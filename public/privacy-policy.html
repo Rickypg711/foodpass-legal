@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - FoodiePass</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .language-switcher {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .language-switcher button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        .language-switcher button:hover {
+            background: #0056b3;
+        }
+        .language-switcher button.active {
+            background: #0056b3;
+            font-weight: bold;
+        }
+        h1 { color: #2c3e50; margin-top: 0; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .last-updated { color: #7f8c8d; font-style: italic; }
+        .lang-en { display: block; }
+        .lang-es { display: none; }
+        .lang-es.active { display: block; }
+        .lang-en.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-switcher">
+            <button onclick="switchLanguage('en')" id="btn-en" class="active">English</button>
+            <button onclick="switchLanguage('es')" id="btn-es">Español</button>
+        </div>
+
+        <!-- English Version -->
+        <div id="content-en" class="lang-en active">
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last Updated: December 2024</p>
+            
+            <h2>1. Information We Collect</h2>
+            <p>We collect information you provide directly to us, including:</p>
+            <ul>
+                <li>Account information (name, email, profile picture)</li>
+                <li>Location data (to show nearby restaurants)</li>
+                <li>Restaurant visit history and preferences</li>
+                <li>QR code scan data</li>
+            </ul>
+            
+            <h2>2. How We Use Your Information</h2>
+            <p>We use the information we collect to:</p>
+            <ul>
+                <li>Provide and improve our services</li>
+                <li>Process your restaurant visits and reward points</li>
+                <li>Send you notifications about rewards and updates</li>
+                <li>Personalize your experience</li>
+            </ul>
+            
+            <h2>3. Data Storage</h2>
+            <p>Your data is stored securely using Firebase. We implement appropriate security measures to protect your personal information.</p>
+            
+            <h2>4. Third-Party Services</h2>
+            <p>We use Firebase for authentication and data storage. Please review Firebase's privacy policy for more information.</p>
+            
+            <h2>5. Your Rights</h2>
+            <p>You can access, update, or delete your account information at any time through the app settings.</p>
+            
+            <h2>6. Contact Us</h2>
+            <p>If you have questions about this Privacy Policy, please contact us at: support@foodpass.com</p>
+        </div>
+
+        <!-- Spanish Version -->
+        <div id="content-es" class="lang-es">
+            <h1>Política de Privacidad</h1>
+            <p class="last-updated">Última actualización: Diciembre 2024</p>
+            
+            <h2>1. Información que Recopilamos</h2>
+            <p>Recopilamos información que nos proporcionas directamente, incluyendo:</p>
+            <ul>
+                <li>Información de cuenta (nombre, correo electrónico, foto de perfil)</li>
+                <li>Datos de ubicación (para mostrar restaurantes cercanos)</li>
+                <li>Historial de visitas a restaurantes y preferencias</li>
+                <li>Datos de escaneo de códigos QR</li>
+            </ul>
+            
+            <h2>2. Cómo Usamos Tu Información</h2>
+            <p>Utilizamos la información que recopilamos para:</p>
+            <ul>
+                <li>Proporcionar y mejorar nuestros servicios</li>
+                <li>Procesar tus visitas a restaurantes y puntos de recompensa</li>
+                <li>Enviarte notificaciones sobre recompensas y actualizaciones</li>
+                <li>Personalizar tu experiencia</li>
+            </ul>
+            
+            <h2>3. Almacenamiento de Datos</h2>
+            <p>Tus datos se almacenan de forma segura usando Firebase. Implementamos medidas de seguridad apropiadas para proteger tu información personal.</p>
+            
+            <h2>4. Servicios de Terceros</h2>
+            <p>Utilizamos Firebase para autenticación y almacenamiento de datos. Por favor revisa la política de privacidad de Firebase para más información.</p>
+            
+            <h2>5. Tus Derechos</h2>
+            <p>Puedes acceder, actualizar o eliminar la información de tu cuenta en cualquier momento a través de la configuración de la aplicación.</p>
+            
+            <h2>6. Contáctanos</h2>
+            <p>Si tienes preguntas sobre esta Política de Privacidad, por favor contáctanos en: support@foodpass.com</p>
+        </div>
+    </div>
+
+    <script>
+        function switchLanguage(lang) {
+            // Hide all content
+            document.querySelectorAll('.lang-en, .lang-es').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.language-switcher button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected language
+            document.getElementById('content-' + lang).classList.add('active');
+            document.getElementById('btn-' + lang).classList.add('active');
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+        }
+    </script>
+</body>
+</html>
+
