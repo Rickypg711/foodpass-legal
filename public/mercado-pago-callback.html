@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirigiendo a FoodPass...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #F28C38 0%, #8B6F47 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fallback-link {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: white;
+            color: #F28C38;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>Redirigiendo a FoodPass...</h1>
+        <p>Por favor espera...</p>
+        <a href="#" id="fallback-link" class="fallback-link" style="display: none;">
+            Si no se abrió la app, toca aquí
+        </a>
+    </div>
+
+    <script>
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        // Construir el deep link
+        let deepLink = 'foodpass://mercado-pago-callback';
+        const params = [];
+        
+        if (code) {
+            params.push('code=' + encodeURIComponent(code));
+        }
+        if (state) {
+            params.push('state=' + encodeURIComponent(state));
+        }
+        if (error) {
+            params.push('error=' + encodeURIComponent(error));
+        }
+        if (errorDescription) {
+            params.push('error_description=' + encodeURIComponent(errorDescription));
+        }
+        
+        if (params.length > 0) {
+            deepLink += '?' + params.join('&');
+        }
+
+        // Intentar redirigir al deep link
+        console.log('Redirigiendo a:', deepLink);
+        
+        // Método 1: Intentar abrir el deep link directamente
+        window.location.href = deepLink;
+        
+        // Método 2: Fallback después de 2 segundos
+        setTimeout(function() {
+            // Si no se abrió la app, mostrar enlace manual
+            const fallbackLink = document.getElementById('fallback-link');
+            fallbackLink.href = deepLink;
+            fallbackLink.style.display = 'inline-block';
+            fallbackLink.textContent = 'Si no se abrió la app, toca aquí para abrir FoodPass';
+        }, 2000);
+
+        // Método 3: Intentar con iframe (para iOS)
+        setTimeout(function() {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            
+            setTimeout(function() {
+                document.body.removeChild(iframe);
+            }, 1000);
+        }, 500);
+    </script>
+</body>
+</html>

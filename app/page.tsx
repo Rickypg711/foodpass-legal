@@ -9,7 +9,7 @@ export default function Home() {
           <div className="space-y-4">
             <h1 className="text-5xl font-bold text-gray-900 dark:text-white">
               FoodiePass
-            </h1>
+          </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Legal Documents
             </p>
@@ -45,7 +45,7 @@ export default function Home() {
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
                   Learn how we collect, use, and protect your personal information.
-                </p>
+          </p>
                 <div className="flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <span className="text-sm font-medium">View Policy</span>
                   <svg
