@@ -128,6 +128,7 @@ export default function Home() {
           {/* Footer */}
           <div className="pt-8 text-sm text-neutral-500 dark:text-neutral-500">
             <p>© 2024 ANTO. All rights reserved.</p>
+            <p className="mt-2">ANTO is operated by Ricardo Paredes.</p>
           </div>
         </div>
       </main>
