@@ -83,8 +83,7 @@
             deepLink += '?' + params.join('&');
         }
 
-        // Intentar redirigir al deep link
-        console.log('Redirigiendo a:', deepLink);
+        // No registrar parametros sensibles del callback en logs.
         
         // Método 1: Intentar abrir el deep link directamente
         window.location.href = deepLink;
