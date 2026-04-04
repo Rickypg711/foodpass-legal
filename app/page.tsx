@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#F5F5DC] via-[#FAF8F2] to-[#EFEBE0] dark:from-[#1c1917] dark:via-[#1c1917] dark:to-[#292524]">
       <main className="flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-8 py-16">
         <div className="w-full max-w-2xl space-y-8 text-center">
           {/* Logo + title (same asset as Flutter app launcher) */}
@@ -15,13 +15,13 @@ export default function Home() {
                 width={88}
                 height={88}
                 priority
-                className="h-[88px] w-[88px] rounded-[22px] shadow-md ring-1 ring-black/5 dark:ring-white/10"
+                className="h-[88px] w-[88px] rounded-[22px] shadow-md ring-1 ring-black/[0.06] dark:ring-white/10"
               />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-4xl font-bold tracking-tight text-[#171717] dark:text-white">
               ANTO
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-neutral-600 dark:text-neutral-400">
               Legal Documents
             </p>
           </div>
@@ -31,13 +31,13 @@ export default function Home() {
             {/* Privacy Policy Card */}
             <Link
               href="/privacy-policy.html"
-              className="group block rounded-lg border-2 border-gray-200 bg-white p-8 shadow-lg transition-all hover:border-blue-500 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800"
+              className="group block rounded-lg border border-neutral-200/80 bg-white p-8 shadow-md transition-all hover:border-[#FF7A00] hover:shadow-lg dark:border-neutral-700 dark:bg-[#292524]"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-center">
-                  <div className="rounded-full bg-blue-100 p-4 dark:bg-blue-900">
+                  <div className="rounded-full bg-[#FF7A00]/12 p-4 dark:bg-[#FF7A00]/15">
                     <svg
-                      className="h-8 w-8 text-blue-600 dark:text-blue-400"
+                      className="h-8 w-8 text-[#FF7A00]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -51,13 +51,13 @@ export default function Home() {
                     </svg>
                   </div>
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-semibold text-[#171717] dark:text-white">
                   Privacy Policy
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-neutral-600 dark:text-neutral-400">
                   Learn how we collect, use, and protect your personal information.
-          </p>
-                <div className="flex items-center justify-center text-blue-600 dark:text-blue-400">
+                </p>
+                <div className="flex items-center justify-center text-[#FF7A00]">
                   <span className="text-sm font-medium">View Policy</span>
                   <svg
                     className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -79,13 +79,13 @@ export default function Home() {
             {/* Terms of Use Card */}
             <Link
               href="/terms-of-use.html"
-              className="group block rounded-lg border-2 border-gray-200 bg-white p-8 shadow-lg transition-all hover:border-blue-500 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800"
+              className="group block rounded-lg border border-neutral-200/80 bg-[#FAFAF4] p-8 shadow-md transition-all hover:border-[#FF7A00] hover:shadow-lg dark:border-neutral-700 dark:bg-[#292524]"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-center">
-                  <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">
+                  <div className="rounded-full bg-[#FF7A00]/12 p-4 dark:bg-[#FF7A00]/15">
                     <svg
-                      className="h-8 w-8 text-green-600 dark:text-green-400"
+                      className="h-8 w-8 text-[#FF7A00]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -99,13 +99,13 @@ export default function Home() {
                     </svg>
                   </div>
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-semibold text-[#171717] dark:text-white">
                   Terms of Use
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-neutral-600 dark:text-neutral-400">
                   Read our terms and conditions for using the App.
                 </p>
-                <div className="flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <div className="flex items-center justify-center text-[#FF7A00]">
                   <span className="text-sm font-medium">View Terms</span>
                   <svg
                     className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -126,7 +126,7 @@ export default function Home() {
           </div>
 
           {/* Footer */}
-          <div className="pt-8 text-sm text-gray-500 dark:text-gray-400">
+          <div className="pt-8 text-sm text-neutral-500 dark:text-neutral-500">
             <p>© 2024 ANTO. All rights reserved.</p>
           </div>
         </div>
