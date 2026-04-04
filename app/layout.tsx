@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FoodPass - Documentos Legales",
+  title: "ANTO - Documentos legales",
   description:
-    "Consulta los documentos legales oficiales de FoodPass, incluyendo privacidad y terminos de uso.",
+    "Consulta los documentos legales oficiales de ANTO (la App), incluyendo privacidad y términos de uso.",
 };
 
 export default function RootLayout({

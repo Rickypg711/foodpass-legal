@@ -8,7 +8,7 @@ export default function Home() {
           {/* Logo/Title */}
           <div className="space-y-4">
             <h1 className="text-5xl font-bold text-gray-900 dark:text-white">
-              FoodiePass
+              ANTO
           </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Legal Documents
@@ -92,7 +92,7 @@ export default function Home() {
                   Terms of Use
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Read our terms and conditions for using FoodiePass services.
+                  Read our terms and conditions for using the App.
                 </p>
                 <div className="flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <span className="text-sm font-medium">View Terms</span>
@@ -116,7 +116,8 @@ export default function Home() {
 
           {/* Footer */}
           <div className="pt-8 text-sm text-gray-500 dark:text-gray-400">
-            <p>© 2024 FoodiePass. All rights reserved.</p>
+            <p>© 2024 ANTO. All rights reserved.</p>
+            <p className="mt-2">ANTO is operated by Ricardo Paredes.</p>
           </div>
         </div>
       </main>
