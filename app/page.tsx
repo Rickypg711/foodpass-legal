@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -5,11 +6,21 @@ export default function Home() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <main className="flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-8 py-16">
         <div className="w-full max-w-2xl space-y-8 text-center">
-          {/* Logo/Title */}
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white">
+          {/* Logo + title (same asset as Flutter app launcher) */}
+          <div className="space-y-5">
+            <div className="flex justify-center">
+              <Image
+                src="/anto-app-icon.png"
+                alt="ANTO"
+                width={88}
+                height={88}
+                priority
+                className="h-[88px] w-[88px] rounded-[22px] shadow-md ring-1 ring-black/5 dark:ring-white/10"
+              />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
               ANTO
-          </h1>
+            </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Legal Documents
             </p>
@@ -117,7 +128,6 @@ export default function Home() {
           {/* Footer */}
           <div className="pt-8 text-sm text-gray-500 dark:text-gray-400">
             <p>© 2024 ANTO. All rights reserved.</p>
-            <p className="mt-2">ANTO is operated by Ricardo Paredes.</p>
           </div>
         </div>
       </main>

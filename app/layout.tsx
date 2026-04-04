@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "ANTO - Documentos legales",
   description:
     "Consulta los documentos legales oficiales de ANTO (la App), incluyendo privacidad y términos de uso.",
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+    apple: "/anto-app-icon.png",
+  },
 };
 
 export default function RootLayout({
