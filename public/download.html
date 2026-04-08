@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F28C38">
     <title>Descarga ANTO - Gana puntos en tus restaurantes favoritos</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/anto-app-icon.png">
@@ -12,15 +13,24 @@
             padding: 0;
             box-sizing: border-box;
         }
+
+        /* Solid base so Safari shows brand color before body/layout paint (avoids white flash). */
+        html {
+            background-color: #F28C38;
+            min-height: 100%;
+        }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #F28C38 0%, #8B6F47 100%);
+            background-color: #F28C38;
             min-height: 100vh;
+            min-height: 100dvh;
+            min-height: -webkit-fill-available;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         }
         
         .container {
@@ -128,29 +138,15 @@
             }
         }
     </style>
-    <script>
-        /* Mobile: send users straight to the store. Desktop: stay on this page (badges). */
-        (function() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                window.location.href = 'https://apps.apple.com/mx/app/foodpass/id6745301069';
-                return;
-            }
-            
-            if (/android/i.test(userAgent)) {
-                window.location.href = 'https://play.google.com/store/apps/details?id=com.ricardoparedes.foodpass';
-                return;
-            }
-        })();
-    </script>
 </head>
 <body>
+    <!-- Static first paint: no JS required. Store redirect runs only after body parses (script at end). -->
     <div class="container">
         <div class="logo-wrap">
-            <img src="/anto-app-icon.png" alt="ANTO" width="88" height="88">
+            <img src="/anto-app-icon.png" alt="ANTO" width="88" height="88" fetchpriority="high" decoding="async">
         </div>
         <h1>ANTO</h1>
+        <p id="ctx-hint" class="subtitle" style="display:none;color:#1C2526;font-weight:600;margin-bottom:12px;"></p>
         <p class="subtitle">Gana puntos en tus restaurantes favoritos y canjea recompensas reales</p>
         
         <div class="features">
@@ -186,5 +182,50 @@
             <p>ANTO es operada por Ricardo Paredes.</p>
         </footer>
     </div>
+    <script>
+        /* Deep-link fallback: query params preserve context (type, restaurantId, linkId, referrerId).
+           Do not auto-redirect to the store when context is present — user keeps URL for open-in-app / handoff.
+           Script is at end of body so mobile Safari can paint HTML/CSS before any store redirect. */
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const hasCtx = params.get('type') || params.get('restaurantId');
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+            function contextualHint() {
+                if (!hasCtx) return;
+                const type = params.get('type') || '';
+                const rid = params.get('restaurantId') || '';
+                let msg = 'Abre ANTO para continuar.';
+                if (type === 'menu' && rid) msg = 'Te compartieron un menú. Al abrir ANTO verás el menú de este lugar.';
+                else if (type === 'restaurant' && rid) msg = 'Te compartieron un restaurante. Ábrelo en ANTO para ver el perfil.';
+                else if (type === 'referral' && rid) msg = 'Te invitaron a un restaurante en ANTO. Abre la app para ver el perfil y tus beneficios.';
+                const el = document.getElementById('ctx-hint');
+                if (el) { el.textContent = msg; el.style.display = 'block'; }
+            }
+            contextualHint();
+
+            if (hasCtx) return;
+
+            function goStore() {
+                if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                    window.location.replace('https://apps.apple.com/mx/app/foodpass/id6745301069');
+                    return;
+                }
+                if (/android/i.test(userAgent)) {
+                    window.location.replace('https://play.google.com/store/apps/details?id=com.ricardoparedes.foodpass');
+                }
+            }
+
+            var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+            var isAndroid = /android/i.test(userAgent);
+            if (!isIOS && !isAndroid) return;
+
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    setTimeout(goStore, 0);
+                });
+            });
+        })();
+    </script>
 </body>
 </html>
