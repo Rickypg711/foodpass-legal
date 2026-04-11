@@ -27,7 +27,7 @@ export default function Home() {
           </div>
 
           {/* Cards */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             {/* Privacy Policy Card */}
             <Link
               href="/privacy-policy.html"
@@ -123,12 +123,60 @@ export default function Home() {
                 </div>
               </div>
             </Link>
+
+            {/* Support Card */}
+            <Link
+              href="/support.html"
+              className="group block rounded-lg border border-neutral-200/80 bg-white p-8 shadow-md transition-all hover:border-[#FF7A00] hover:shadow-lg dark:border-neutral-700 dark:bg-[#292524]"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="rounded-full bg-[#FF7A00]/12 p-4 dark:bg-[#FF7A00]/15">
+                    <svg
+                      className="h-8 w-8 text-[#FF7A00]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <h2 className="text-2xl font-semibold text-[#171717] dark:text-white">
+                  Support
+                </h2>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Get help with the app, contact options, and FAQs.
+                </p>
+                <div className="flex items-center justify-center text-[#FF7A00]">
+                  <span className="text-sm font-medium">View Support</span>
+                  <svg
+                    className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </Link>
           </div>
 
           {/* Footer */}
           <div className="pt-8 text-sm text-neutral-500 dark:text-neutral-500">
             <p>© 2024 ANTO. All rights reserved.</p>
-            <p className="mt-2">ANTO is operated by Ricardo Paredes.</p>
+            <p className="mt-2">We operate ANTO.</p>
           </div>
         </div>
       </main>
