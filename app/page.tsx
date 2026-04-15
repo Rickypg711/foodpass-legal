@@ -10,8 +10,8 @@ export default function Home() {
           <div className="space-y-5">
             <div className="flex justify-center">
               <Image
-                src="/anto-app-icon.png"
-                alt="ANTO"
+                src="/comeleal-app-icon.png"
+                alt="Comeleal"
                 width={88}
                 height={88}
                 priority
@@ -19,7 +19,7 @@ export default function Home() {
               />
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-[#171717] dark:text-white">
-              ANTO
+              Comeleal
             </h1>
             <p className="text-xl text-neutral-600 dark:text-neutral-400">
               Legal Documents
@@ -175,8 +175,8 @@ export default function Home() {
 
           {/* Footer */}
           <div className="pt-8 text-sm text-neutral-500 dark:text-neutral-500">
-            <p>© 2024 ANTO. All rights reserved.</p>
-            <p className="mt-2">We operate ANTO.</p>
+            <p>© 2024 Comeleal. All rights reserved.</p>
+            <p className="mt-2">We operate Comeleal.</p>
           </div>
         </div>
       </main>

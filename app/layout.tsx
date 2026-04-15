@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ANTO - Documentos legales",
+  title: "Comeleal - Documentos legales",
   description:
-    "Consulta los documentos legales oficiales de ANTO (la App), incluyendo privacidad y términos de uso.",
+    "Consulta los documentos legales oficiales de Comeleal (la App), incluyendo privacidad y términos de uso.",
   icons: {
     icon: [{ url: "/favicon.ico", sizes: "any" }],
-    apple: "/anto-app-icon.png",
+    apple: "/comeleal-app-icon.png",
   },
 };
 
