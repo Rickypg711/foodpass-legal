@@ -56,7 +56,7 @@ export default function PublicMenuPage() {
 
   const downloadHref =
     restaurantId && `/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`;
-  /** “Usar Comeleal” always uses download.html (controlled install flow; no Branch interstitial in CTA). */
+  /** Primary CTA always uses download.html (controlled install flow; no Branch interstitial in CTA). */
   const primaryCtaHref = !menuLinkResolved
     ? "#"
     : downloadHref || "#";
@@ -292,7 +292,7 @@ export default function PublicMenuPage() {
               });
             }}
           >
-            Usar Comeleal
+            Gana puntos con este pedido 🔥
           </a>
         </div>
       </div>
