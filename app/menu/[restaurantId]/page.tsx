@@ -4,11 +4,7 @@ import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  trackWebMenuDownloadClick,
-  trackWebMenuOpenAppClick,
-  trackWebMenuView,
-} from "@/lib/analytics";
+import { trackWebMenuOpenAppClick, trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
 import { formatPrice } from "@/lib/priceFormat";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
@@ -266,20 +262,7 @@ export default function PublicMenuPage() {
               });
             }}
           >
-            Abrir en Comeleal
-          </a>
-          <a
-            href={downloadHref || "#"}
-            className="block w-full rounded-lg border border-[#1C2526]/10 bg-white/90 py-2.5 text-center text-sm font-medium text-[#1C2526]/65 sm:flex-1"
-            onClick={() => {
-              if (!restaurantId) return;
-              trackWebMenuDownloadClick({
-                restaurantId,
-                restaurantName: restaurantName || "Restaurante",
-              });
-            }}
-          >
-            Descargar app
+            Usar Comeleal
           </a>
         </div>
       </div>
