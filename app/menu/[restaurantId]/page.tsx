@@ -53,15 +53,24 @@ export default function PublicMenuPage() {
   const [items, setItems] = useState<MenuRow[]>([]);
   /** Branch short URL from app (same as QR/share) when cached in Firestore. */
   const [branchMenuHref, setBranchMenuHref] = useState<string | null>(null);
+  /** False until `settings/menu_link` read finishes (or path skips that read). CTA must not use download fallback while false. */
+  const [menuLinkResolved, setMenuLinkResolved] = useState(false);
 
   const downloadHref =
     restaurantId && `/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`;
-  const primaryCtaHref = branchMenuHref && branchMenuHref.trim() ? branchMenuHref.trim() : downloadHref;
+  const primaryCtaHref = !menuLinkResolved
+    ? "#"
+    : branchMenuHref && branchMenuHref.trim()
+      ? branchMenuHref.trim()
+      : downloadHref;
 
   useEffect(() => {
     if (!restaurantId) {
       setError("Falta el id del restaurante");
       setLoading(false);
+      setMenuLinkResolved(true);
+      // eslint-disable-next-line no-console -- CTA resolution diagnostics
+      console.log("CTA ready: using fallback");
       return;
     }
 
@@ -70,6 +79,7 @@ export default function PublicMenuPage() {
     (async () => {
       setLoading(true);
       setError(null);
+      setMenuLinkResolved(false);
       try {
         const db = getFirebaseDb();
         const rRef = doc(db, "restaurants", restaurantId);
@@ -80,6 +90,11 @@ export default function PublicMenuPage() {
           setRestaurantName("");
           setItems([]);
           setBranchMenuHref(null);
+          setMenuLinkResolved(true);
+          if (!cancelled) {
+            // eslint-disable-next-line no-console -- CTA resolution diagnostics
+            console.log("CTA ready: using fallback");
+          }
           setLoading(false);
           return;
         }
@@ -90,6 +105,11 @@ export default function PublicMenuPage() {
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
 
+        if (!cancelled) {
+          // eslint-disable-next-line no-console -- CTA resolution diagnostics
+          console.log("CTA waiting for menu_link");
+        }
+        let ctaUsesBranch = false;
         try {
           const linkSnap = await getDoc(
             doc(db, "restaurants", restaurantId, "settings", "menu_link"),
@@ -99,6 +119,7 @@ export default function PublicMenuPage() {
             const link = linkData?.link;
             if (typeof link === "string" && link.trim()) {
               setBranchMenuHref(link.trim());
+              ctaUsesBranch = true;
             } else {
               setBranchMenuHref(null);
             }
@@ -107,6 +128,14 @@ export default function PublicMenuPage() {
           }
         } catch {
           if (!cancelled) setBranchMenuHref(null);
+        } finally {
+          if (!cancelled) {
+            setMenuLinkResolved(true);
+            // eslint-disable-next-line no-console -- CTA resolution diagnostics
+            console.log(
+              ctaUsesBranch ? "CTA ready: using Branch" : "CTA ready: using fallback",
+            );
+          }
         }
 
         const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
@@ -134,6 +163,9 @@ export default function PublicMenuPage() {
         setError(e instanceof Error ? e.message : "Error al cargar el menú");
         setItems([]);
         setBranchMenuHref(null);
+        setMenuLinkResolved(true);
+        // eslint-disable-next-line no-console -- CTA resolution diagnostics
+        console.log("CTA ready: using fallback");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -252,9 +284,17 @@ export default function PublicMenuPage() {
         <div className="mx-auto flex max-w-md flex-col gap-2 sm:flex-row sm:justify-stretch">
           <a
             href={primaryCtaHref || "#"}
-            className="block w-full rounded-lg py-3 text-center text-sm font-semibold text-white shadow-sm sm:flex-1"
+            className={
+              "block w-full rounded-lg py-3 text-center text-sm font-semibold text-white shadow-sm sm:flex-1" +
+              (!menuLinkResolved ? " pointer-events-none cursor-not-allowed opacity-60" : "")
+            }
             style={{ backgroundColor: "#F28C38" }}
-            onClick={() => {
+            aria-disabled={!menuLinkResolved}
+            onClick={(e) => {
+              if (!menuLinkResolved) {
+                e.preventDefault();
+                return;
+              }
               if (!restaurantId) return;
               trackWebMenuOpenAppClick({
                 restaurantId,
