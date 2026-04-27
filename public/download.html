@@ -227,5 +227,41 @@
             });
         })();
     </script>
+    <script type="module">
+        /* Firebase Analytics — must match lib/firebase.ts (public web client). */
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import {
+            getAnalytics,
+            isSupported,
+            logEvent,
+        } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk",
+            appId: "1:111825516835:web:c224c2dfd3148dcd627496",
+            projectId: "foodpass-18b33",
+            authDomain: "foodpass-18b33.firebaseapp.com",
+            storageBucket: "foodpass-18b33.firebasestorage.app",
+            messagingSenderId: "111825516835",
+        };
+
+        (async function trackWebMenuDownloadPageViewIfMenuFunnel() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get("type") !== "menu") return;
+                const rid = params.get("restaurantId");
+                if (!rid || !String(rid).trim()) return;
+                if (!(await isSupported().catch(() => false))) return;
+
+                const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
+                logEvent(analytics, "web_menu_download_page_view", {
+                    restaurantId: String(rid).trim(),
+                });
+            } catch (_) {
+                /* best-effort only */
+            }
+        })();
+    </script>
 </body>
 </html>
