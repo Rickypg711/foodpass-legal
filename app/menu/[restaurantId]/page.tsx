@@ -51,18 +51,15 @@ export default function PublicMenuPage() {
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
-  /** Branch short URL from app (same as QR/share) when cached in Firestore. */
-  const [branchMenuHref, setBranchMenuHref] = useState<string | null>(null);
-  /** False until `settings/menu_link` read finishes (or path skips that read). CTA must not use download fallback while false. */
+  /** False until `settings/menu_link` read finishes (or path skips that read). CTA stays disabled until true. */
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
 
   const downloadHref =
     restaurantId && `/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`;
+  /** “Usar Comeleal” always uses download.html (controlled install flow; no Branch interstitial in CTA). */
   const primaryCtaHref = !menuLinkResolved
     ? "#"
-    : branchMenuHref && branchMenuHref.trim()
-      ? branchMenuHref.trim()
-      : downloadHref;
+    : downloadHref || "#";
 
   useEffect(() => {
     if (!restaurantId) {
@@ -89,7 +86,6 @@ export default function PublicMenuPage() {
           setError("No encontramos este menú");
           setRestaurantName("");
           setItems([]);
-          setBranchMenuHref(null);
           setMenuLinkResolved(true);
           if (!cancelled) {
             // eslint-disable-next-line no-console -- CTA resolution diagnostics
@@ -118,22 +114,17 @@ export default function PublicMenuPage() {
             const linkData = linkSnap.data() as Record<string, unknown> | undefined;
             const link = linkData?.link;
             if (typeof link === "string" && link.trim()) {
-              setBranchMenuHref(link.trim());
               ctaUsesBranch = true;
-            } else {
-              setBranchMenuHref(null);
             }
-          } else if (!cancelled) {
-            setBranchMenuHref(null);
           }
         } catch {
-          if (!cancelled) setBranchMenuHref(null);
+          /* menu_link missing or unreadable; CTA still uses download.html */
         } finally {
           if (!cancelled) {
             setMenuLinkResolved(true);
             // eslint-disable-next-line no-console -- CTA resolution diagnostics
             console.log(
-              ctaUsesBranch ? "CTA ready: using Branch" : "CTA ready: using fallback",
+              `CTA ready: download.html${ctaUsesBranch ? " (menu_link also present)" : ""}`,
             );
           }
         }
@@ -162,7 +153,6 @@ export default function PublicMenuPage() {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Error al cargar el menú");
         setItems([]);
-        setBranchMenuHref(null);
         setMenuLinkResolved(true);
         // eslint-disable-next-line no-console -- CTA resolution diagnostics
         console.log("CTA ready: using fallback");
