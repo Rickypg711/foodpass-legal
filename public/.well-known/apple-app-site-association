@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "4Q67Q697U5.com.ricardoparedes.foodpass",
+        "paths": ["/menu/*"]
+      }
+    ]
+  }
+}
