@@ -275,8 +275,11 @@ export default function PublicMenuPage() {
           <a
             href={primaryCtaHref || "#"}
             className={
-              "block w-full rounded-lg py-3 text-center text-sm font-semibold text-white shadow-sm sm:flex-1" +
-              (!menuLinkResolved ? " pointer-events-none cursor-not-allowed opacity-60" : "")
+              "menu-cta-enter block w-full rounded-xl border border-[#1C2526]/15 py-3 text-center text-sm font-semibold text-white sm:flex-1 " +
+              "shadow-[0_2px_6px_rgba(28,37,38,0.08)] " +
+              "transition-[transform,box-shadow] duration-200 ease-out " +
+              "active:scale-[0.98] active:shadow-[0_1px_3px_rgba(28,37,38,0.1)] " +
+              (!menuLinkResolved ? "pointer-events-none cursor-not-allowed " : "")
             }
             style={{ backgroundColor: "#F28C38" }}
             aria-disabled={!menuLinkResolved}
