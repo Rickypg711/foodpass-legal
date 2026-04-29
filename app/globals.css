@@ -25,27 +25,28 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Opacity only — avoids fighting menu-cta-pulse transform (scale breathe). */
 @keyframes menu-cta-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* Subtle outer pulse (toned down vs glow-only read); inset highlight on every frame. */
+/* Shadow + subtle scale breathe (button body pulses, not only glow). */
 @keyframes menu-cta-pulse {
   0%,
   100% {
+    transform: scale(1);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
       0 5px 14px rgba(242, 140, 56, 0.24),
       0 2px 4px rgba(28, 37, 38, 0.14);
   }
   50% {
+    transform: scale(1.025);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
       0 8px 20px rgba(242, 140, 56, 0.32),
@@ -68,7 +69,7 @@ a.menu-cta-enter.menu-cta-pulse {
 
 @media (hover: hover) {
   a.menu-cta-enter.menu-cta-pulse:hover:not(:active):not([aria-disabled="true"]) {
-    animation-play-state: paused;
+    animation-play-state: paused, paused;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
       0 7px 18px rgba(242, 140, 56, 0.3),
@@ -77,8 +78,9 @@ a.menu-cta-enter.menu-cta-pulse {
   }
 }
 
+/* Pause both stacked anims so Tailwind active:scale-[0.98] owns transform while pressed. */
 a.menu-cta-enter.menu-cta-pulse:active:not([aria-disabled="true"]) {
-  animation-play-state: paused;
+  animation-play-state: paused, paused;
   background: linear-gradient(180deg, #f28c38 0%, #de7626 52%, #c86a1f 100%);
   box-shadow:
     inset 0 2px 3px rgba(28, 37, 38, 0.12),
