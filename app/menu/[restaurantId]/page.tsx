@@ -276,11 +276,10 @@ export default function PublicMenuPage() {
             href={primaryCtaHref || "#"}
             className={
               "menu-cta-enter menu-cta-pulse mx-auto block w-full max-w-xs rounded-xl border border-[#1C2526]/15 py-3 text-center text-sm font-semibold text-white sm:max-w-sm " +
-              "transition-[transform,box-shadow] duration-200 ease-out " +
-              "active:scale-[0.98] active:shadow-[0_1px_3px_rgba(28,37,38,0.1)] " +
+              "transition-[transform,box-shadow,background] duration-200 ease-out " +
+              "active:scale-[0.98] " +
               (!menuLinkResolved ? "pointer-events-none cursor-not-allowed " : "")
             }
-            style={{ backgroundColor: "#F28C38" }}
             aria-disabled={!menuLinkResolved}
             onClick={(e) => {
               if (!menuLinkResolved) {
