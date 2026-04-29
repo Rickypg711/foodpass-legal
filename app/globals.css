@@ -36,8 +36,37 @@ body {
   }
 }
 
-.menu-cta-enter {
+@keyframes menu-cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 2px 6px rgba(28, 37, 38, 0.07),
+      0 1px 2px rgba(28, 37, 38, 0.04);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgba(28, 37, 38, 0.1),
+      0 2px 6px rgba(28, 37, 38, 0.06);
+  }
+}
+
+a.menu-cta-enter {
   animation: menu-cta-enter 0.28s ease-out forwards;
+}
+
+a.menu-cta-enter.menu-cta-pulse {
+  animation:
+    menu-cta-enter 0.28s ease-out forwards,
+    menu-cta-pulse 2.5s ease-in-out 0.35s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.menu-cta-enter.menu-cta-pulse {
+    animation: menu-cta-enter 0.28s ease-out forwards;
+    box-shadow:
+      0 2px 6px rgba(28, 37, 38, 0.08),
+      0 1px 2px rgba(28, 37, 38, 0.05);
+  }
 }
 
 /* Disabled CTA must stay dimmed after entrance animation (fill-mode would lock opacity: 1). */

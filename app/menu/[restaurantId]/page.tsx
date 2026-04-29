@@ -271,12 +271,11 @@ export default function PublicMenuPage() {
         <p className="mb-3 mt-1 text-center text-sm text-[#1C2526]/75">
           Abre Comeleal antes de ordenar
         </p>
-        <div className="mx-auto flex max-w-md flex-col gap-2 sm:flex-row sm:justify-stretch">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <a
             href={primaryCtaHref || "#"}
             className={
-              "menu-cta-enter block w-full rounded-xl border border-[#1C2526]/15 py-3 text-center text-sm font-semibold text-white sm:flex-1 " +
-              "shadow-[0_2px_6px_rgba(28,37,38,0.08)] " +
+              "menu-cta-enter menu-cta-pulse mx-auto block w-full max-w-xs rounded-xl border border-[#1C2526]/15 py-3 text-center text-sm font-semibold text-white sm:max-w-sm " +
               "transition-[transform,box-shadow] duration-200 ease-out " +
               "active:scale-[0.98] active:shadow-[0_1px_3px_rgba(28,37,38,0.1)] " +
               (!menuLinkResolved ? "pointer-events-none cursor-not-allowed " : "")
