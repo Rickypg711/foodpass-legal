@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Comeleal web (`comeleal-web`)
 
-## Getting Started
+Public site for [Comeleal](https://www.comeleal.com): legal pages, app download, public restaurant menus, and web ordering with Mercado Pago Checkout Pro (sandbox).
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router)
+- Deployed on Vercel → **www.comeleal.com**
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run test:order-payload` | Order payload validation |
+| `npm run test:mp-preference` | Mercado Pago preference builder checks |
 
-## Learn More
+## Docs
 
-To learn more about Next.js, take a look at the following resources:
+- [Web Mercado Pago sandbox checkout](./docs/WEB_MERCADO_PAGO_SANDBOX_CHECKOUT.md)
+- [Vercel Preview testing](./docs/WEB_MP_VERCEL_PREVIEW_TESTING.md)
+- [MP web debugging](./docs/WEB_MP_DEBUGGING.md)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Infrastructure (unchanged)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Firebase project: `foodpass-18b33`
+- Webhook: FOODPASS Cloud Function `mercadopagoWebhook`
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Repo folder name may still be `foodpass-legal` locally; npm package name is `comeleal-web`.

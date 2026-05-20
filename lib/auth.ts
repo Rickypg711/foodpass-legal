@@ -1,0 +1,46 @@
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInAnonymously,
+  type Auth,
+  type User,
+} from "firebase/auth";
+import { getFirebaseApp } from "./firebase";
+
+let auth: Auth | null = null;
+
+export function getFirebaseAuth(): Auth {
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
+  }
+  return auth;
+}
+
+/** Resolves when Firebase Auth has finished restoring session (or timed out). */
+export function waitForAuthReady(): Promise<User | null> {
+  const a = getFirebaseAuth();
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(a, (user) => {
+      unsub();
+      resolve(user);
+    });
+    setTimeout(() => {
+      unsub();
+      resolve(a.currentUser);
+    }, 4000);
+  });
+}
+
+/**
+ * Ensures a signed-in user (anonymous for guest checkout).
+ * Required for Firestore order create/read per security rules.
+ */
+export async function ensureAnonymousUser(): Promise<User> {
+  const a = getFirebaseAuth();
+  await waitForAuthReady();
+  if (a.currentUser) {
+    return a.currentUser;
+  }
+  const cred = await signInAnonymously(a);
+  return cred.user;
+}

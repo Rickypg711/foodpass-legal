@@ -1,0 +1,141 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { trackCartItemAdded } from "@/lib/analytics/orderEvents";
+import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
+import { clearCart, loadCart, saveCart } from "./cartStorage";
+import type { CartLine } from "./types";
+
+type CartContextValue = {
+  lines: CartLine[];
+  itemCount: number;
+  subtotal: number;
+  /** True after client has loaded cart from sessionStorage. */
+  cartReady: boolean;
+  addItem: (item: Omit<CartLine, "quantity" | "subtotal">) => void;
+  removeLine: (menuItemId: string) => void;
+  clear: () => void;
+};
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+export function CartProvider({
+  restaurantId,
+  children,
+}: {
+  restaurantId: string;
+  children: ReactNode;
+}) {
+  const [lines, setLines] = useState<CartLine[]>([]);
+  /** False until sessionStorage cart has been read (avoids SSR/client mismatch + empty save). */
+  const [cartReady, setCartReady] = useState(false);
+
+  useEffect(() => {
+    const loaded = loadCart(restaurantId);
+    setLines(loaded);
+    setCartReady(true);
+    mpWebDebugClient("cart_loaded", {
+      restaurantId,
+      itemCount: loaded.reduce((s, l) => s + l.quantity, 0),
+      lineCount: loaded.length,
+    });
+    if (loaded.length === 0) {
+      mpWebDebugClient("cart_empty_detected", { restaurantId, source: "sessionStorage_load" });
+    }
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!cartReady) return;
+    saveCart(restaurantId, lines);
+  }, [restaurantId, lines, cartReady]);
+
+  const addItem = useCallback(
+    (item: Omit<CartLine, "quantity" | "subtotal">) => {
+      setLines((prev) => {
+        const idx = prev.findIndex((l) => l.menuItemId === item.menuItemId);
+        let next: CartLine[];
+        let addedQty = 1;
+        if (idx >= 0) {
+          const line = prev[idx]!;
+          const qty = line.quantity + 1;
+          addedQty = qty;
+          next = [...prev];
+          next[idx] = {
+            ...line,
+            quantity: qty,
+            subtotal: line.price * qty,
+          };
+        } else {
+          next = [
+            ...prev,
+            {
+              ...item,
+              quantity: 1,
+              subtotal: item.price,
+            },
+          ];
+        }
+        void trackCartItemAdded({
+          restaurantId,
+          menuItemId: item.menuItemId,
+          quantity: addedQty,
+        });
+        return next;
+      });
+    },
+    [restaurantId],
+  );
+
+  const removeLine = useCallback((menuItemId: string) => {
+    setLines((prev) => prev.filter((l) => l.menuItemId !== menuItemId));
+  }, []);
+
+  const clear = useCallback(() => {
+    mpWebDebugClient("cart_clear_called", {
+      restaurantId,
+      previousItemCount: lines.reduce((s, l) => s + l.quantity, 0),
+    });
+    clearCart(restaurantId);
+    setLines([]);
+  }, [restaurantId, lines]);
+
+  const itemCount = useMemo(
+    () => lines.reduce((s, l) => s + l.quantity, 0),
+    [lines],
+  );
+  const subtotal = useMemo(
+    () => lines.reduce((s, l) => s + l.subtotal, 0),
+    [lines],
+  );
+
+  const value = useMemo(
+    () => ({
+      lines,
+      itemCount,
+      subtotal,
+      cartReady,
+      addItem,
+      removeLine,
+      clear,
+    }),
+    [lines, itemCount, subtotal, cartReady, addItem, removeLine, clear],
+  );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+export function useCart(): CartContextValue {
+  const ctx = useContext(CartContext);
+  if (!ctx) {
+    throw new Error("useCart must be used within CartProvider");
+  }
+  return ctx;
+}

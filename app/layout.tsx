@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { rootMetadata } from "@/lib/siteMetadata";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,15 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Comeleal - Documentos legales",
-  description:
-    "Consulta los documentos legales oficiales de Comeleal (la App), incluyendo privacidad y términos de uso.",
-  icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-    apple: "/comeleal-app-icon.png",
-  },
-};
+export const metadata: Metadata = rootMetadata;
 
 export default function RootLayout({
   children,
@@ -28,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
