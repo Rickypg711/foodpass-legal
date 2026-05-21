@@ -10,7 +10,7 @@
 | Variable | FOODPASS (Flutter + Functions) | foodpass-legal | Required for web Checkout Pro? |
 |----------|----------------------------------|----------------|------------------------------|
 | `MERCADO_PAGO_SANDBOX` | App `.env` | `.env.local` / `.env.example` | **Yes** — pick `sandbox_init_point` |
-| `MERCADO_PAGO_WEBHOOK_URL` | App `.env` + preference `notification_url` | `.env.local` (often set); **commented in `.env.example`** | **Yes** — IPN on preference |
+| `MERCADO_PAGO_WEBHOOK_URL` | App `.env` + preference `notification_url` | Documented in `.env.example`; **Vercel Production** via `MERCADO_PAGO_WEBHOOK_URL` | **Yes** — IPN on preference |
 | `GOOGLE_APPLICATION_CREDENTIALS` | N/A (Admin scripts) | `.env.local` | **Yes** — read `mercadoPagoAccessToken` from Firestore |
 | `NEXT_PUBLIC_SITE_URL` | N/A | `.env.local` | **Yes** — `back_urls` base |
 | `NEXT_PUBLIC_ORDERING_ENABLED` | N/A | `.env.local` | **Yes** — feature gate |
@@ -24,8 +24,10 @@
 
 | Issue | Severity | Notes |
 |-------|----------|--------|
-| `MERCADO_PAGO_WEBHOOK_URL` commented in `.env.example` | Medium | Local prefs without `notification_url` → no IPN; order stays `payment_pending` |
+| Local dev without `MERCADO_PAGO_WEBHOOK_URL` | Medium | Local prefs without `notification_url` → no IPN; order stays `payment_pending` |
 | No `MERCADO_PAGO_*` payment credentials in legal | **OK** | By design: seller token on `restaurants/{id}` |
+
+**Production fee note:** Verified production tests used `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0`. Target commission when enabled: **`0.03` (3%)**, not `0.017` (1.7%).
 
 ### Intentional difference from Flutter sandbox
 
@@ -112,7 +114,7 @@ Web implements **Checkout Pro Marketplace model C** (seller OAuth + `marketplace
 
 | # | Patch | Repo |
 |---|--------|------|
-| 1 | Mark `MERCADO_PAGO_WEBHOOK_URL` required in `.env.example` | foodpass-legal |
+| 1 | Keep `MERCADO_PAGO_WEBHOOK_URL` documented in `.env.example` and set on Vercel Production | foodpass-legal |
 | 2 | Warn in API logs when `notification_url` omitted | foodpass-legal |
 | 3 | Env matrix + Flutter diff in this doc | foodpass-legal |
 | 4 | Sandbox buyer checklist (incognito, cookies) | `WEB_MERCADO_PAGO_SANDBOX_CHECKOUT.md` (done) |
@@ -126,6 +128,6 @@ Web implements **Checkout Pro Marketplace model C** (seller OAuth + `marketplace
 
 **foodpass-legal is not missing required Checkout Pro env vars** for the current design (seller token from Firestore + sandbox flag + site URL + Admin credentials + webhook URL).
 
-**Gaps:** uncomment/document `MERCADO_PAGO_WEBHOOK_URL`; optional payer email; production marketplace fields; MP localhost back_url limitation vs Flutter deep links.
+**Gaps:** optional payer email; enable `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0.03` on Vercel when ready (verified at `0`); MP localhost back_url limitation vs Flutter deep links.
 
 **ERR_TOO_MANY_REDIRECTS:** preference/redirect implementation is aligned with MP; treat as **sandbox buyer/seller session** until proven otherwise.
