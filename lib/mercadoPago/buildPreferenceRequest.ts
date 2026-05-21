@@ -1,3 +1,5 @@
+import { calculateMarketplaceFeeAmount } from "@/lib/mercadoPago/marketplaceFee";
+
 export type PreferenceCartItem = {
   title: string;
   quantity: number;
@@ -12,6 +14,8 @@ export type BuildPreferenceBodyInput = {
   customerEmail?: string;
   items: PreferenceCartItem[];
   total: number;
+  /** Commission rate 0–1 (e.g. 0.017). Omitted or 0 → no marketplace_fee on preference. */
+  marketplaceFeeRate?: number;
   successUrl: string;
   failureUrl: string;
   pendingUrl: string;
@@ -85,6 +89,14 @@ export function buildMercadoPagoPreferenceBody(
 
   const descriptor = (input.statementDescriptor ?? "COMELEAL").slice(0, 22);
   body.statement_descriptor = descriptor;
+
+  const marketplaceFeeAmount = calculateMarketplaceFeeAmount(
+    input.total,
+    input.marketplaceFeeRate ?? 0,
+  );
+  if (marketplaceFeeAmount > 0) {
+    body.marketplace_fee = marketplaceFeeAmount;
+  }
 
   return body;
 }

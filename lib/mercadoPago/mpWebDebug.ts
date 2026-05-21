@@ -107,6 +107,11 @@ export function preferenceBodySafeSummary(
     }
   }
 
+  const marketplaceFeeAmount =
+    typeof body.marketplace_fee === "number" && Number.isFinite(body.marketplace_fee)
+      ? body.marketplace_fee
+      : 0;
+
   return {
     itemCount: items.length,
     totalAmount: Math.round(totalAmount * 100) / 100,
@@ -116,6 +121,8 @@ export function preferenceBodySafeSummary(
     usesHttpLocalhostBackUrls,
     autoReturnPresent: "auto_return" in body,
     hasPayer: "payer" in body,
+    hasMarketplaceFee: marketplaceFeeAmount > 0,
+    marketplaceFeeAmount,
   };
 }
 

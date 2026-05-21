@@ -34,7 +34,7 @@ All events use: `[mp-web-debug]` with an `event` name and a safe JSON payload.
 5. **Server** `create_preference_request` — env presence booleans
 6. **Server** `restaurant_loaded` — `restaurantDocFound`, `mercadoPagoConnected`, `hasAccessToken`
 7. **Server** `order_loaded` — `paymentMethod`, `status`, `paymentStatus`
-8. **Server** `preference_body_summary` — item count, total, `backUrlHosts`, `autoReturnPresent`, `hasNotificationUrl`
+8. **Server** `preference_body_summary` — item count, total, `backUrlHosts`, `autoReturnPresent`, `hasNotificationUrl`, `hasMarketplaceFee`, `marketplaceFeeAmount`, `marketplaceFeeRate`
 9. **Server** `mercado_pago_api_success` — `mpStatus: 201`, `redirectSource`, `redirectUrlHost`
 10. **Client** `create_preference_response` — HTTP status, `redirectUrlHost`, `redirectSource` (from API body if present)
 11. **Checkout** `create_preference_success` — `redirectUrlHost`, `redirectSource`, `sandboxMode`

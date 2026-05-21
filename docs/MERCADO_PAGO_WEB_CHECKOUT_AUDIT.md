@@ -30,9 +30,9 @@
 ### Intentional difference from Flutter sandbox
 
 - **Flutter (sandbox):** `MercadoPagoService` uses **`MERCADO_PAGO_ACCESS_TOKEN`** from app `.env` (Pruebas integrator token).
-- **Web:** `POST /api/mercado-pago/create-preference` uses **`restaurants.mercadoPagoAccessToken`** (OAuth seller token).
+- **Web:** `POST /api/mercado-pago/create-preference` uses **`restaurants.mercadoPagoAccessToken`** (OAuth seller token) + **`marketplace_fee`** when `MERCADO_PAGO_MARKETPLACE_FEE_RATE` > 0.
 
-Both are valid for Checkout Pro; web matches **connected seller** production model. Seller must be a **Pruebas test user** (`@testuser.com` etc.) for sandbox checkout.
+Web implements **Checkout Pro Marketplace model C** (seller OAuth + `marketplace_fee`). Flutter sandbox still uses integrator token without split. Seller must be a **Pruebas test user** (`@testuser.com` etc.) for sandbox checkout.
 
 ---
 
@@ -51,7 +51,8 @@ Both are valid for Checkout Pro; web matches **connected seller** production mod
 | `payer.email` | Improves approval | From Firestore user / Auth | **Not sent** (web guest, no email on order) | Optional gap |
 | `payer.first_name` | Optional | Yes | Only if `order.customerName` | Partial |
 | `statement_descriptor` | Max 22 chars | `COMELEAL` | Restaurant name or `COMELEAL` | Yes |
-| `marketplace_fee` / `collector_id` | Production marketplace | Prod only in Flutter | **Not implemented** | OK for sandbox; **prod gap** later |
+| `marketplace_fee` | Marketplace Checkout Pro | Prod Flutter (`createMarketplacePreference`) | **`MERCADO_PAGO_MARKETPLACE_FEE_RATE`** → MXN amount when > 0 | Yes |
+| `collector_id` | Optional with seller token | Flutter prod (platform token path) | **Not sent** | OK per MP marketplace doc |
 | Redirect | Sandbox buyer URL | `sandboxInitPoint` when sandbox | `pickCheckoutRedirectUrl(..., true)` → `sandbox_init_point` | Yes |
 
 ### MP documentation notes (MCP)
@@ -115,7 +116,7 @@ Both are valid for Checkout Pro; web matches **connected seller** production mod
 | 2 | Warn in API logs when `notification_url` omitted | foodpass-legal |
 | 3 | Env matrix + Flutter diff in this doc | foodpass-legal |
 | 4 | Sandbox buyer checklist (incognito, cookies) | `WEB_MERCADO_PAGO_SANDBOX_CHECKOUT.md` (done) |
-| 5 | Production: marketplace preference (`collector_id`, `marketplace_fee`) | Future FOODPASS/ legal — align with Flutter prod path |
+| 5 | ~~Production marketplace preference~~ | **Done in legal:** seller OAuth + `marketplace_fee`; align Flutter prod to seller token |
 | 6 | Optional: `payer.email` when web collects email | Future |
 | 7 | Dev: ngrok / `https://www.comeleal.com` `NEXT_PUBLIC_SITE_URL` for `auto_return` + MP-compliant back_urls | Ops |
 

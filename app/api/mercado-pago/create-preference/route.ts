@@ -12,6 +12,10 @@ import {
   preferenceBodySafeSummary,
   urlHostOnly,
 } from "@/lib/mercadoPago/mpWebDebug";
+import {
+  calculateMarketplaceFeeAmount,
+  parseMarketplaceFeeRate,
+} from "@/lib/mercadoPago/marketplaceFee";
 import { evaluateRestaurantMpEligibility } from "@/lib/mercadoPago/restaurantEligibility";
 import { PAYMENT_METHOD_MERCADO_PAGO } from "@/lib/types/order";
 
@@ -185,13 +189,23 @@ export async function POST(request: Request) {
       });
     }
 
+    const orderTotal = typeof order.total === "number" ? order.total : 0;
+    const marketplaceFeeRate = parseMarketplaceFeeRate(
+      process.env.MERCADO_PAGO_MARKETPLACE_FEE_RATE,
+    );
+    const marketplaceFeeAmount = calculateMarketplaceFeeAmount(
+      orderTotal,
+      marketplaceFeeRate,
+    );
+
     const preferenceBody = buildMercadoPagoPreferenceBody({
       orderId,
       restaurantId,
       customerId,
       customerName: order.customerName,
       items,
-      total: typeof order.total === "number" ? order.total : 0,
+      total: orderTotal,
+      marketplaceFeeRate,
       successUrl,
       failureUrl,
       pendingUrl,
@@ -207,6 +221,7 @@ export async function POST(request: Request) {
       restaurantId,
       orderId,
       ...preferenceSummary,
+      marketplaceFeeRate,
     });
     if (preferenceSummary.usesHttpLocalhostBackUrls === true) {
       logMpSandboxLocalhostSiteUrlWarning(siteBaseUrl(request));
