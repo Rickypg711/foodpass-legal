@@ -16,9 +16,8 @@ import { loadOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import {
   parsePaymentReturnParam,
   paymentReturnBannerMessage,
-  paymentStatusLabel,
 } from "@/lib/order/paymentReturnMessage";
-import { orderStatusLabel } from "@/lib/order/orderStatusLabels";
+import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
 import type { CartLine } from "@/lib/cart/types";
@@ -197,6 +196,8 @@ function OrderStatusPageContent() {
   const displayRestaurant =
     order?.restaurantName ?? snapshot?.restaurantName ?? "Restaurante";
   const status = mounted ? (order?.status ?? "pending") : "pending";
+  const paymentStatus = mounted ? (order?.paymentStatus ?? "pending") : "pending";
+  const orderDisplay = customerOrderDisplay(status, paymentStatus);
 
   useEffect(() => {
     if (!mounted) return;
@@ -301,12 +302,10 @@ function OrderStatusPageContent() {
             <div className="rounded-xl bg-white p-4 text-center">
               <p className="text-sm text-[#1C2526]/70">Estado del pedido</p>
               <p className="mt-1 text-xl font-bold" style={{ color: "#F28C38" }}>
-                {orderStatusLabel(status)}
+                {orderDisplay.title}
               </p>
-              {order?.paymentMethod === "mercado_pago" ? (
-                <p className="mt-2 text-xs text-[#1C2526]/70">
-                  Pago: {paymentStatusLabel(order.paymentStatus)}
-                </p>
+              {orderDisplay.subtitle ? (
+                <p className="mt-2 text-sm text-[#1C2526]/80">{orderDisplay.subtitle}</p>
               ) : null}
             </div>
 
