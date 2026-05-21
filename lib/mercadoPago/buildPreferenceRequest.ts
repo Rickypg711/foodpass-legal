@@ -101,13 +101,19 @@ export function buildMercadoPagoPreferenceBody(
   return body;
 }
 
+/** Experiment: use init_point redirect while MERCADO_PAGO_SANDBOX stays true. */
+export function isForceInitPointMode(): boolean {
+  return process.env.MERCADO_PAGO_FORCE_INIT_POINT === "true";
+}
+
 export function pickCheckoutRedirectUrl(
   preferenceResponse: Record<string, unknown>,
   sandboxMode: boolean,
 ): string | null {
   const sandbox = preferenceResponse.sandbox_init_point;
   const prod = preferenceResponse.init_point;
-  if (sandboxMode && typeof sandbox === "string" && sandbox.length > 0) {
+  const useSandboxRedirect = sandboxMode && !isForceInitPointMode();
+  if (useSandboxRedirect && typeof sandbox === "string" && sandbox.length > 0) {
     return sandbox;
   }
   if (typeof prod === "string" && prod.length > 0) {

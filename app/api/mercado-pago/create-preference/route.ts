@@ -76,6 +76,7 @@ export async function POST(request: Request) {
         hasNextPublicSiteUrl: !!siteUrlFromEnv,
         nextPublicSiteUrlHost: urlHostOnly(siteUrlFromEnv || null),
         mercadoPagoSandbox: process.env.MERCADO_PAGO_SANDBOX === "true",
+        mercadoPagoForceInitPoint: process.env.MERCADO_PAGO_FORCE_INIT_POINT === "true",
         hasMercadoPagoWebhookUrl: !!process.env.MERCADO_PAGO_WEBHOOK_URL?.trim(),
         hasFirebaseAdminCredentials: hasFirebaseAdminCredentials(),
       },

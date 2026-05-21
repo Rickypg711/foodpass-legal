@@ -77,13 +77,24 @@ function buildMercadoPagoPreferenceBody(input) {
   return body;
 }
 
+function isForceInitPointMode() {
+  return process.env.MERCADO_PAGO_FORCE_INIT_POINT === "true";
+}
+
 function pickCheckoutRedirectUrl(preferenceResponse, sandboxMode) {
   const sandbox = preferenceResponse.sandbox_init_point;
   const prod = preferenceResponse.init_point;
-  if (sandboxMode && typeof sandbox === "string" && sandbox.length > 0) {
+  const useSandboxRedirect = sandboxMode && !isForceInitPointMode();
+  if (useSandboxRedirect && typeof sandbox === "string" && sandbox.length > 0) {
     return sandbox;
   }
-  return prod ?? sandbox ?? null;
+  if (typeof prod === "string" && prod.length > 0) {
+    return prod;
+  }
+  if (typeof sandbox === "string" && sandbox.length > 0) {
+    return sandbox;
+  }
+  return null;
 }
 
 function assertNoFee(label, body) {
@@ -212,15 +223,23 @@ if (body.metadata.restaurant_id !== "tZYtg0Jt7vAyTLrxyljv") {
   process.exit(1);
 }
 
-const url = pickCheckoutRedirectUrl(
-  {
-    init_point: "https://www.mercadopago.com/prod",
-    sandbox_init_point: "https://sandbox.mercadopago.com/test",
-  },
-  true,
-);
-if (!url || !url.includes("sandbox")) {
-  console.error("expected sandbox redirect");
+const prefRedirect = {
+  init_point: "https://www.mercadopago.com/prod",
+  sandbox_init_point: "https://sandbox.mercadopago.com/test",
+};
+
+delete process.env.MERCADO_PAGO_FORCE_INIT_POINT;
+const sandboxUrl = pickCheckoutRedirectUrl(prefRedirect, true);
+if (!sandboxUrl || !sandboxUrl.includes("sandbox")) {
+  console.error("expected sandbox redirect when FORCE_INIT_POINT unset");
+  process.exit(1);
+}
+
+process.env.MERCADO_PAGO_FORCE_INIT_POINT = "true";
+const prodUrl = pickCheckoutRedirectUrl(prefRedirect, true);
+delete process.env.MERCADO_PAGO_FORCE_INIT_POINT;
+if (!prodUrl || !prodUrl.includes("prod") || prodUrl.includes("sandbox")) {
+  console.error("expected init_point redirect when FORCE_INIT_POINT=true");
   process.exit(1);
 }
 
