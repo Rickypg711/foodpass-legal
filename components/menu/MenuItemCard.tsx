@@ -10,6 +10,8 @@ export type MenuItemCardProps = {
   price: number;
   imageUrl: string | null;
   onAdd: () => void;
+  /** When false, Agregar is disabled and onAdd is not called. */
+  orderingEnabled?: boolean;
 };
 
 export function MenuItemCard({
@@ -18,6 +20,7 @@ export function MenuItemCard({
   price,
   imageUrl,
   onAdd,
+  orderingEnabled = true,
 }: MenuItemCardProps) {
   return (
     <li
@@ -52,14 +55,26 @@ export function MenuItemCard({
             {description}
           </p>
         ) : null}
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-2 self-end rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-          style={{ backgroundColor: "#F28C38" }}
-        >
-          Agregar
-        </button>
+        {orderingEnabled ? (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="mt-2 self-end rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
+            style={{ backgroundColor: "#F28C38" }}
+          >
+            Agregar
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-disabled
+            className="mt-2 cursor-not-allowed self-end rounded-lg px-3 py-1.5 text-sm font-semibold text-white opacity-50"
+            style={{ backgroundColor: "#F28C38" }}
+          >
+            Agregar
+          </button>
+        )}
       </div>
     </li>
   );

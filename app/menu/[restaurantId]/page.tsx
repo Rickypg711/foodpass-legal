@@ -10,6 +10,11 @@ import { useCart } from "@/lib/cart/CartProvider";
 import { trackWebMenuOpenAppClick, trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
+import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
+import {
+  WEB_ORDERING_UNAVAILABLE_HINT,
+  WEB_ORDERING_UNAVAILABLE_TITLE,
+} from "@/lib/order/customerWebCheckoutPolicy";
 import { formatPrice } from "@/lib/priceFormat";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
@@ -50,6 +55,7 @@ function PublicMenuPageWithOrdering() {
   const params = useParams();
   const restaurantId = typeof params.restaurantId === "string" ? params.restaurantId : "";
   const { addItem } = useCart();
+  const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +153,9 @@ function PublicMenuPageWithOrdering() {
           </h1>
           {!loading && restaurantName ? (
             <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/90">
-              Ordena aquí · Pago al recoger
+              {webOrderingReady && webOrderingAvailable
+                ? "Ordena en línea · Pago con Mercado Pago"
+                : "Menú en línea"}
             </p>
           ) : null}
         </div>
@@ -166,6 +174,18 @@ function PublicMenuPageWithOrdering() {
           <p className="text-center text-sm">No hay platillos disponibles</p>
         )}
 
+        {webOrderingReady && !webOrderingAvailable && !loading && !error ? (
+          <div
+            className="mb-4 rounded-xl border border-amber-700/25 bg-white p-4 text-sm text-[#1C2526]"
+            role="status"
+          >
+            <p className="font-semibold text-red-900">{WEB_ORDERING_UNAVAILABLE_TITLE}</p>
+            <p className="mt-2 text-xs leading-relaxed text-[#1C2526]/75">
+              {WEB_ORDERING_UNAVAILABLE_HINT}
+            </p>
+          </div>
+        ) : null}
+
         {!loading && !error && items.length > 0 && (
           <ul className="flex flex-col gap-3.5">
             {items.map((item) => (
@@ -176,6 +196,7 @@ function PublicMenuPageWithOrdering() {
                 description={item.description}
                 price={item.price}
                 imageUrl={item.imageUrl}
+                orderingEnabled={webOrderingReady && webOrderingAvailable}
                 onAdd={() =>
                   addItem({
                     menuItemId: item.id,
@@ -197,7 +218,9 @@ function PublicMenuPageWithOrdering() {
         style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
       >
         <p className="text-xs text-[#1C2526]/65">
-          Pago al recoger · Crea tu cuenta en Comeleal para guardar puntos después del pedido
+          {webOrderingReady && webOrderingAvailable
+            ? "Pago en línea con Mercado Pago · Crea tu cuenta en Comeleal para guardar puntos después del pedido"
+            : "Crea tu cuenta en Comeleal para guardar puntos cuando el restaurante active pedidos en línea"}
         </p>
       </div>
     </div>

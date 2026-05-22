@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/priceFormat";
 import { useCart } from "@/lib/cart/CartProvider";
+import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 
 export function CartBar({ restaurantId }: { restaurantId: string }) {
   const { itemCount, subtotal, cartReady } = useCart();
+  const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
-  if (!cartReady || itemCount === 0) {
+  if (!webOrderingReady || !webOrderingAvailable || !cartReady || itemCount === 0) {
     return null;
   }
 

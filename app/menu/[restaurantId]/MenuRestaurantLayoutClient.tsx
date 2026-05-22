@@ -2,6 +2,7 @@
 
 import { CartProvider } from "@/lib/cart/CartProvider";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
+import { WebOrderingProvider } from "@/lib/ordering/WebOrderingContext";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -17,5 +18,9 @@ export default function MenuRestaurantLayoutClient({
     return <>{children}</>;
   }
 
-  return <CartProvider restaurantId={restaurantId}>{children}</CartProvider>;
+  return (
+    <WebOrderingProvider restaurantId={restaurantId}>
+      <CartProvider restaurantId={restaurantId}>{children}</CartProvider>
+    </WebOrderingProvider>
+  );
 }

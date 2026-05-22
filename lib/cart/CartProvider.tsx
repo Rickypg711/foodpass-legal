@@ -11,6 +11,7 @@ import {
 } from "react";
 import { trackCartItemAdded } from "@/lib/analytics/orderEvents";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
+import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { clearCart, loadCart, saveCart } from "./cartStorage";
 import type { CartLine } from "./types";
 
@@ -34,11 +35,20 @@ export function CartProvider({
   restaurantId: string;
   children: ReactNode;
 }) {
+  const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
   const [lines, setLines] = useState<CartLine[]>([]);
   /** False until sessionStorage cart has been read (avoids SSR/client mismatch + empty save). */
   const [cartReady, setCartReady] = useState(false);
 
   useEffect(() => {
+    if (!webOrderingReady) return;
+    if (!webOrderingAvailable) {
+      clearCart(restaurantId);
+      setLines([]);
+      setCartReady(true);
+      mpWebDebugClient("cart_cleared_mp_unavailable", { restaurantId });
+      return;
+    }
     const loaded = loadCart(restaurantId);
     setLines(loaded);
     setCartReady(true);
@@ -50,7 +60,7 @@ export function CartProvider({
     if (loaded.length === 0) {
       mpWebDebugClient("cart_empty_detected", { restaurantId, source: "sessionStorage_load" });
     }
-  }, [restaurantId]);
+  }, [restaurantId, webOrderingReady, webOrderingAvailable]);
 
   useEffect(() => {
     if (!cartReady) return;
@@ -59,6 +69,10 @@ export function CartProvider({
 
   const addItem = useCallback(
     (item: Omit<CartLine, "quantity" | "subtotal">) => {
+      if (!webOrderingAvailable) {
+        mpWebDebugClient("cart_add_blocked_mp_unavailable", { restaurantId });
+        return;
+      }
       setLines((prev) => {
         const idx = prev.findIndex((l) => l.menuItemId === item.menuItemId);
         let next: CartLine[];
@@ -91,7 +105,7 @@ export function CartProvider({
         return next;
       });
     },
-    [restaurantId],
+    [restaurantId, webOrderingAvailable],
   );
 
   const removeLine = useCallback((menuItemId: string) => {

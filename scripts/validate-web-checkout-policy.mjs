@@ -1,5 +1,5 @@
 /**
- * Web checkout: Mercado Pago only (no pay_at_pickup).
+ * Web ordering policy: Mercado Pago only; menu blocks add-to-cart when MP unavailable.
  * Run: node scripts/validate-web-checkout-policy.mjs
  */
 
@@ -52,6 +52,55 @@ const policySrc = readFileSync(
 if (!policySrc.includes("customer_web_checkout_requires_mercado_pago")) {
   fail("customerWebCheckoutPolicy must reject non-MP methods");
 }
+if (!policySrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
+  fail("customerWebCheckoutPolicy must define menu unavailable title");
+}
+
+const menuSrc = readFileSync(
+  join(root, "app/menu/[restaurantId]/page.tsx"),
+  "utf8",
+);
+const menuCardSrc = readFileSync(join(root, "components/menu/MenuItemCard.tsx"), "utf8");
+const cartBarSrc = readFileSync(join(root, "components/cart/CartBar.tsx"), "utf8");
+const cartProviderSrc = readFileSync(join(root, "lib/cart/CartProvider.tsx"), "utf8");
+const webOrderingSrc = readFileSync(
+  join(root, "lib/ordering/WebOrderingContext.tsx"),
+  "utf8",
+);
+
+if (menuSrc.includes("Pagar al recoger")) {
+  fail("menu page must not show Pagar al recoger");
+}
+if (!menuSrc.includes("WebOrderingContext")) {
+  fail("menu must use WebOrderingContext for MP eligibility");
+}
+if (!menuSrc.includes("useWebOrdering")) {
+  fail("menu page must use WebOrderingContext");
+}
+if (!menuSrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
+  fail("menu must show WEB_ORDERING_UNAVAILABLE_TITLE when MP unavailable");
+}
+if (!menuSrc.includes("orderingEnabled")) {
+  fail("menu must pass orderingEnabled to MenuItemCard");
+}
+if (!menuCardSrc.includes("orderingEnabled")) {
+  fail("MenuItemCard must support orderingEnabled");
+}
+if (!menuCardSrc.includes("aria-disabled")) {
+  fail("MenuItemCard must disable Agregar when ordering unavailable");
+}
+if (!cartBarSrc.includes("webOrderingAvailable")) {
+  fail("CartBar must hide checkout when MP unavailable");
+}
+if (!cartProviderSrc.includes("cart_add_blocked_mp_unavailable")) {
+  fail("CartProvider must block addItem when MP unavailable");
+}
+if (!cartProviderSrc.includes("cart_cleared_mp_unavailable")) {
+  fail("CartProvider must clear cart when MP unavailable");
+}
+if (!webOrderingSrc.includes("restaurantSupportsWebCheckout")) {
+  fail("WebOrderingContext must use restaurantSupportsWebCheckout");
+}
 
 if (failed) process.exit(1);
-console.log("OK: web checkout Mercado Pago-only policy validated");
+console.log("OK: web ordering Mercado Pago policy validated (menu + checkout)");
