@@ -6,12 +6,6 @@ export const CUSTOMER_WEB_PAYMENT_METHOD = PAYMENT_METHOD_MERCADO_PAGO;
 export const MP_UNAVAILABLE_MESSAGE =
   "Este restaurante todavía no tiene pagos en línea activos. Intenta más tarde.";
 
-/** Shown on the public menu when online ordering is disabled (neutral; no MP/Comeleal blame). */
-export const WEB_ORDERING_UNAVAILABLE_TITLE = "Pedidos en tienda";
-
-export const WEB_ORDERING_UNAVAILABLE_HINT =
-  "Por ahora, este restaurante recibe pedidos directamente en tienda.";
-
 export function restaurantSupportsWebCheckout(
   restaurantId: string,
   data: Record<string, unknown> | undefined,

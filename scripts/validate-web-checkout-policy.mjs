@@ -52,21 +52,11 @@ const policySrc = readFileSync(
 if (!policySrc.includes("customer_web_checkout_requires_mercado_pago")) {
   fail("customerWebCheckoutPolicy must reject non-MP methods");
 }
-if (!policySrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
-  fail("customerWebCheckoutPolicy must define menu unavailable title");
-}
-if (!policySrc.includes("Pedidos en tienda")) {
-  fail("menu unavailable title must use short neutral copy");
-}
-const menuCopyBlock = policySrc.slice(
-  policySrc.indexOf("WEB_ORDERING_UNAVAILABLE_TITLE"),
-  policySrc.indexOf("export function restaurantSupportsWebCheckout"),
-);
-if (menuCopyBlock.includes("Mercado Pago")) {
-  fail("menu unavailable copy must not mention Mercado Pago");
+if (policySrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
+  fail("remove menu unavailable banner constants from policy");
 }
 if (policySrc.includes("WEB_ORDERING_ITEM_UNAVAILABLE_HINT")) {
-  fail("remove per-item unavailable hint constant; banner only");
+  fail("remove per-item unavailable hint constant");
 }
 
 const menuSrc = readFileSync(
@@ -90,8 +80,11 @@ if (!menuSrc.includes("WebOrderingContext")) {
 if (!menuSrc.includes("useWebOrdering")) {
   fail("menu page must use WebOrderingContext");
 }
-if (!menuSrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
-  fail("menu must show WEB_ORDERING_UNAVAILABLE_TITLE when MP unavailable");
+if (menuSrc.includes("Pedidos en tienda")) {
+  fail("menu must not show unavailable ordering banner");
+}
+if (menuSrc.includes("WEB_ORDERING_UNAVAILABLE")) {
+  fail("menu must not import unavailable banner copy");
 }
 if (!menuSrc.includes("orderingEnabled")) {
   fail("menu must pass orderingEnabled to MenuItemCard");

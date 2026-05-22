@@ -11,10 +11,6 @@ import { trackWebMenuOpenAppClick, trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
-import {
-  WEB_ORDERING_UNAVAILABLE_HINT,
-  WEB_ORDERING_UNAVAILABLE_TITLE,
-} from "@/lib/order/customerWebCheckoutPolicy";
 import { formatPrice } from "@/lib/priceFormat";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
@@ -175,18 +171,6 @@ function PublicMenuPageWithOrdering() {
         {!loading && !error && items.length === 0 && (
           <p className="text-center text-sm">No hay platillos disponibles</p>
         )}
-
-        {webOrderingReady && !webOrderingAvailable && !loading && !error ? (
-          <div
-            className="mb-4 rounded-xl border border-amber-700/25 bg-white p-4 text-sm text-[#1C2526]"
-            role="status"
-          >
-            <p className="font-semibold text-[#1C2526]">{WEB_ORDERING_UNAVAILABLE_TITLE}</p>
-            <p className="mt-2 text-xs leading-relaxed text-[#1C2526]/75">
-              {WEB_ORDERING_UNAVAILABLE_HINT}
-            </p>
-          </div>
-        ) : null}
 
         {!loading && !error && items.length > 0 && (
           <ul className="flex flex-col gap-3.5">
