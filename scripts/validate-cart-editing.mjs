@@ -23,6 +23,7 @@ const checkoutSrc = readFileSync(
 );
 const linesSrc = readFileSync(join(root, "components/cart/CheckoutCartLines.tsx"), "utf8");
 const mathSrc = readFileSync(join(root, "lib/cart/cartLineMath.ts"), "utf8");
+const confirmSrc = readFileSync(join(root, "lib/cart/confirmRemoveLine.ts"), "utf8");
 
 if (!providerSrc.includes("incrementLine")) fail("CartProvider must expose incrementLine");
 if (!providerSrc.includes("decrementLine")) fail("CartProvider must expose decrementLine");
@@ -33,6 +34,15 @@ if (!linesSrc.includes("incrementLine")) fail("CheckoutCartLines must call incre
 if (!linesSrc.includes("removeLine")) fail("CheckoutCartLines must call removeLine");
 if (!linesSrc.includes("Eliminar")) fail("CheckoutCartLines must show remove action");
 if (!mathSrc.includes("updateCartLineQuantity")) fail("cartLineMath must update quantity");
+if (!confirmSrc.includes("¿Seguro que quieres quitar este producto del carrito?")) {
+  fail("confirmRemoveLine must use Spanish confirmation message");
+}
+if (!linesSrc.includes("confirmRemoveCartLine")) {
+  fail("CheckoutCartLines must confirm before removeLine");
+}
+if (linesSrc.match(/decrementLine[\s\S]{0,200}confirmRemoveCartLine/)) {
+  fail("minus/decrement must not use remove confirmation");
+}
 
 if (failed) process.exit(1);
 console.log("OK: web cart editing validated");

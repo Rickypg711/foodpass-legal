@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmRemoveCartLine } from "@/lib/cart/confirmRemoveLine";
 import { useCart } from "@/lib/cart/CartProvider";
 import { formatPrice } from "@/lib/priceFormat";
 
@@ -47,7 +48,11 @@ export function CheckoutCartLines() {
             <button
               type="button"
               aria-label={`Eliminar ${l.name}`}
-              onClick={() => removeLine(l.menuItemId)}
+              onClick={() => {
+                if (confirmRemoveCartLine()) {
+                  removeLine(l.menuItemId);
+                }
+              }}
               className="text-xs font-semibold text-red-700 underline"
             >
               Eliminar
