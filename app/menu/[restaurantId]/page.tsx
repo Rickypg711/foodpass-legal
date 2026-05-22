@@ -155,7 +155,9 @@ function PublicMenuPageWithOrdering() {
             <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/90">
               {webOrderingReady && webOrderingAvailable
                 ? "Ordena en línea · Pago con Mercado Pago"
-                : "Menú en línea"}
+                : webOrderingReady
+                  ? "Menú"
+                  : null}
             </p>
           ) : null}
         </div>
@@ -179,7 +181,7 @@ function PublicMenuPageWithOrdering() {
             className="mb-4 rounded-xl border border-amber-700/25 bg-white p-4 text-sm text-[#1C2526]"
             role="status"
           >
-            <p className="font-semibold text-red-900">{WEB_ORDERING_UNAVAILABLE_TITLE}</p>
+            <p className="font-semibold text-[#1C2526]">{WEB_ORDERING_UNAVAILABLE_TITLE}</p>
             <p className="mt-2 text-xs leading-relaxed text-[#1C2526]/75">
               {WEB_ORDERING_UNAVAILABLE_HINT}
             </p>
@@ -220,7 +222,9 @@ function PublicMenuPageWithOrdering() {
         <p className="text-xs text-[#1C2526]/65">
           {webOrderingReady && webOrderingAvailable
             ? "Pago en línea con Mercado Pago · Crea tu cuenta en Comeleal para guardar puntos después del pedido"
-            : "Crea tu cuenta en Comeleal para guardar puntos cuando el restaurante active pedidos en línea"}
+            : webOrderingReady
+              ? "Consulta disponibilidad y precios en el restaurante."
+              : null}
         </p>
       </div>
     </div>

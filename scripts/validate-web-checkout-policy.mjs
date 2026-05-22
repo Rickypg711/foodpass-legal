@@ -55,6 +55,19 @@ if (!policySrc.includes("customer_web_checkout_requires_mercado_pago")) {
 if (!policySrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
   fail("customerWebCheckoutPolicy must define menu unavailable title");
 }
+if (!policySrc.includes("Pedidos en línea no disponibles por el momento")) {
+  fail("menu unavailable title must use neutral copy");
+}
+const menuCopyBlock = policySrc.slice(
+  policySrc.indexOf("WEB_ORDERING_UNAVAILABLE_TITLE"),
+  policySrc.indexOf("export function restaurantSupportsWebCheckout"),
+);
+if (menuCopyBlock.includes("Mercado Pago")) {
+  fail("menu unavailable copy must not mention Mercado Pago");
+}
+if (!policySrc.includes("WEB_ORDERING_ITEM_UNAVAILABLE_HINT")) {
+  fail("customerWebCheckoutPolicy must define item unavailable hint");
+}
 
 const menuSrc = readFileSync(
   join(root, "app/menu/[restaurantId]/page.tsx"),
@@ -86,8 +99,11 @@ if (!menuSrc.includes("orderingEnabled")) {
 if (!menuCardSrc.includes("orderingEnabled")) {
   fail("MenuItemCard must support orderingEnabled");
 }
-if (!menuCardSrc.includes("aria-disabled")) {
-  fail("MenuItemCard must disable Agregar when ordering unavailable");
+if (!menuCardSrc.includes("WEB_ORDERING_ITEM_UNAVAILABLE_HINT")) {
+  fail("MenuItemCard must show in-store hint when ordering unavailable");
+}
+if (/disabled[\s\S]{0,120}Agregar/.test(menuCardSrc)) {
+  fail("MenuItemCard must not show disabled Agregar when ordering unavailable");
 }
 if (!cartBarSrc.includes("webOrderingAvailable")) {
   fail("CartBar must hide checkout when MP unavailable");

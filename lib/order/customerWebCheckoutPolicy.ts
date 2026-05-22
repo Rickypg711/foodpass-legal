@@ -6,12 +6,16 @@ export const CUSTOMER_WEB_PAYMENT_METHOD = PAYMENT_METHOD_MERCADO_PAGO;
 export const MP_UNAVAILABLE_MESSAGE =
   "Este restaurante todavía no tiene pagos en línea activos. Intenta más tarde.";
 
-/** Shown on the public menu when online ordering is disabled (MP not ready). */
+/** Shown on the public menu when online ordering is disabled (neutral; no MP/Comeleal blame). */
 export const WEB_ORDERING_UNAVAILABLE_TITLE =
-  "Este restaurante todavía no tiene pedidos en línea activos.";
+  "Pedidos en línea no disponibles por el momento";
 
 export const WEB_ORDERING_UNAVAILABLE_HINT =
-  "Podrás ver el menú, pero los pedidos en línea estarán disponibles cuando el restaurante active Mercado Pago.";
+  "Puedes ver el menú, pero por ahora este restaurante solo acepta pedidos directamente en tienda.";
+
+/** Muted hint on menu item cards when add-to-cart is unavailable. */
+export const WEB_ORDERING_ITEM_UNAVAILABLE_HINT =
+  "Pedidos disponibles directamente en tienda.";
 
 export function restaurantSupportsWebCheckout(
   restaurantId: string,
