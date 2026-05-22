@@ -12,6 +12,11 @@ import {
 import { trackCartItemAdded } from "@/lib/analytics/orderEvents";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
+import {
+  decrementCartLine,
+  incrementCartLine,
+  updateCartLineQuantity,
+} from "@/lib/cart/cartLineMath";
 import { clearCart, loadCart, saveCart } from "./cartStorage";
 import type { CartLine } from "./types";
 
@@ -22,6 +27,9 @@ type CartContextValue = {
   /** True after client has loaded cart from sessionStorage. */
   cartReady: boolean;
   addItem: (item: Omit<CartLine, "quantity" | "subtotal">) => void;
+  incrementLine: (menuItemId: string) => void;
+  decrementLine: (menuItemId: string) => void;
+  updateLineQuantity: (menuItemId: string, quantity: number) => void;
   removeLine: (menuItemId: string) => void;
   clear: () => void;
 };
@@ -108,9 +116,37 @@ export function CartProvider({
     [restaurantId, webOrderingAvailable],
   );
 
-  const removeLine = useCallback((menuItemId: string) => {
-    setLines((prev) => prev.filter((l) => l.menuItemId !== menuItemId));
-  }, []);
+  const incrementLine = useCallback(
+    (menuItemId: string) => {
+      if (!webOrderingAvailable) return;
+      setLines((prev) => incrementCartLine(prev, menuItemId));
+    },
+    [webOrderingAvailable],
+  );
+
+  const decrementLine = useCallback(
+    (menuItemId: string) => {
+      if (!webOrderingAvailable) return;
+      setLines((prev) => decrementCartLine(prev, menuItemId));
+    },
+    [webOrderingAvailable],
+  );
+
+  const updateLineQuantity = useCallback(
+    (menuItemId: string, quantity: number) => {
+      if (!webOrderingAvailable) return;
+      setLines((prev) => updateCartLineQuantity(prev, menuItemId, quantity));
+    },
+    [webOrderingAvailable],
+  );
+
+  const removeLine = useCallback(
+    (menuItemId: string) => {
+      if (!webOrderingAvailable) return;
+      setLines((prev) => prev.filter((l) => l.menuItemId !== menuItemId));
+    },
+    [webOrderingAvailable],
+  );
 
   const clear = useCallback(() => {
     mpWebDebugClient("cart_clear_called", {
@@ -137,10 +173,24 @@ export function CartProvider({
       subtotal,
       cartReady,
       addItem,
+      incrementLine,
+      decrementLine,
+      updateLineQuantity,
       removeLine,
       clear,
     }),
-    [lines, itemCount, subtotal, cartReady, addItem, removeLine, clear],
+    [
+      lines,
+      itemCount,
+      subtotal,
+      cartReady,
+      addItem,
+      incrementLine,
+      decrementLine,
+      updateLineQuantity,
+      removeLine,
+      clear,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

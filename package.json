@@ -10,7 +10,8 @@
     "test:order-payload": "node scripts/validate-order-payload.mjs",
     "test:web-checkout-policy": "node scripts/validate-web-checkout-policy.mjs",
     "test:mp-preference": "node scripts/test-mp-preference-build.mjs",
-    "test": "npm run test:order-payload && npm run test:web-checkout-policy"
+    "test:cart-editing": "node scripts/validate-cart-editing.mjs",
+    "test": "npm run test:order-payload && npm run test:web-checkout-policy && npm run test:cart-editing"
   },
   "dependencies": {
     "firebase": "^11.6.0",

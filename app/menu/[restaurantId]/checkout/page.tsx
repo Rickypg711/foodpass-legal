@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
 import { ensureAnonymousUser } from "@/lib/auth";
@@ -18,7 +19,6 @@ import {
   mercadoPagoCheckoutTitle,
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
-import { formatPrice } from "@/lib/priceFormat";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
@@ -366,20 +366,7 @@ export default function CheckoutPage() {
             </Link>
           </div>
         ) : null}
-        <ul className="mb-6 flex flex-col gap-2 rounded-xl bg-white p-4">
-          {lines.map((l) => (
-            <li key={l.menuItemId} className="flex justify-between text-sm">
-              <span>
-                {l.quantity}x {l.name}
-              </span>
-              <span className="font-semibold">{formatPrice(l.subtotal)}</span>
-            </li>
-          ))}
-          <li className="flex justify-between border-t pt-2 font-bold">
-            <span>Total</span>
-            <span style={{ color: "#F28C38" }}>{formatPrice(subtotal)}</span>
-          </li>
-        </ul>
+        <CheckoutCartLines />
 
         <div className="mb-4 rounded-xl bg-white p-4">
           <p className="mb-2 text-sm font-semibold">Forma de pago</p>
