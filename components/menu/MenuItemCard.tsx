@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { WEB_ORDERING_ITEM_UNAVAILABLE_HINT } from "@/lib/order/customerWebCheckoutPolicy";
 import { formatPrice } from "@/lib/priceFormat";
 
 export type MenuItemCardProps = {
@@ -11,7 +10,7 @@ export type MenuItemCardProps = {
   price: number;
   imageUrl: string | null;
   onAdd: () => void;
-  /** When false, no Agregar button; shows in-store-only hint instead. */
+  /** When false, no Agregar button (browse-only item card). */
   orderingEnabled?: boolean;
 };
 
@@ -65,11 +64,7 @@ export function MenuItemCard({
           >
             Agregar
           </button>
-        ) : (
-          <p className="mt-2 self-end text-right text-xs text-[#1C2526]/55">
-            {WEB_ORDERING_ITEM_UNAVAILABLE_HINT}
-          </p>
-        )}
+        ) : null}
       </div>
     </li>
   );

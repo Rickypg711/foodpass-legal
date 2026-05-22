@@ -215,18 +215,17 @@ function PublicMenuPageWithOrdering() {
 
       <CartBar restaurantId={restaurantId} />
 
-      <div
-        className="pointer-events-none fixed bottom-0 left-0 right-0 px-4 pb-20 pt-2 text-center"
-        style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
-      >
-        <p className="text-xs text-[#1C2526]/65">
-          {webOrderingReady && webOrderingAvailable
-            ? "Pago en línea con Mercado Pago · Crea tu cuenta en Comeleal para guardar puntos después del pedido"
-            : webOrderingReady
-              ? "Consulta disponibilidad y precios en el restaurante."
-              : null}
-        </p>
-      </div>
+      {webOrderingReady && webOrderingAvailable ? (
+        <div
+          className="pointer-events-none fixed bottom-0 left-0 right-0 px-4 pb-20 pt-2 text-center"
+          style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
+        >
+          <p className="text-xs text-[#1C2526]/65">
+            Pago en línea con Mercado Pago · Crea tu cuenta en Comeleal para guardar puntos después
+            del pedido
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

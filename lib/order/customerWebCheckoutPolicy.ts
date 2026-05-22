@@ -7,15 +7,10 @@ export const MP_UNAVAILABLE_MESSAGE =
   "Este restaurante todavía no tiene pagos en línea activos. Intenta más tarde.";
 
 /** Shown on the public menu when online ordering is disabled (neutral; no MP/Comeleal blame). */
-export const WEB_ORDERING_UNAVAILABLE_TITLE =
-  "Pedidos en línea no disponibles por el momento";
+export const WEB_ORDERING_UNAVAILABLE_TITLE = "Pedidos en tienda";
 
 export const WEB_ORDERING_UNAVAILABLE_HINT =
-  "Puedes ver el menú, pero por ahora este restaurante solo acepta pedidos directamente en tienda.";
-
-/** Muted hint on menu item cards when add-to-cart is unavailable. */
-export const WEB_ORDERING_ITEM_UNAVAILABLE_HINT =
-  "Pedidos disponibles directamente en tienda.";
+  "Por ahora, este restaurante recibe pedidos directamente en tienda.";
 
 export function restaurantSupportsWebCheckout(
   restaurantId: string,
