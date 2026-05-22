@@ -126,22 +126,26 @@ if (parseMarketplaceFeeRate("0") !== 0) {
   console.error("parseMarketplaceFeeRate('0') should be 0");
   process.exit(1);
 }
-if (parseMarketplaceFeeRate("0.017") !== 0.017) {
-  console.error("parseMarketplaceFeeRate('0.017') should be 0.017");
+if (parseMarketplaceFeeRate("0.03") !== 0.03) {
+  console.error("parseMarketplaceFeeRate('0.03') should be 0.03");
   process.exit(1);
 }
 
-// --- fee amount rounding ---
-if (calculateMarketplaceFeeAmount(20, 0.017) !== 0.34) {
-  console.error("20 * 0.017 should round to 0.34 MXN");
+// --- fee amount rounding (production target 3%) ---
+if (calculateMarketplaceFeeAmount(20, 0.03) !== 0.6) {
+  console.error("20 * 0.03 should be 0.60 MXN");
   process.exit(1);
 }
-if (calculateMarketplaceFeeAmount(100, 0.017) !== 1.7) {
-  console.error("100 * 0.017 should be 1.7 MXN");
+if (calculateMarketplaceFeeAmount(100, 0.03) !== 3) {
+  console.error("100 * 0.03 should be 3.00 MXN");
   process.exit(1);
 }
-if (calculateMarketplaceFeeAmount(10.005, 0.017) !== 0.17) {
-  console.error("10.005 * 0.017 should round to 0.17 MXN");
+if (calculateMarketplaceFeeAmount(10, 0.03) !== 0.3) {
+  console.error("10 * 0.03 should be 0.30 MXN");
+  process.exit(1);
+}
+if (calculateMarketplaceFeeAmount(10.005, 0.03) !== 0.3) {
+  console.error("10.005 * 0.03 should round to 0.30 MXN");
   process.exit(1);
 }
 if (calculateMarketplaceFeeAmount(20, 0) !== 0) {
@@ -171,12 +175,24 @@ const feeBody = buildMercadoPagoPreferenceBody({
   restaurantId: "tZYtg0Jt7vAyTLrxyljv",
   items: [{ title: "Item", quantity: 1, unit_price: 20 }],
   total: 20,
-  marketplaceFeeRate: 0.017,
+  marketplaceFeeRate: 0.03,
   successUrl: "https://www.comeleal.com/menu/success",
   failureUrl: "https://www.comeleal.com/menu/failure",
   pendingUrl: "https://www.comeleal.com/menu/pending",
 });
-assertFee("rate 0.017 on total 20", feeBody, 0.34);
+assertFee("rate 0.03 on total 20", feeBody, 0.6);
+
+const feeBody100 = buildMercadoPagoPreferenceBody({
+  orderId: "order-fee-100",
+  restaurantId: "tZYtg0Jt7vAyTLrxyljv",
+  items: [{ title: "Item", quantity: 1, unit_price: 100 }],
+  total: 100,
+  marketplaceFeeRate: 0.03,
+  successUrl: "https://www.comeleal.com/menu/success",
+  failureUrl: "https://www.comeleal.com/menu/failure",
+  pendingUrl: "https://www.comeleal.com/menu/pending",
+});
+assertFee("rate 0.03 on total 100", feeBody100, 3);
 
 const httpsBody = buildMercadoPagoPreferenceBody({
   orderId: "order-abc",
@@ -199,7 +215,7 @@ const tunnelBody = buildMercadoPagoPreferenceBody({
   restaurantId: "tZYtg0Jt7vAyTLrxyljv",
   items: [{ title: "Taco", quantity: 1, unit_price: 25 }],
   total: 25,
-  marketplaceFeeRate: 0.017,
+  marketplaceFeeRate: 0.03,
   successUrl: `https://${tunnelHost}/menu/tZYtg0Jt7vAyTLrxyljv/order/order-tunnel?payment=success`,
   failureUrl: `https://${tunnelHost}/menu/tZYtg0Jt7vAyTLrxyljv/order/order-tunnel?payment=failure`,
   pendingUrl: `https://${tunnelHost}/menu/tZYtg0Jt7vAyTLrxyljv/order/order-tunnel?payment=pending`,
@@ -212,7 +228,7 @@ if (!tunnelBody.back_urls.success.startsWith("https://")) {
   console.error("tunnel back_urls must be https");
   process.exit(1);
 }
-assertFee("tunnel with rate", tunnelBody, 0.43);
+assertFee("tunnel with rate 3%", tunnelBody, 0.75);
 
 if (body.external_reference !== "order-abc") {
   console.error("external_reference mismatch");

@@ -14,7 +14,7 @@ export type BuildPreferenceBodyInput = {
   customerEmail?: string;
   items: PreferenceCartItem[];
   total: number;
-  /** Commission rate 0–1 (e.g. 0.017). Omitted or 0 → no marketplace_fee on preference. */
+  /** Commission rate 0–1 (e.g. 0.03 = 3%). Omitted or 0 → no marketplace_fee on preference. */
   marketplaceFeeRate?: number;
   successUrl: string;
   failureUrl: string;

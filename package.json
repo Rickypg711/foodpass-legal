@@ -11,7 +11,7 @@
     "test:web-checkout-policy": "node scripts/validate-web-checkout-policy.mjs",
     "test:mp-preference": "node scripts/test-mp-preference-build.mjs",
     "test:cart-editing": "node scripts/validate-cart-editing.mjs",
-    "test": "npm run test:order-payload && npm run test:web-checkout-policy && npm run test:cart-editing"
+    "test": "npm run test:order-payload && npm run test:web-checkout-policy && npm run test:cart-editing && npm run test:mp-preference"
   },
   "dependencies": {
     "firebase": "^11.6.0",
