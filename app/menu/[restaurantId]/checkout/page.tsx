@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
@@ -10,21 +10,21 @@ import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreference
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
+import { ORDER_SOURCE_CUSTOMER_WEB } from "@/lib/types/order";
 import {
-  ORDER_SOURCE_CUSTOMER_WEB,
-  PAYMENT_METHOD_MERCADO_PAGO,
-  PAYMENT_METHOD_PAY_AT_PICKUP,
-} from "@/lib/types/order";
+  CUSTOMER_WEB_PAYMENT_METHOD,
+  MP_UNAVAILABLE_MESSAGE,
+  mercadoPagoCheckoutSubtitle,
+  mercadoPagoCheckoutTitle,
+  restaurantSupportsWebCheckout,
+} from "@/lib/order/customerWebCheckoutPolicy";
 import { formatPrice } from "@/lib/priceFormat";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
-type PaymentChoice = typeof PAYMENT_METHOD_PAY_AT_PICKUP | typeof PAYMENT_METHOD_MERCADO_PAGO;
-
 export default function CheckoutPage() {
   const params = useParams();
-  const router = useRouter();
   const restaurantId = typeof params.restaurantId === "string" ? params.restaurantId : "";
   const { lines, itemCount, subtotal, clear, cartReady } = useCart();
 
@@ -32,9 +32,8 @@ export default function CheckoutPage() {
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
-  const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>(
-    PAYMENT_METHOD_PAY_AT_PICKUP,
-  );
+  const mpSandboxUi =
+    isMpWebDebugClient() || process.env.NEXT_PUBLIC_MERCADO_PAGO_SANDBOX === "true";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLogged, setCheckoutLogged] = useState(false);
@@ -74,20 +73,15 @@ export default function CheckoutPage() {
             typeof data.name === "string" && data.name.trim() ? data.name : "Restaurante";
           setRestaurantName(name);
           setRestaurantImageUrl(getRestaurantImageUrl(data));
-          const mpOn =
-            data.mercadoPagoConnected === true &&
-            data.status === "active" &&
-            data.isSetupComplete === true;
-          setMercadoPagoAvailable(mpOn);
-          if (!mpOn && paymentChoice === PAYMENT_METHOD_MERCADO_PAGO) {
-            setPaymentChoice(PAYMENT_METHOD_PAY_AT_PICKUP);
-          }
+          setMercadoPagoAvailable(
+            restaurantSupportsWebCheckout(restaurantId, data),
+          );
         }
       } catch {
         /* ignore */
       }
     })();
-  }, [orderingEnabled, restaurantId, paymentChoice]);
+  }, [orderingEnabled, restaurantId]);
 
   useEffect(() => {
     if (!cartReady || itemCount > 0 || checkoutOrder) return;
@@ -146,8 +140,12 @@ export default function CheckoutPage() {
     setError(null);
     setSubmitting(true);
 
-    const mpDebugMode =
-      isMpWebDebugClient() && paymentChoice === PAYMENT_METHOD_MERCADO_PAGO;
+    if (!mercadoPagoAvailable) {
+      setError(MP_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
+    const mpDebugMode = isMpWebDebugClient();
     let mpDebugWindow: Window | null = null;
     if (mpDebugMode) {
       mpDebugWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
@@ -159,7 +157,7 @@ export default function CheckoutPage() {
     mpWebDebugClient("checkout_submit_start", {
       restaurantId,
       cartItemCount: itemCount,
-      paymentMethod: paymentChoice,
+      paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
       mercadoPagoAvailable,
     });
 
@@ -168,7 +166,7 @@ export default function CheckoutPage() {
 
       mpWebDebugClient("order_create_start", {
         restaurantId,
-        paymentMethod: paymentChoice,
+        paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
       });
 
       const result = await createCustomerWebOrder({
@@ -177,13 +175,13 @@ export default function CheckoutPage() {
         cartLines: lines,
         restaurantName,
         restaurantImageUrl,
-        paymentMethod: paymentChoice,
+        paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
       });
 
       mpWebDebugClient("order_create_success", {
         restaurantId,
         orderId: result.orderId,
-        paymentMethod: paymentChoice,
+        paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
       });
 
       mpWebDebugClient("order_created_before_cart_clear", {
@@ -201,7 +199,7 @@ export default function CheckoutPage() {
         total: result.total,
       });
 
-      if (paymentChoice === PAYMENT_METHOD_MERCADO_PAGO) {
+      {
         mpWebDebugClient("create_preference_start", {
           restaurantId,
           orderId: result.orderId,
@@ -273,16 +271,11 @@ export default function CheckoutPage() {
           throw prefErr;
         }
       }
-
-      clear();
-      router.push(
-        `/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(result.orderId)}`,
-      );
     } catch (err) {
       const message = err instanceof Error ? err.message : "No pudimos crear tu pedido.";
       mpWebDebugClient("order_create_error", {
         restaurantId,
-        paymentMethod: paymentChoice,
+        paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
         message,
       });
       setError(message);
@@ -388,51 +381,21 @@ export default function CheckoutPage() {
           </li>
         </ul>
 
-        <fieldset className="mb-4 rounded-xl bg-white p-4">
-          <legend className="mb-3 text-sm font-semibold">Forma de pago</legend>
-          <div className="flex flex-col gap-3">
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-black/10 p-3">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentChoice === PAYMENT_METHOD_PAY_AT_PICKUP}
-                onChange={() => setPaymentChoice(PAYMENT_METHOD_PAY_AT_PICKUP)}
-                disabled={submitting}
-                className="mt-1"
-              />
-              <span>
-                <span className="block text-sm font-medium">Pagar al recoger</span>
-                <span className="block text-xs text-[#1C2526]/70">
-                  Efectivo o terminal en el local
-                </span>
-              </span>
-            </label>
-            {mercadoPagoAvailable ? (
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#009EE3]/30 p-3">
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentChoice === PAYMENT_METHOD_MERCADO_PAGO}
-                  onChange={() => setPaymentChoice(PAYMENT_METHOD_MERCADO_PAGO)}
-                  disabled={submitting}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="block text-sm font-medium">
-                    Pagar en línea con Mercado Pago
-                  </span>
-                  <span className="block text-xs text-[#1C2526]/70">
-                    Sandbox — tarjeta de prueba en Mercado Pago
-                  </span>
-                </span>
-              </label>
-            ) : (
-              <p className="text-xs text-[#1C2526]/60">
-                Pago en línea no disponible en este restaurante.
+        <div className="mb-4 rounded-xl bg-white p-4">
+          <p className="mb-2 text-sm font-semibold">Forma de pago</p>
+          {mercadoPagoAvailable ? (
+            <div className="rounded-lg border border-[#009EE3]/30 p-3">
+              <p className="text-sm font-medium">
+                {mercadoPagoCheckoutTitle(mpSandboxUi)}
               </p>
-            )}
-          </div>
-        </fieldset>
+              <p className="mt-1 text-xs text-[#1C2526]/70">
+                {mercadoPagoCheckoutSubtitle(mpSandboxUi)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-red-800">{MP_UNAVAILABLE_MESSAGE}</p>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <label className="block">
@@ -450,17 +413,11 @@ export default function CheckoutPage() {
           {error ? <p className="text-sm text-red-700">{error}</p> : null}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !mercadoPagoAvailable}
             className="rounded-xl py-3 font-semibold text-white disabled:opacity-60"
             style={{ backgroundColor: "#F28C38" }}
           >
-            {submitting
-              ? paymentChoice === PAYMENT_METHOD_MERCADO_PAGO
-                ? "Redirigiendo a Mercado Pago…"
-                : "Enviando…"
-              : paymentChoice === PAYMENT_METHOD_MERCADO_PAGO
-                ? "Pagar con Mercado Pago"
-                : "Confirmar pedido"}
+            {submitting ? "Redirigiendo a Mercado Pago…" : "Pagar con Mercado Pago"}
           </button>
         </form>
 

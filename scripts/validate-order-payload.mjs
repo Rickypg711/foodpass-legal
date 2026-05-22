@@ -50,9 +50,9 @@ const payload = {
     },
   ],
   total: 100,
-  paymentMethod: "pay_at_pickup",
+  paymentMethod: "mercado_pago",
   paymentStatus: "pending",
-  status: "pending",
+  status: "payment_pending",
   orderType: "pickup",
   orderSource: "customer_web",
   customerName: "Juan Pérez",
@@ -73,9 +73,9 @@ for (const key of REQUIRED_TOP_LEVEL) {
 }
 
 const checks = [
-  ["paymentMethod", "pay_at_pickup"],
+  ["paymentMethod", "mercado_pago"],
   ["paymentStatus", "pending"],
-  ["status", "pending"],
+  ["status", "payment_pending"],
   ["orderSource", "customer_web"],
   ["orderType", "pickup"],
 ];

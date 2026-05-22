@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:order-payload": "node scripts/validate-order-payload.mjs",
-    "test:mp-preference": "node scripts/test-mp-preference-build.mjs"
+    "test:web-checkout-policy": "node scripts/validate-web-checkout-policy.mjs",
+    "test:mp-preference": "node scripts/test-mp-preference-build.mjs",
+    "test": "npm run test:order-payload && npm run test:web-checkout-policy"
   },
   "dependencies": {
     "firebase": "^11.6.0",

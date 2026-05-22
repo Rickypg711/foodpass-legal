@@ -3,10 +3,11 @@ import type { CartLine } from "@/lib/cart/types";
 import { resolveInitialOrderStatus } from "@/lib/order/orderLifecycle";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
-  PAYMENT_METHOD_PAY_AT_PICKUP,
+  PAYMENT_METHOD_MERCADO_PAGO,
   type CustomerOrderPayload,
   type OrderPaymentMethod,
 } from "@/lib/types/order";
+import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
 
 export type BuildOrderInput = {
   restaurantId: string;
@@ -34,7 +35,9 @@ export function buildCustomerWebOrderPayload(
   }));
 
   const total = items.reduce((sum, i) => sum + i.subtotal, 0);
-  const paymentMethod = input.paymentMethod ?? PAYMENT_METHOD_PAY_AT_PICKUP;
+  const paymentMethod = assertCustomerWebPaymentMethod(
+    input.paymentMethod ?? PAYMENT_METHOD_MERCADO_PAGO,
+  );
   const status = resolveInitialOrderStatus({
     orderSource: ORDER_SOURCE_CUSTOMER_WEB,
     paymentMethod,
