@@ -45,29 +45,36 @@ export function CartProvider({
 }) {
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
   const [lines, setLines] = useState<CartLine[]>([]);
-  /** False until sessionStorage cart has been read (avoids SSR/client mismatch + empty save). */
-  const [cartReady, setCartReady] = useState(false);
+  const cartReady = webOrderingReady;
 
   useEffect(() => {
     if (!webOrderingReady) return;
-    if (!webOrderingAvailable) {
-      clearCart(restaurantId);
-      setLines([]);
-      setCartReady(true);
-      mpWebDebugClient("cart_cleared_mp_unavailable", { restaurantId });
-      return;
-    }
-    const loaded = loadCart(restaurantId);
-    setLines(loaded);
-    setCartReady(true);
-    mpWebDebugClient("cart_loaded", {
-      restaurantId,
-      itemCount: loaded.reduce((s, l) => s + l.quantity, 0),
-      lineCount: loaded.length,
+
+    let cancelled = false;
+
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      if (!webOrderingAvailable) {
+        clearCart(restaurantId);
+        setLines([]);
+        mpWebDebugClient("cart_cleared_mp_unavailable", { restaurantId });
+        return;
+      }
+      const loaded = loadCart(restaurantId);
+      setLines(loaded);
+      mpWebDebugClient("cart_loaded", {
+        restaurantId,
+        itemCount: loaded.reduce((s, l) => s + l.quantity, 0),
+        lineCount: loaded.length,
+      });
+      if (loaded.length === 0) {
+        mpWebDebugClient("cart_empty_detected", { restaurantId, source: "sessionStorage_load" });
+      }
     });
-    if (loaded.length === 0) {
-      mpWebDebugClient("cart_empty_detected", { restaurantId, source: "sessionStorage_load" });
-    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [restaurantId, webOrderingReady, webOrderingAvailable]);
 
   useEffect(() => {

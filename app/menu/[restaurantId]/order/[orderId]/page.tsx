@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -57,6 +57,14 @@ function OrderStatusSkeleton() {
   );
 }
 
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 function OrderStatusPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -65,8 +73,10 @@ function OrderStatusPageContent() {
   const paymentReturn = parsePaymentReturnParam(searchParams.get("payment"));
   const returnBanner = paymentReturnBannerMessage(paymentReturn);
 
-  const [mounted, setMounted] = useState(false);
-  const [snapshot, setSnapshot] = useState<StoredOrderSnapshot | null>(null);
+  const [snapshot] = useState<StoredOrderSnapshot | null>(() =>
+    typeof window !== "undefined" ? loadOrderSnapshot() : null,
+  );
+  const mounted = useIsClient();
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -84,11 +94,6 @@ function OrderStatusPageContent() {
       });
     }
   }, [paymentReturn, restaurantId, orderId]);
-
-  useEffect(() => {
-    setMounted(true);
-    setSnapshot(loadOrderSnapshot());
-  }, []);
 
   useEffect(() => {
     if (!mounted || !orderingEnabled || !restaurantId || !orderId) return;
@@ -229,18 +234,15 @@ function OrderStatusPageContent() {
     displayName,
   ]);
 
-  const cartLinesForWa: CartLine[] = useMemo(() => {
-    if (order?.items?.length) {
-      return order.items.map((it, i) => ({
+  const cartLinesForWa: CartLine[] = order?.items?.length
+    ? order.items.map((it, i) => ({
         menuItemId: String(i),
         name: it.name ?? "—",
         price: 0,
         quantity: typeof it.quantity === "number" ? it.quantity : 1,
         subtotal: typeof it.subtotal === "number" ? it.subtotal : 0,
-      }));
-    }
-    return [];
-  }, [order?.items]);
+      }))
+    : [];
 
   function handleWhatsappClick() {
     if (!whatsapp || !orderId || !displayPin || !displayName) return;
