@@ -10,6 +10,9 @@ export type MenuItemCardProps = {
   price: number;
   imageUrl: string | null;
   onAdd: () => void;
+  quantity?: number;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
   /** When false, no Agregar button (browse-only item card). */
   orderingEnabled?: boolean;
 };
@@ -20,6 +23,9 @@ export function MenuItemCard({
   price,
   imageUrl,
   onAdd,
+  quantity = 0,
+  onIncrement,
+  onDecrement,
   orderingEnabled = true,
 }: MenuItemCardProps) {
   return (
@@ -61,13 +67,37 @@ export function MenuItemCard({
             ) : null}
           </div>
           {orderingEnabled ? (
-            <button
-              type="button"
-              onClick={onAdd}
-              className="mt-3 min-h-10 w-full rounded-xl bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#e07d30] active:bg-[#d67428] sm:mt-2.5 sm:w-auto sm:self-end"
-            >
-              Agregar
-            </button>
+            quantity > 0 ? (
+              <div className="mt-3 flex items-center gap-1 sm:mt-2.5 sm:self-end">
+                <button
+                  type="button"
+                  aria-label={`Quitar uno de ${name}`}
+                  onClick={onDecrement}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#1C2526]/10 bg-white text-lg font-semibold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] active:bg-[#F5EDE2]"
+                >
+                  −
+                </button>
+                <span className="min-w-[2.25rem] text-center text-sm font-semibold tabular-nums text-[#1C2526]">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Agregar uno de ${name}`}
+                  onClick={onIncrement}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F28C38] text-lg font-semibold text-white shadow-sm transition-colors hover:bg-[#e07d30] active:bg-[#d67428]"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="mt-3 min-h-10 w-full rounded-xl bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#e07d30] active:bg-[#d67428] sm:mt-2.5 sm:w-auto sm:self-end"
+              >
+                Agregar
+              </button>
+            )
           ) : null}
         </div>
       </div>

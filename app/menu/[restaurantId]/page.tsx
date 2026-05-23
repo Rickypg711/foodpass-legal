@@ -3,7 +3,7 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
@@ -150,10 +150,16 @@ function MenuCategoryList({
   groups,
   orderingEnabled,
   onAddItem,
+  getItemQuantity,
+  onIncrementItem,
+  onDecrementItem,
 }: {
   groups: { category: string; items: MenuRow[] }[];
   orderingEnabled: boolean;
   onAddItem: (item: MenuRow) => void;
+  getItemQuantity?: (itemId: string) => number;
+  onIncrementItem?: (item: MenuRow) => void;
+  onDecrementItem?: (item: MenuRow) => void;
 }) {
   return (
     <div className="space-y-8">
@@ -175,7 +181,10 @@ function MenuCategoryList({
                 price={item.price}
                 imageUrl={item.imageUrl}
                 orderingEnabled={orderingEnabled}
+                quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
+                onIncrement={() => onIncrementItem?.(item)}
+                onDecrement={() => onDecrementItem?.(item)}
               />
             ))}
           </ul>
@@ -199,8 +208,16 @@ function MenuBottomDock({ children }: { children: ReactNode }) {
 function PublicMenuPageWithOrdering() {
   const params = useParams();
   const restaurantId = typeof params.restaurantId === "string" ? params.restaurantId : "";
-  const { addItem } = useCart();
+  const { addItem, lines, incrementLine, decrementLine } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
+
+  const quantityByItemId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const line of lines) {
+      map.set(line.menuItemId, line.quantity);
+    }
+    return map;
+  }, [lines]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -313,6 +330,7 @@ function PublicMenuPageWithOrdering() {
           <MenuCategoryList
             groups={categoryGroups}
             orderingEnabled={orderingEnabled}
+            getItemQuantity={(itemId) => quantityByItemId.get(itemId) ?? 0}
             onAddItem={(item) =>
               addItem({
                 menuItemId: item.id,
@@ -321,6 +339,8 @@ function PublicMenuPageWithOrdering() {
                 imageUrl: item.imageUrl,
               })
             }
+            onIncrementItem={(item) => incrementLine(item.id)}
+            onDecrementItem={(item) => decrementLine(item.id)}
           />
         )}
       </main>
