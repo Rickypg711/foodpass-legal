@@ -56,10 +56,9 @@ export function MenuAppRewardsCta({
           className="rounded-2xl border border-[#F28C38]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
           role="status"
         >
-          <p className="font-semibold">Este restaurante también vive en Comeleal</p>
+          <p className="font-semibold">Este lugar tiene recompensas en Comeleal</p>
           <p className="mt-1.5 text-xs leading-relaxed text-[#1C2526]/70">
-            Descarga la app para ver recompensas y volver fácil. Gana recompensas cuando visites
-            este lugar.
+            Descarga la app para acumular puntos y volver fácil a tus favoritos.
           </p>
         </div>
         <a
@@ -81,7 +80,10 @@ export function MenuAppRewardsCta({
     return (
       <div className="space-y-3">
         <p className="text-center text-sm font-medium text-[#1C2526]/75">
-          Abre Comeleal y gana recompensas
+          Este lugar tiene recompensas en Comeleal
+        </p>
+        <p className="text-center text-xs leading-relaxed text-[#1C2526]/70">
+          Descarga la app para acumular puntos y volver fácil a tus favoritos.
         </p>
         <a
           href={href}
@@ -92,7 +94,7 @@ export function MenuAppRewardsCta({
             (isDisabled ? "pointer-events-none opacity-60" : "")
           }
         >
-          Gana puntos con este pedido 🔥
+          Descargar Comeleal
         </a>
       </div>
     );

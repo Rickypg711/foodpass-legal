@@ -81,7 +81,7 @@ function MenuRestaurantHeader({
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
         aria-hidden
       />
-      <div className="relative mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-6">
+      <div className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="flex items-start gap-4">
           {logoUrl ? (
             <Image
@@ -191,7 +191,7 @@ function MenuBottomDock({ children }: { children: ReactNode }) {
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
-      <div className="mx-auto w-full max-w-3xl">{children}</div>
+      <div className="mx-auto w-full max-w-3xl lg:max-w-4xl">{children}</div>
     </div>
   );
 }
@@ -297,7 +297,7 @@ function PublicMenuPageWithOrdering() {
 
       <main
         className={
-          "mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6 sm:pt-6 " +
+          "mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 sm:px-6 sm:pt-6 " +
           (webOrderingReady ? "pb-[220px] sm:pb-[200px]" : "pb-28")
         }
       >
@@ -438,7 +438,7 @@ function PublicMenuPageBrowseOnly() {
         logoUrl={logoUrl}
       />
 
-      <main className="mx-auto w-full max-w-3xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
+      <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
         {!loading && !error && items.length === 0 && (

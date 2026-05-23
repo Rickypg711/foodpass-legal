@@ -46,19 +46,19 @@ const VALUE_CARDS = [
   },
   {
     title: "Gana puntos y recompensas",
-    body: "Acumula beneficios cuando visitas o pides en lugares participantes.",
+    body: "Acumula beneficios cuando visitas restaurantes participantes.",
     icon: "⭐",
   },
   {
     title: "Vuelve fácil a tus favoritos",
-    body: "Guarda tus lugares preferidos y regresa con menos fricción.",
+    body: "Guarda tus lugares preferidos y vuelve más fácil cuando se te antoje.",
     icon: "🔁",
   },
 ] as const;
 
 const STEPS = [
   { step: "1", title: "Encuentra un lugar", body: "Explora restaurantes locales en la app." },
-  { step: "2", title: "Ordena o visita", body: "Pide cuando esté disponible o visita el local." },
+  { step: "2", title: "Revisa o visita", body: "Explora el menú y visita el local cuando se te antoje." },
   { step: "3", title: "Acumula recompensas", body: "Gana puntos según las reglas de cada lugar." },
   { step: "4", title: "Vuelve por más", body: "Canjea recompensas y regresa a tus favoritos." },
 ] as const;
@@ -148,8 +148,8 @@ export default function Home() {
                 Descubre restaurantes locales y gana recompensas cuando vuelves.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Comeleal conecta personas con lugares locales para comer, pedir cuando esté
-                disponible y acumular recompensas en una sola app.
+                Comeleal conecta personas con lugares locales para descubrir menús, ganar
+                recompensas y volver a tus favoritos en una sola app.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
@@ -183,7 +183,7 @@ export default function Home() {
                     Tu app para explorar, ganar puntos y volver a los lugares que te gustan.
                   </p>
                   <div className="mt-6 grid w-full gap-2 text-left text-sm">
-                    {["Lugares locales", "Puntos y recompensas", "Pedidos cuando esté disponible"].map(
+                    {["Lugares locales", "Puntos y recompensas", "Explora menús"].map(
                       (item) => (
                         <div
                           key={item}
@@ -243,7 +243,7 @@ export default function Home() {
               Cómo funciona
             </h2>
             <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              Cuatro pasos simples para descubrir lugares, acumular valor y regresar.
+              Cuatro pasos simples para descubrir lugares, ganar recompensas y regresar.
             </p>
             <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
@@ -280,8 +280,9 @@ export default function Home() {
                 Convierte visitas en clientes que regresan.
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70">
-                Comeleal ayuda a restaurantes locales a crear recompensas, recibir pedidos cuando
-                esté disponible y mantenerse presentes con sus clientes.
+                Comeleal ayuda a restaurantes locales a convertir visitas en clientes que
+                regresan con recompensas, menú digital, QR y herramientas simples para operar
+                desde una sola app.
               </p>
               <Link
                 href="/support.html"
@@ -354,8 +355,8 @@ export default function Home() {
           <div>
             <p className="text-lg font-bold text-white">Comeleal</p>
             <p className="mt-2 max-w-xs text-sm text-white/55">
-              Restaurantes locales y recompensas para quien come fuera y para quien sirve en su
-              ciudad.
+              Recompensas y herramientas simples para conectar restaurantes locales con clientes
+              que regresan.
             </p>
           </div>
           <nav aria-label="Legal y soporte">

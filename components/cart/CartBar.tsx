@@ -27,7 +27,7 @@ export function CartBar({
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
-      <div className="mx-auto w-full max-w-3xl space-y-2">
+      <div className="mx-auto w-full max-w-3xl lg:max-w-4xl space-y-2">
         {hasItems ? (
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
