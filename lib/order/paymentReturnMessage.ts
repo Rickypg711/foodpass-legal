@@ -14,9 +14,9 @@ export function paymentReturnBannerMessage(param: PaymentReturnParam): string | 
     case "success":
       return "Regresaste de Mercado Pago. Confirmaremos el pago en breve; no cierres esta página.";
     case "pending":
-      return "Tu pago está pendiente en Mercado Pago. Te avisaremos cuando se confirme.";
+      return "Tu pago está pendiente en Mercado Pago. Tu pedido se enviará al restaurante cuando se confirme.";
     case "failure":
-      return "El pago no se completó. Puedes intentar de nuevo desde el restaurante o pagar al recoger si el local lo permite.";
+      return "El pago no se completó. Vuelve al menú del restaurante e intenta de nuevo con Mercado Pago.";
     default:
       return null;
   }

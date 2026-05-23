@@ -25,7 +25,7 @@ export function customerOrderDisplay(
   if (s === "payment_pending") {
     return {
       title: "Pago pendiente",
-      subtitle: "Tu orden se confirmará cuando realices el pago",
+      subtitle: "Tu pedido se enviará al restaurante cuando Mercado Pago confirme el pago.",
     };
   }
 

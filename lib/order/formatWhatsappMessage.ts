@@ -27,7 +27,7 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     "",
     `Total: ${formatPrice(ctx.total)}`,
     "",
-    "Pago al recoger. Estado del pedido en Comeleal.",
+    "Pago con Mercado Pago. Estado del pedido en Comeleal.",
   ].join("\n");
 }
 
