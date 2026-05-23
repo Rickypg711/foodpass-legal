@@ -24,28 +24,29 @@ export function CartBar({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 border-t border-black/5 px-4 py-3"
-      style={{
-        backgroundColor: "#F0E3D2",
-        paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-      }}
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
+      style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
-      {hasItems ? (
-        <Link
-          href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
-          className="mx-auto flex w-full max-w-md items-center justify-between rounded-xl bg-[#F28C38] px-4 py-3 text-white shadow-md"
-        >
-          <span className="text-sm font-semibold">
-            {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
-          </span>
-          <span className="text-sm font-bold">Ver carrito · {formatPrice(subtotal)}</span>
-        </Link>
-      ) : null}
-      <MenuAppRewardsCta
-        restaurantId={restaurantId}
-        restaurantName={restaurantName}
-        variant={hasItems ? "compact" : "prominent"}
-      />
+      <div className="mx-auto w-full max-w-3xl space-y-2">
+        {hasItems ? (
+          <Link
+            href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
+            className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-white shadow-md transition-colors hover:bg-[#e07d30]"
+          >
+            <span className="text-sm font-semibold">
+              {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
+            </span>
+            <span className="text-sm font-bold tabular-nums">
+              Ver carrito · {formatPrice(subtotal)}
+            </span>
+          </Link>
+        ) : null}
+        <MenuAppRewardsCta
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          variant={hasItems ? "compact" : "prominent"}
+        />
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
@@ -12,7 +12,6 @@ import { trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
-import { formatPrice } from "@/lib/priceFormat";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
 type MenuRow = {
@@ -48,6 +47,23 @@ function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
   };
 }
 
+/** Items must already be sorted by category then name. */
+function groupMenuByCategory(items: MenuRow[]): { category: string; items: MenuRow[] }[] {
+  const groups: { category: string; items: MenuRow[] }[] = [];
+  for (const item of items) {
+    const last = groups[groups.length - 1];
+    if (!last || last.category !== item.category) {
+      groups.push({ category: item.category, items: [item] });
+    } else {
+      last.items.push(item);
+    }
+  }
+  return groups;
+}
+
+const MENU_PAGE_BG =
+  "min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F5EDE2] to-[#F0E3D2] text-[#1C2526]";
+
 function MenuRestaurantHeader({
   loading,
   restaurantName,
@@ -60,36 +76,123 @@ function MenuRestaurantHeader({
   secondarySubtitle?: string | null;
 }) {
   return (
-    <header
-      className="flex items-center gap-3 px-4 py-3 shadow-sm"
-      style={{ backgroundColor: "#F28C38" }}
-    >
-      {logoUrl ? (
-        <Image
-          src={logoUrl}
-          alt=""
-          width={40}
-          height={40}
-          unoptimized
-          className="h-10 w-10 shrink-0 rounded-full object-cover"
-        />
-      ) : null}
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate text-lg font-semibold text-white">
-          {loading ? "…" : restaurantName || "Menú"}
-        </h1>
-        {!loading && restaurantName ? (
-          <div className="mt-0.5 space-y-0.5">
-            <p className="line-clamp-2 text-xs leading-snug text-white/95">
-              🔥 Este lugar tiene recompensas en Comeleal
-            </p>
-            {secondarySubtitle ? (
-              <p className="line-clamp-2 text-xs leading-snug text-white/85">{secondarySubtitle}</p>
+    <header className="relative overflow-hidden bg-[#141414] shadow-md">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-6">
+        <div className="flex items-start gap-4">
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt=""
+              width={64}
+              height={64}
+              unoptimized
+              className="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-lg ring-2 ring-white/15"
+            />
+          ) : (
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#F28C38]/15 text-2xl ring-2 ring-white/10"
+              aria-hidden
+            >
+              🍽
+            </div>
+          )}
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h1 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
+              {loading ? "…" : restaurantName || "Menú"}
+            </h1>
+            {!loading && restaurantName ? (
+              <div className="mt-2 space-y-1.5">
+                <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
+                  🔥 Recompensas en Comeleal
+                </p>
+                {secondarySubtitle ? (
+                  <p className="text-xs leading-snug text-white/55">{secondarySubtitle}</p>
+                ) : null}
+              </div>
             ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
+      <div
+        className="h-px bg-gradient-to-r from-transparent via-[#F28C38]/50 to-transparent"
+        aria-hidden
+      />
     </header>
+  );
+}
+
+function MenuStatusMessage({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "error";
+}) {
+  return (
+    <p
+      className={
+        "rounded-2xl border px-4 py-6 text-center text-sm " +
+        (tone === "error"
+          ? "border-red-200/80 bg-red-50 text-red-800"
+          : "border-[#1C2526]/8 bg-white/80 text-[#1C2526]/70")
+      }
+    >
+      {children}
+    </p>
+  );
+}
+
+function MenuCategoryList({
+  groups,
+  orderingEnabled,
+  onAddItem,
+}: {
+  groups: { category: string; items: MenuRow[] }[];
+  orderingEnabled: boolean;
+  onAddItem: (item: MenuRow) => void;
+}) {
+  return (
+    <div className="space-y-8">
+      {groups.map((group, index) => (
+        <section key={`${group.category}-${index}`} aria-labelledby={`menu-cat-${index}`}>
+          <h2
+            id={`menu-cat-${index}`}
+            className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#1C2526]/45"
+          >
+            {group.category}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {group.items.map((item) => (
+              <MenuItemCard
+                key={item.id}
+                id={item.id}
+                name={item.name}
+                description={item.description}
+                price={item.price}
+                imageUrl={item.imageUrl}
+                orderingEnabled={orderingEnabled}
+                onAdd={() => onAddItem(item)}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function MenuBottomDock({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
+      style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+    >
+      <div className="mx-auto w-full max-w-3xl">{children}</div>
+    </div>
   );
 }
 
@@ -180,11 +283,11 @@ function PublicMenuPageWithOrdering() {
   const showMpUnavailableDock =
     webOrderingReady && !webOrderingAvailable && !loading && !error;
 
+  const categoryGroups = groupMenuByCategory(items);
+  const orderingEnabled = webOrderingReady && webOrderingAvailable;
+
   return (
-    <div
-      className="min-h-screen text-[#1C2526]"
-      style={{ backgroundColor: "#F0E3D2" }}
-    >
+    <div className={MENU_PAGE_BG}>
       <MenuRestaurantHeader
         loading={loading}
         restaurantName={restaurantName}
@@ -194,63 +297,44 @@ function PublicMenuPageWithOrdering() {
 
       <main
         className={
-          "px-4 pt-4 " +
-          (webOrderingReady ? "pb-[240px] sm:pb-[220px]" : "pb-28")
+          "mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6 sm:pt-6 " +
+          (webOrderingReady ? "pb-[220px] sm:pb-[200px]" : "pb-28")
         }
       >
-        {loading && (
-          <p className="text-center text-sm text-[#1C2526]/80">Cargando menú…</p>
-        )}
+        {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
 
-        {!loading && error && (
-          <p className="text-center text-sm text-red-700">{error}</p>
-        )}
+        {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-center text-sm">No hay platillos disponibles</p>
+          <MenuStatusMessage>No hay platillos disponibles</MenuStatusMessage>
         )}
 
         {!loading && !error && items.length > 0 && (
-          <ul className="flex flex-col gap-3.5">
-            {items.map((item) => (
-              <MenuItemCard
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                description={item.description}
-                price={item.price}
-                imageUrl={item.imageUrl}
-                orderingEnabled={webOrderingReady && webOrderingAvailable}
-                onAdd={() =>
-                  addItem({
-                    menuItemId: item.id,
-                    name: item.name,
-                    price: item.price,
-                    imageUrl: item.imageUrl,
-                  })
-                }
-              />
-            ))}
-          </ul>
+          <MenuCategoryList
+            groups={categoryGroups}
+            orderingEnabled={orderingEnabled}
+            onAddItem={(item) =>
+              addItem({
+                menuItemId: item.id,
+                name: item.name,
+                price: item.price,
+                imageUrl: item.imageUrl,
+              })
+            }
+          />
         )}
       </main>
 
       <CartBar restaurantId={restaurantId} restaurantName={restaurantName} />
 
       {showMpUnavailableDock ? (
-        <div
-          className="fixed bottom-0 left-0 right-0 border-t border-black/5 px-4 py-3"
-          style={{
-            backgroundColor: "#F0E3D2",
-            paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-          }}
-        >
+        <MenuBottomDock>
           <MenuAppRewardsCta
             restaurantId={restaurantId}
             restaurantName={restaurantName}
             variant="banner"
           />
-        </div>
+        </MenuBottomDock>
       ) : null}
     </div>
   );
@@ -344,61 +428,39 @@ function PublicMenuPageBrowseOnly() {
     };
   }, [restaurantId]);
 
+  const categoryGroups = groupMenuByCategory(items);
+
   return (
-    <div
-      className="min-h-screen text-[#1C2526]"
-      style={{ backgroundColor: "#F0E3D2" }}
-    >
+    <div className={MENU_PAGE_BG}>
       <MenuRestaurantHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
       />
 
-      <main className="px-4 pt-4 pb-[260px] sm:pb-[200px]">
-        {loading && (
-          <p className="text-center text-sm text-[#1C2526]/80">Cargando menú…</p>
-        )}
-        {!loading && error && (
-          <p className="text-center text-sm text-red-700">{error}</p>
-        )}
+      <main className="mx-auto w-full max-w-3xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
+        {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
+        {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
         {!loading && !error && items.length === 0 && (
-          <p className="text-center text-sm">No hay platillos disponibles</p>
+          <MenuStatusMessage>No hay platillos disponibles</MenuStatusMessage>
         )}
         {!loading && !error && items.length > 0 && (
-          <ul className="flex flex-col gap-3.5">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex gap-3 rounded-[14px] bg-white p-4"
-                style={{ boxShadow: "0 1px 0 rgba(28, 37, 38, 0.06)" }}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="font-bold" style={{ color: "#F28C38" }}>
-                    {formatPrice(item.price)}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <MenuCategoryList
+            groups={categoryGroups}
+            orderingEnabled={false}
+            onAddItem={() => {}}
+          />
         )}
       </main>
 
-      <div
-        className="fixed bottom-0 left-0 right-0 border-t border-black/5 px-4 pt-3"
-        style={{
-          backgroundColor: "#F0E3D2",
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-        }}
-      >
+      <MenuBottomDock>
         <MenuAppRewardsCta
           restaurantId={restaurantId}
           restaurantName={restaurantName}
           variant="browse"
           disabled={!menuLinkResolved}
         />
-      </div>
+      </MenuBottomDock>
     </div>
   );
 }

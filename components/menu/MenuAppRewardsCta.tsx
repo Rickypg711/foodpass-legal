@@ -40,7 +40,7 @@ export function MenuAppRewardsCta({
         href={href}
         onClick={handleClick}
         className={
-          "mt-2 block text-center text-sm font-semibold text-[#F28C38] underline " +
+          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#F28C38] underline decoration-[#F28C38]/40 underline-offset-2 transition-colors hover:text-[#e07d30] " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >
@@ -53,11 +53,11 @@ export function MenuAppRewardsCta({
     return (
       <div className="space-y-3">
         <div
-          className="rounded-xl border border-[#F28C38]/25 bg-white p-4 text-sm text-[#1C2526]"
+          className="rounded-2xl border border-[#F28C38]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
           role="status"
         >
           <p className="font-semibold">Este restaurante también vive en Comeleal</p>
-          <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/75">
+          <p className="mt-1.5 text-xs leading-relaxed text-[#1C2526]/70">
             Descarga la app para ver recompensas y volver fácil. Gana recompensas cuando visites
             este lugar.
           </p>
@@ -67,7 +67,7 @@ export function MenuAppRewardsCta({
           onClick={handleClick}
           aria-disabled={isDisabled}
           className={
-            "menu-cta-enter menu-cta-pulse mx-auto block w-full max-w-md rounded-xl py-3 text-center text-sm font-semibold text-white " +
+            "menu-cta-enter menu-cta-pulse mx-auto block min-h-11 w-full max-w-md rounded-xl py-3 text-center text-sm font-semibold text-white " +
             (isDisabled ? "pointer-events-none opacity-60" : "")
           }
         >
@@ -80,13 +80,15 @@ export function MenuAppRewardsCta({
   if (variant === "browse") {
     return (
       <div className="space-y-3">
-        <p className="text-center text-sm text-[#1C2526]/75">Abre Comeleal y gana recompensas</p>
+        <p className="text-center text-sm font-medium text-[#1C2526]/75">
+          Abre Comeleal y gana recompensas
+        </p>
         <a
           href={href}
           onClick={handleClick}
           aria-disabled={isDisabled}
           className={
-            "menu-cta-enter menu-cta-pulse mx-auto block w-full max-w-xs rounded-xl py-3 text-center text-sm font-semibold text-white sm:max-w-md " +
+            "menu-cta-enter menu-cta-pulse mx-auto block min-h-11 w-full max-w-md rounded-xl py-3 text-center text-sm font-semibold text-white " +
             (isDisabled ? "pointer-events-none opacity-60" : "")
           }
         >
@@ -97,15 +99,15 @@ export function MenuAppRewardsCta({
   }
 
   return (
-    <div className="space-y-2 text-center">
+    <div className="rounded-xl border border-[#F28C38]/15 bg-white/90 px-3 py-2.5 text-center shadow-sm">
       <p className="text-sm font-semibold text-[#1C2526]">Descarga Comeleal y guarda tus puntos</p>
-      <p className="text-xs text-[#1C2526]/75">Gana recompensas con este restaurante</p>
+      <p className="mt-0.5 text-xs text-[#1C2526]/65">Gana recompensas con este restaurante</p>
       <a
         href={href}
         onClick={handleClick}
         aria-disabled={isDisabled}
         className={
-          "menu-cta-enter mx-auto block w-full max-w-md rounded-xl border-2 border-[#F28C38] bg-white py-3 text-sm font-semibold text-[#F28C38] " +
+          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl border-2 border-[#F28C38] bg-white px-4 py-2 text-sm font-semibold text-[#F28C38] transition-colors hover:bg-[#F28C38]/5 " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >
