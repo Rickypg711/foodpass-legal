@@ -5,9 +5,10 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CartBar } from "@/components/cart/CartBar";
+import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { useCart } from "@/lib/cart/CartProvider";
-import { trackWebMenuOpenAppClick, trackWebMenuView } from "@/lib/analytics";
+import { trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
@@ -45,6 +46,51 @@ function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
       typeof data.imageUrl === "string" && data.imageUrl.trim() ? data.imageUrl.trim() : null,
     isAvailable: typeof data.isAvailable === "boolean" ? data.isAvailable : true,
   };
+}
+
+function MenuRestaurantHeader({
+  loading,
+  restaurantName,
+  logoUrl,
+  secondarySubtitle,
+}: {
+  loading: boolean;
+  restaurantName: string;
+  logoUrl: string | null;
+  secondarySubtitle?: string | null;
+}) {
+  return (
+    <header
+      className="flex items-center gap-3 px-4 py-3 shadow-sm"
+      style={{ backgroundColor: "#F28C38" }}
+    >
+      {logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt=""
+          width={40}
+          height={40}
+          unoptimized
+          className="h-10 w-10 shrink-0 rounded-full object-cover"
+        />
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-lg font-semibold text-white">
+          {loading ? "…" : restaurantName || "Menú"}
+        </h1>
+        {!loading && restaurantName ? (
+          <div className="mt-0.5 space-y-0.5">
+            <p className="line-clamp-2 text-xs leading-snug text-white/95">
+              🔥 Este lugar tiene recompensas en Comeleal
+            </p>
+            {secondarySubtitle ? (
+              <p className="line-clamp-2 text-xs leading-snug text-white/85">{secondarySubtitle}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </header>
+  );
 }
 
 function PublicMenuPageWithOrdering() {
@@ -124,42 +170,34 @@ function PublicMenuPageWithOrdering() {
     };
   }, [restaurantId]);
 
+  const headerSecondary =
+    webOrderingReady && webOrderingAvailable
+      ? "Ordena en línea · Pago seguro con Mercado Pago"
+      : webOrderingReady
+        ? "Menú en línea"
+        : null;
+
+  const showMpUnavailableDock =
+    webOrderingReady && !webOrderingAvailable && !loading && !error;
+
   return (
     <div
       className="min-h-screen text-[#1C2526]"
       style={{ backgroundColor: "#F0E3D2" }}
     >
-      <header
-        className="flex items-center gap-3 px-4 py-3 shadow-sm"
-        style={{ backgroundColor: "#F28C38" }}
-      >
-        {logoUrl ? (
-          <Image
-            src={logoUrl}
-            alt=""
-            width={40}
-            height={40}
-            unoptimized
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold text-white">
-            {loading ? "…" : restaurantName || "Menú"}
-          </h1>
-          {!loading && restaurantName ? (
-            <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/90">
-              {webOrderingReady && webOrderingAvailable
-                ? "Ordena en línea · Pago con Mercado Pago"
-                : webOrderingReady
-                  ? "Menú"
-                  : null}
-            </p>
-          ) : null}
-        </div>
-      </header>
+      <MenuRestaurantHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        secondarySubtitle={headerSecondary}
+      />
 
-      <main className="px-4 pt-4 pb-28">
+      <main
+        className={
+          "px-4 pt-4 " +
+          (webOrderingReady ? "pb-[240px] sm:pb-[220px]" : "pb-28")
+        }
+      >
         {loading && (
           <p className="text-center text-sm text-[#1C2526]/80">Cargando menú…</p>
         )}
@@ -197,17 +235,21 @@ function PublicMenuPageWithOrdering() {
         )}
       </main>
 
-      <CartBar restaurantId={restaurantId} />
+      <CartBar restaurantId={restaurantId} restaurantName={restaurantName} />
 
-      {webOrderingReady && webOrderingAvailable ? (
+      {showMpUnavailableDock ? (
         <div
-          className="pointer-events-none fixed bottom-0 left-0 right-0 px-4 pb-20 pt-2 text-center"
-          style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
+          className="fixed bottom-0 left-0 right-0 border-t border-black/5 px-4 py-3"
+          style={{
+            backgroundColor: "#F0E3D2",
+            paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+          }}
         >
-          <p className="text-xs text-[#1C2526]/65">
-            Pago en línea con Mercado Pago · Crea tu cuenta en Comeleal para guardar puntos después
-            del pedido
-          </p>
+          <MenuAppRewardsCta
+            restaurantId={restaurantId}
+            restaurantName={restaurantName}
+            variant="banner"
+          />
         </div>
       ) : null}
     </div>
@@ -224,10 +266,6 @@ function PublicMenuPageBrowseOnly() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
-
-  const downloadHref =
-    restaurantId && `/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`;
-  const primaryCtaHref = !menuLinkResolved ? "#" : downloadHref || "#";
 
   useEffect(() => {
     if (!restaurantId) {
@@ -311,26 +349,11 @@ function PublicMenuPageBrowseOnly() {
       className="min-h-screen text-[#1C2526]"
       style={{ backgroundColor: "#F0E3D2" }}
     >
-      <header
-        className="flex items-center gap-3 px-4 py-3 shadow-sm"
-        style={{ backgroundColor: "#F28C38" }}
-      >
-        {logoUrl ? (
-          <Image
-            src={logoUrl}
-            alt=""
-            width={40}
-            height={40}
-            unoptimized
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold text-white">
-            {loading ? "…" : restaurantName || "Menú"}
-          </h1>
-        </div>
-      </header>
+      <MenuRestaurantHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+      />
 
       <main className="px-4 pt-4 pb-[260px] sm:pb-[200px]">
         {loading && (
@@ -369,26 +392,12 @@ function PublicMenuPageBrowseOnly() {
           paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
       >
-        <p className="mb-3 text-center text-sm text-[#1C2526]/75">
-          Abre Comeleal para ordenar y ganar puntos
-        </p>
-        <a
-          href={primaryCtaHref || "#"}
-          className={
-            "mx-auto block w-full max-w-xs rounded-xl py-3 text-center text-sm font-semibold text-white " +
-            (!menuLinkResolved ? "pointer-events-none opacity-60 " : "")
-          }
-          style={{ backgroundColor: "#F28C38" }}
-          onClick={() => {
-            if (!menuLinkResolved || !restaurantId) return;
-            trackWebMenuOpenAppClick({
-              restaurantId,
-              restaurantName: restaurantName || "Restaurante",
-            });
-          }}
-        >
-          Abrir Comeleal
-        </a>
+        <MenuAppRewardsCta
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          variant="browse"
+          disabled={!menuLinkResolved}
+        />
       </div>
     </div>
   );

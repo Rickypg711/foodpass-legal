@@ -64,6 +64,10 @@ const menuSrc = readFileSync(
   "utf8",
 );
 const menuCardSrc = readFileSync(join(root, "components/menu/MenuItemCard.tsx"), "utf8");
+const menuRewardsCtaSrc = readFileSync(
+  join(root, "components/menu/MenuAppRewardsCta.tsx"),
+  "utf8",
+);
 const cartBarSrc = readFileSync(join(root, "components/cart/CartBar.tsx"), "utf8");
 const cartProviderSrc = readFileSync(join(root, "lib/cart/CartProvider.tsx"), "utf8");
 const webOrderingSrc = readFileSync(
@@ -81,10 +85,22 @@ if (!menuSrc.includes("useWebOrdering")) {
   fail("menu page must use WebOrderingContext");
 }
 if (menuSrc.includes("Pedidos en tienda")) {
-  fail("menu must not show unavailable ordering banner");
+  fail("menu must not show cash/in-store ordering banner");
 }
 if (menuSrc.includes("WEB_ORDERING_UNAVAILABLE")) {
-  fail("menu must not import unavailable banner copy");
+  fail("menu must not import unavailable checkout banner copy");
+}
+if (!menuSrc.includes("MenuAppRewardsCta")) {
+  fail("menu must include app download/rewards CTA component");
+}
+if (!menuSrc.includes('variant="banner"')) {
+  fail("menu must show app rewards banner when MP unavailable");
+}
+if (!menuRewardsCtaSrc.includes("trackWebMenuDownloadClick")) {
+  fail("MenuAppRewardsCta must wire trackWebMenuDownloadClick");
+}
+if (!cartBarSrc.includes("MenuAppRewardsCta")) {
+  fail("CartBar must include app rewards CTA alongside checkout");
 }
 if (!menuSrc.includes("orderingEnabled")) {
   fail("menu must pass orderingEnabled to MenuItemCard");
