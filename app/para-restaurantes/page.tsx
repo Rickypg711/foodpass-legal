@@ -192,7 +192,7 @@ export default function ParaRestaurantesPage() {
             href="#contacto"
             className="hidden shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e07d30] sm:inline-block"
           >
-            Solicitar información
+            Activar mi negocio
           </Link>
 
           <details className="relative lg:hidden">
@@ -220,12 +220,12 @@ export default function ParaRestaurantesPage() {
                 Para restaurantes locales
               </p>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
-                Haz que tus clientes regresen — desde una sola app.
+                Activa menú digital, puntos con QR y recompensas para tu negocio.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Comeleal ayuda a restaurantes, cafés, food trucks y cocinas independientes a
-                aparecer en el mapa, compartir un menú público, dar puntos con QR y, si lo deseas,
-                recibir pedidos para recoger con Mercado Pago.
+                Haz que tus clientes regresen. Comeleal ayuda a restaurantes, cafés, food trucks y
+                cocinas independientes a aparecer en el mapa, compartir un menú público, dar puntos
+                con QR y, si lo deseas, recibir pedidos para recoger con Mercado Pago.
               </p>
               <VendorHeroCtas />
             </div>
@@ -280,8 +280,8 @@ export default function ParaRestaurantesPage() {
               Problemas comunes en negocios locales
             </h2>
             <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              No necesitas otra app complicada de delivery. Necesitas herramientas prácticas para
-              que quien ya te conoce vuelva.
+              No necesitas depender de apps de delivery para fidelizar a tus clientes. Necesitas
+              herramientas prácticas para que quien ya te conoce vuelva.
             </p>
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {PROBLEM_CARDS.map((card) => (
