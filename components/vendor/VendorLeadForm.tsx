@@ -1,0 +1,330 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useRef, useState } from "react";
+import { PUBLIC_CONTACT_EMAIL } from "@/lib/contactEmail";
+import {
+  trackVendorLeadStarted,
+  trackVendorLeadSubmitted,
+  type VendorUtmParams,
+} from "@/lib/analytics/vendorAcquisition";
+import { parseUtmsFromSearch } from "@/lib/vendorLead/parseUtmsFromSearch";
+import {
+  VENDOR_BUSINESS_TYPES,
+  type VendorBusinessType,
+} from "@/lib/vendorLead/validate";
+
+const BUSINESS_TYPE_LABELS: Record<VendorBusinessType, string> = {
+  restaurante: "Restaurante",
+  cafe: "Café",
+  food_truck: "Food truck",
+  dark_kitchen: "Dark kitchen",
+  otro: "Otro",
+};
+
+const VENDOR_DOWNLOAD_URL =
+  "/download.html?utm_source=web&utm_medium=vendor_lp&utm_campaign=para_restaurantes";
+
+type FormState = "idle" | "submitting" | "success" | "error";
+
+export function VendorLeadForm() {
+  const [formState, setFormState] = useState<FormState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [utms] = useState<VendorUtmParams>(() =>
+    typeof window !== "undefined" ? parseUtmsFromSearch(window.location.search) : {},
+  );
+  const leadStartedLogged = useRef(false);
+
+  const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [city, setCity] = useState("Chihuahua");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [businessType, setBusinessType] = useState<VendorBusinessType | "">("");
+  const [optionalMessage, setOptionalMessage] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [websiteHoneypot, setWebsiteHoneypot] = useState("");
+
+  const onFirstFieldFocus = useCallback(() => {
+    if (leadStartedLogged.current) return;
+    leadStartedLogged.current = true;
+    trackVendorLeadStarted({
+      business_type: businessType || undefined,
+      utm_source: utms.utm_source,
+      utm_campaign: utms.utm_campaign,
+    });
+  }, [businessType, utms.utm_campaign, utms.utm_source]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMessage(null);
+    setFormState("submitting");
+
+    try {
+      const res = await fetch("/api/vendor-leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          businessName,
+          city,
+          whatsapp,
+          businessType,
+          optionalMessage: optionalMessage.trim() || null,
+          consent,
+          website: websiteHoneypot,
+          utmSource: utms.utm_source ?? null,
+          utmMedium: utms.utm_medium ?? null,
+          utmCampaign: utms.utm_campaign ?? null,
+          utmContent: utms.utm_content ?? null,
+          utmTerm: utms.utm_term ?? null,
+        }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        ok?: boolean;
+      };
+
+      if (!res.ok) {
+        setFormState("error");
+        setErrorMessage(
+          data.message ??
+            "No pudimos enviar tu información. Intenta de nuevo o escríbenos por correo.",
+        );
+        return;
+      }
+
+      setFormState("success");
+      trackVendorLeadSubmitted({
+        city: city.trim(),
+        business_type: businessType,
+        source: "para_restaurantes",
+        utm_source: utms.utm_source,
+        utm_medium: utms.utm_medium,
+        utm_campaign: utms.utm_campaign,
+        utm_content: utms.utm_content,
+        utm_term: utms.utm_term,
+      });
+    } catch {
+      setFormState("error");
+      setErrorMessage(
+        "No pudimos enviar tu información. Revisa tu conexión o escríbenos por correo.",
+      );
+    }
+  }
+
+  if (formState === "success") {
+    return (
+      <div
+        className="mt-8 rounded-2xl border border-[#F28C38]/30 bg-white p-6 sm:p-8"
+        role="status"
+      >
+        <p className="text-lg font-semibold text-[#1C2526]">
+          Listo. Recibimos tu información y te contactaremos pronto desde Comeleal.
+        </p>
+        <p className="mt-3 text-sm text-[#1C2526]/70">
+          Si prefieres instalar la app mientras tanto, puedes descargarla aquí:
+        </p>
+        <Link
+          href={VENDOR_DOWNLOAD_URL}
+          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-[#1C2526]/15 bg-[#FAF7F2] px-6 py-3 text-sm font-semibold text-[#1C2526] transition-colors hover:bg-white"
+        >
+          Descargar la app
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="relative mt-8 space-y-5" noValidate>
+      <div
+        className="absolute -left-[9999px] h-px w-px overflow-hidden"
+        aria-hidden
+      >
+        <label htmlFor="vendor-website-hp">Sitio web</label>
+        <input
+          id="vendor-website-hp"
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={websiteHoneypot}
+          onChange={(e) => setWebsiteHoneypot(e.target.value)}
+        />
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label htmlFor="vendor-name" className="block text-sm font-medium text-[#1C2526]">
+            Tu nombre <span className="text-[#F28C38]">*</span>
+          </label>
+          <input
+            id="vendor-name"
+            name="name"
+            type="text"
+            required
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onFocus={onFirstFieldFocus}
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="vendor-business-name"
+            className="block text-sm font-medium text-[#1C2526]"
+          >
+            Nombre del negocio <span className="text-[#F28C38]">*</span>
+          </label>
+          <input
+            id="vendor-business-name"
+            name="businessName"
+            type="text"
+            required
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            onFocus={onFirstFieldFocus}
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label htmlFor="vendor-city" className="block text-sm font-medium text-[#1C2526]">
+            Ciudad <span className="text-[#F28C38]">*</span>
+          </label>
+          <input
+            id="vendor-city"
+            name="city"
+            type="text"
+            required
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            onFocus={onFirstFieldFocus}
+            placeholder="Chihuahua"
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+          />
+        </div>
+        <div>
+          <label htmlFor="vendor-whatsapp" className="block text-sm font-medium text-[#1C2526]">
+            WhatsApp <span className="text-[#F28C38]">*</span>
+          </label>
+          <input
+            id="vendor-whatsapp"
+            name="whatsapp"
+            type="tel"
+            required
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="614 123 4567"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            onFocus={onFirstFieldFocus}
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="vendor-business-type" className="block text-sm font-medium text-[#1C2526]">
+          Tipo de negocio <span className="text-[#F28C38]">*</span>
+        </label>
+        <select
+          id="vendor-business-type"
+          name="businessType"
+          required
+          value={businessType}
+          onChange={(e) => setBusinessType(e.target.value as VendorBusinessType)}
+          onFocus={onFirstFieldFocus}
+          className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+        >
+          <option value="" disabled>
+            Selecciona una opción
+          </option>
+          {VENDOR_BUSINESS_TYPES.map((value) => (
+            <option key={value} value={value}>
+              {BUSINESS_TYPE_LABELS[value]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="vendor-message" className="block text-sm font-medium text-[#1C2526]">
+          Mensaje (opcional)
+        </label>
+        <textarea
+          id="vendor-message"
+          name="optionalMessage"
+          rows={3}
+          maxLength={500}
+          value={optionalMessage}
+          onChange={(e) => setOptionalMessage(e.target.value)}
+          onFocus={onFirstFieldFocus}
+          placeholder="Cuéntanos horario, zona o cómo te ayudamos"
+          className="mt-1.5 w-full resize-y rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
+        />
+        <p className="mt-1 text-xs text-[#1C2526]/50">Máximo 500 caracteres.</p>
+      </div>
+
+      <div className="flex items-start gap-3">
+        <input
+          id="vendor-consent"
+          name="consent"
+          type="checkbox"
+          required
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border-[#1C2526]/25 text-[#F28C38] focus:ring-[#F28C38]"
+        />
+        <label htmlFor="vendor-consent" className="text-sm leading-relaxed text-[#1C2526]/80">
+          Acepto que Comeleal me contacte sobre mi negocio usando los datos que comparto.{" "}
+          <Link href="/privacy-policy.html" className="font-medium text-[#F28C38] hover:underline">
+            Política de privacidad
+          </Link>
+          .
+        </label>
+      </div>
+
+      {formState === "error" && errorMessage && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+          {errorMessage}{" "}
+          <a
+            href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
+            className="font-medium underline"
+          >
+            {PUBLIC_CONTACT_EMAIL}
+          </a>
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={formState === "submitting"}
+          className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#e07d30] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {formState === "submitting" ? "Enviando…" : "Enviar solicitud"}
+        </button>
+        <Link
+          href={VENDOR_DOWNLOAD_URL}
+          className="inline-flex w-full min-h-11 items-center justify-center rounded-full border border-[#1C2526]/15 bg-white px-6 py-3.5 text-center text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] sm:w-auto"
+        >
+          Descargar la app
+        </Link>
+      </div>
+
+      <p className="text-sm text-[#1C2526]/55">
+        ¿Prefieres correo?{" "}
+        <a
+          href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante — Chihuahua")}`}
+          className="font-medium text-[#F28C38] hover:underline"
+        >
+          {PUBLIC_CONTACT_EMAIL}
+        </a>
+      </p>
+    </form>
+  );
+}

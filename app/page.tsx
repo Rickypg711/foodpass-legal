@@ -285,7 +285,7 @@ export default function Home() {
                 desde una sola app.
               </p>
               <Link
-                href="/support.html"
+                href="/para-restaurantes"
                 className="mt-8 inline-flex w-full min-h-11 max-w-xl items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
               >
                 Quiero conocer Comeleal para mi restaurante
