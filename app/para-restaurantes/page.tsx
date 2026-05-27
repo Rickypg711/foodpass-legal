@@ -6,9 +6,9 @@ import { VendorLeadForm } from "@/components/vendor/VendorLeadForm";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
 import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
 
-const PAGE_TITLE = "Comeleal para restaurantes | Chihuahua";
+const PAGE_TITLE = "Comeleal para restaurantes";
 const PAGE_DESCRIPTION =
-  "Haz que tus clientes regresen: mapa, menú público, puntos con QR y pedidos para recoger. Para restaurantes, cafés y food trucks en Chihuahua.";
+  "Haz que tus clientes regresen: mapa, menú público, puntos con QR y pedidos para recoger. Para restaurantes, cafés y food trucks locales.";
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -106,7 +106,8 @@ const BENEFITS = [
   "App disponible en App Store y Google Play.",
   "Herramientas en una sola app: panel, POS, escáner QR y pedidos si activas Mercado Pago.",
   "Menú digital sin depender solo de fotos en WhatsApp.",
-  "Enfocado en negocios locales — restaurantes, cafés, food trucks y cocinas en Chihuahua.",
+  "Acompañamiento para dejar tu negocio listo con menú, horario y una recompensa inicial.",
+  "Enfocado en negocios locales — restaurantes, cafés, food trucks y cocinas independientes.",
 ] as const;
 
 const FAQ_ITEMS = [
@@ -123,12 +124,16 @@ const FAQ_ITEMS = [
     a: "No. Comeleal no es una app de reparto a domicilio; los pedidos en línea son para recoger en tu local.",
   },
   {
+    q: "¿Me pueden ayudar a activarlo?",
+    a: "Sí. La idea es acompañarte para dejar lo básico listo: tu negocio, horario, menú inicial y una recompensa para que puedas empezar a probarlo con clientes.",
+  },
+  {
     q: "¿Cuánto tarda activar mi lugar?",
     a: "Con acompañamiento, muchos negocios dejan horario, menú básico y una recompensa en unos 15–20 minutos.",
   },
   {
-    q: "¿Funciona en Chihuahua?",
-    a: "Sí. Estamos activando los primeros lugares locales en Chihuahua y zona metropolitana.",
+    q: "¿Dónde funciona?",
+    a: "Comeleal está pensado para negocios locales que quieren activar menú, recompensas y puntos con QR. Estamos empezando con lugares cercanos para poder acompañarlos bien.",
   },
   {
     q: "¿Qué necesito en el mostrador?",
@@ -212,16 +217,15 @@ export default function ParaRestaurantesPage() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
             <div>
               <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
-                Para restaurantes · Chihuahua
+                Para restaurantes locales
               </p>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
                 Haz que tus clientes regresen — desde una sola app.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Comeleal ayuda a restaurantes, cafés, food trucks y cocinas locales en{" "}
-                <strong className="font-semibold text-white/90">Chihuahua</strong> a aparecer en
-                el mapa, compartir un menú público, dar puntos con QR y, si lo deseas, recibir
-                pedidos para recoger con Mercado Pago.
+                Comeleal ayuda a restaurantes, cafés, food trucks y cocinas independientes a
+                aparecer en el mapa, compartir un menú público, dar puntos con QR y, si lo deseas,
+                recibir pedidos para recoger con Mercado Pago.
               </p>
               <VendorHeroCtas />
             </div>
@@ -396,7 +400,7 @@ export default function ParaRestaurantesPage() {
           <div className="mx-auto max-w-6xl">
             <div className="rounded-3xl border border-[#1C2526]/8 bg-white px-6 py-10 sm:px-10 sm:py-12">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
-                Ejemplo en Chihuahua
+                Ejemplo de activación
               </p>
               <h2
                 id="ejemplo-heading"
@@ -434,9 +438,8 @@ export default function ParaRestaurantesPage() {
                 ¿Listo para conocer Comeleal en tu negocio?
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#1C2526]/70">
-                Completa el formulario y te contactamos para ayudarte a activar tu lugar en
-                Chihuahua. También puedes instalar la app si ya quieres empezar con
-                acompañamiento.
+                Completa el formulario y te contactamos para ayudarte a activar tu lugar. También
+                puedes instalar la app si ya quieres empezar con acompañamiento.
               </p>
 
               <VendorLeadForm />

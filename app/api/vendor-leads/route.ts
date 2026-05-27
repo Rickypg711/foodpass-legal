@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
+import { VENDOR_LEAD_FORM_UNAVAILABLE_MESSAGE } from "@/lib/contactEmail";
 import { getFirebaseAdminDb, hasFirebaseAdminCredentials } from "@/lib/firebaseAdmin";
 import { validateVendorLeadBody, VENDOR_LEAD_SOURCE } from "@/lib/vendorLead/validate";
 
@@ -17,8 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "service_unavailable",
-          message:
-            "El formulario no está disponible en este momento. Escríbenos a comeleal@gmail.com.",
+          message: VENDOR_LEAD_FORM_UNAVAILABLE_MESSAGE,
         },
         { status: 503 },
       );
@@ -66,8 +66,8 @@ export async function POST(request: Request) {
   } catch (e) {
     const message =
       e instanceof Error && e.message === "firebase_admin_credentials_missing"
-        ? "El formulario no está disponible en este momento. Escríbenos a comeleal@gmail.com."
-        : "No pudimos guardar tu información. Intenta de nuevo o escríbenos a comeleal@gmail.com.";
+        ? VENDOR_LEAD_FORM_UNAVAILABLE_MESSAGE
+        : "No pudimos guardar tu información. Intenta de nuevo o escríbenos a comeleal@gmail.com o por WhatsApp al 614 601 7597.";
     return NextResponse.json(
       { error: "server_error", message },
       { status: 500 },

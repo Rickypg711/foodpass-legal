@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
-import { PUBLIC_CONTACT_EMAIL } from "@/lib/contactEmail";
+import {
+  PUBLIC_CONTACT_EMAIL,
+  PUBLIC_WHATSAPP_DISPLAY,
+  PUBLIC_WHATSAPP_WA_ME,
+} from "@/lib/contactEmail";
 import {
   trackVendorLeadStarted,
   trackVendorLeadSubmitted,
@@ -37,7 +41,7 @@ export function VendorLeadForm() {
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [city, setCity] = useState("Chihuahua");
+  const [city, setCity] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [businessType, setBusinessType] = useState<VendorBusinessType | "">("");
   const [optionalMessage, setOptionalMessage] = useState("");
@@ -120,7 +124,8 @@ export function VendorLeadForm() {
         role="status"
       >
         <p className="text-lg font-semibold text-[#1C2526]">
-          Listo. Recibimos tu información y te contactaremos pronto desde Comeleal.
+          Listo. Recibimos tu información y te contactaremos para ayudarte a activar tu negocio
+          en Comeleal.
         </p>
         <p className="mt-3 text-sm text-[#1C2526]/70">
           Si prefieres instalar la app mientras tanto, puedes descargarla aquí:
@@ -131,6 +136,24 @@ export function VendorLeadForm() {
         >
           Descargar la app
         </Link>
+        <p className="mt-4 text-sm text-[#1C2526]/55">
+          ¿Prefieres escribirnos?{" "}
+          <a
+            href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
+            className="font-medium text-[#F28C38] hover:underline"
+          >
+            {PUBLIC_CONTACT_EMAIL}
+          </a>
+          {" · "}
+          <a
+            href={PUBLIC_WHATSAPP_WA_ME}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[#F28C38] hover:underline"
+          >
+            WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
+          </a>
+        </p>
       </div>
     );
   }
@@ -203,7 +226,7 @@ export function VendorLeadForm() {
             value={city}
             onChange={(e) => setCity(e.target.value)}
             onFocus={onFirstFieldFocus}
-            placeholder="Chihuahua"
+            placeholder="Tu ciudad"
             className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
           />
         </div>
@@ -306,7 +329,7 @@ export function VendorLeadForm() {
           disabled={formState === "submitting"}
           className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#e07d30] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {formState === "submitting" ? "Enviando…" : "Enviar solicitud"}
+          {formState === "submitting" ? "Enviando…" : "Quiero que me contacten para activarlo"}
         </button>
         <Link
           href={VENDOR_DOWNLOAD_URL}
@@ -317,12 +340,21 @@ export function VendorLeadForm() {
       </div>
 
       <p className="text-sm text-[#1C2526]/55">
-        ¿Prefieres correo?{" "}
+        ¿Prefieres contacto directo?{" "}
         <a
-          href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante — Chihuahua")}`}
+          href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
           className="font-medium text-[#F28C38] hover:underline"
         >
           {PUBLIC_CONTACT_EMAIL}
+        </a>
+        {" · "}
+        <a
+          href={PUBLIC_WHATSAPP_WA_ME}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-[#F28C38] hover:underline"
+        >
+          WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
         </a>
       </p>
     </form>
