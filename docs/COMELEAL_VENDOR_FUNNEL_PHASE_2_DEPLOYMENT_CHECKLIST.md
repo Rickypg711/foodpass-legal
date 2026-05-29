@@ -12,7 +12,7 @@
 
 | Area | Deliverable |
 |------|-------------|
-| **Landing** | `/para-restaurantes` — hero: form activation CTA (`#contacto`) + download app CTA; `#contacto` lead form saves to Firestore then opens prefilled WhatsApp after successful submit |
+| **Landing** | `/para-restaurantes` — hero: activation CTA (`#contacto`) + download app CTA; `#contacto` lead form captures the request and opens prefilled WhatsApp after successful submit |
 | **API** | `POST /api/vendor-leads` → Firestore collection `vendorLeads` |
 | **Analytics** | `vendor_landing_view`, `vendor_cta_click`, `vendor_lead_started`, `vendor_lead_submitted` (no PII in GA4 params) |
 | **UTM** | Read from URL on `/para-restaurantes`; stored on lead doc + safe analytics params |

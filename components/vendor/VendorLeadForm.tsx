@@ -22,7 +22,7 @@ import {
 const BUSINESS_TYPE_LABELS: Record<VendorBusinessType, string> = {
   restaurante: "Restaurante",
   cafe: "Café",
-  food_truck: "Food truck",
+  food_truck: "Food truck / puesto de comida",
   dark_kitchen: "Dark kitchen",
   otro: "Otro",
 };
@@ -45,7 +45,6 @@ export function VendorLeadForm() {
   const [city, setCity] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [businessType, setBusinessType] = useState<VendorBusinessType | "">("");
-  const [optionalMessage, setOptionalMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [websiteHoneypot, setWebsiteHoneypot] = useState("");
   const [successWhatsappUrl, setSuccessWhatsappUrl] = useState<string | null>(null);
@@ -75,7 +74,7 @@ export function VendorLeadForm() {
           city,
           whatsapp,
           businessType,
-          optionalMessage: optionalMessage.trim() || null,
+          optionalMessage: null,
           consent,
           website: websiteHoneypot,
           utmSource: utms.utm_source ?? null,
@@ -109,7 +108,7 @@ export function VendorLeadForm() {
         city,
         whatsapp,
         businessType: businessTypeLabel,
-        optionalMessage,
+        optionalMessage: "",
       });
 
       setSuccessWhatsappUrl(whatsappUrl);
@@ -142,7 +141,7 @@ export function VendorLeadForm() {
         role="status"
       >
         <p className="text-lg font-semibold text-[#1C2526]">
-          Listo. Guardamos tus datos y abrimos WhatsApp con tu mensaje preparado.
+          Listo. Abrimos WhatsApp con tu mensaje preparado.
         </p>
         <p className="mt-3 text-sm text-[#1C2526]/70">
           Si WhatsApp no se abrió, usa el botón de WhatsApp aquí abajo.
@@ -304,24 +303,6 @@ export function VendorLeadForm() {
         </select>
       </div>
 
-      <div>
-        <label htmlFor="vendor-message" className="block text-sm font-medium text-[#1C2526]">
-          Mensaje (opcional)
-        </label>
-        <textarea
-          id="vendor-message"
-          name="optionalMessage"
-          rows={3}
-          maxLength={500}
-          value={optionalMessage}
-          onChange={(e) => setOptionalMessage(e.target.value)}
-          onFocus={onFirstFieldFocus}
-          placeholder="Cuéntanos horario, zona o cómo te ayudamos"
-          className="mt-1.5 w-full resize-y rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
-        />
-        <p className="mt-1 text-xs text-[#1C2526]/50">Máximo 500 caracteres.</p>
-      </div>
-
       <div className="flex items-start gap-3">
         <input
           id="vendor-consent"
@@ -359,7 +340,7 @@ export function VendorLeadForm() {
           disabled={formState === "submitting"}
           className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#e07d30] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {formState === "submitting" ? "Enviando…" : "Guardar mis datos y abrir WhatsApp"}
+          {formState === "submitting" ? "Enviando…" : "Activar por WhatsApp"}
         </button>
         <Link
           href={VENDOR_DOWNLOAD_URL}
@@ -368,25 +349,6 @@ export function VendorLeadForm() {
           Descargar la app
         </Link>
       </div>
-
-      <p className="text-sm text-[#1C2526]/55">
-        ¿Prefieres contacto directo?{" "}
-        <a
-          href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
-          className="font-medium text-[#F28C38] hover:underline"
-        >
-          {PUBLIC_CONTACT_EMAIL}
-        </a>
-        {" · "}
-        <a
-          href={PUBLIC_WHATSAPP_WA_ME}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-[#F28C38] hover:underline"
-        >
-          WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
-        </a>
-      </p>
     </form>
   );
 }

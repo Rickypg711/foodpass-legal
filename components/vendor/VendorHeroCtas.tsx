@@ -20,7 +20,7 @@ export function VendorHeroCtas() {
         onClick={() => trackCta("form", "hero")}
         className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#F28C38]/25 transition-colors hover:bg-[#e07d30] sm:w-auto"
       >
-        Guardar mis datos y activar por WhatsApp
+        Activar mi negocio por WhatsApp
       </Link>
       <Link
         href={VENDOR_DOWNLOAD_URL}

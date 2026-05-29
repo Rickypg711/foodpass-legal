@@ -435,11 +435,11 @@ export default function ParaRestaurantesPage() {
                 id="contacto-heading"
                 className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl"
               >
-                Déjanos tus datos y te abrimos WhatsApp listo para enviar
+                Activa tu negocio por WhatsApp
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#1C2526]/70">
-                Primero guardamos tus datos para darte seguimiento. Después abrimos WhatsApp con tu
-                mensaje listo para enviar.
+                Completa la información básica de tu negocio y te abrimos WhatsApp con el mensaje
+                listo para enviar.
               </p>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#1C2526]/65">
                 Te ayudamos a dejar listo lo básico: negocio, horario, menú inicial y una
@@ -447,14 +447,6 @@ export default function ParaRestaurantesPage() {
               </p>
 
               <VendorLeadForm />
-
-              <p className="mt-6 text-sm text-[#1C2526]/55">
-                ¿Dudas técnicas o de cuenta? Visita{" "}
-                <Link href="/support.html" className="font-medium text-[#F28C38] hover:underline">
-                  soporte
-                </Link>
-                .
-              </p>
             </div>
           </div>
         </section>
