@@ -13,22 +13,22 @@ function trackCta(cta: string, section: string) {
   trackVendorCtaClick({ cta, section, ...utms });
 }
 
-export function VendorHeroCtas() {
+export function VendorContactCtas() {
   return (
-    <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
       <a
         href={PUBLIC_WHATSAPP_WA_ME_ACTIVATE}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => trackCta("whatsapp", "hero")}
-        className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#F28C38]/25 transition-colors hover:bg-[#e07d30] sm:w-auto"
+        onClick={() => trackCta("whatsapp", "contact")}
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#F28C38]/20 transition-colors hover:bg-[#e07d30] sm:w-auto"
       >
-        Activar mi negocio por WhatsApp
+        Activar por WhatsApp
       </a>
       <Link
         href={VENDOR_DOWNLOAD_URL}
-        onClick={() => trackCta("download", "hero")}
-        className="inline-flex w-full min-h-11 items-center justify-center rounded-full border border-white/15 bg-transparent px-6 py-3.5 text-center text-sm font-medium text-white/80 transition-colors hover:bg-white/5 hover:text-white sm:w-auto"
+        onClick={() => trackCta("download", "contact")}
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#1C2526]/15 bg-white px-6 py-3.5 text-center text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] sm:w-auto"
       >
         Descargar la app
       </Link>
