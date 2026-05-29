@@ -14,3 +14,35 @@ export const PUBLIC_WHATSAPP_WA_ME_ACTIVATE =
 /** User-facing message when the vendor lead API is unavailable. */
 export const VENDOR_LEAD_FORM_UNAVAILABLE_MESSAGE =
   "El formulario no está disponible en este momento. Escríbenos a comeleal@gmail.com o por WhatsApp al 614 601 7597.";
+
+/** WhatsApp deep link with message built from vendor lead form fields (post-save handoff). */
+export function buildVendorActivationWhatsAppUrl(input: {
+  name?: string;
+  businessName?: string;
+  city?: string;
+  whatsapp?: string;
+  businessType?: string;
+  optionalMessage?: string | null;
+}) {
+  const lines = [
+    "Hola, quiero activar mi negocio en Comeleal.",
+    "",
+    input.name?.trim() ? `Mi nombre: ${input.name.trim()}` : null,
+    input.businessName?.trim()
+      ? `Nombre del negocio: ${input.businessName.trim()}`
+      : "Nombre del negocio:",
+    input.city?.trim() ? `Ciudad: ${input.city.trim()}` : "Ciudad:",
+    input.whatsapp?.trim() ? `WhatsApp: ${input.whatsapp.trim()}` : null,
+    input.businessType?.trim()
+      ? `Tipo de negocio: ${input.businessType.trim()}`
+      : "Tipo de negocio:",
+    input.optionalMessage?.trim() ? "" : null,
+    input.optionalMessage?.trim()
+      ? `Mensaje: ${input.optionalMessage.trim()}`
+      : null,
+    "",
+    "¿Me pueden ayudar a configurar mi menú, horario y recompensa?",
+  ].filter(Boolean);
+
+  return `${PUBLIC_WHATSAPP_WA_ME}?text=${encodeURIComponent(lines.join("\n"))}`;
+}

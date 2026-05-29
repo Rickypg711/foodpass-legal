@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import {
+  buildVendorActivationWhatsAppUrl,
   PUBLIC_CONTACT_EMAIL,
   PUBLIC_WHATSAPP_DISPLAY,
   PUBLIC_WHATSAPP_WA_ME,
@@ -47,6 +48,7 @@ export function VendorLeadForm() {
   const [optionalMessage, setOptionalMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [websiteHoneypot, setWebsiteHoneypot] = useState("");
+  const [successWhatsappUrl, setSuccessWhatsappUrl] = useState<string | null>(null);
 
   const onFirstFieldFocus = useCallback(() => {
     if (leadStartedLogged.current) return;
@@ -98,7 +100,21 @@ export function VendorLeadForm() {
         return;
       }
 
+      const businessTypeLabel =
+        businessType !== "" ? BUSINESS_TYPE_LABELS[businessType] : undefined;
+
+      const whatsappUrl = buildVendorActivationWhatsAppUrl({
+        name,
+        businessName,
+        city,
+        whatsapp,
+        businessType: businessTypeLabel,
+        optionalMessage,
+      });
+
+      setSuccessWhatsappUrl(whatsappUrl);
       setFormState("success");
+
       trackVendorLeadSubmitted({
         city: city.trim(),
         business_type: businessType,
@@ -109,6 +125,8 @@ export function VendorLeadForm() {
         utm_content: utms.utm_content,
         utm_term: utms.utm_term,
       });
+
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     } catch {
       setFormState("error");
       setErrorMessage(
@@ -124,11 +142,23 @@ export function VendorLeadForm() {
         role="status"
       >
         <p className="text-lg font-semibold text-[#1C2526]">
-          Listo. Recibimos tu información y te contactaremos para ayudarte a activar tu negocio
-          en Comeleal.
+          Listo. Guardamos tus datos y abrimos WhatsApp con tu mensaje preparado.
         </p>
         <p className="mt-3 text-sm text-[#1C2526]/70">
-          Si prefieres instalar la app mientras tanto, puedes descargarla aquí:
+          Si WhatsApp no se abrió, usa el botón de WhatsApp aquí abajo.
+        </p>
+        {successWhatsappUrl && (
+          <a
+            href={successWhatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1fb855]"
+          >
+            Abrir WhatsApp
+          </a>
+        )}
+        <p className="mt-4 text-sm text-[#1C2526]/70">
+          También puedes descargar la app mientras tanto:
         </p>
         <Link
           href={VENDOR_DOWNLOAD_URL}
@@ -329,7 +359,7 @@ export function VendorLeadForm() {
           disabled={formState === "submitting"}
           className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#e07d30] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {formState === "submitting" ? "Enviando…" : "Quiero que me contacten para activarlo"}
+          {formState === "submitting" ? "Enviando…" : "Guardar mis datos y abrir WhatsApp"}
         </button>
         <Link
           href={VENDOR_DOWNLOAD_URL}

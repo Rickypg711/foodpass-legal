@@ -12,7 +12,7 @@
 
 | Area | Deliverable |
 |------|-------------|
-| **Landing** | `/para-restaurantes` — vendor lead form in `#contacto` |
+| **Landing** | `/para-restaurantes` — WhatsApp-first hero + lead form in `#contacto`; form saves lead then opens WhatsApp with prefilled business info |
 | **API** | `POST /api/vendor-leads` → Firestore collection `vendorLeads` |
 | **Analytics** | `vendor_landing_view`, `vendor_cta_click`, `vendor_lead_started`, `vendor_lead_submitted` (no PII in GA4 params) |
 | **UTM** | Read from URL on `/para-restaurantes`; stored on lead doc + safe analytics params |

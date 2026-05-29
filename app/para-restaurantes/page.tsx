@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { VendorContactCtas } from "@/components/vendor/VendorContactCtas";
 import { VendorHeroCtas } from "@/components/vendor/VendorHeroCtas";
+import { VendorLeadForm } from "@/components/vendor/VendorLeadForm";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
-import {
-  PUBLIC_CONTACT_EMAIL,
-  PUBLIC_WHATSAPP_DISPLAY,
-} from "@/lib/contactEmail";
 import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
 
 const PAGE_TITLE = "Comeleal para restaurantes";
@@ -439,43 +435,25 @@ export default function ParaRestaurantesPage() {
                 id="contacto-heading"
                 className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl"
               >
-                ¿Quieres activar Comeleal en tu negocio?
+                Déjanos tus datos y te abrimos WhatsApp listo para enviar
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#1C2526]/70">
-                Escríbenos por WhatsApp y te ayudamos a dejar listo lo básico: tu negocio, horario,
-                menú inicial y una recompensa para empezar a probarlo con clientes.
+                Así guardamos tu solicitud para darte seguimiento y, al mismo tiempo, puedes iniciar
+                la conversación por WhatsApp con la información de tu negocio ya preparada.
               </p>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#1C2526]/65">
-                También puedes descargar la app y crear tu negocio directamente. Si tienes dudas,
-                te acompañamos paso a paso.
+                Te ayudamos a dejar listo lo básico: negocio, horario, menú inicial y una
+                recompensa para empezar a probarlo con clientes.
               </p>
 
-              <div className="mt-8 rounded-2xl border border-[#1C2526]/10 bg-white p-6 sm:p-8">
-                <h3 className="text-lg font-bold text-[#1C2526]">Te ayudamos por WhatsApp</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#1C2526]/70">
-                  El mensaje ya va preparado. Solo agrega el nombre de tu negocio, tu ciudad y el
-                  tipo de negocio para que podamos orientarte mejor.
-                </p>
-                <VendorContactCtas />
-              </div>
+              <VendorLeadForm />
 
               <p className="mt-6 text-sm text-[#1C2526]/55">
-                Contacto directo:{" "}
-                <a
-                  href={`mailto:${PUBLIC_CONTACT_EMAIL}`}
-                  className="font-medium text-[#F28C38] hover:underline"
-                >
-                  {PUBLIC_CONTACT_EMAIL}
-                </a>{" "}
-                · WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
-                <br className="hidden sm:block" />
-                <span className="sm:ml-0">
-                  ¿Dudas técnicas o de cuenta? Visita{" "}
-                  <Link href="/support.html" className="font-medium text-[#F28C38] hover:underline">
-                    soporte
-                  </Link>
-                  .
-                </span>
+                ¿Dudas técnicas o de cuenta? Visita{" "}
+                <Link href="/support.html" className="font-medium text-[#F28C38] hover:underline">
+                  soporte
+                </Link>
+                .
               </p>
             </div>
           </div>
