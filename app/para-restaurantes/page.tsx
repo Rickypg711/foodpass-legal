@@ -438,8 +438,8 @@ export default function ParaRestaurantesPage() {
                 Déjanos tus datos y te abrimos WhatsApp listo para enviar
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#1C2526]/70">
-                Así guardamos tu solicitud para darte seguimiento y, al mismo tiempo, puedes iniciar
-                la conversación por WhatsApp con la información de tu negocio ya preparada.
+                Primero guardamos tus datos para darte seguimiento. Después abrimos WhatsApp con tu
+                mensaje listo para enviar.
               </p>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#1C2526]/65">
                 Te ayudamos a dejar listo lo básico: negocio, horario, menú inicial y una

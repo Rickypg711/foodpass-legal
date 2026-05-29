@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { PUBLIC_WHATSAPP_WA_ME_ACTIVATE } from "@/lib/contactEmail";
 import { trackVendorCtaClick } from "@/lib/analytics/vendorAcquisition";
 import { parseUtmsFromSearch } from "@/lib/vendorLead/parseUtmsFromSearch";
 
@@ -16,15 +15,13 @@ function trackCta(cta: string, section: string) {
 export function VendorHeroCtas() {
   return (
     <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <a
-        href={PUBLIC_WHATSAPP_WA_ME_ACTIVATE}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => trackCta("whatsapp", "hero")}
+      <Link
+        href="#contacto"
+        onClick={() => trackCta("form", "hero")}
         className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#F28C38]/25 transition-colors hover:bg-[#e07d30] sm:w-auto"
       >
-        Activar mi negocio por WhatsApp
-      </a>
+        Guardar mis datos y activar por WhatsApp
+      </Link>
       <Link
         href={VENDOR_DOWNLOAD_URL}
         onClick={() => trackCta("download", "hero")}
