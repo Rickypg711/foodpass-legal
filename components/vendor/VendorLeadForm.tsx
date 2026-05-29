@@ -5,8 +5,6 @@ import { useCallback, useRef, useState } from "react";
 import {
   buildVendorActivationWhatsAppUrl,
   PUBLIC_CONTACT_EMAIL,
-  PUBLIC_WHATSAPP_DISPLAY,
-  PUBLIC_WHATSAPP_WA_ME,
 } from "@/lib/contactEmail";
 import {
   trackVendorLeadStarted,
@@ -35,6 +33,7 @@ type FormState = "idle" | "submitting" | "success" | "error";
 export function VendorLeadForm() {
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorShowContact, setErrorShowContact] = useState(false);
   const [utms] = useState<VendorUtmParams>(() =>
     typeof window !== "undefined" ? parseUtmsFromSearch(window.location.search) : {},
   );
@@ -62,6 +61,7 @@ export function VendorLeadForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage(null);
+    setErrorShowContact(false);
     setFormState("submitting");
 
     try {
@@ -96,6 +96,7 @@ export function VendorLeadForm() {
           data.message ??
             "No pudimos enviar tu información. Intenta de nuevo o escríbenos por correo.",
         );
+        setErrorShowContact(res.status !== 400);
         return;
       }
 
@@ -128,6 +129,7 @@ export function VendorLeadForm() {
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     } catch {
       setFormState("error");
+      setErrorShowContact(true);
       setErrorMessage(
         "No pudimos enviar tu información. Revisa tu conexión o escríbenos por correo.",
       );
@@ -165,24 +167,6 @@ export function VendorLeadForm() {
         >
           Descargar la app
         </Link>
-        <p className="mt-4 text-sm text-[#1C2526]/55">
-          ¿Prefieres escribirnos?{" "}
-          <a
-            href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
-            className="font-medium text-[#F28C38] hover:underline"
-          >
-            {PUBLIC_CONTACT_EMAIL}
-          </a>
-          {" · "}
-          <a
-            href={PUBLIC_WHATSAPP_WA_ME}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-[#F28C38] hover:underline"
-          >
-            WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
-          </a>
-        </p>
       </div>
     );
   }
@@ -324,13 +308,18 @@ export function VendorLeadForm() {
 
       {formState === "error" && errorMessage && (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-          {errorMessage}{" "}
-          <a
-            href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
-            className="font-medium underline"
-          >
-            {PUBLIC_CONTACT_EMAIL}
-          </a>
+          {errorMessage}
+          {errorShowContact && (
+            <>
+              {" "}
+              <a
+                href={`mailto:${PUBLIC_CONTACT_EMAIL}?subject=${encodeURIComponent("Comeleal para mi restaurante")}`}
+                className="font-medium underline"
+              >
+                {PUBLIC_CONTACT_EMAIL}
+              </a>
+            </>
+          )}
         </p>
       )}
 

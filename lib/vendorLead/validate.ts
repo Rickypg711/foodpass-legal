@@ -94,7 +94,7 @@ export function validateVendorLeadBody(body: unknown): VendorLeadValidationResul
   }
 
   if (b.consent !== true) {
-    return { ok: false, error: "Debes aceptar el consentimiento de contacto." };
+    return { ok: false, error: "Debes aceptar el consentimiento para continuar." };
   }
 
   const optionalRaw = trimToNull(b.optionalMessage, MAX_OPTIONAL_MESSAGE_LENGTH);
