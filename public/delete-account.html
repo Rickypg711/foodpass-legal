@@ -1,108 +1,165 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comeleal Account Deletion</title>
-    <meta name="description" content="How to request deletion of your Comeleal account and what happens to your data.">
+    <title>Eliminación de Cuenta | Comeleal</title>
+    <meta name="description" content="Cómo solicitar la eliminación de tu cuenta de Comeleal y qué sucede con tus datos.">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="/comeleal-app-icon.png">
     <style>
         *,
         *::before,
         *::after {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            margin: 0;
-            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
+            color: #1C2526;
+            background: #FAF7F2;
+            padding: 24px 16px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         main {
-            max-width: 40rem;
-            margin: 0 auto;
-            background: #fff;
-            padding: clamp(24px, 5vw, 40px);
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 42rem;
+            background: #ffffff;
+            padding: clamp(24px, 6vw, 48px);
+            border-radius: 20px;
+            border: 1px solid rgba(28, 37, 38, 0.08);
+            box-shadow: 0 10px 30px rgba(28, 37, 38, 0.04);
+        }
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo-wrap img {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
         h1 {
-            color: #2c3e50;
-            font-size: clamp(1.35rem, 4vw, 1.75rem);
-            margin: 0 0 12px;
+            color: #1C2526;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            margin-bottom: 16px;
             line-height: 1.25;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -0.02em;
         }
         h2 {
-            color: #34495e;
-            font-size: 1.05rem;
-            margin: 28px 0 10px;
+            color: #1C2526;
+            font-size: 1.2rem;
+            margin: 32px 0 12px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
         }
         p {
-            margin: 0 0 12px;
+            margin-bottom: 16px;
+            color: rgba(28, 37, 38, 0.8);
+            font-size: 0.975rem;
         }
         .contact {
-            background: #f8f9fa;
-            border: 1px solid #e8e8e8;
-            border-radius: 8px;
-            padding: 18px 20px;
-            margin: 20px 0;
+            background: #FAF7F2;
+            border: 1px solid rgba(242, 140, 56, 0.25);
+            border-radius: 14px;
+            padding: 20px;
+            margin: 24px 0;
+            text-align: center;
         }
         .contact p {
-            margin: 8px 0;
+            margin-bottom: 0;
+            font-weight: 600;
+            color: #1C2526;
+            font-size: 1.05rem;
         }
-        a {
-            color: #007aff;
-            word-break: break-word;
+        .contact a {
+            color: #F28C38;
+            text-decoration: none;
+            font-weight: 700;
+            border-bottom: 2px solid rgba(242, 140, 56, 0.2);
+            transition: all 0.2s ease;
+        }
+        .contact a:hover {
+            color: #e07b28;
+            border-bottom-color: #e07b28;
         }
         ul {
-            margin: 0 0 12px;
-            padding-left: 1.25rem;
+            margin-bottom: 16px;
+            padding-left: 1.5rem;
         }
         li {
             margin-bottom: 8px;
+            color: rgba(28, 37, 38, 0.8);
+            font-size: 0.975rem;
         }
         .note {
-            color: #555;
-            font-size: 0.95rem;
-            border-left: 3px solid #bdc3c7;
-            padding-left: 14px;
-            margin: 16px 0;
+            color: rgba(28, 37, 38, 0.75);
+            font-size: 0.925rem;
+            border-left: 3px solid #F28C38;
+            padding-left: 16px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(28, 37, 38, 0.08);
+            text-align: center;
+        }
+        footer p {
+            color: rgba(28, 37, 38, 0.5);
+            font-size: 0.825rem;
+            margin-bottom: 0;
         }
     </style>
 </head>
 <body>
     <main>
-        <h1>Comeleal Account Deletion</h1>
-        <p>You can ask us to delete your Comeleal account and the personal data associated with it. This page explains how to submit a request and what to expect.</p>
+        <div class="logo-wrap">
+            <img src="/comeleal-app-icon.png" alt="Comeleal Logo" width="72" height="72">
+        </div>
+        <h1>Eliminación de Cuenta Comeleal</h1>
+        <p>Puedes solicitarnos la eliminación de tu cuenta de Comeleal y de todos los datos personales asociados a ella. A continuación te explicamos cómo enviar tu solicitud y qué esperar del proceso.</p>
 
-        <h2>How to request account deletion</h2>
-        <p>Send an email from the address you use for Comeleal (or, if you no longer have access to it, explain that in your message).</p>
+        <h2>Cómo solicitar la eliminación de tu cuenta</h2>
+        <p>Envía un correo electrónico desde la dirección de correo que utilizas en Comeleal. Si ya no tienes acceso a ella, infórmalo detalladamente en tu mensaje para que podamos asistirte.</p>
 
         <div class="contact">
-            <p><strong>Email:</strong> <a href="mailto:paredesricardog@gmail.com">paredesricardog@gmail.com</a></p>
+            <p>Escríbenos a: <a href="mailto:comeleal@gmail.com">comeleal@gmail.com</a></p>
         </div>
 
-        <h2>What to include in your email</h2>
+        <h2>Qué incluir en tu correo electrónico</h2>
         <ul>
-            <li>The email address tied to your Comeleal account (your “account email”).</li>
-            <li>A clear statement that you want your account deleted (for example: “Please delete my Comeleal account and associated data”).</li>
+            <li>La dirección de correo electrónico vinculada a tu cuenta de Comeleal.</li>
+            <li>Una declaración clara indicando que deseas dar de baja tu cuenta (por ejemplo: <em>"Solicito la eliminación de mi cuenta de Comeleal y de mis datos personales"</em>).</li>
         </ul>
-        <p>Including this information helps us verify and process your request promptly.</p>
+        <p>Proporcionar estos datos nos permite verificar y procesar tu solicitud de manera ágil y oportuna.</p>
 
-        <h2>What data will be deleted</h2>
-        <p>After we confirm your request, we will delete or anonymize personal data associated with your account, including for example:</p>
+        <h2>Qué datos serán eliminados</h2>
+        <p>Una vez confirmada tu identidad, procederemos a borrar o anonimizar la información personal vinculada a tu cuenta, incluyendo por ejemplo:</p>
         <ul>
-            <li>Your profile and account information linked to Comeleal.</li>
-            <li>App activity and preferences stored with your account, where applicable.</li>
+            <li>Tu perfil de usuario e información de registro en la aplicación.</li>
+            <li>Historial de actividad y preferencias de usuario guardadas.</li>
         </ul>
-        <p>The exact categories may depend on how you use Comeleal; we will delete what we hold in a way that identifies you as a user, unless we must keep limited information as described below.</p>
+        <p>Los datos exactos dependen del uso que le hayas dado a Comeleal; eliminaremos todo aquello que te identifique directamente como usuario, salvo las excepciones legales detalladas a continuación.</p>
 
-        <h2>Data we may retain</h2>
-        <p class="note">Some information may be kept where the law requires it or where we have a legitimate need to retain it for security, fraud prevention, or legal compliance. When we retain data for these reasons, we limit use to those purposes and keep it only as long as necessary.</p>
+        <h2>Datos que podríamos retener</h2>
+        <p class="note">Ciertos datos podrían conservarse cuando la legislación aplicable lo exija, o bien cuando exista un interés legítimo como la prevención de fraudes, seguridad o el cumplimiento de obligaciones legales. En estos casos, la información se limitará estrictamente a dicho propósito y se guardará únicamente durante el tiempo requerido por la ley.</p>
 
-        <h2>When deletion happens</h2>
-        <p>We aim to complete account deletion within <strong>7 days</strong> after we verify your request. We may contact you if we need additional information to confirm your identity or your account.</p>
+        <h2>Plazo de eliminación</h2>
+        <p>Nuestro compromiso es completar la baja de tu cuenta en un plazo máximo de <strong>7 días</strong> a partir de que verifiquemos tu identidad. Te contactaremos por correo en caso de requerir información adicional de seguridad.</p>
+
+        <footer>
+            <p>© 2026 Comeleal. Todos los derechos reservados.</p>
+        </footer>
     </main>
 </body>
 </html>
