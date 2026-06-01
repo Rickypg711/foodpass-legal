@@ -11,7 +11,10 @@ import {
   trackVendorLeadSubmitted,
   type VendorUtmParams,
 } from "@/lib/analytics/vendorAcquisition";
-import { parseUtmsFromSearch } from "@/lib/vendorLead/parseUtmsFromSearch";
+import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
+import { pixelLead, pixelContact } from "@/lib/meta/pixel";
+import { generateEventId } from "@/lib/meta/eventId";
+import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import {
   VENDOR_BUSINESS_TYPES,
   type VendorBusinessType,
@@ -35,7 +38,9 @@ export function VendorLeadForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorShowContact, setErrorShowContact] = useState(false);
   const [utms] = useState<VendorUtmParams>(() =>
-    typeof window !== "undefined" ? parseUtmsFromSearch(window.location.search) : {},
+    // readAndPersistUtms: reads from URL if present, falls back to sessionStorage.
+    // VendorPageAnalytics persists UTMs on page mount, so they survive navigation.
+    typeof window !== "undefined" ? readAndPersistUtms(window.location.search) : {},
   );
   const leadStartedLogged = useRef(false);
 
@@ -115,6 +120,7 @@ export function VendorLeadForm() {
       setSuccessWhatsappUrl(whatsappUrl);
       setFormState("success");
 
+      // GA4 — existing event (unchanged behaviour)
       trackVendorLeadSubmitted({
         city: city.trim(),
         business_type: businessType,
@@ -125,6 +131,40 @@ export function VendorLeadForm() {
         utm_content: utms.utm_content,
         utm_term: utms.utm_term,
       });
+
+      // Generate unique event IDs for deduplication.
+      // Each event_id is shared between the browser fbq() call and the
+      // server CAPI call so Meta counts only one event per pair.
+      const leadEventId = generateEventId();
+      const contactEventId = generateEventId();
+
+      // Browser Pixel — Lead (primary conversion signal for Meta optimisation).
+      pixelLead(leadEventId);
+
+      // Browser Pixel — Contact (WhatsApp outreach initiated).
+      pixelContact(contactEventId);
+
+      // Server CAPI — Lead + Contact with the same event_ids for deduplication.
+      // UTMs are forwarded so Meta can attribute the conversion to the campaign.
+      sendBrowserCapiEvents([
+        {
+          event_name: "Lead",
+          event_id: leadEventId,
+          event_source_url: window.location.href,
+          custom_data: {
+            utm_source: utms.utm_source,
+            utm_medium: utms.utm_medium,
+            utm_campaign: utms.utm_campaign,
+            utm_content: utms.utm_content,
+            utm_term: utms.utm_term,
+          },
+        },
+        {
+          event_name: "Contact",
+          event_id: contactEventId,
+          event_source_url: window.location.href,
+        },
+      ]);
 
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     } catch {
