@@ -1,13 +1,38 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Comeleal brand tokens — single source of truth for the web.
+   Flutter equivalent: lib/styles/styles.dart
+   Change colors here; Tailwind arbitrary values like text-[#F28C38] still
+   work but new code should prefer these vars for consistency.
+   ========================================================================== */
 :root {
+  /* Brand palette */
+  --comeleal-primary: #F28C38;        /* Warm orange — CTAs, icons, highlights */
+  --comeleal-primary-dark: #de7626;   /* Hover / pressed state */
+  --comeleal-primary-light: #ff9a45;  /* Gradient top */
+  --comeleal-accent: #1C2526;         /* Deep black — body text, headings */
+  --comeleal-cream: #FAF7F2;          /* Page background (light sections) */
+  --comeleal-dark-bg: #141414;        /* Dark sections, footer, nav */
+  --comeleal-secondary: #8B6F47;      /* Muted brown — secondary text */
+
+  /* Semantic aliases */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: var(--comeleal-accent);
+
+  /* Opacity helpers (use with / in Tailwind e.g. bg-[var(--comeleal-primary)]/10) */
+  --comeleal-primary-rgb: 242 140 56;
+  --comeleal-accent-rgb: 28 37 38;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--comeleal-primary);
+  --color-brand-dark: var(--comeleal-primary-dark);
+  --color-brand-ink: var(--comeleal-accent);
+  --color-brand-cream: var(--comeleal-cream);
+  --color-brand-dark-bg: var(--comeleal-dark-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
