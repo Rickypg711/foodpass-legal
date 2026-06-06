@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { VendorContactCtas } from "@/components/vendor/VendorContactCtas";
 import { VendorHeroCtas } from "@/components/vendor/VendorHeroCtas";
 import { VendorLeadForm } from "@/components/vendor/VendorLeadForm";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
