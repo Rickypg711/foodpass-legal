@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#restaurantes", label: "Para restaurantes" },
+  { href: "/para-restaurantes", label: "Para restaurantes" },
   { href: "/download.html", label: "Descargar app" },
   { href: "/support.html", label: "Soporte" },
 ] as const;
@@ -115,10 +115,10 @@ export default function Home() {
           </nav>
 
           <Link
-            href="/download.html"
+            href="/activar"
             className="hidden shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e07d30] sm:inline-block"
           >
-            Descargar app
+            Registrar restaurante
           </Link>
 
           <details className="relative md:hidden">
@@ -284,12 +284,20 @@ export default function Home() {
                 regresan con recompensas, menú digital, QR y herramientas simples para operar
                 desde una sola app.
               </p>
-              <Link
-                href="/para-restaurantes"
-                className="mt-8 inline-flex w-full min-h-11 max-w-xl items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
-              >
-                Quiero conocer Comeleal para mi restaurante
-              </Link>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/activar"
+                  className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#F28C38]/20 transition-colors hover:bg-[#e07d30] sm:w-auto"
+                >
+                  Registrar mi restaurante →
+                </Link>
+                <Link
+                  href="/para-restaurantes"
+                  className="inline-flex w-full min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
+                >
+                  Ver cómo funciona
+                </Link>
+              </div>
             </div>
           </div>
         </section>

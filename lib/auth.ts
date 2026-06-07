@@ -2,6 +2,8 @@ import {
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
+  signInWithPopup,
+  GoogleAuthProvider,
   type Auth,
   type User,
 } from "firebase/auth";
@@ -29,6 +31,19 @@ export function waitForAuthReady(): Promise<User | null> {
       resolve(a.currentUser);
     }, 4000);
   });
+}
+
+/**
+ * Sign in with Google popup — returns the authenticated user.
+ * Same Firebase Auth UID as the Comeleal Flutter app when the vendor
+ * later signs in with Google on mobile.
+ */
+export async function signInWithGoogle(): Promise<User> {
+  const a = getFirebaseAuth();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  const cred = await signInWithPopup(a, provider);
+  return cred.user;
 }
 
 /**
