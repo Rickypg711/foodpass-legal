@@ -4,6 +4,7 @@ import {
   signInAnonymously,
   signInWithPopup,
   GoogleAuthProvider,
+  FacebookAuthProvider,
   type Auth,
   type User,
 } from "firebase/auth";
@@ -42,6 +43,18 @@ export async function signInWithGoogle(): Promise<User> {
   const a = getFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  const cred = await signInWithPopup(a, provider);
+  return cred.user;
+}
+
+/**
+ * Sign in with Facebook popup.
+ * Requires Facebook provider enabled in Firebase Auth console.
+ */
+export async function signInWithFacebook(): Promise<User> {
+  const a = getFirebaseAuth();
+  const provider = new FacebookAuthProvider();
+  provider.addScope("email");
   const cred = await signInWithPopup(a, provider);
   return cred.user;
 }

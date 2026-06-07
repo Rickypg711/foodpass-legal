@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
-import { getFirebaseAuth, signInWithGoogle, waitForAuthReady } from "@/lib/auth";
+import { getFirebaseAuth, signInWithGoogle, signInWithFacebook, waitForAuthReady } from "@/lib/auth";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -63,10 +63,11 @@ export default function ActivarPage() {
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState<string>("");
 
-  // Check if user already has a restaurant on mount
+  // Check if user already has a restaurant on mount.
+  // Ignore anonymous sessions — they must go through Google Sign-In.
   useEffect(() => {
     waitForAuthReady().then(async (u) => {
-      if (!u) return;
+      if (!u || u.isAnonymous) return;
       setUser(u);
       try {
         const userDoc = await getDoc(
@@ -86,13 +87,14 @@ export default function ActivarPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  async function handleGoogleSignIn() {
+  async function handleSignIn(provider: "google" | "facebook") {
     setError(null);
     setStage("signing");
     try {
-      const u = await signInWithGoogle();
+      const u = provider === "google"
+        ? await signInWithGoogle()
+        : await signInWithFacebook();
       setUser(u);
-      // Check if they already own a restaurant
       const userDoc = await getDoc(doc(getFirebaseDb(), "users", u.uid));
       const data = userDoc.data();
       if (data?.ownedRestaurantId) {
@@ -102,11 +104,10 @@ export default function ActivarPage() {
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error al iniciar sesión";
-      // User closed the popup — silently reset
       if (msg.includes("popup-closed") || msg.includes("cancelled")) {
         setStage("idle");
       } else {
-        setError("No pudimos conectar con Google. Intenta de nuevo.");
+        setError("No pudimos conectar. Intenta de nuevo.");
         setStage("idle");
       }
     }
@@ -237,23 +238,33 @@ export default function ActivarPage() {
               </p>
             )}
 
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={stage === "signing"}
-              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-lg transition-all hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {stage === "signing" ? (
-                <>
-                  <Spinner className="text-[#1C2526]" />
-                  Conectando…
-                </>
-              ) : (
-                <>
-                  <GoogleLogo />
-                  Continuar con Google
-                </>
-              )}
-            </button>
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={() => handleSignIn("google")}
+                disabled={stage === "signing"}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-lg transition-all hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {stage === "signing" ? (
+                  <>
+                    <Spinner className="text-[#1C2526]" />
+                    Conectando…
+                  </>
+                ) : (
+                  <>
+                    <GoogleLogo />
+                    Continuar con Google
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => handleSignIn("facebook")}
+                disabled={stage === "signing"}
+                className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#1877F2] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#166fe5] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <FacebookLogo />
+                Continuar con Facebook
+              </button>
+            </div>
 
             <p className="mt-4 text-xs text-white/35">
               Al continuar aceptas los{" "}
@@ -537,6 +548,14 @@ function GoogleLogo() {
         d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"
         fill="#EA4335"
       />
+    </svg>
+  );
+}
+
+function FacebookLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white" aria-hidden>
+      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.883v2.27h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
     </svg>
   );
 }
