@@ -9,7 +9,7 @@ import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
 
 const PAGE_TITLE = "Comeleal para restaurantes";
 const PAGE_DESCRIPTION =
-  "Haz que tus clientes regresen: mapa, menú público, puntos con QR y pedidos para recoger. Para restaurantes, cafés y food trucks locales.";
+  "Haz que tus clientes regresen: puntos con QR, Apple Wallet, menú digital y pedidos para recoger. Sin cambiar tu sistema actual. Para restaurantes, cafés y food trucks locales.";
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -62,20 +62,20 @@ const PROBLEM_CARDS = [
 
 const VALUE_POINTS = [
   {
-    title: "Te encuentran en el mapa",
-    body: "Tu lugar puede aparecer en Explorar para que la gente de tu zona te descubra.",
+    title: "Monedero digital en Apple Wallet",
+    body: "Tus clientes guardan su tarjeta de lealtad en Apple Wallet. La abren desde su iPhone sin entrar a la app — menos fricción, más visitas.",
   },
   {
     title: "Puntos y recompensas con QR",
-    body: "El cliente muestra su QR; tú escaneas en la app y sumas puntos o canjeas recompensas.",
+    body: "El cliente muestra su QR; tú escaneas en la app y sumas puntos o canjeas recompensas. Funciona junto a tu caja o POS actual, sin reemplazarlo.",
   },
   {
-    title: "Menú público en internet",
-    body: "Comparte un enlace tipo comeleal.com/menu/tu-lugar en redes o en mostrador.",
+    title: "Detectamos cuándo un cliente está por no regresar",
+    body: "El sistema te avisa automáticamente cuando un cliente habitual lleva tiempo sin visitar — para que actúes antes de perderlo.",
   },
   {
-    title: "Pedidos para recoger (opcional)",
-    body: "Si conectas Mercado Pago, puedes recibir pedidos pagados en línea para recoger en local — no delivery.",
+    title: "Pedidos para recoger con Mercado Pago",
+    body: "Si conectas Mercado Pago, recibes pedidos pagados en línea listos para recoger en local — sin comisiones de reparto.",
   },
 ] as const;
 
@@ -105,16 +105,20 @@ const STEPS = [
 const BENEFITS = [
   "Gratis para empezar (plan Free; Pro opcional en la app).",
   "App disponible en App Store y Google Play.",
-  "Herramientas en una sola app: panel, POS, escáner QR y pedidos si activas Mercado Pago.",
+  "Tus clientes guardan su tarjeta de lealtad en Apple Wallet — sin descargar otra app.",
   "Menú digital sin depender solo de fotos en WhatsApp.",
   "Acompañamiento para dejar tu negocio listo con menú, horario y una recompensa inicial.",
-  "Enfocado en negocios locales — restaurantes, cafés, food trucks y cocinas independientes.",
+  "Sin cambiar tu caja ni tu sistema actual: Comeleal funciona junto a tu punto de venta.",
 ] as const;
 
 const FAQ_ITEMS = [
   {
     q: "¿Cuánto cuesta?",
     a: "Puedes empezar gratis con el plan Free. Comeleal Pro es opcional en la app si más adelante quieres funciones adicionales.",
+  },
+  {
+    q: "¿Qué es Apple Wallet y cómo lo usan mis clientes?",
+    a: "Tus clientes pueden guardar su tarjeta de puntos de Comeleal directo en Apple Wallet. La próxima vez que visiten, la abren desde su iPhone sin entrar a la app — más rápido para ellos, más visitas para ti.",
   },
   {
     q: "¿Necesito Mercado Pago?",
@@ -221,12 +225,12 @@ export default function ParaRestaurantesPage() {
                 Para restaurantes locales
               </p>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
-                Activa menú digital, puntos con QR y recompensas para tu negocio.
+                Haz que tus clientes regresen. Lealtad con QR, Apple Wallet y menú digital.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Haz que tus clientes regresen. Comeleal ayuda a restaurantes, cafés, food trucks y
-                cocinas independientes a aparecer en el mapa, compartir un menú público, dar puntos
-                con QR y, si lo deseas, recibir pedidos para recoger con Mercado Pago.
+                Comeleal ayuda a restaurantes, cafés, food trucks y cocinas independientes a
+                fidelizar clientes con puntos QR, Apple Wallet y menú en línea — sin reemplazar tu
+                caja ni tu POS actual. Gratis para empezar.
               </p>
               <VendorHeroCtas />
             </div>
@@ -247,7 +251,7 @@ export default function ParaRestaurantesPage() {
                     Panel, menú web, QR de clientes y herramientas simples para operar tu local.
                   </p>
                   <div className="mt-6 grid w-full gap-2 text-left text-sm">
-                    {["Mapa y descubrimiento", "Puntos con QR", "Menú en comeleal.com"].map(
+                    {["Puntos con QR en segundos", "Apple Wallet para tus clientes", "Menú en comeleal.com"].map(
                       (item) => (
                         <div
                           key={item}
@@ -314,11 +318,11 @@ export default function ParaRestaurantesPage() {
               id="valor-heading"
               className="mt-2 text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl"
             >
-              Todo lo que necesitas para fidelizar, sin prometer magia
+              Estructura simple para que tus clientes regresen más seguido
             </h2>
             <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              Comeleal no garantiza más ventas automáticamente: te da estructura para que clientes
-              te encuentren, acumulen puntos y regresen si tú operas el programa en mostrador.
+              Configura tu club de lealtad en 15 minutos, sin contratos y sin cambiar tu punto de
+              venta. Comeleal se integra al flujo de tu mostrador, no lo reemplaza.
             </p>
             <ul className="mt-10 grid gap-6 sm:grid-cols-2">
               {VALUE_POINTS.map((point) => (
