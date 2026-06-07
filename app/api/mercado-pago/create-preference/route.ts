@@ -99,7 +99,24 @@ export async function POST(request: Request) {
 
     const db = getFirebaseAdminDb();
     const restaurantSnap = await db.collection("restaurants").doc(restaurantId).get();
-    const restaurantData = restaurantSnap.data() as Record<string, unknown> | undefined;
+    let restaurantData = restaurantSnap.data() as Record<string, unknown> | undefined;
+
+    if (restaurantData) {
+      const privateSnap = await db
+        .collection("restaurants")
+        .doc(restaurantId)
+        .collection("private")
+        .doc("mercadoPago")
+        .get();
+      if (privateSnap.exists) {
+        const privateData = privateSnap.data() as Record<string, unknown>;
+        restaurantData = {
+          ...restaurantData,
+          mercadoPagoAccessToken: privateData.mercadoPagoAccessToken,
+          mercadoPagoRefreshToken: privateData.mercadoPagoRefreshToken,
+        };
+      }
+    }
 
     mpWebDebugServer("restaurant_loaded", {
       restaurantId,

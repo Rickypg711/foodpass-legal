@@ -30,9 +30,6 @@ export function evaluateRestaurantMpEligibility(
   const status = (data.status as string | undefined)?.trim().toLowerCase() ?? "";
   const isSetupComplete = data.isSetupComplete === true;
   const connected = data.mercadoPagoConnected === true;
-  const hasToken =
-    typeof data.mercadoPagoAccessToken === "string" &&
-    data.mercadoPagoAccessToken.trim().length > 0;
 
   if (status !== "active" || !isSetupComplete) {
     return {
@@ -41,11 +38,11 @@ export function evaluateRestaurantMpEligibility(
       mercadoPagoConnected: connected,
     };
   }
-  if (!connected || !hasToken) {
+  if (!connected) {
     return {
       eligible: false,
       reason: "mercado_pago_not_connected",
-      mercadoPagoConnected: connected,
+      mercadoPagoConnected: false,
     };
   }
   return { eligible: true, mercadoPagoConnected: true };
