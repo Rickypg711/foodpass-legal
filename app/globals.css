@@ -60,6 +60,26 @@ html {
   }
 }
 
+/* ── Vendor scanner animations ───────────────────────────────────────────── */
+@keyframes scanner-beam {
+  0%, 100% { transform: translateY(0px); opacity: 1; }
+  50%       { transform: translateY(220px); opacity: 0.6; }
+}
+
+@keyframes success-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanner-beam-line { animation: none !important; }
+}
+
 /* Opacity only — avoids fighting menu-cta-pulse transform (scale breathe). */
 @keyframes menu-cta-enter {
   from {
