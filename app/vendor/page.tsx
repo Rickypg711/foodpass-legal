@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { getAuth, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -323,7 +324,7 @@ export default function VendorDashboard() {
                   {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
                 </div>
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-[11px] font-semibold"
                   style={{ color: "rgba(255,255,255,0.7)" }}>
                   {user?.displayName ?? user?.email ?? "Propietario"}
@@ -333,6 +334,13 @@ export default function VendorDashboard() {
                   Free
                 </span>
               </div>
+              <button
+                onClick={async () => { await signOut(getAuth()); router.push("/activar"); }}
+                className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-white/10"
+                title="Cerrar sesión"
+              >
+                <IconLogOut />
+              </button>
             </div>
           </div>
         )}
@@ -351,34 +359,12 @@ export default function VendorDashboard() {
         )}
       </aside>
 
+      {/* Sidebar spacer — reserves sidebar width in the flex layout (sidebar is fixed/out-of-flow) */}
+      <div className="hidden shrink-0 transition-all duration-200 md:block" style={{ width: sidebarW }} />
+
       {/* ══════════ MAIN ══════════ */}
       <div
-        className="flex min-h-screen flex-1 flex-col transition-all duration-200"
-        style={{ marginLeft: 0 }}
-      >
-        {/* We use a wrapper that respects sidebar width on md+ */}
-        <div className="md:hidden" /> {/* placeholder for mobile */}
-        <div
-          className="hidden md:block"
-          style={{ marginLeft: sidebarW, transition: "margin-left 200ms" }}
-        />
-
-        <div
-          className="flex min-h-screen flex-1 flex-col"
-          style={{ paddingLeft: 0 }}
-        >
-          {/* We duplicate the layout here using a CSS approach */}
-        </div>
-      </div>
-
-      {/* Use absolute positioning for main to respect dynamic sidebar */}
-      <div
-        className="flex min-h-screen flex-col transition-all duration-200"
-        style={{
-          marginLeft: 0,
-          flex: 1,
-          // On desktop, marginLeft = sidebarW. We handle this via inline style + JS.
-        }}
+        className="flex min-h-screen min-w-0 flex-1 flex-col"
         id="main-content"
       >
         {/* Mobile header */}
@@ -664,12 +650,12 @@ export default function VendorDashboard() {
             )}
           </div>
 
-          {/* ── Atajos ── */}
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
+          {/* ── Atajos — mobile only (sidebar handles desktop nav) ── */}
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em] md:hidden"
             style={{ color: "rgba(28,37,38,0.35)" }}>
             Atajos
           </p>
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
+          <div className="grid grid-cols-3 gap-3 md:hidden">
             <Atajo href="/vendor/scanner" emoji="📷" label="Escanear" />
             <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
             <Atajo href="/vendor/brain" emoji="🧠" label="Brain" />
@@ -685,14 +671,6 @@ export default function VendorDashboard() {
         </main>
       </div>
 
-      {/* Sidebar spacer on desktop */}
-      <style>{`
-        @media (min-width: 768px) {
-          #main-content {
-            margin-left: ${sidebarW}px;
-          }
-        }
-      `}</style>
     </div>
   );
 }
@@ -883,4 +861,7 @@ function IconTrendUp() {
 }
 function IconAlert() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+}
+function IconLogOut() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>;
 }
