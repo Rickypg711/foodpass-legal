@@ -72,26 +72,26 @@ export default function RecompensasPage() {
   const hasAnyReward = hasFpr || hasTiers;
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5F3EF" }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
-        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
-        <Link href="/vendor" className="text-[13px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
-          ← Panel
-        </Link>
-        <span style={{ color: "rgba(28,37,38,0.2)" }}>/</span>
-        <h1 className="text-[15px] font-bold" style={{ color: "#1C2526" }}>Recompensas</h1>
-        {!loading && restaurantId && (
-          <Link
-            href={`/vendor/setup/recompensas?from=recompensas`}
-            className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-bold"
-            style={{ background: "#1C2526", color: "#ffffff" }}>
-            ✏️ Editar
-          </Link>
-        )}
-      </div>
+    <>
+      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
 
-      <main className="px-4 py-6 md:px-8 max-w-2xl mx-auto">
+        {/* Page title */}
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Recompensas</h1>
+            <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+              Programa de lealtad de tu restaurante
+            </p>
+          </div>
+          {!loading && restaurantId && (
+            <Link
+              href={`/vendor/setup/recompensas?from=recompensas`}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-bold"
+              style={{ background: "#1C2526", color: "#ffffff" }}>
+              ✏️ Editar
+            </Link>
+          )}
+        </div>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -224,6 +224,6 @@ export default function RecompensasPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

@@ -130,20 +130,18 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5F3EF" }}>
-      {/* Header */}
-      <div
-        className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
-        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}
-      >
-        <Link href="/vendor" className="text-[13px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
-          ← Panel
-        </Link>
-        <span style={{ color: "rgba(28,37,38,0.2)" }}>/</span>
-        <h1 className="text-[15px] font-bold" style={{ color: "#1C2526" }}>Configuración</h1>
-      </div>
+    <>
+      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
 
-      <main className="mx-auto max-w-xl px-4 py-6 md:px-8">
+        {/* Page title */}
+        <div className="mb-5">
+          <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Configuración</h1>
+          <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+            Perfil, plan y ajustes de tu cuenta
+          </p>
+        </div>
+
+        <div className="max-w-xl">
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : (
@@ -376,8 +374,9 @@ export default function ConfiguracionPage() {
 
           </div>
         )}
+        </div>
       </main>
-    </div>
+    </>
   );
 }
 

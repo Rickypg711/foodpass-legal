@@ -56,8 +56,8 @@ function hoursFromFirestore(raw: Record<string, unknown>): WeekHours {
     const close = d.closingTime as Record<string, number> | undefined;
     result[key] = {
       isClosed: d.isClosed === true,
-      openingTime: open ?? { hour: 9, minute: 0 },
-      closingTime: close ?? { hour: 20, minute: 0 },
+      openingTime: open ? { hour: Number(open.hour), minute: Number(open.minute) } : { hour: 9, minute: 0 },
+      closingTime: close ? { hour: Number(close.hour), minute: Number(close.minute) } : { hour: 20, minute: 0 },
     };
   }
   return result;

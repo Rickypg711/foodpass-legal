@@ -42,7 +42,7 @@ function computeSegment(visits: number, daysSince: number): Segment {
 }
 
 const SEGMENT_META: Record<Segment, { label: string; emoji: string; bg: string; color: string }> = {
-  campeon:  { label: "Campeón",   emoji: "🏆", bg: "rgba(255,180,0,0.1)",    color: "#b8860b" },
+  campeon:  { label: "VIP",   emoji: "👑", bg: "rgba(255,180,0,0.1)",    color: "#b8860b" },
   regular:  { label: "Regular",   emoji: "🔁", bg: "rgba(59,130,246,0.1)",   color: "#2563eb" },
   riesgo:   { label: "En riesgo", emoji: "⚠️", bg: "rgba(239,68,68,0.1)",    color: "#dc2626" },
   perdido:  { label: "Perdido",   emoji: "💤", bg: "rgba(107,114,128,0.1)",  color: "#6b7280" },
@@ -53,7 +53,7 @@ const TABS: { key: Segment | "todos"; label: string; emoji: string }[] = [
   { key: "todos",   label: "Todos",      emoji: "👥" },
   { key: "riesgo",  label: "En riesgo",  emoji: "⚠️" },
   { key: "perdido", label: "Perdidos",   emoji: "💤" },
-  { key: "campeon", label: "Campeones",  emoji: "🏆" },
+  { key: "campeon", label: "VIP",  emoji: "👑" },
   { key: "regular", label: "Regulares",  emoji: "🔁" },
   { key: "nuevo",   label: "Nuevos",     emoji: "✨" },
 ];
@@ -326,26 +326,22 @@ export default function ClientesPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5F3EF" }}>
+    <>
+      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
 
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
-        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
-        <Link href="/vendor" className="text-[13px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
-          ← Panel
-        </Link>
-        <span style={{ color: "rgba(28,37,38,0.2)" }}>/</span>
-        <h1 className="text-[15px] font-bold" style={{ color: "#1C2526" }}>Clientes</h1>
-        {!loading && (
-          <span className="ml-auto rounded-full px-2.5 py-1 text-[11px] font-semibold"
-            style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.5)" }}>
-            {customers.length} total
-          </span>
-        )}
-      </div>
+        {/* Page title */}
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Clientes</h1>
+            {!loading && customers.length > 0 && (
+              <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                {customers.length} cliente{customers.length !== 1 ? "s" : ""} registrados
+              </p>
+            )}
+          </div>
+        </div>
 
-      <main className="px-4 py-5 md:px-8 max-w-2xl mx-auto space-y-5">
-
+        <div className="space-y-5">
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : customers.length === 0 ? (
@@ -364,19 +360,20 @@ export default function ClientesPage() {
         ) : (
           <>
             {/* ── Metrics strip ── */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Campeones", value: counts.campeon, color: "#b8860b" },
-                { label: "Regulares", value: counts.regular, color: "#2563eb" },
-                { label: "En riesgo", value: counts.riesgo,  color: "#dc2626" },
-                { label: "Perdidos",  value: counts.perdido, color: "#6b7280" },
+                { label: "VIP",       value: counts.campeon, color: "#b8860b", emoji: "👑" },
+                { label: "Regulares", value: counts.regular, color: "#2563eb", emoji: "🔁" },
+                { label: "En riesgo", value: counts.riesgo,  color: "#dc2626", emoji: "⚠️" },
+                { label: "Perdidos",  value: counts.perdido, color: "#6b7280", emoji: "💤" },
               ].map((m) => (
-                <div key={m.label} className="rounded-2xl p-3 text-center"
+                <div key={m.label} className="rounded-2xl p-4 text-center"
                   style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}>
-                  <p className="font-mono text-[20px] font-bold" style={{ color: m.color }}>
+                  <p className="text-[22px]">{m.emoji}</p>
+                  <p className="mt-1 font-mono text-[24px] font-bold leading-none" style={{ color: m.color }}>
                     {m.value}
                   </p>
-                  <p className="mt-0.5 text-[10px] font-medium leading-tight"
+                  <p className="mt-1 text-[11px] font-medium"
                     style={{ color: "rgba(28,37,38,0.45)" }}>
                     {m.label}
                   </p>
@@ -400,7 +397,7 @@ export default function ClientesPage() {
                     </p>
                   </div>
                 </div>
-                <div className="px-4 pb-4 space-y-3">
+                <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {actuaHoy.map((c) => (
                     <CustomerCard
                       key={c.userId}
@@ -453,7 +450,7 @@ export default function ClientesPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filtered.map((c) => (
                   <CustomerCard
                     key={c.userId}
@@ -466,7 +463,8 @@ export default function ClientesPage() {
             )}
           </>
         )}
+        </div>
       </main>
-    </div>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +18,6 @@ import {
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { httpsCallable } from "firebase/functions";
 import { waitForAuthReady } from "@/lib/auth";
-import { getAuth, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
 
@@ -103,7 +101,6 @@ export default function VendorDashboard() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     async function init() {
@@ -270,140 +267,9 @@ export default function VendorDashboard() {
   const firstName = user?.displayName?.split(" ")[0] ?? "";
   const isLive = data.scansToday > 0;
   const riskCount = data.atRiskCount ?? 0;
-  const sidebarW = sidebarOpen ? 220 : 60;
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#F5F3EF" }}>
-
-      {/* ══════════ SIDEBAR ══════════ */}
-      <aside
-        className="fixed left-0 top-0 z-30 hidden h-screen flex-col transition-all duration-200 md:flex"
-        style={{ width: sidebarW, background: "#1C2526", overflow: "hidden" }}
-      >
-        {/* Logo */}
-        <div className="flex h-[60px] shrink-0 items-center gap-3 px-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", minWidth: sidebarW }}>
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
-            <Image src="/comeleal-app-icon.png" alt="Comeleal"
-              width={28} height={28}
-              className="h-7 w-7 shrink-0 rounded-[7px]"
-              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.12)" }} />
-            {sidebarOpen && (
-              <span className="whitespace-nowrap text-[15px] font-bold text-white tracking-tight">
-                Comeleal
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Restaurant name */}
-        {sidebarOpen && (
-          <div className="shrink-0 px-4 py-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: "rgba(255,255,255,0.28)" }}>
-              Restaurante
-            </p>
-            <p className="truncate text-[13px] font-semibold text-white">
-              {data.restaurantName}
-            </p>
-            {isLive && (
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-70" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-400" />
-                </span>
-                <span className="text-[10px] font-semibold text-green-400">En vivo</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-          <NavItem href="/vendor" icon={<IconHome />} label="Panel" active open={sidebarOpen} />
-          <NavItem href="/vendor/scanner" icon={<IconQr size={15} />} label="Escanear" open={sidebarOpen} />
-          <NavItem href="/vendor/clientes" icon={<IconUsers />} label="Clientes" open={sidebarOpen} />
-          <NavItem href="/vendor/brain" icon={<IconBrain />} label="Brain AI" open={sidebarOpen} />
-          <NavItem href="/vendor/reportes" icon={<IconBarChart />} label="Reportes" open={sidebarOpen} />
-          {sidebarOpen && (
-            <div className="my-2" style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />
-          )}
-          <NavItem href="/vendor/configuracion" icon={<IconGear />} label="Configuración" open={sidebarOpen} />
-          <NavItem href="/para-restaurantes" icon={<IconHelp />} label="Ayuda" open={sidebarOpen} />
-        </nav>
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setSidebarOpen((o) => !o)}
-          className="flex h-11 w-full shrink-0 items-center justify-center transition-colors hover:bg-white/5"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-          title={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
-        >
-          <span className="text-white/40" style={{ transform: sidebarOpen ? "none" : "rotate(180deg)", display: "inline-block" }}>
-            <IconChevronLeft />
-          </span>
-        </button>
-
-        {/* User */}
-        {sidebarOpen && (
-          <div className="shrink-0 p-3"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2.5">
-              {user?.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.photoURL} alt=""
-                  className="h-7 w-7 shrink-0 rounded-full"
-                  style={{ boxShadow: "0 0 0 1.5px rgba(255,255,255,0.16)" }} />
-              ) : (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                  style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}>
-                  {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-semibold"
-                  style={{ color: "rgba(255,255,255,0.7)" }}>
-                  {user?.displayName ?? user?.email ?? "Propietario"}
-                </p>
-                <span className="inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ background: "rgba(242,140,56,0.18)", color: "#d97757" }}>
-                  Free
-                </span>
-              </div>
-              <button
-                onClick={async () => { await signOut(getAuth()); router.push("/activar"); }}
-                className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-white/10"
-                title="Cerrar sesión"
-              >
-                <IconLogOut />
-              </button>
-            </div>
-          </div>
-        )}
-        {!sidebarOpen && (
-          <div className="flex shrink-0 items-center justify-center py-3">
-            {user?.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.photoURL} alt="" className="h-7 w-7 rounded-full" />
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}>
-                {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
-              </div>
-            )}
-          </div>
-        )}
-      </aside>
-
-      {/* Sidebar spacer — reserves sidebar width in the flex layout (sidebar is fixed/out-of-flow) */}
-      <div className="hidden shrink-0 transition-all duration-200 md:block" style={{ width: sidebarW }} />
-
-      {/* ══════════ MAIN ══════════ */}
-      <div
-        className="flex min-h-screen min-w-0 flex-1 flex-col"
-        id="main-content"
-      >
+    <>
         {/* Mobile header */}
         <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 md:hidden"
           style={{
@@ -693,9 +559,7 @@ export default function VendorDashboard() {
             />
           </div>
         </main>
-      </div>
-
-    </div>
+    </>
   );
 }
 
@@ -916,34 +780,13 @@ function WeekChart({ days }: { days: WeekDay[] }) {
   );
 }
 
-// ─── Sidebar nav item ─────────────────────────────────────────────────────────
-
-function NavItem({
-  href, icon, label, active = false, open,
-}: {
-  href: string; icon: ReactNode; label: string; active?: boolean; open: boolean;
-}) {
-  return (
-    <Link href={href}
-      className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors"
-      title={!open ? label : undefined}
-      style={active
-        ? { background: "rgba(242,140,56,0.16)", color: "#d97757" }
-        : { color: "rgba(255,255,255,0.52)" }
-      }
-    >
-      <span className="shrink-0">{icon}</span>
-      {open && <span className="whitespace-nowrap">{label}</span>}
-    </Link>
-  );
-}
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
 function StatCard({
   label, value, icon, accent = false, danger = false,
 }: {
-  label: string; value: number; icon: ReactNode; accent?: boolean; danger?: boolean;
+  label: string; value: number; icon: React.ReactNode; accent?: boolean; danger?: boolean;
 }) {
   const dangerActive = danger && value > 0;
   return (
@@ -1488,26 +1331,8 @@ function IconQr({ size = 18 }: { size?: number }) {
   );
 }
 
-function IconHome() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>;
-}
 function IconUsers() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
-}
-function IconBrain() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" /><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" /></svg>;
-}
-function IconBarChart() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
-}
-function IconGear() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
-}
-function IconHelp() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
-}
-function IconChevronLeft() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>;
 }
 function IconScan() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><line x1="7" y1="12" x2="17" y2="12" /></svg>;
@@ -1520,7 +1345,4 @@ function IconTrendUp() {
 }
 function IconAlert() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
-}
-function IconLogOut() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>;
 }
