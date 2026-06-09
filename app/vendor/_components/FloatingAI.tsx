@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseFunctions } from "@/lib/firebase";
 
@@ -36,16 +36,52 @@ function Spinner() {
   );
 }
 
-export default function FloatingAI({ restaurantId }: { restaurantId: string | null }) {
+export default function FloatingAI({
+  restaurantId,
+  open,
+  setOpen,
+}: {
+  restaurantId: string | null;
+  open: boolean;
+  setOpen: (o: boolean | ((prev: boolean) => boolean)) => void;
+}) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const lastSubmittedQuery = useRef<string | null>(null);
 
   const pageLabel = PAGE_LABELS[pathname] ?? "Panel";
+
+  // Auto-submit URL query parameter ?q=... or open with ?ai=1 on any page
+  useEffect(() => {
+    if (!restaurantId) return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    const ai = params.get("ai");
+
+    let shouldClean = false;
+    if (q && q !== lastSubmittedQuery.current) {
+      lastSubmittedQuery.current = q;
+      setOpen(true);
+      shouldClean = true;
+      ask(q);
+    } else if (ai === "1") {
+      setOpen(true);
+      shouldClean = true;
+    }
+
+    if (shouldClean) {
+      // Clean query parameter from URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, pathname, searchParams]);
+
 
   // Auto-scroll thread to bottom on new message
   useEffect(() => {

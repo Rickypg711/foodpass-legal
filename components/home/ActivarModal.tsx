@@ -16,7 +16,9 @@ import {
   signInWithGoogle,
   signInWithFacebook,
   waitForAuthReady,
+  getFirebaseAuth,
 } from "@/lib/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -50,6 +52,25 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+
+  async function handleEmailSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setStage("signing");
+    try {
+      const auth = getFirebaseAuth();
+      const cred = await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
+      setUser(cred.user);
+      const snap = await getDoc(doc(getFirebaseDb(), "users", cred.user.uid));
+      setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
+    } catch (err: unknown) {
+      console.error(err);
+      setError("Correo o contraseña incorrectos.");
+      setStage("idle");
+    }
+  }
 
   // If already signed in skip straight to form / existing
   useEffect(() => {
@@ -231,6 +252,40 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
               <FacebookLogo />Continuar con Facebook
             </button>
           </div>
+
+          <div className="my-4 flex items-center justify-between gap-3 text-xs text-[#141413]/35">
+            <div className="h-px flex-1 bg-[#141413]/10" />
+            <span>o con correo</span>
+            <div className="h-px flex-1 bg-[#141413]/10" />
+          </div>
+
+          <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2.5 text-left">
+            <input
+              type="email"
+              placeholder="Correo electrónico"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              required
+              disabled={stage === "signing"}
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#d97757]"
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              required
+              disabled={stage === "signing"}
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#d97757]"
+            />
+            <button
+              type="submit"
+              disabled={stage === "signing"}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
+            >
+              {stage === "signing" ? <Spinner className="text-white" /> : "Iniciar sesión →"}
+            </button>
+          </form>
 
           <p className="mt-4 text-[11px] text-[#141413]/35">
             Al continuar aceptas los{" "}

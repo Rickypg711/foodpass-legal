@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -77,6 +77,14 @@ function IconLogOut() {
   );
 }
 
+function IconBrain() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 2A2.5 2.5 0 0112 4.5v15a2.5 2.5 0 01-4.96.44 2.5 2.5 0 01-3.83-2.87 2.5 2.5 0 01-1.11-3.77 2.5 2.5 0 01.35-3.8 2.5 2.5 0 01.05-3.9A2.5 2.5 0 015 3.1v-.1A2.5 2.5 0 017.5.5h2zm5 1.5A2.5 2.5 0 0117 6v12a2.5 2.5 0 01-4.96.44" />
+    </svg>
+  );
+}
+
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 function IconList() {
@@ -98,6 +106,7 @@ const NAV_ITEMS: NavDef[] = [
   { href: "/vendor", label: "Panel", icon: <IconHome />, exact: true },
   { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
   { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
+  { href: "/vendor/brain", label: "Comeleal AI", icon: <IconBrain /> },
   { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/clientes", label: "Clientes", icon: <IconUsers /> },
   { href: "/vendor/reportes", label: "Reportes", icon: <IconBarChart /> },
@@ -114,6 +123,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(true);
+  const [aiOpen, setAiOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [isLive] = useState(false);
@@ -165,6 +175,24 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   function NavLink({ href, label, icon, exact }: NavDef) {
     const active = isActive(href, exact);
+
+    if (href === "/vendor/brain") {
+      return (
+        <button
+          onClick={() => setAiOpen((o) => !o)}
+          className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors text-left"
+          title={!open ? label : undefined}
+          style={aiOpen
+            ? { background: "rgba(242,140,56,0.16)", color: "#d97757" }
+            : { color: "rgba(255,255,255,0.52)" }
+          }
+        >
+          <span className="shrink-0">{icon}</span>
+          {open && <span className="whitespace-nowrap">{label}</span>}
+        </button>
+      );
+    }
+
     return (
       <Link
         href={href}
@@ -331,7 +359,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* ── Floating AI ── */}
-      <FloatingAI restaurantId={restaurantId} />
+      <Suspense fallback={null}>
+        <FloatingAI restaurantId={restaurantId} open={aiOpen} setOpen={setAiOpen} />
+      </Suspense>
     </div>
   );
 }

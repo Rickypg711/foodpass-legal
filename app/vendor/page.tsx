@@ -15,8 +15,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
-import { httpsCallable } from "firebase/functions";
+import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
@@ -69,6 +68,9 @@ interface DashboardData {
   nbaMetrics: NbaMetrics;
   // Revenue goal
   dailyGoal: number | null;
+  ventasHoy: number;
+  pedidosCola: number;
+  cuentasAbiertas: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -126,7 +128,7 @@ export default function VendorDashboard() {
           return Timestamp.fromDate(d);
         })();
 
-        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap] =
+        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -144,6 +146,10 @@ export default function VendorDashboard() {
               orderBy("timestamp", "desc"),
               limit(6)
             )),
+            getDocs(query(
+              collection(db, "restaurants", rid, "orders"),
+              where("createdAt", ">=", todayStart)
+            )),
           ]);
 
         const r = restaurantSnap.data() ?? {};
@@ -154,6 +160,34 @@ export default function VendorDashboard() {
         visitsSnap.forEach((d) => {
           scansToday++;
           pointsToday += (d.data().pointsAwarded as number) ?? 0;
+        });
+
+        // Calculate operational stats
+        let ventasHoy = 0;
+        let pedidosCola = 0;
+        let cuentasAbiertas = 0;
+
+        todayOrdersSnap.forEach((doc) => {
+          const o = doc.data();
+          const total = (o.total as number) ?? 0;
+          const status = o.status as string;
+          const isOpenTab = o.isOpenTab as boolean | undefined;
+          const paymentStatus = o.paymentStatus as string | undefined;
+
+          // 1. Ventas hoy: only paid orders from today
+          if (paymentStatus === "paid") {
+            ventasHoy += total;
+          }
+
+          // 2. Pedidos en cola: status in ['pending', 'preparing', 'ready']
+          if (["pending", "preparing", "ready"].includes(status)) {
+            pedidosCola++;
+          }
+
+          // 3. Cuentas abiertas: isOpenTab === true, status in ['pending', 'preparing', 'ready'], and paymentStatus !== 'paid'
+          if (isOpenTab === true && ["pending", "preparing", "ready"].includes(status) && paymentStatus !== "paid") {
+            cuentasAbiertas++;
+          }
         });
 
         // 7-day chart data
@@ -228,6 +262,9 @@ export default function VendorDashboard() {
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
+          ventasHoy,
+          pedidosCola,
+          cuentasAbiertas,
         });
         setLoadState("ready");
       } catch (err) {
@@ -364,45 +401,84 @@ export default function VendorDashboard() {
             <SetupBanner reasons={data.setupIncompleteReasons} />
           )}
 
-          {/* ── Next Best Action (Brain NBA) ── */}
-          <NextBestActionCard
+          {/* ── Coach Comeleal AI Card ── */}
+          <AICoachPreviewCard
             actionCode={data.nbaActionCode}
-            title={data.nbaTitle}
-            body={data.nbaBody}
+            nbaTitle={data.nbaTitle}
+            nbaBody={data.nbaBody}
             metrics={data.nbaMetrics}
+            weeklyBriefText={data.weeklyBriefText}
           />
 
-          {/* ── Stats ── */}
-          <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatCard label="Scans hoy" value={data.scansToday} icon={<IconScan />} accent={isLive} />
-            <StatCard label="Esta semana" value={data.weekTotal} icon={<IconWaveform />} />
-            <StatCard label="Total histórico" value={data.scanCountTotal} icon={<IconTrendUp />} />
-            <StatCard label="En riesgo" value={riskCount} icon={<IconAlert />} danger={riskCount > 0} />
-          </div>
+          {/* ── Resumen de hoy ── */}
+          <div className="mb-6">
+            <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
+              Resumen de hoy
+            </h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              
+              <Link href="/vendor/reportes" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas hoy</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    💵
+                  </div>
+                </div>
+                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
+                  ${data.ventasHoy.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ver reportes →</p>
+              </Link>
 
-          {/* ── Attention alert → links to CRM ── */}
-          {riskCount > 0 && (
-            <Link href="/vendor/clientes"
-              className="mb-5 flex items-center gap-3 rounded-2xl px-5 py-4 transition hover:opacity-90"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(239,68,68,0.18)",
-                boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-              }}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: "rgba(239,68,68,0.09)" }}>
-                <IconAlert />
-              </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                  {riskCount} cliente{riskCount !== 1 ? "s" : ""} sin regresar en 14+ días
+              <Link href="/vendor/pedidos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Pedidos en cola</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    ⏳
+                  </div>
+                </div>
+                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
+                  {data.pedidosCola}
                 </p>
-                <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                  El Brain tiene mensajes listos — toca para actuar →
+                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ver cocina →</p>
+              </Link>
+
+              <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Cuentas abiertas</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    📖
+                  </div>
+                </div>
+                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
+                  {data.cuentasAbiertas}
                 </p>
-              </div>
-            </Link>
-          )}
+                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ir a POS →</p>
+              </Link>
+
+              <Link href="/vendor/scanner" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Escaneos hoy</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    📷
+                  </div>
+                </div>
+                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
+                  {data.scansToday}
+                </p>
+                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Escanear →</p>
+              </Link>
+
+            </div>
+          </div>
 
           {/* ── Acciones rápidas ── */}
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
@@ -473,16 +549,7 @@ export default function VendorDashboard() {
           </div>
 
           {/* ── Loyalty proof (30d lookback) ── */}
-          <OwnerLookbackCard restaurantId={data.restaurantId} />
-
-          {/* ── Weekly AI Brief ── */}
-          <WeeklyGrowthBriefCard
-            restaurantId={data.restaurantId}
-            restaurantName={data.restaurantName}
-          />
-
-          {/* ── Ask the Brain ── */}
-          <BrainQueryCard restaurantId={data.restaurantId} />
+          <OwnerLookbackCard metrics={data.nbaMetrics} />
 
           {/* ── Recent activity ── */}
           <div className="mb-5 rounded-2xl p-5"
@@ -548,7 +615,7 @@ export default function VendorDashboard() {
           <div className="grid grid-cols-3 gap-3 md:hidden">
             <Atajo href="/vendor/scanner" emoji="📷" label="Escanear" />
             <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
-            <Atajo href="/vendor/brain" emoji="🧠" label="Brain" />
+            <Atajo href="/vendor?ai=1" emoji="🧠" label="Coach AI" />
             <Atajo href="/vendor/reportes" emoji="📊" label="Reportes" />
             <Atajo href="/vendor/configuracion" emoji="⚙️" label="Config" />
             <Atajo
@@ -899,125 +966,129 @@ function getNbaCtaHref(actionCode: string): string {
   }
 }
 
-function NextBestActionCard({
-  actionCode, title, body, metrics,
+function AICoachPreviewCard({
+  actionCode,
+  nbaTitle,
+  nbaBody,
+  metrics,
+  weeklyBriefText,
 }: {
   actionCode: string;
-  title: string;
-  body: string;
+  nbaTitle: string;
+  nbaBody: string;
   metrics: NbaMetrics;
+  weeklyBriefText?: string;
 }) {
-  const displayTitle = title || "Siguiente mejor acción";
-  const displayBody = body || getNbaFallbackBody(actionCode);
+  const [question, setQuestion] = useState("");
+  const router = useRouter();
+
+  const displayTitle = nbaTitle || "Siguiente mejor acción";
+  const displayBody = nbaBody || getNbaFallbackBody(actionCode);
   const ctaLabel = getNbaCtaLabel(actionCode, metrics.atRiskCount);
   const ctaHref = getNbaCtaHref(actionCode);
 
   const parts: string[] = [];
-  if (metrics.scans30d > 0) parts.push(`${metrics.scans30d} escaneos`);
-  if (metrics.redemptions30d > 0) parts.push(`${metrics.redemptions30d} redenciones`);
+  if (metrics.scans30d > 0) parts.push(`${metrics.scans30d} visitas`);
+  if (metrics.redemptions30d > 0) parts.push(`${metrics.redemptions30d} canjes`);
   if (metrics.uniqueCustomers30d > 0) parts.push(`${metrics.uniqueCustomers30d} clientes`);
   const metricsLine = parts.length > 0 ? `Actividad: ${parts.join(" · ")} (últimos 30d)` : null;
 
+  // Extract a compact quote/insight from weeklyBriefText
+  const compactInsight = weeklyBriefText
+    ? (weeklyBriefText.length > 200 ? weeklyBriefText.substring(0, 200) + "..." : weeklyBriefText)
+    : "Sigue registrando las visitas de tus clientes para generar más recomendaciones personalizadas.";
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!question.trim()) return;
+    router.push(`${window.location.pathname}?q=${encodeURIComponent(question.trim())}`);
+  }
+
   return (
-    <div className="mb-5 overflow-hidden rounded-2xl"
+    <div className="mb-6 overflow-hidden rounded-2xl"
       style={{
-        background: "#ffffff",
-        border: "1px solid rgba(217,119,87,0.18)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-        borderLeft: "4px solid #d97757",
+        background: "linear-gradient(135deg, #1C2526 0%, #2A3739 100%)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
       }}>
-      <div className="p-5">
+      <div className="p-6 text-white">
+        
         {/* Header */}
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[14px] font-bold" style={{ color: "#d97757" }}>{displayTitle}</p>
-            <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
-              Comeleal te recomienda esta acción
-            </p>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[20px]">🧠</span>
+            <div>
+              <p className="text-[14px] font-extrabold tracking-tight" style={{ color: "#FF9A45" }}>Coach Comeleal</p>
+              <p className="text-[11px] text-white/50 font-medium">Tu asistente de negocio con IA</p>
+            </div>
           </div>
-          <span className="text-[18px] shrink-0">✨</span>
+          <button
+            onClick={() => router.push(`${window.location.pathname}?ai=1`)}
+            className="rounded-full px-3.5 py-1 text-[11.5px] font-bold text-[#FF9A45] transition hover:bg-white/5"
+            style={{ border: "1px solid rgba(255,154,69,0.3)" }}>
+            Ir al Coach →
+          </button>
         </div>
 
-        {/* Body */}
-        <p className="text-[13px] leading-relaxed mb-3" style={{ color: "rgba(28,37,38,0.8)" }}>
-          {displayBody}
-        </p>
+        {/* Inner Grid for NBA & Weekly Brief */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          {/* NBA Section */}
+          <div className="rounded-xl p-4 transition-all hover:bg-white/[0.02]"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#FF9A45] mb-1.5">Siguiente mejor acción</p>
+            <p className="text-[14px] font-bold text-white mb-1">{displayTitle}</p>
+            <p className="text-[12px] text-white/70 leading-relaxed mb-3">{displayBody}</p>
+            
+            {metricsLine && (
+              <p className="text-[10px] text-white/40 mb-3 flex items-center gap-1">
+                <span>📊</span> {metricsLine}
+              </p>
+            )}
 
-        {/* Metrics */}
-        {metricsLine && (
-          <div className="mb-3 flex items-center gap-1.5">
-            <span className="text-[11px]">📊</span>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>{metricsLine}</p>
+            <a href={ctaHref}
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF9A45] hover:underline">
+              {ctaLabel} <span>→</span>
+            </a>
           </div>
-        )}
 
-        {/* Win-back urgency banner */}
-        {actionCode === "send_winback" && metrics.atRiskCount > 0 && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2"
-            style={{ background: "#FFF3E0", border: "1px solid #FFB300" }}>
-            <span className="text-[13px]">⚠️</span>
-            <p className="text-[12px] font-semibold" style={{ color: "#E65100" }}>
-              {metrics.atRiskCount} {metrics.atRiskCount === 1 ? "cliente está" : "clientes están"} a punto de no regresar
+          {/* Weekly Insight Section */}
+          <div className="rounded-xl p-4 transition-all hover:bg-white/[0.02]"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Consejo de la semana</p>
+            <p className="text-[12px] leading-relaxed text-white/80 italic font-medium">
+              "{compactInsight}"
             </p>
           </div>
-        )}
+        </div>
 
-        {/* CTA */}
-        <a href={ctaHref}
-          className="inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-semibold transition hover:opacity-80"
-          style={{ borderColor: "rgba(217,119,87,0.4)", color: "#d97757" }}>
-          {ctaLabel} <span>→</span>
-        </a>
+        {/* Quick Question bar */}
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Pregúntale al Coach (ej. ¿Quiénes son mis clientes más fieles?)..."
+            className="flex-1 rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all placeholder-white/30 text-white"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!question.trim()}
+            className="rounded-xl px-4 py-2.5 text-[12px] font-bold text-white transition-all disabled:opacity-40 hover:opacity-90 shrink-0"
+            style={{ background: "#FF9A45" }}>
+            Preguntar
+          </button>
+        </form>
+
       </div>
     </div>
   );
 }
 
-// ─── OwnerLookbackCard ────────────────────────────────────────────────────────
-
-function OwnerLookbackCard({ restaurantId }: { restaurantId: string }) {
-  type LookbackStats = {
-    comelealCustomers: number;
-    returnedCustomers: number;
-    returnRatePercent: number;
-    redemptionsCount: number;
-  };
-  const [stats, setStats] = useState<LookbackStats | null>(null);
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    async function load() {
-      const db = getFirebaseDb();
-      const cutoff = Timestamp.fromDate(
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      );
-      const [visitSnap, redemptionSnap] = await Promise.all([
-        getDocs(query(
-          collection(db, "restaurants", restaurantId, "visitHistory"),
-          where("timestamp", ">=", cutoff)
-        )),
-        getDocs(query(
-          collection(db, "restaurants", restaurantId, "redemptions"),
-          where("timestamp", ">=", cutoff)
-        )),
-      ]);
-      const visitCounts: Record<string, number> = {};
-      visitSnap.forEach((d) => {
-        const uid = d.data().userId as string | undefined;
-        if (uid) visitCounts[uid] = (visitCounts[uid] ?? 0) + 1;
-      });
-      const comelealCustomers = Object.keys(visitCounts).length;
-      const returnedCustomers = Object.values(visitCounts).filter((c) => c >= 2).length;
-      setStats({
-        comelealCustomers,
-        returnedCustomers,
-        returnRatePercent: comelealCustomers > 0 ? (returnedCustomers / comelealCustomers) * 100 : 0,
-        redemptionsCount: redemptionSnap.size,
-      });
-    }
-    load().catch(console.error);
-  }, [restaurantId]);
-
+function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
   return (
     <div className="mb-5 rounded-2xl p-5"
       style={{
@@ -1025,36 +1096,25 @@ function OwnerLookbackCard({ restaurantId }: { restaurantId: string }) {
         border: "1px solid rgba(28,37,38,0.07)",
         boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
       }}>
-      <p className="mb-4 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.85)" }}>
+      <p className="mb-4 text-[13px] font-bold" style={{ color: "rgba(28,37,38,0.8)" }}>
         Lealtad — últimos 30 días
       </p>
-      {!stats ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-3 rounded" style={{ background: "rgba(28,37,38,0.07)", width: "60%" }} />
-              <div className="h-5 rounded" style={{ background: "rgba(28,37,38,0.07)", width: "40%" }} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { label: "Clientes con Comeleal", value: stats.comelealCustomers },
-            { label: "Regresaron", value: stats.returnedCustomers },
-            { label: "Tasa de retorno", value: `${stats.returnRatePercent.toFixed(0)}%` },
-            { label: "Canjes", value: stats.redemptionsCount },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
-              <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[
+          { label: "Clientes únicos", value: metrics.uniqueCustomers30d },
+          { label: "Visitas totales", value: metrics.scans30d },
+          { label: "Canjes", value: metrics.redemptions30d },
+          { label: "Clientes en riesgo", value: metrics.atRiskCount },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
+            <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
+          </div>
+        ))}
+      </div>
       <div className="mt-4 flex gap-3">
         <Link href="/vendor/recompensas"
-          className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-80"
+          className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-85"
           style={{ borderColor: "rgba(217,119,87,0.35)", color: "#d97757" }}>
           Ver programa
         </Link>
@@ -1068,247 +1128,7 @@ function OwnerLookbackCard({ restaurantId }: { restaurantId: string }) {
   );
 }
 
-// ─── WeeklyGrowthBriefCard ────────────────────────────────────────────────────
 
-// Module-level cache: restaurantId → { title, text, actionCode, fetchedAt }
-const _briefCache = new Map<string, { title: string; text: string; actionCode: string; fetchedAt: number }>();
-
-function WeeklyGrowthBriefCard({
-  restaurantId, restaurantName,
-}: { restaurantId: string; restaurantName: string }) {
-  const [brief, setBrief] = useState<{ title: string; text: string; actionCode: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  async function load(forceRefresh = false) {
-    setLoading(true); setError(false);
-    const cached = _briefCache.get(restaurantId);
-    if (!forceRefresh && cached && Date.now() - cached.fetchedAt < 24 * 3600 * 1000) {
-      setBrief(cached); setLoading(false); return;
-    }
-    try {
-      // Load 30d stats from Firestore
-      const db = getFirebaseDb();
-      const cutoff = Timestamp.fromDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-      const [visitSnap, redemptionSnap] = await Promise.all([
-        getDocs(query(
-          collection(db, "restaurants", restaurantId, "visitHistory"),
-          where("timestamp", ">=", cutoff)
-        )),
-        getDocs(query(
-          collection(db, "restaurants", restaurantId, "redemptions"),
-          where("timestamp", ">=", cutoff)
-        )),
-      ]);
-      const userCounts: Record<string, number> = {};
-      visitSnap.forEach((d) => {
-        const uid = d.data().userId as string | undefined;
-        if (uid) userCounts[uid] = (userCounts[uid] ?? 0) + 1;
-      });
-      const uniqueCustomers = Object.keys(userCounts).length;
-      const returned = Object.values(userCounts).filter((c) => c >= 2).length;
-
-      // Call CF
-      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
-        getFirebaseFunctions(), "generateWeeklyGrowthBrief"
-      );
-      const result = await fn({
-        restaurantId,
-        restaurantName: restaurantName || "mi restaurante",
-        scans30d: visitSnap.size,
-        redemptions30d: redemptionSnap.size,
-        uniqueCustomers30d: uniqueCustomers,
-        returnRatePercent: uniqueCustomers > 0 ? Math.round((returned / uniqueCustomers) * 100) : 0,
-      });
-      const title = (result.data.briefTitle ?? "").trim() || "¡Tu negocio sigue creciendo!";
-      const text = (result.data.growthBriefText_es ?? "").trim();
-      const actionCode = (result.data.suggestedActionCode ?? "keep_going").trim();
-      if (!text) throw new Error("empty");
-      const entry = { title, text, actionCode, fetchedAt: Date.now() };
-      _briefCache.set(restaurantId, entry);
-      setBrief(entry);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { if (restaurantId) load(); }, [restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const ctaRoutes: Record<string, string> = {
-    get_first_scan: "/vendor/scanner",
-    share_with_customers: "/vendor/scanner",
-    review_rewards: "/vendor/recompensas",
-  };
-
-  return (
-    <div className="mb-5 rounded-2xl"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(217,119,87,0.18)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-      }}>
-      <div className="p-5">
-        {/* Header */}
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
-            style={{ background: "rgba(217,119,87,0.1)" }}>
-            <span className="text-[11px]">✨</span>
-            <span className="text-[11px] font-bold" style={{ color: "#d97757" }}>Resumen semanal</span>
-          </div>
-          <button onClick={() => load(true)}
-            className="rounded-lg p-1.5 transition hover:bg-[#F5F3EF]"
-            title="Actualizar">
-            <span className="text-[14px]" style={{ color: "rgba(28,37,38,0.35)" }}>↻</span>
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="space-y-2.5">
-            <div className="h-4 w-3/4 rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
-            <div className="h-3 w-full rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
-            <div className="h-3 w-5/6 rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
-          </div>
-        ) : error ? (
-          <div className="flex items-center gap-2">
-            <p className="flex-1 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-              No se pudo generar el resumen.
-            </p>
-            <button onClick={() => load(true)}
-              className="text-[12px] font-semibold" style={{ color: "#d97757" }}>
-              Reintentar
-            </button>
-          </div>
-        ) : brief ? (
-          <>
-            <p className="mb-2 text-[14px] font-bold" style={{ color: "#1C2526" }}>{brief.title}</p>
-            <p className="text-[13px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>{brief.text}</p>
-            {ctaRoutes[brief.actionCode] && (
-              <Link href={ctaRoutes[brief.actionCode]}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition hover:opacity-80"
-                style={{ background: "rgba(217,119,87,0.09)", border: "1px solid rgba(217,119,87,0.22)", color: "#d97757" }}>
-                {brief.actionCode === "review_rewards" ? "Ver recompensas" : "Compartir QR"} →
-              </Link>
-            )}
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-// ─── BrainQueryCard ───────────────────────────────────────────────────────────
-
-const SUGGESTED_QUESTIONS = [
-  "¿Qué debo hacer esta semana?",
-  "¿Por qué bajaron mis visitas?",
-  "¿Mi recompensa está funcionando?",
-  "¿Cuáles son mis mejores clientes?",
-];
-
-function BrainQueryCard({ restaurantId }: { restaurantId: string }) {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [lastQ, setLastQ] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function ask(q: string) {
-    const trimmed = q.trim();
-    if (!trimmed || !restaurantId || loading) return;
-    setLoading(true); setAnswer(null); setError(null); setLastQ(trimmed);
-    try {
-      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
-        getFirebaseFunctions(), "queryRestaurantBrain"
-      );
-      const result = await fn({ restaurantId, question: trimmed });
-      setAnswer((result.data.answer ?? "Sin respuesta.").trim());
-    } catch {
-      setError("No se pudo conectar con el cerebro. Intenta de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="mb-5 overflow-hidden rounded-2xl"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(217,119,87,0.18)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-        borderLeft: "4px solid #d97757",
-      }}>
-      <div className="p-5">
-        {/* Header */}
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>Pregúntale al cerebro</p>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-              Responde con datos reales de tu negocio
-            </p>
-          </div>
-          <span className="text-[18px]">🧠</span>
-        </div>
-
-        {/* Suggested questions */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          {SUGGESTED_QUESTIONS.map((q) => (
-            <button key={q} disabled={loading}
-              onClick={() => { setQuestion(q); ask(q); }}
-              className="rounded-full border px-3 py-1.5 text-[11px] font-medium transition hover:opacity-80"
-              style={{ borderColor: "rgba(217,119,87,0.28)", color: "#d97757", background: "rgba(217,119,87,0.06)" }}>
-              {q}
-            </button>
-          ))}
-        </div>
-
-        {/* Text input */}
-        <div className="flex gap-2">
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") ask(question); }}
-            disabled={loading}
-            placeholder="Escribe tu pregunta…"
-            className="flex-1 rounded-full border px-4 py-2 text-[13px] outline-none focus:ring-2"
-            style={{
-              borderColor: "rgba(217,119,87,0.28)",
-              color: "#1C2526",
-              background: "#fff",
-            }}
-          />
-          <button
-            onClick={() => ask(question)}
-            disabled={loading}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition"
-            style={{ background: loading ? "rgba(217,119,87,0.4)" : "#d97757" }}>
-            {loading ? <Spinner /> : <span className="text-[14px]">→</span>}
-          </button>
-        </div>
-
-        {/* Answer */}
-        {(answer !== null || error !== null) && (
-          <div className="mt-3 rounded-xl p-4"
-            style={{
-              background: error ? "rgba(239,68,68,0.05)" : "rgba(217,119,87,0.05)",
-              border: `1px solid ${error ? "rgba(239,68,68,0.2)" : "rgba(217,119,87,0.15)"}`,
-            }}>
-            {lastQ && (
-              <p className="mb-1.5 text-[11px] italic" style={{ color: "rgba(28,37,38,0.45)" }}>
-                {lastQ}
-              </p>
-            )}
-            <p className="text-[13px] leading-relaxed"
-              style={{ color: error ? "#DC2626" : "rgba(28,37,38,0.85)" }}>
-              {error ?? answer}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
