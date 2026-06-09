@@ -514,9 +514,10 @@ export default function VendorDashboard() {
             <StatCard label="En riesgo" value={riskCount} icon={<IconAlert />} danger={riskCount > 0} />
           </div>
 
-          {/* ── Attention alert ── */}
+          {/* ── Attention alert → links to CRM ── */}
           {riskCount > 0 && (
-            <div className="mb-5 flex items-center gap-3 rounded-2xl px-5 py-4"
+            <Link href="/vendor/clientes"
+              className="mb-5 flex items-center gap-3 rounded-2xl px-5 py-4 transition hover:opacity-90"
               style={{
                 background: "#ffffff",
                 border: "1px solid rgba(239,68,68,0.18)",
@@ -531,10 +532,10 @@ export default function VendorDashboard() {
                   {riskCount} cliente{riskCount !== 1 ? "s" : ""} sin regresar en 14+ días
                 </p>
                 <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                  Activa una campaña de reenganche pronto
+                  El Brain tiene mensajes listos — toca para actuar →
                 </p>
               </div>
-            </div>
+            </Link>
           )}
 
           {/* ── Acciones rápidas ── */}
@@ -616,12 +617,6 @@ export default function VendorDashboard() {
 
           {/* ── Ask the Brain ── */}
           <BrainQueryCard restaurantId={data.restaurantId} />
-
-          {/* ── At-risk customers ── */}
-          <AtRiskCustomersCard
-            restaurantId={data.restaurantId}
-            restaurantName={data.restaurantName}
-          />
 
           {/* ── Recent activity ── */}
           <div className="mb-5 rounded-2xl p-5"
@@ -1472,218 +1467,9 @@ function BrainQueryCard({ restaurantId }: { restaurantId: string }) {
   );
 }
 
-// ─── AtRiskCustomersCard ──────────────────────────────────────────────────────
-
-interface AtRiskCustomer {
-  userId: string;
-  displayName: string;
-  firstName: string;
-  phone: string | null;
-  daysSinceVisit: number;
-  visitCount: number;
-  pointsAvailable: number;
-  isDormant: boolean;
-}
-
-function AtRiskCustomersCard({
-  restaurantId, restaurantName,
-}: { restaurantId: string; restaurantName: string }) {
-  const [customers, setCustomers] = useState<AtRiskCustomer[] | null>(null);
-  const [loadingWa, setLoadingWa] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    async function load() {
-      const db = getFirebaseDb();
-      const cutoff = Timestamp.fromDate(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
-      let visitSnap;
-      try {
-        visitSnap = await getDocs(query(
-          collection(db, "restaurants", restaurantId, "visitHistory"),
-          where("timestamp", ">=", cutoff),
-          orderBy("timestamp", "desc"),
-          limit(300)
-        ));
-      } catch { return; }
-      if (visitSnap.empty) { setCustomers([]); return; }
-
-      // Group by userId → most recent + count
-      const lastVisit: Record<string, Date> = {};
-      const visitCount: Record<string, number> = {};
-      const now = new Date();
-      visitSnap.forEach((d) => {
-        const uid = d.data().userId as string | undefined;
-        const ts = d.data().timestamp;
-        if (!uid || !(ts instanceof Timestamp)) return;
-        const dt = ts.toDate();
-        if (!lastVisit[uid] || dt > lastVisit[uid]) lastVisit[uid] = dt;
-        visitCount[uid] = (visitCount[uid] ?? 0) + 1;
-      });
-
-      // Filter >= 14 days
-      const atRisk = Object.entries(lastVisit)
-        .map(([uid, dt]) => ({ uid, days: Math.floor((now.getTime() - dt.getTime()) / 86400000) }))
-        .filter((e) => e.days >= 14)
-        .sort((a, b) => b.days - a.days)
-        .slice(0, 20);
-
-      if (atRisk.length === 0) { setCustomers([]); return; }
-
-      // Fetch user profiles in parallel
-      const results = await Promise.all(
-        atRisk.map(async ({ uid, days }) => {
-          try {
-            const { getDoc, doc: fsDoc } = await import("firebase/firestore");
-            const [userSnap, loyaltySnap] = await Promise.all([
-              getDoc(fsDoc(db, "users", uid)),
-              getDoc(fsDoc(db, "users", uid, "loyaltyByRestaurant", restaurantId)).catch(() => null),
-            ]);
-            const ud = userSnap?.data() ?? {};
-            const name = ((ud.displayName ?? ud.name ?? "") as string).trim();
-            if (!name) return null;
-            const rawPhone = ((ud.phone ?? ud.phoneNumber ?? "") as string).trim();
-            const points = (loyaltySnap?.data()?.pointsAvailable as number) ?? 0;
-            const firstName = name.split(/\s+/)[0] ?? name;
-            return {
-              userId: uid,
-              displayName: name,
-              firstName,
-              phone: rawPhone || null,
-              daysSinceVisit: days,
-              visitCount: visitCount[uid] ?? 1,
-              pointsAvailable: points,
-              isDormant: days >= 30,
-            } as AtRiskCustomer;
-          } catch { return null; }
-        })
-      );
-      setCustomers(results.filter((c): c is AtRiskCustomer => c !== null));
-    }
-    load().catch(console.error);
-  }, [restaurantId]);
-
-  async function sendWhatsApp(c: AtRiskCustomer) {
-    const raw = c.phone!.replace(/[\s\-()]/g, "");
-    const phone = raw.startsWith("+") ? raw : `+52${raw}`;
-    setLoadingWa(c.userId);
-    let text: string;
-    try {
-      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
-        getFirebaseFunctions(), "generateWinBackMessage"
-      );
-      const result = await fn({
-        restaurantId,
-        userId: c.userId,
-        restaurantName: restaurantName || "nuestro lugar",
-        daysSinceVisit: c.daysSinceVisit,
-      });
-      text = (result.data.message ?? "").trim();
-      if (!text) throw new Error("empty");
-    } catch {
-      const name = restaurantName || "nuestro lugar";
-      text = c.pointsAvailable > 0
-        ? `¡Hola ${c.firstName}! 👋 Te extrañamos en ${name}. Todavía tienes ${c.pointsAvailable} puntos esperándote 🎁`
-        : `¡Hola ${c.firstName}! 👋 Hace ${c.daysSinceVisit} días que no te vemos en ${name}. Esta semana tenemos algo especial para ti 🎁`;
-    } finally {
-      setLoadingWa(null);
-    }
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
-  }
-
-  const displayed = customers?.slice(0, 5) ?? [];
-  const extraCount = (customers?.length ?? 0) - 5;
-
-  return (
-    <div id="at-risk" className="mb-5 rounded-2xl p-5"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-      }}>
-      <div className="mb-1 flex items-center justify-between">
-        <p className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.85)" }}>
-          Clientes que podrías perder
-        </p>
-        {customers !== null && customers.length > 0 && (
-          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-            style={{ background: "rgba(217,119,87,0.12)", color: "#d97757" }}>
-            {customers.length}
-          </span>
-        )}
-      </div>
-      <p className="mb-4 text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-        Sin visita reciente — un mensaje puede traerlos de vuelta.
-      </p>
-
-      {customers === null ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner />
-        </div>
-      ) : customers.length === 0 ? (
-        <div className="flex items-center gap-2">
-          <span className="text-[16px]">✅</span>
-          <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-            ¡Todos tus clientes han visitado recientemente!
-          </p>
-        </div>
-      ) : (
-        <>
-          {displayed.map((c) => {
-            const riskColor = c.isDormant ? "#EF4444" : "#F57C00";
-            const isLoadingThis = loadingWa === c.userId;
-            return (
-              <div key={c.userId} className="mb-3 flex items-center gap-2.5">
-                {/* Risk dot */}
-                <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: riskColor }} />
-                {/* Avatar */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
-                  style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.65)" }}>
-                  {(c.firstName[0] ?? "?").toUpperCase()}
-                </div>
-                {/* Name + stats */}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    {c.displayName}
-                  </p>
-                  <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                    {c.daysSinceVisit}d sin visita · {c.visitCount} visita{c.visitCount !== 1 ? "s" : ""}
-                    {c.pointsAvailable > 0 ? ` · ${c.pointsAvailable} pts` : ""}
-                  </p>
-                </div>
-                {/* WA button */}
-                {c.phone ? (
-                  <button
-                    onClick={() => !isLoadingThis && sendWhatsApp(c)}
-                    disabled={!!loadingWa}
-                    className="flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition hover:opacity-80"
-                    style={{
-                      borderColor: "rgba(37,211,102,0.35)",
-                      color: "#25D366",
-                      background: isLoadingThis ? "rgba(37,211,102,0.04)" : "rgba(37,211,102,0.08)",
-                    }}>
-                    {isLoadingThis ? <Spinner /> : <>💬 WA</>}
-                  </button>
-                ) : (
-                  <span className="rounded-lg px-2.5 py-1.5 text-[11px]"
-                    style={{ background: "rgba(28,37,38,0.05)", color: "rgba(28,37,38,0.3)" }}>
-                    Sin tel.
-                  </span>
-                )}
-              </div>
-            );
-          })}
-          {extraCount > 0 && (
-            <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-              y {extraCount} más sin visita reciente
-            </p>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
+
+// (AtRiskCustomersCard removed — lives in /vendor/clientes AI CRM)
 
 function Spinner() {
   return (
