@@ -386,7 +386,7 @@ function RecompensasSetupPageInner() {
                 {draft.firstPurchaseReward.menuItemDescription && (
                   <p className="text-xs text-[#141413]/45 mt-0.5">{draft.firstPurchaseReward.menuItemDescription}</p>
                 )}
-                <p className="text-xs text-[#d97757] mt-1">Regalo en tu primera visita</p>
+                <p className="text-xs text-[#d97757] mt-1">Regalo de bienvenida (se desbloquea en la 1ra visita, se reclama en la 2da)</p>
               </div>
 
               {/* Draft tiers preview */}
@@ -436,7 +436,7 @@ function RecompensasSetupPageInner() {
                 }`} />
               </button>
             </div>
-            <p className="text-xs text-[#141413]/45">Primer escaneo = regalo. Crea el primer hábito de visita.</p>
+            <p className="text-xs text-[#141413]/45">Se desbloquea en la 1ra visita y se regala en la 2da. ¡Ideal para crear el hábito de regresar!</p>
             {currentFPR.enabled && (
               <>
                 <select
