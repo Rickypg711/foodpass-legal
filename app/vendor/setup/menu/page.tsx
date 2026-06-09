@@ -17,7 +17,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
-import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getFirebaseDb, getFirebaseStorage, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness } from "@/lib/vendorReadiness";
 
@@ -123,7 +124,7 @@ function MenuSetupPageInner() {
             );
             setPhotoStep("review");
           });
-        } else if (status === "error") {
+        } else if (status === "failed" || status === "error") {
           setAiError("La IA no pudo leer el menú. Intenta con otra foto o agrega los platillos manualmente.");
           setPhotoStep("idle");
         }
@@ -214,6 +215,18 @@ function MenuSetupPageInner() {
         });
       }
       await batch.commit();
+
+      // Fire reward draft generation in the background so the draft is ready
+      // when the vendor reaches the recompensas page — non-blocking, intentional.
+      try {
+        const fns = getFunctions(getFirebaseApp(), "us-central1");
+        httpsCallable(fns, "generateRewardDraft")({ restaurantId }).catch(() => {
+          // Silently swallow — recompensas page has a manual fallback button
+        });
+      } catch {
+        // ignore
+      }
+
       // Reload menu items
       const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
       setMenuItems(menuSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<MenuItem, "id">) })));

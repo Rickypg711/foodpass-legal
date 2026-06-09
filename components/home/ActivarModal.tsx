@@ -47,6 +47,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState("");
 
@@ -105,7 +106,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       const db = getFirebaseDb();
       const restaurantRef = await addDoc(collection(db, "restaurants"), {
         name: name.trim(),
-        address: "",
+        address: address.trim(),
         phone: phone.trim(),
         whatsapp: phone.trim(),
         categories: category ? [category] : [],
@@ -135,6 +136,33 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       });
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       await httpsCallable(functions, "ensureOwnerMember")({ restaurantId: restaurantRef.id });
+
+      // Geocode address → lat/lng (same pattern as Flutter app)
+      // Non-blocking: if it fails, restaurant is still created with lat:0, lng:0
+      try {
+        const geocodeKey = process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_API_KEY;
+        if (geocodeKey && address.trim().length >= 10) {
+          const query = encodeURIComponent(`${address.trim()}, Chihuahua, Chihuahua, México`);
+          const geoRes = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${geocodeKey}`
+          );
+          const geoData = await geoRes.json();
+          if (geoData.status === "OK" && geoData.results?.[0]?.geometry?.location) {
+            const { lat, lng } = geoData.results[0].geometry.location;
+            const { updateDoc } = await import("firebase/firestore");
+            await updateDoc(restaurantRef, {
+              lat,
+              lng,
+              locationSource: "web_signup",
+              locationVerifiedAt: serverTimestamp(),
+              locationUpdatedAt: serverTimestamp(),
+            });
+          }
+        }
+      } catch (geoErr) {
+        console.warn("[activar] geocode failed (non-blocking):", geoErr);
+      }
+
       setStage("done");
     } catch (e) {
       console.error("[activar] create failed:", e);
@@ -158,7 +186,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             Registra tu restaurante en minutos.
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
-            Un clic con Google y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos.
+            Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos.
           </p>
 
           {/* Stats */}
@@ -247,6 +275,19 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                 disabled={stage === "creating"}
                 className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#d97757] focus:outline-none focus:ring-2 focus:ring-[#d97757]/15 disabled:opacity-50"
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">
+                Dirección *
+              </label>
+              <input
+                type="text" required value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Av. Juárez 123, Col. Centro, Chihuahua"
+                disabled={stage === "creating"}
+                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#d97757] focus:outline-none focus:ring-2 focus:ring-[#d97757]/15 disabled:opacity-50"
+              />
+              <p className="mt-1 text-[10px] text-[#141413]/35">Para que tus clientes te encuentren en el mapa</p>
             </div>
             <div>
               <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">

@@ -3,90 +3,377 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { persistReadiness } from "@/lib/vendorReadiness";
+import type { User } from "firebase/auth";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const RESTAURANT_CATEGORIES = [
+  "Tacos","Café","Hamburguesas","Pizza","Sushi",
+  "Mariscos","Antojitos","Carnes","Postres","Otro",
+] as const;
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ConfiguracionPage() {
   const router = useRouter();
-  const [restaurant, setRestaurant] = useState<Record<string, unknown> | null>(null);
+
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [plan, setPlan] = useState<"free" | "pro">("free");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // Form fields
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [pointsPerVisit, setPointsPerVisit] = useState(1);
+  const [dailyRevenueGoal, setDailyRevenueGoal] = useState<number | "">("");
 
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      setUser(u);
       const db = getFirebaseDb();
       const userSnap = await getDoc(doc(db, "users", u.uid));
       const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
       if (!rid) { router.push("/activar"); return; }
-      const rSnap = await getDoc(doc(db, "restaurants", rid));
-      setRestaurant(rSnap.data() ?? null);
+
+      const [rSnap, subSnap] = await Promise.all([
+        getDoc(doc(db, "restaurants", rid)),
+        getDoc(doc(db, "restaurants", rid, "subscriptions", "current")).catch(() => null),
+      ]);
+
+      const data = rSnap.data() ?? {};
+      setRestaurantId(rid);
+      setName((data.name as string) ?? "");
+      setAddress((data.address as string) ?? "");
+      setPhone((data.phone as string) ?? "");
+      setCategories((data.categories as string[]) ?? []);
+      setPointsPerVisit((data.pointsPerVisit as number) ?? 1);
+      const goal = data.dailyRevenueGoal as number | undefined;
+      setDailyRevenueGoal(goal && goal > 0 ? goal : "");
+
+      // Detect plan — check subscription doc or top-level field
+      const subData = subSnap?.data();
+      const isPro =
+        (subData?.status === "active" && subData?.plan === "pro") ||
+        data.plan === "pro";
+      setPlan(isPro ? "pro" : "free");
+
       setLoading(false);
     }
     init().catch(() => setLoading(false));
   }, [router]);
 
+  function toggleCategory(cat: string) {
+    setCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    if (!restaurantId) return;
+    if (!name.trim()) { setError("El nombre del restaurante es obligatorio."); return; }
+    if (!address.trim()) { setError("La dirección es obligatoria."); return; }
+    const pts = Number(pointsPerVisit);
+    if (!pts || pts < 1) { setError("Los puntos por visita deben ser al menos 1."); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const db = getFirebaseDb();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const update: Record<string, any> = {
+        name: name.trim(),
+        address: address.trim(),
+        phone: phone.trim(),
+        categories,
+        pointsPerVisit: pts,
+        lastUpdated: serverTimestamp(),
+      };
+      if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
+        update.dailyRevenueGoal = Number(dailyRevenueGoal);
+      } else {
+        update.dailyRevenueGoal = 0;
+      }
+      await updateDoc(doc(db, "restaurants", restaurantId), update);
+      await persistReadiness(restaurantId);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      console.error("[configuracion/save]", e);
+      setError("No pudimos guardar. Intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut(getAuth());
+      router.push("/activar");
+    } catch {
+      setSigningOut(false);
+    }
+  }
+
   return (
     <div className="min-h-screen" style={{ background: "#F5F3EF" }}>
-      <div className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
-        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
+      {/* Header */}
+      <div
+        className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4"
+        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}
+      >
         <Link href="/vendor" className="text-[13px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
           ← Panel
         </Link>
         <span style={{ color: "rgba(28,37,38,0.2)" }}>/</span>
         <h1 className="text-[15px] font-bold" style={{ color: "#1C2526" }}>Configuración</h1>
       </div>
-      <main className="px-4 py-6 md:px-8 max-w-xl">
+
+      <main className="mx-auto max-w-xl px-4 py-6 md:px-8">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
-            </svg>
-          </div>
+          <div className="flex justify-center py-20"><Spinner /></div>
         ) : (
           <div className="space-y-4">
-            {/* Restaurant info */}
-            <div className="rounded-2xl p-5"
-              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: "rgba(28,37,38,0.35)" }}>
-                Restaurante
-              </p>
-              <Row label="Nombre" value={restaurant?.name as string ?? "—"} />
-              <Row label="Estado" value={restaurant?.status as string ?? "—"} />
-              <Row label="Puntos por visita" value={String(restaurant?.pointsPerVisit ?? "1")} />
+
+            {/* ── Profile pill ── */}
+            <div
+              className="flex items-center gap-3 rounded-2xl px-5 py-4"
+              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
+            >
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
+                style={{ background: "rgba(217,119,87,0.12)", color: "#d97757" }}
+              >
+                {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                  {user?.displayName ?? user?.email ?? "Propietario"}
+                </p>
+                <p className="text-[11px] truncate" style={{ color: "rgba(28,37,38,0.4)" }}>
+                  {user?.email ?? ""}
+                </p>
+              </div>
+              <span
+                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                style={
+                  plan === "pro"
+                    ? { background: "rgba(217,119,87,0.15)", color: "#d97757" }
+                    : { background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.4)" }
+                }
+              >
+                {plan === "pro" ? "⭐ Pro" : "Free"}
+              </span>
             </div>
 
-            {/* App links */}
-            <div className="rounded-2xl p-5"
-              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: "rgba(28,37,38,0.35)" }}>
-                Accesos rápidos
-              </p>
-              <a href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-between py-2.5"
-                style={{ borderBottom: "1px solid rgba(28,37,38,0.05)" }}>
-                <span className="text-[13px] font-medium" style={{ color: "#1C2526" }}>
-                  📱 App cliente (iOS)
-                </span>
-                <span className="text-[12px]" style={{ color: "#d97757" }}>Abrir →</span>
-              </a>
-              <Link href="/para-restaurantes"
-                className="flex items-center justify-between py-2.5">
-                <span className="text-[13px] font-medium" style={{ color: "#1C2526" }}>
-                  ❓ Centro de ayuda
-                </span>
-                <span className="text-[12px]" style={{ color: "#d97757" }}>Ver →</span>
-              </Link>
-            </div>
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+                {error}
+              </div>
+            )}
 
-            <p className="text-center text-[11px]" style={{ color: "rgba(28,37,38,0.3)" }}>
-              Para cambiar la configuración del restaurante, usa la app móvil.
+            {/* ── Gestionar ── */}
+            <SectionCard label="Gestionar">
+              <ManageLink
+                href="/vendor/setup/horario"
+                emoji="🕐"
+                title="Horarios"
+                subtitle="Días y horas de atención"
+              />
+              <ManageLink
+                href="/vendor/setup/menu"
+                emoji="🍽️"
+                title="Menú"
+                subtitle="Platillos e importar con IA"
+              />
+              <ManageLink
+                href="/vendor/setup/recompensas"
+                emoji="🎁"
+                title="Recompensas"
+                subtitle="Programa de lealtad"
+                last
+              />
+            </SectionCard>
+
+            {/* ── Datos del restaurante ── */}
+            <SectionCard label="Información del negocio">
+              <Field label="Nombre *">
+                <TextInput value={name} onChange={(v) => { setName(v); setSaved(false); }} placeholder="Ej. Tacos El Güero" />
+              </Field>
+              <Field label="Dirección *">
+                <TextInput value={address} onChange={(v) => { setAddress(v); setSaved(false); }} placeholder="Calle, colonia, ciudad" />
+              </Field>
+              <Field label="Teléfono">
+                <TextInput value={phone} onChange={(v) => { setPhone(v); setSaved(false); }} placeholder="614 123 4567" type="tel" />
+              </Field>
+            </SectionCard>
+
+            {/* ── Categorías ── */}
+            <SectionCard label="Tipo de restaurante">
+              <div className="flex flex-wrap gap-2">
+                {RESTAURANT_CATEGORIES.map((cat) => {
+                  const active = categories.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCategory(cat)}
+                      className="rounded-full px-3 py-1.5 text-[12px] font-medium transition-all"
+                      style={
+                        active
+                          ? { background: "#d97757", color: "#fff", border: "1.5px solid #d97757" }
+                          : { background: "transparent", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                      }
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </SectionCard>
+
+            {/* ── Programa de lealtad ── */}
+            <SectionCard label="Programa de lealtad">
+              <Field label="Puntos por visita">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={pointsPerVisit}
+                    onChange={(e) => { setPointsPerVisit(Math.max(1, parseInt(e.target.value) || 1)); setSaved(false); }}
+                    className="w-24 rounded-xl px-3 py-2.5 text-[13px] outline-none"
+                    style={{
+                      background: "#F5F3EF",
+                      border: "1px solid rgba(28,37,38,0.12)",
+                      color: "#1C2526",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = "#d97757")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                  />
+                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    pts cada vez que escaneen
+                  </span>
+                </div>
+              </Field>
+            </SectionCard>
+
+            {/* ── Meta de ingresos ── */}
+            <SectionCard label="Meta de ingresos diaria">
+              <Field label="Meta en MXN (opcional)">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={dailyRevenueGoal}
+                    placeholder="0"
+                    onChange={(e) => { setDailyRevenueGoal(e.target.value === "" ? "" : Number(e.target.value)); setSaved(false); }}
+                    className="w-36 rounded-xl px-3 py-2.5 text-[13px] outline-none"
+                    style={{
+                      background: "#F5F3EF",
+                      border: "1px solid rgba(28,37,38,0.12)",
+                      color: "#1C2526",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = "#d97757")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                  />
+                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>MXN / día</span>
+                </div>
+                <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                  El Brain AI usa esta meta para calcular el progreso diario.
+                </p>
+              </Field>
+            </SectionCard>
+
+            {/* ── Guardar ── */}
+            <button
+              onClick={handleSave}
+              disabled={saving || saved}
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[13px] font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60"
+              style={{ background: saved ? "#22c55e" : "#d97757" }}
+            >
+              {saved ? "✓ Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
+            </button>
+
+            {/* ── Suscripción ── */}
+            <SectionCard label="Plan">
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    {plan === "pro" ? "Plan Pro activo ⭐" : "Plan Gratuito"}
+                  </p>
+                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    {plan === "pro"
+                      ? "Scans ilimitados y todas las funciones"
+                      : "50 scans/mes · Para más, activa Pro en la app"}
+                  </p>
+                </div>
+                {plan === "free" && (
+                  <a
+                    href="https://apps.apple.com/mx/app/foodpass/id6745301069"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold"
+                    style={{ background: "rgba(217,119,87,0.1)", color: "#d97757" }}
+                  >
+                    Activar →
+                  </a>
+                )}
+              </div>
+            </SectionCard>
+
+            {/* ── Soporte ── */}
+            <SectionCard label="Soporte">
+              <ManageLink
+                href="https://apps.apple.com/mx/app/foodpass/id6745301069"
+                emoji="📱"
+                title="App cliente (iOS)"
+                subtitle="Descarga la app para los clientes"
+                external
+              />
+              <ManageLink
+                href="/para-restaurantes"
+                emoji="❓"
+                title="Centro de ayuda"
+                subtitle="Documentación y tutoriales"
+                last
+              />
+            </SectionCard>
+
+            {/* ── Cerrar sesión ── */}
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(28,37,38,0.07)",
+                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
+              }}
+            >
+              {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
+            </button>
+
+            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
+              Comeleal · v{new Date().getFullYear()}
             </p>
+
           </div>
         )}
       </main>
@@ -94,12 +381,111 @@ export default function ConfiguracionPage() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2.5"
-      style={{ borderBottom: "1px solid rgba(28,37,38,0.05)" }}>
-      <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>{label}</span>
-      <span className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>{value}</span>
+    <div
+      className="rounded-2xl p-5"
+      style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
+    >
+      <p
+        className="mb-4 text-[10px] font-bold uppercase tracking-widest"
+        style={{ color: "rgba(28,37,38,0.35)" }}
+      >
+        {label}
+      </p>
+      <div className="space-y-3">{children}</div>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function TextInput({
+  value, onChange, placeholder, type = "text",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
+      style={{
+        background: "#F5F3EF",
+        border: "1px solid rgba(28,37,38,0.12)",
+        color: "#1C2526",
+      }}
+      onFocus={(e) => (e.target.style.borderColor = "#d97757")}
+      onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+    />
+  );
+}
+
+function ManageLink({
+  href, emoji, title, subtitle, last = false, external = false,
+}: {
+  href: string;
+  emoji: string;
+  title: string;
+  subtitle: string;
+  last?: boolean;
+  external?: boolean;
+}) {
+  const inner = (
+    <div
+      className="flex items-center gap-3 py-3 transition-opacity hover:opacity-75"
+      style={last ? {} : { borderBottom: "1px solid rgba(28,37,38,0.05)" }}
+    >
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
+        style={{ background: "#F5F3EF" }}
+      >
+        {emoji}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>{title}</p>
+        <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>{subtitle}</p>
+      </div>
+      <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.25)" }}>›</span>
+    </div>
+  );
+
+  if (external) {
+    return <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>;
+  }
+  return <Link href={href}>{inner}</Link>;
+}
+
+function Spinner() {
+  return (
+    <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
+    </svg>
+  );
+}
+
+function Spin() {
+  return (
+    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
+    </svg>
   );
 }

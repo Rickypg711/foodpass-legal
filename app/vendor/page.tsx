@@ -41,6 +41,7 @@ interface WeekDay {
 }
 
 interface DashboardData {
+  restaurantId: string;
   restaurantName: string;
   scanCountTotal: number;
   scansToday: number;
@@ -187,6 +188,7 @@ export default function VendorDashboard() {
         }));
 
         setData({
+          restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
           scanCountTotal: (r.scanCount as number) ?? 0,
           scansToday,
@@ -660,6 +662,9 @@ export default function VendorDashboard() {
             )}
           </div>
 
+          {/* ── QR Card ── */}
+          <QrCard restaurantId={data.restaurantId} restaurantName={data.restaurantName} />
+
           {/* ── Atajos — mobile only (sidebar handles desktop nav) ── */}
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em] md:hidden"
             style={{ color: "rgba(28,37,38,0.35)" }}>
@@ -685,6 +690,99 @@ export default function VendorDashboard() {
   );
 }
 
+// ─── QR Card ──────────────────────────────────────────────────────────────────
+
+function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const qrUrl = `https://comeleal.com/menu/${restaurantId}`;
+  const qrImgSrc = `https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=${encodeURIComponent(qrUrl)}&choe=UTF-8&chld=M|1`;
+
+  function handlePrint() {
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <!DOCTYPE html><html><head>
+        <title>QR — ${restaurantName}</title>
+        <style>
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            min-height:100vh;padding:40px;background:#fff}
+          .logo{font-size:14px;font-weight:700;letter-spacing:.08em;color:#d97757;
+            margin-bottom:28px;text-transform:uppercase}
+          img{width:260px;height:260px}
+          h1{margin-top:24px;font-size:22px;font-weight:800;color:#141413;text-align:center}
+          p{margin-top:8px;font-size:13px;color:#141413;opacity:.5;text-align:center;
+            max-width:220px;line-height:1.5}
+          .cta{margin-top:20px;font-size:15px;font-weight:700;color:#d97757;text-align:center}
+        </style>
+      </head><body>
+        <span class="logo">Comeleal</span>
+        <img src="${qrImgSrc}" alt="QR" />
+        <h1>${restaurantName}</h1>
+        <p>Escanea para ganar puntos y recompensas</p>
+        <p>Descarga la app Comeleal y únete al programa de lealtad</p>
+        <script>window.onload=()=>{window.print()}<\/script>
+      </body></html>
+    `);
+    win.document.close();
+  }
+
+  return (
+    <div className="mb-5 rounded-2xl"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(28,37,38,0.07)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+      }}>
+      {/* Header row — always visible */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-[#faf9f5] rounded-2xl"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
+          style={{ background: "rgba(217,119,87,0.1)" }}>
+          📲
+        </div>
+        <div className="flex-1 text-left">
+          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Tu QR de menú</p>
+          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
+            Los clientes lo escanean para ver tu menú y encontrarte en la app
+          </p>
+        </div>
+        <span className="text-[13px] transition-transform duration-200"
+          style={{
+            color: "rgba(28,37,38,0.3)",
+            display: "inline-block",
+            transform: expanded ? "rotate(180deg)" : "none",
+          }}>
+          ▾
+        </span>
+      </button>
+
+      {/* Expanded QR */}
+      {expanded && (
+        <div className="flex flex-col items-center gap-4 px-5 pb-5">
+          <div className="mx-auto flex h-44 w-44 items-center justify-center rounded-xl bg-white p-2 shadow-sm ring-1 ring-[#141413]/8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrImgSrc} alt="QR de tu restaurante" className="h-full w-full" />
+          </div>
+          <p className="text-[10px] font-mono text-[#141413]/30 break-all text-center">
+            comeleal.com/menu/{restaurantId}
+          </p>
+          <button
+            onClick={handlePrint}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#d97757]/10"
+            style={{ borderColor: "rgba(217,119,87,0.3)", color: "#d97757", background: "rgba(217,119,87,0.05)" }}
+          >
+            🖨️ Imprimir QR
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Setup Banner ─────────────────────────────────────────────────────────────
 
 const SETUP_STEPS = [
@@ -698,6 +796,12 @@ const REASON_TO_STEP: Record<string, typeof SETUP_STEPS[number]["key"]> = {
   menu_items: "menu",
   reward_tiers: "rewards",
   first_purchase_reward: "rewards",
+  // business info — required at signup so rarely hit, but mapped so the
+  // banner never silently drops a pending reason
+  name: "hours",
+  address: "hours",
+  phone: "hours",
+  category: "hours",
 };
 
 function SetupBanner({ reasons }: { reasons: string[] }) {

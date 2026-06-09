@@ -7,7 +7,7 @@ import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
 
 const PAGE_TITLE = "Comeleal para restaurantes — Empieza gratis";
 const PAGE_DESCRIPTION =
-  "Haz que tus clientes regresen: puntos con QR, Apple Wallet, menú digital y panel web. Sin cambiar tu sistema actual. Gratis para empezar.";
+  "Haz que tus clientes regresen: puntos con QR, Apple y Google Wallet, menú digital y panel web. Sin cambiar tu sistema actual. Gratis para empezar.";
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -139,7 +139,7 @@ export default function Home() {
                 <span className="text-[#d97757]">Comienza gratis.</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
-                Puntos con QR, Apple Wallet y menú digital. Sin cambiar tu caja. Gratis para empezar.
+                Puntos con QR, Apple y Google Wallet y menú digital. Sin cambiar tu caja. Gratis para empezar.
               </p>
               <HomeCta />
               <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Listo en 5 minutos</p>
