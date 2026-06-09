@@ -11,6 +11,8 @@ import {
   serverTimestamp,
   doc,
   getDoc,
+  runTransaction,
+  updateDoc,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
@@ -371,6 +373,13 @@ export default function PosPage() {
   const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
+  // Open tabs state
+  const [activeOpenTabs, setActiveOpenTabs] = useState<any[]>([]);
+  const [tabsLoading, setTabsLoading] = useState(false);
+  const [showTabsModal, setShowTabsModal] = useState(false);
+  const [addingToTab, setAddingToTab] = useState<any | null>(null);
+  const [checkoutTabId, setCheckoutTabId] = useState<string | null>(null);
+
   // ── Auth & restaurant init ──────────────────────────────────────────────────
 
   useEffect(() => {
@@ -419,9 +428,131 @@ export default function PosPage() {
     }
   }, []);
 
+  const loadOpenTabs = useCallback(async (rid: string) => {
+    setTabsLoading(true);
+    try {
+      const db = getFirebaseDb();
+      const q = query(
+        collection(db, "restaurants", rid, "orders"),
+        where("isOpenTab", "==", true)
+      );
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      list.sort((a: any, b: any) => {
+        const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return tB - tA;
+      });
+      setActiveOpenTabs(list);
+    } catch (err) {
+      console.error("Error loading open tabs", err);
+    } finally {
+      setTabsLoading(false);
+    }
+  }, []);
+
+  async function addItemsToTabTransaction(orderId: string, itemsToAdd: CartItem[]) {
+    if (!restaurantId) return;
+    setProcessing(true);
+    try {
+      const db = getFirebaseDb();
+      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
+      
+      await runTransaction(db, async (transaction) => {
+        const orderDoc = await transaction.get(orderRef);
+        if (!orderDoc.exists()) {
+          throw new Error("La cuenta no existe.");
+        }
+        
+        const data = orderDoc.data();
+        const existingItems = data.items || [];
+        
+        const newItems = itemsToAdd.map((c) => ({
+          menuItemId: c.menuItem.id,
+          name: c.menuItem.name,
+          price: c.menuItem.price,
+          quantity: c.quantity,
+          subtotal: c.menuItem.price * c.quantity,
+        }));
+        
+        const combinedItems = [...existingItems, ...newItems];
+        const newSubtotal = combinedItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+        
+        transaction.update(orderRef, {
+          items: combinedItems,
+          subtotal: newSubtotal,
+          total: newSubtotal,
+          updatedAt: serverTimestamp(),
+        });
+      });
+      
+      setSuccess({ mode: "tab", total: subtotal });
+      setCart([]);
+      setAddingToTab(null);
+      loadOpenTabs(restaurantId);
+    } catch (err: any) {
+      console.error("Transaction failed: ", err);
+      alert(`Error al actualizar la cuenta: ${err.message || err}`);
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  async function closeOpenTab(orderId: string, method: PaymentMethod) {
+    if (!restaurantId) return;
+    try {
+      const db = getFirebaseDb();
+      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
+      
+      await updateDoc(orderRef, {
+        status: "completed",
+        isOpenTab: false,
+        paymentStatus: "paid",
+        paymentMethod: method,
+        completedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      
+      alert("¡Cuenta pagada y cerrada!");
+      loadOpenTabs(restaurantId);
+    } catch (err) {
+      console.error("Error closing tab", err);
+      alert("Error al cerrar la cuenta.");
+    }
+  }
+
+  async function voidOpenTab(orderId: string) {
+    if (!restaurantId) return;
+    const confirmed = confirm("¿Estás seguro de que deseas cancelar esta cuenta? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
+    try {
+      const db = getFirebaseDb();
+      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
+      
+      await updateDoc(orderRef, {
+        status: "cancelled",
+        isOpenTab: false,
+        voidReason: "cancelled_by_vendor",
+        updatedAt: serverTimestamp(),
+      });
+      
+      alert("¡Cuenta cancelada!");
+      loadOpenTabs(restaurantId);
+    } catch (err) {
+      console.error("Error voiding tab", err);
+      alert("Error al cancelar la cuenta.");
+    }
+  }
+
   useEffect(() => {
-    if (restaurantId) loadMenu(restaurantId);
-  }, [restaurantId, loadMenu]);
+    if (restaurantId) {
+      loadMenu(restaurantId);
+      loadOpenTabs(restaurantId);
+    }
+  }, [restaurantId, loadMenu, loadOpenTabs]);
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
 
@@ -511,6 +642,7 @@ export default function PosPage() {
       setSuccess({ mode, total: subtotal });
       setShowCheckout(false);
       clearCart();
+      loadOpenTabs(restaurantId);
     } catch (err) {
       console.error("POS order error", err);
       alert("Error al crear la orden. Intenta de nuevo.");
@@ -555,23 +687,48 @@ export default function PosPage() {
             </div>
           </div>
 
-          {/* Mobile cart badge */}
-          <button
-            className="relative flex items-center gap-2 rounded-xl px-4 py-2 md:hidden"
-            style={{ background: cartCount > 0 ? "#1C2526" : "rgba(28,37,38,0.07)" }}
-            onClick={() => setMobileCartOpen(true)}
-          >
-            <span className="text-[14px]">🛒</span>
-            {cartCount > 0 && (
-              <>
-                <span className="text-[13px] font-bold text-white">{cartCount}</span>
-                <span className="text-[13px] font-bold" style={{ color: "#FF9A45" }}>{fmt(subtotal)}</span>
-              </>
-            )}
-            {cartCount === 0 && (
-              <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Carrito</span>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Cuentas Abiertas button */}
+            <button
+              onClick={() => {
+                if (restaurantId) {
+                  loadOpenTabs(restaurantId);
+                  setShowTabsModal(true);
+                }
+              }}
+              className="relative flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
+              style={{ background: "rgba(28,37,38,0.07)", border: "1px solid rgba(28,37,38,0.05)" }}
+            >
+              <span className="text-[14px]">📋</span>
+              <span className="text-[12px] font-bold text-[#1C2526] hidden sm:inline">Cuentas</span>
+              {activeOpenTabs.length > 0 && (
+                <span
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white animate-pulse"
+                  style={{ background: "#d97757" }}
+                >
+                  {activeOpenTabs.length}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile cart badge */}
+            <button
+              className="relative flex items-center gap-2 rounded-xl px-4 py-2 md:hidden"
+              style={{ background: cartCount > 0 ? "#1C2526" : "rgba(28,37,38,0.07)" }}
+              onClick={() => setMobileCartOpen(true)}
+            >
+              <span className="text-[14px]">🛒</span>
+              {cartCount > 0 && (
+                <>
+                  <span className="text-[13px] font-bold text-white">{cartCount}</span>
+                  <span className="text-[13px] font-bold" style={{ color: "#FF9A45" }}>{fmt(subtotal)}</span>
+                </>
+              )}
+              {cartCount === 0 && (
+                <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Carrito</span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* ── Body: menu + cart split ── */}
@@ -581,7 +738,7 @@ export default function PosPage() {
           <div className="flex flex-1 flex-col overflow-hidden">
 
             {/* Search + category filter */}
-            <div className="px-4 pt-4 pb-2 md:px-6">
+            <div className="px-4 pt-4 pb-2 md:px-6 space-y-2">
               <input
                 type="text"
                 value={search}
@@ -590,6 +747,22 @@ export default function PosPage() {
                 className="w-full rounded-2xl px-4 py-2.5 text-[13px] outline-none"
                 style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
               />
+
+              {addingToTab && (
+                <div className="p-3 rounded-xl flex items-center justify-between text-[13px] font-semibold animate-pulse" style={{ background: "rgba(217,119,87,0.12)", color: "#d97757", border: "1px solid rgba(217,119,87,0.25)" }}>
+                  <span>📝 Agregando a: {addingToTab.customerName || `Cuenta #${addingToTab.id.slice(-4)}`}</span>
+                  <button
+                    onClick={() => {
+                      setAddingToTab(null);
+                      clearCart();
+                    }}
+                    className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-95"
+                    style={{ background: "#d97757" }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Category chips */}
@@ -719,12 +892,18 @@ export default function PosPage() {
                 <p className="text-[20px] font-extrabold" style={{ color: "#1C2526" }}>{fmt(subtotal)}</p>
               </div>
               <button
-                onClick={() => setShowCheckout(true)}
+                onClick={() => {
+                  if (addingToTab) {
+                    addItemsToTabTransaction(addingToTab.id, cart);
+                  } else {
+                    setShowCheckout(true);
+                  }
+                }}
                 disabled={cart.length === 0}
                 className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-all disabled:opacity-30 hover:opacity-90 active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
               >
-                Listo →
+                {addingToTab ? "Actualizar Cuenta" : "Listo →"}
               </button>
             </div>
           </div>
@@ -741,11 +920,17 @@ export default function PosPage() {
               <p className="text-[16px] font-extrabold text-white">{fmt(subtotal)}</p>
             </div>
             <button
-              onClick={() => setShowCheckout(true)}
+              onClick={() => {
+                if (addingToTab) {
+                  addItemsToTabTransaction(addingToTab.id, cart);
+                } else {
+                  setShowCheckout(true);
+                }
+              }}
               className="rounded-xl px-6 py-3 text-[14px] font-extrabold"
               style={{ background: "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)", color: "#fff" }}
             >
-              Cobrar →
+              {addingToTab ? "Actualizar Cuenta" : "Cobrar →"}
             </button>
           </div>
         )}
@@ -801,6 +986,182 @@ export default function PosPage() {
           onDone={() => setSuccess(null)}
         />
       )}
+
+      {/* ── Open Tabs Modal ── */}
+      {showTabsModal && (
+        <OpenTabsModal
+          tabs={activeOpenTabs}
+          loading={tabsLoading}
+          onClose={() => setShowTabsModal(false)}
+          onCloseTab={(id) => setCheckoutTabId(id)}
+          onStartAdding={(tab) => {
+            setAddingToTab(tab);
+            setShowTabsModal(false);
+          }}
+          onVoidTab={(id) => voidOpenTab(id)}
+        />
+      )}
+
+      {/* ── Close Tab Payment Method Selector ── */}
+      {checkoutTabId && (
+        <CloseTabDialog
+          onClose={() => setCheckoutTabId(null)}
+          onConfirm={(method) => {
+            closeOpenTab(checkoutTabId, method);
+            setCheckoutTabId(null);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+// ─── Open Tabs Subcomponents ──────────────────────────────────────────────────
+
+function OpenTabsModal({
+  tabs,
+  loading,
+  onClose,
+  onCloseTab,
+  onStartAdding,
+  onVoidTab,
+}: {
+  tabs: any[];
+  loading: boolean;
+  onClose: () => void;
+  onCloseTab: (orderId: string) => void;
+  onStartAdding: (tab: any) => void;
+  onVoidTab: (orderId: string) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }} onClick={onClose}>
+      <div
+        className="w-full rounded-t-3xl md:w-[500px] md:rounded-3xl overflow-hidden"
+        style={{ background: "#ffffff", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
+          <div>
+            <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>Cuentas Abiertas</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{tabs.length} cuentas activas</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-[18px]"
+            style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-10"><Spinner size={24} /></div>
+          ) : tabs.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <span className="text-4xl block mb-2">📋</span>
+              No hay cuentas abiertas.
+            </div>
+          ) : (
+            tabs.map((tab) => {
+              const itemCount = tab.items?.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || 0;
+              const date = tab.createdAt?.toDate ? tab.createdAt.toDate() : new Date();
+              const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+
+              return (
+                <div
+                  key={tab.id}
+                  className="rounded-2xl p-4 bg-white space-y-3"
+                  style={{ border: "1px solid rgba(28,37,38,0.07)", boxShadow: "0 1px 3px rgba(28,37,38,0.04)" }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>{tab.customerName || `Mesa/Cuenta #${tab.id.slice(-4)}`}</p>
+                      <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                        Creada a las {formattedTime} · {itemCount} {itemCount === 1 ? "producto" : "productos"}
+                      </p>
+                    </div>
+                    <p className="text-[15px] font-bold text-[#d97757]">{fmt(tab.total || 0)}</p>
+                  </div>
+
+                  {/* Tab Items List */}
+                  <div className="text-[11px] text-gray-500 max-h-24 overflow-y-auto bg-gray-50 rounded-lg p-2 space-y-1">
+                    {tab.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span>{fmt(item.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => onVoidTab(tab.id)}
+                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => onStartAdding(tab)}
+                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
+                      Agregar productos
+                    </button>
+                    <button
+                      onClick={() => onCloseTab(tab.id)}
+                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-white bg-[#d97757] hover:opacity-90 transition-all"
+                    >
+                      Cobrar Cuenta
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CloseTabDialog({
+  onClose,
+  onConfirm,
+}: {
+  onClose: () => void;
+  onConfirm: (method: PaymentMethod) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4" style={{ boxShadow: "0 10px 25px rgba(28,37,38,0.15)" }} onClick={(e) => e.stopPropagation()}>
+        <p className="text-[16px] font-extrabold text-[#1C2526]">Cobrar Cuenta</p>
+        <p className="text-[13px] text-gray-400">Selecciona el método de pago del cliente</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onConfirm("cash")}
+            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#d97757] transition-all"
+          >
+            <span className="text-2xl mb-1">💵</span>
+            <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
+          </button>
+          <button
+            onClick={() => onConfirm("card")}
+            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#d97757] transition-all"
+          >
+            <span className="text-2xl mb-1">💳</span>
+            <span className="text-[12px] font-bold text-[#1C2526]">Tarjeta</span>
+          </button>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl text-[12px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }

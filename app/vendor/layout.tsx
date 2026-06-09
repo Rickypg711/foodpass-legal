@@ -79,6 +79,14 @@ function IconLogOut() {
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
+function IconList() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  );
+}
+
 interface NavDef {
   href: string;
   label: string;
@@ -88,6 +96,7 @@ interface NavDef {
 
 const NAV_ITEMS: NavDef[] = [
   { href: "/vendor", label: "Panel", icon: <IconHome />, exact: true },
+  { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
   { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
   { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/clientes", label: "Clientes", icon: <IconUsers /> },

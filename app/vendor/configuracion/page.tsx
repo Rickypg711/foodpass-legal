@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, deleteField } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
-import { getFirebaseDb } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness } from "@/lib/vendorReadiness";
 import type { User } from "firebase/auth";
@@ -39,6 +40,12 @@ export default function ConfiguracionPage() {
   const [pointsPerVisit, setPointsPerVisit] = useState(1);
   const [dailyRevenueGoal, setDailyRevenueGoal] = useState<number | "">("");
 
+  // Images state
+  const [logoUrl, setLogoUrl] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
@@ -64,6 +71,11 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
 
+      const logo = (data.logoUrl as string) || (data.imageUrl as string) || "";
+      const cover = (data.coverImageUrl as string) || (data.menuBannerUrl as string) || "";
+      setLogoUrl(logo);
+      setCoverUrl(cover);
+
       // Detect plan — check subscription doc or top-level field
       const subData = subSnap?.data();
       const isPro =
@@ -81,6 +93,106 @@ export default function ConfiguracionPage() {
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
     setSaved(false);
+  }
+
+  async function handleLogoUpload(file: File) {
+    if (!restaurantId) return;
+    if (!file.type.startsWith("image/")) {
+      setError("El archivo debe ser una imagen.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("La imagen no debe pesar más de 5 MB.");
+      return;
+    }
+    setLogoUploading(true);
+    setError(null);
+    try {
+      const storage = getFirebaseStorage();
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const storageRef = ref(storage, `restaurant_pictures/${restaurantId}/${Date.now()}.${fileExt}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+      
+      const db = getFirebaseDb();
+      await updateDoc(doc(db, "restaurants", restaurantId), {
+        imageUrl: url,
+        logoUrl: url,
+        lastUpdated: serverTimestamp(),
+      });
+      setLogoUrl(url);
+      await persistReadiness(restaurantId);
+    } catch (e) {
+      console.error("[logoUpload]", e);
+      setError("Error al subir el logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function handleCoverUpload(file: File) {
+    if (!restaurantId) return;
+    if (!file.type.startsWith("image/")) {
+      setError("El archivo debe ser una imagen.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("La imagen no debe pesar más de 5 MB.");
+      return;
+    }
+    setCoverUploading(true);
+    setError(null);
+    try {
+      const storage = getFirebaseStorage();
+      const storageRef = ref(storage, `restaurant_banners/${restaurantId}/cover.jpg`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+      
+      const db = getFirebaseDb();
+      await updateDoc(doc(db, "restaurants", restaurantId), {
+        coverImageUrl: url,
+        menuBannerUrl: url,
+        lastUpdated: serverTimestamp(),
+      });
+      setCoverUrl(url);
+      await persistReadiness(restaurantId);
+    } catch (e) {
+      console.error("[coverUpload]", e);
+      setError("Error al subir la portada.");
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
+  async function handleCoverDelete() {
+    if (!restaurantId) return;
+    setCoverUploading(true);
+    setError(null);
+    try {
+      if (coverUrl) {
+        try {
+          const storage = getFirebaseStorage();
+          const storageRef = ref(storage, `restaurant_banners/${restaurantId}/cover.jpg`);
+          await deleteObject(storageRef);
+        } catch (storageErr) {
+          console.warn("[coverDeleteStorage]", storageErr);
+        }
+      }
+      
+      const db = getFirebaseDb();
+      await updateDoc(doc(db, "restaurants", restaurantId), {
+        coverImageUrl: deleteField(),
+        menuBannerUrl: deleteField(),
+        lastUpdated: serverTimestamp(),
+      });
+      setCoverUrl("");
+      await persistReadiness(restaurantId);
+    } catch (e) {
+      console.error("[coverDelete]", e);
+      setError("Error al eliminar la portada.");
+    } finally {
+      setCoverUploading(false);
+    }
   }
 
   async function handleSave() {
@@ -218,6 +330,85 @@ export default function ConfiguracionPage() {
               <Field label="Teléfono">
                 <TextInput value={phone} onChange={(v) => { setPhone(v); setSaved(false); }} placeholder="614 123 4567" type="tel" />
               </Field>
+            </SectionCard>
+
+            {/* ── Imágenes del restaurante ── */}
+            <SectionCard label="Imágenes del negocio">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Logo Section */}
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-gray-200 bg-[#F5F3EF]/30">
+                  <span className="block mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Logo / Miniatura</span>
+                  <div className="relative group w-24 h-24 rounded-full overflow-hidden border border-gray-100 bg-[#F5F3EF]">
+                    {logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-2xl text-gray-400">🍽️</div>
+                    )}
+                    {logoUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Spinner />
+                      </div>
+                    )}
+                  </div>
+                  <label className="mt-3 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-white bg-[#1C2526] hover:opacity-90">
+                    {logoUrl ? "Cambiar Logo" : "Subir Logo"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleLogoUpload(file);
+                      }}
+                      disabled={logoUploading}
+                    />
+                  </label>
+                </div>
+
+                {/* Cover Banner Section */}
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-gray-200 bg-[#F5F3EF]/30">
+                  <span className="block mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Portada / Banner</span>
+                  <div className="relative group w-full h-24 rounded-lg overflow-hidden border border-gray-100 bg-[#F5F3EF]">
+                    {coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={coverUrl} alt="Portada" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-2xl text-gray-400">🖼️</div>
+                    )}
+                    {coverUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Spinner />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <label className="cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-white bg-[#1C2526] hover:opacity-90">
+                      {coverUrl ? "Cambiar Portada" : "Subir Portada"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleCoverUpload(file);
+                        }}
+                        disabled={coverUploading}
+                      />
+                    </label>
+                    {coverUrl && (
+                      <button
+                        type="button"
+                        onClick={handleCoverDelete}
+                        disabled={coverUploading}
+                        className="rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </SectionCard>
 
             {/* ── Categorías ── */}
