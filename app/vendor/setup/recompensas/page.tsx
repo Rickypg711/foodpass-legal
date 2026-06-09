@@ -386,7 +386,7 @@ function RecompensasSetupPageInner() {
                 {draft.firstPurchaseReward.menuItemDescription && (
                   <p className="text-xs text-[#141413]/45 mt-0.5">{draft.firstPurchaseReward.menuItemDescription}</p>
                 )}
-                <p className="text-xs text-[#d97757] mt-1">+{draft.firstPurchaseReward.pointsAwarded} pts al registrarse</p>
+                <p className="text-xs text-[#d97757] mt-1">Regalo en tu primera visita</p>
               </div>
 
               {/* Draft tiers preview */}
@@ -480,17 +480,6 @@ function RecompensasSetupPageInner() {
                     className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
                   />
                 )}
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-[#141413]/50 shrink-0">Puntos al registrarse:</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={50}
-                    value={currentFPR.pointsAwarded}
-                    onChange={(e) => setCurrentFPR((f) => ({ ...f, pointsAwarded: parseInt(e.target.value) || 0 }))}
-                    className="w-24 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
-                  />
-                </div>
               </>
             )}
           </div>
