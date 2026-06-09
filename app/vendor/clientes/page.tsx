@@ -104,7 +104,7 @@ export default function ClientesPage() {
       <main className="px-4 py-6 md:px-8">
         {loading ? (
           <div className="flex justify-center py-20">
-            <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
             </svg>
@@ -120,7 +120,7 @@ export default function ClientesPage() {
             </p>
             <Link href="/vendor/scanner"
               className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
-              style={{ background: "#F28C38" }}>
+              style={{ background: "#d97757" }}>
               Ir al escáner
             </Link>
           </div>
@@ -149,7 +149,7 @@ export default function ClientesPage() {
                 style={{ borderBottom: i < customers.length - 1 ? "1px solid rgba(28,37,38,0.05)" : "none" }}>
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                    style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}>
+                    style={{ background: "rgba(242,140,56,0.12)", color: "#d97757" }}>
                     {(c.name[0] ?? "C").toUpperCase()}
                   </div>
                   <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
@@ -162,7 +162,7 @@ export default function ClientesPage() {
                 <p className="text-center font-mono text-[14px] font-bold" style={{ color: "#1C2526" }}>
                   {c.totalVisits}
                 </p>
-                <p className="text-center font-mono text-[13px] font-semibold" style={{ color: "#F28C38" }}>
+                <p className="text-center font-mono text-[13px] font-semibold" style={{ color: "#d97757" }}>
                   {c.totalPoints}
                 </p>
                 <p className="text-right text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>

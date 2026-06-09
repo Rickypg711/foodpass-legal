@@ -270,7 +270,7 @@ function OrderStatusPageContent() {
 
   return (
     <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
+      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#d97757" }}>
         <h1 className="text-lg font-semibold text-white">Pedido enviado</h1>
       </header>
 
@@ -303,7 +303,7 @@ function OrderStatusPageContent() {
             ) : null}
             <div className="rounded-xl bg-white p-4 text-center">
               <p className="text-sm text-[#1C2526]/70">Estado del pedido</p>
-              <p className="mt-1 text-xl font-bold" style={{ color: "#F28C38" }}>
+              <p className="mt-1 text-xl font-bold" style={{ color: "#d97757" }}>
                 {orderDisplay.title}
               </p>
               {orderDisplay.subtitle ? (
@@ -373,11 +373,11 @@ function OrderStatusPageContent() {
               </p>
             )}
 
-            <div className="rounded-xl border border-[#F28C38]/30 bg-white/80 p-4 text-center">
+            <div className="rounded-xl border border-[#d97757]/30 bg-white/80 p-4 text-center">
               <p className="text-sm font-semibold">Crea tu cuenta para guardar tus puntos</p>
               <a
                 href={downloadHref}
-                className="mt-2 inline-block text-sm font-semibold text-[#F28C38] underline"
+                className="mt-2 inline-block text-sm font-semibold text-[#d97757] underline"
               >
                 Descargar Comeleal
               </a>

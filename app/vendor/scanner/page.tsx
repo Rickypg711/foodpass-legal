@@ -322,7 +322,7 @@ export default function VendorScanner() {
         <div className="flex gap-3">
           <button
             onClick={() => window.location.reload()}
-            className="rounded-xl bg-[#F28C38] px-5 py-2.5 text-sm font-semibold text-white"
+            className="rounded-xl bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white"
           >
             Reintentar
           </button>
@@ -350,7 +350,7 @@ export default function VendorScanner() {
   if (stage === "permission") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#141414] px-6 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F28C38]/15 text-3xl">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#d97757]/15 text-3xl">
           📷
         </div>
         <div>
@@ -361,7 +361,7 @@ export default function VendorScanner() {
         </div>
         <button
           onClick={startCamera}
-          className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#e07d30] active:scale-[0.98]"
+          className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-[#d97757] py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#c46644] active:scale-[0.98]"
           style={{ boxShadow: "0 4px 20px rgba(242,140,56,0.3)" }}
         >
           Activar cámara
@@ -396,10 +396,10 @@ export default function VendorScanner() {
           style={{ boxShadow: "0 0 0 100vmax rgba(0,0,0,0.58)" }}
         >
           {/* Corner brackets */}
-          <span className="absolute -left-[2px] -top-[2px] h-9 w-9 rounded-tl-xl border-l-[3px] border-t-[3px] border-[#F28C38]" />
-          <span className="absolute -right-[2px] -top-[2px] h-9 w-9 rounded-tr-xl border-r-[3px] border-t-[3px] border-[#F28C38]" />
-          <span className="absolute -bottom-[2px] -left-[2px] h-9 w-9 rounded-bl-xl border-b-[3px] border-l-[3px] border-[#F28C38]" />
-          <span className="absolute -bottom-[2px] -right-[2px] h-9 w-9 rounded-br-xl border-b-[3px] border-r-[3px] border-[#F28C38]" />
+          <span className="absolute -left-[2px] -top-[2px] h-9 w-9 rounded-tl-xl border-l-[3px] border-t-[3px] border-[#d97757]" />
+          <span className="absolute -right-[2px] -top-[2px] h-9 w-9 rounded-tr-xl border-r-[3px] border-t-[3px] border-[#d97757]" />
+          <span className="absolute -bottom-[2px] -left-[2px] h-9 w-9 rounded-bl-xl border-b-[3px] border-l-[3px] border-[#d97757]" />
+          <span className="absolute -bottom-[2px] -right-[2px] h-9 w-9 rounded-br-xl border-b-[3px] border-r-[3px] border-[#d97757]" />
 
           {/* Scan beam */}
           {stage === "scanning" && (
@@ -407,7 +407,7 @@ export default function VendorScanner() {
               className="scanner-beam-line absolute left-3 right-3 h-[2px] rounded-full"
               style={{
                 background:
-                  "linear-gradient(90deg, transparent 0%, #F28C38 20%, #F28C38cc 50%, #F28C38 80%, transparent 100%)",
+                  "linear-gradient(90deg, transparent 0%, #d97757 20%, #d97757cc 50%, #d97757 80%, transparent 100%)",
                 animation: "scanner-beam 2s ease-in-out infinite",
                 top: 12,
                 boxShadow: "0 0 8px rgba(242,140,56,0.6)",
@@ -475,7 +475,7 @@ export default function VendorScanner() {
 
           <div className="flex flex-col items-center text-center">
             {/* Avatar circle */}
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F28C38]/15 text-2xl font-bold text-[#F28C38]">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#d97757]/15 text-2xl font-bold text-[#d97757]">
               {scanResult.customerName[0]?.toUpperCase() ?? "C"}
             </div>
 
@@ -485,10 +485,10 @@ export default function VendorScanner() {
 
             {/* Points awarded */}
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="font-mono text-[52px] font-bold leading-none text-[#F28C38]">
+              <span className="font-mono text-[52px] font-bold leading-none text-[#d97757]">
                 +{scanResult.pointsAwarded}
               </span>
-              <span className="text-xl font-semibold text-[#F28C38]/70">pts</span>
+              <span className="text-xl font-semibold text-[#d97757]/70">pts</span>
             </div>
 
             <div className="mt-2 flex items-center gap-1.5 text-sm text-[#1C2526]/50">
@@ -500,7 +500,7 @@ export default function VendorScanner() {
 
             <button
               onClick={handleNextScan}
-              className="mt-7 w-full rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.98] hover:bg-[#e07d30]"
+              className="mt-7 w-full rounded-xl bg-[#d97757] py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.98] hover:bg-[#c46644]"
               style={{ boxShadow: "0 4px 16px rgba(242,140,56,0.3)" }}
             >
               Siguiente cliente →
@@ -524,7 +524,7 @@ export default function VendorScanner() {
 function Spinner() {
   return (
     <svg
-      className="h-6 w-6 animate-spin text-[#F28C38]"
+      className="h-6 w-6 animate-spin text-[#d97757]"
       fill="none"
       viewBox="0 0 24 24"
     >

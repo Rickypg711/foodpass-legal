@@ -40,7 +40,7 @@ export function MenuAppRewardsCta({
         href={href}
         onClick={handleClick}
         className={
-          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#F28C38] underline decoration-[#F28C38]/40 underline-offset-2 transition-colors hover:text-[#e07d30] " +
+          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#d97757] underline decoration-[#d97757]/40 underline-offset-2 transition-colors hover:text-[#c46644] " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >
@@ -53,7 +53,7 @@ export function MenuAppRewardsCta({
     return (
       <div className="space-y-3">
         <div
-          className="rounded-2xl border border-[#F28C38]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
+          className="rounded-2xl border border-[#d97757]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
           role="status"
         >
           <p className="font-semibold">Este lugar tiene recompensas en Comeleal</p>
@@ -101,7 +101,7 @@ export function MenuAppRewardsCta({
   }
 
   return (
-    <div className="rounded-xl border border-[#F28C38]/15 bg-white/90 px-3 py-2.5 text-center shadow-sm">
+    <div className="rounded-xl border border-[#d97757]/15 bg-white/90 px-3 py-2.5 text-center shadow-sm">
       <p className="text-sm font-semibold text-[#1C2526]">Descarga Comeleal y guarda tus puntos</p>
       <p className="mt-0.5 text-xs text-[#1C2526]/65">Gana recompensas con este restaurante</p>
       <a
@@ -109,7 +109,7 @@ export function MenuAppRewardsCta({
         onClick={handleClick}
         aria-disabled={isDisabled}
         className={
-          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl border-2 border-[#F28C38] bg-white px-4 py-2 text-sm font-semibold text-[#F28C38] transition-colors hover:bg-[#F28C38]/5 " +
+          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl border-2 border-[#d97757] bg-white px-4 py-2 text-sm font-semibold text-[#d97757] transition-colors hover:bg-[#d97757]/5 " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >

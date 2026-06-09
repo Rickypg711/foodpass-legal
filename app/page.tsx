@@ -131,12 +131,12 @@ export default function Home() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(242,140,56,0.18),transparent)]" aria-hidden />
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
             <div>
-              <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
+              <p className="mb-4 inline-block rounded-full border border-[#d97757]/30 bg-[#d97757]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#d97757]">
                 Para restaurantes locales
               </p>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
                 El restaurante al que siempre regresan.{" "}
-                <span className="text-[#F28C38]">Comienza gratis.</span>
+                <span className="text-[#d97757]">Comienza gratis.</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
                 Puntos con QR, Apple Wallet y menú digital. Sin cambiar tu caja. Gratis para empezar.
@@ -166,7 +166,7 @@ export default function Home() {
                       { value: "3", label: "Por regresar", accent: true },
                     ].map((s) => (
                       <div key={s.label} className="rounded-xl bg-white/5 p-3 text-center">
-                        <p className={`text-lg font-bold ${s.accent ? "text-[#F28C38]" : "text-white"}`}>{s.value}</p>
+                        <p className={`text-lg font-bold ${s.accent ? "text-[#d97757]" : "text-white"}`}>{s.value}</p>
                         <p className="mt-0.5 text-[10px] leading-tight text-white/45">{s.label}</p>
                       </div>
                     ))}
@@ -180,7 +180,7 @@ export default function Home() {
                       { initials: "AL", name: "Ana L.", action: "Primera visita ✦", time: "1 h" },
                     ].map((item) => (
                       <div key={item.name} className="flex items-center gap-2.5 rounded-lg bg-white/5 px-3 py-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F28C38]/20 text-[10px] font-bold text-[#F28C38]">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d97757]/20 text-[10px] font-bold text-[#d97757]">
                           {item.initials}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -221,7 +221,7 @@ export default function Home() {
         {/* ── Value props ── */}
         <section className="border-y border-[#1C2526]/8 bg-white px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="valor-heading">
           <div className="mx-auto max-w-6xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#F28C38]">Qué incluye</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#d97757]">Qué incluye</p>
             <h2 id="valor-heading" className="mt-2 text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
               Todo lo que necesitas para que tus clientes regresen
             </h2>
@@ -251,7 +251,7 @@ export default function Home() {
             <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
                 <li key={item.step} className="relative rounded-2xl border border-[#1C2526]/8 bg-white p-5 shadow-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F28C38] text-sm font-bold text-white">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#d97757] text-sm font-bold text-white">
                     {item.step}
                   </span>
                   <h3 className="mt-4 font-bold text-[#1C2526]">{item.title}</h3>
@@ -271,7 +271,7 @@ export default function Home() {
             <ul className="mt-8 grid gap-3 sm:grid-cols-2">
               {BENEFITS.map((benefit) => (
                 <li key={benefit} className="flex gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed text-white/80">
-                  <span className="shrink-0 text-[#F28C38]" aria-hidden>✓</span>
+                  <span className="shrink-0 text-[#d97757]" aria-hidden>✓</span>
                   {benefit}
                 </li>
               ))}

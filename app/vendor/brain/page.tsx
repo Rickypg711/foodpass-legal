@@ -51,7 +51,7 @@ export default function BrainPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
             </svg>
@@ -79,7 +79,7 @@ export default function BrainPage() {
             </p>
             <Link href="/vendor/scanner"
               className="mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
-              style={{ background: "#F28C38" }}>
+              style={{ background: "#d97757" }}>
               Escanear cliente
             </Link>
           </div>

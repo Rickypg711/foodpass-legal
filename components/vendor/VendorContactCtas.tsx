@@ -19,7 +19,7 @@ export function VendorContactCtas() {
       <Link
         href={ACTIVAR_URL}
         onClick={() => trackCta("signup", "contact")}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#F28C38]/20 transition-colors hover:bg-[#e07d30] sm:w-auto"
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#d97757] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#d97757]/20 transition-colors hover:bg-[#c46644] sm:w-auto"
       >
         Registrar mi restaurante →
       </Link>

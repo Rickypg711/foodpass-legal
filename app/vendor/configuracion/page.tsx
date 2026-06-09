@@ -40,7 +40,7 @@ export default function ConfiguracionPage() {
       <main className="px-4 py-6 md:px-8 max-w-xl">
         {loading ? (
           <div className="flex justify-center py-20">
-            <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
             </svg>
@@ -73,14 +73,14 @@ export default function ConfiguracionPage() {
                 <span className="text-[13px] font-medium" style={{ color: "#1C2526" }}>
                   📱 App cliente (iOS)
                 </span>
-                <span className="text-[12px]" style={{ color: "#F28C38" }}>Abrir →</span>
+                <span className="text-[12px]" style={{ color: "#d97757" }}>Abrir →</span>
               </a>
               <Link href="/para-restaurantes"
                 className="flex items-center justify-between py-2.5">
                 <span className="text-[13px] font-medium" style={{ color: "#1C2526" }}>
                   ❓ Centro de ayuda
                 </span>
-                <span className="text-[12px]" style={{ color: "#F28C38" }}>Ver →</span>
+                <span className="text-[12px]" style={{ color: "#d97757" }}>Ver →</span>
               </Link>
             </div>
 

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirebaseApp } from "@/lib/firebase";
+import { ActivarModal } from "@/components/home/ActivarModal";
 
 const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
@@ -14,6 +15,7 @@ const NAV_LINKS = [
 
 export function HomeHeader() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     getFirebaseApp();
@@ -29,6 +31,7 @@ export function HomeHeader() {
   }
 
   return (
+    <>
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#141414]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
@@ -70,10 +73,11 @@ export function HomeHeader() {
                 className="shrink-0 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white">
                 Entrar
               </Link>
-              <Link href="/activar"
-                className="shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e07d30]">
+              <button
+                onClick={() => setModalOpen(true)}
+                className="shrink-0 rounded-full bg-[#d97757] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#c46644]">
                 Empieza gratis
-              </Link>
+              </button>
             </>
           )}
         </div>
@@ -103,7 +107,7 @@ export function HomeHeader() {
               ) : (
                 <>
                   <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
-                  <Link href="/activar" className="block rounded-full bg-[#F28C38] px-3 py-2 text-center text-sm font-semibold text-white">Empieza gratis</Link>
+                  <button onClick={() => setModalOpen(true)} className="block w-full rounded-full bg-[#d97757] px-3 py-2 text-center text-sm font-semibold text-white">Empieza gratis</button>
                 </>
               )}
             </div>
@@ -111,5 +115,7 @@ export function HomeHeader() {
         </details>
       </div>
     </header>
+    {modalOpen && <ActivarModal asModal onClose={() => setModalOpen(false)} />}
+    </>
   );
 }

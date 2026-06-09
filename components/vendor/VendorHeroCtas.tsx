@@ -18,7 +18,7 @@ export function VendorHeroCtas() {
       <Link
         href={ACTIVAR_URL}
         onClick={() => trackCta("signup", "hero")}
-        className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#F28C38]/25 transition-colors hover:bg-[#e07d30] sm:w-auto"
+        className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#d97757] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#d97757]/25 transition-colors hover:bg-[#c46644] sm:w-auto"
       >
         Registrar mi restaurante →
       </Link>

@@ -20,6 +20,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { getAuth, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
+import { completedStepCount } from "@/lib/vendorReadiness";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,8 @@ interface DashboardData {
   atRiskCount?: number;
   restaurantStatus: string;
   recentScans: RecentScan[];
+  isSetupComplete: boolean;
+  setupIncompleteReasons: string[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -194,6 +197,8 @@ export default function VendorDashboard() {
           atRiskCount: ins.atRiskCount as number | undefined,
           restaurantStatus: (r.status as string) ?? "active",
           recentScans,
+          isSetupComplete: (r.isSetupComplete as boolean) ?? true,
+          setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
         });
         setLoadState("ready");
       } catch (err) {
@@ -221,7 +226,7 @@ export default function VendorDashboard() {
         </p>
         <button onClick={() => window.location.reload()}
           className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: "#F28C38" }}>
+          style={{ background: "#d97757" }}>
           Reintentar
         </button>
       </div>
@@ -320,7 +325,7 @@ export default function VendorDashboard() {
                   style={{ boxShadow: "0 0 0 1.5px rgba(255,255,255,0.16)" }} />
               ) : (
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                  style={{ background: "rgba(242,140,56,0.2)", color: "#F28C38" }}>
+                  style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}>
                   {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
                 </div>
               )}
@@ -330,7 +335,7 @@ export default function VendorDashboard() {
                   {user?.displayName ?? user?.email ?? "Propietario"}
                 </p>
                 <span className="inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ background: "rgba(242,140,56,0.18)", color: "#F28C38" }}>
+                  style={{ background: "rgba(242,140,56,0.18)", color: "#d97757" }}>
                   Free
                 </span>
               </div>
@@ -351,7 +356,7 @@ export default function VendorDashboard() {
               <img src={user.photoURL} alt="" className="h-7 w-7 rounded-full" />
             ) : (
               <div className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{ background: "rgba(242,140,56,0.2)", color: "#F28C38" }}>
+                style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}>
                 {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
               </div>
             )}
@@ -393,7 +398,7 @@ export default function VendorDashboard() {
             )}
             <Link href="/vendor/scanner"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
-              style={{ background: "#F28C38" }}>
+              style={{ background: "#d97757" }}>
               <IconQr size={11} /> Escanear
             </Link>
           </div>
@@ -441,7 +446,7 @@ export default function VendorDashboard() {
           <Link href="/vendor/scanner"
             className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
             style={{
-              background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
+              background: "linear-gradient(135deg, #FF9A45 0%, #d97757 55%, #E07830 100%)",
               boxShadow: "0 6px 28px rgba(242,140,56,0.28)",
             }}>
             <div>
@@ -455,6 +460,11 @@ export default function VendorDashboard() {
               <IconQr size={24} />
             </div>
           </Link>
+
+          {/* ── Setup banner ── */}
+          {!data.isSetupComplete && (
+            <SetupBanner reasons={data.setupIncompleteReasons} />
+          )}
 
           {/* ── Stats ── */}
           <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -610,7 +620,7 @@ export default function VendorDashboard() {
               </p>
               <Link href="/vendor/clientes"
                 className="text-[11px] font-semibold"
-                style={{ color: "#F28C38" }}>
+                style={{ color: "#d97757" }}>
                 Ver todos →
               </Link>
             </div>
@@ -621,7 +631,7 @@ export default function VendorDashboard() {
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                     style={{ background: i === 0 ? "rgba(242,140,56,0.06)" : "transparent" }}>
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                      style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}>
+                      style={{ background: "rgba(242,140,56,0.12)", color: "#d97757" }}>
                       {(scan.customerName[0] ?? "C").toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -675,6 +685,82 @@ export default function VendorDashboard() {
   );
 }
 
+// ─── Setup Banner ─────────────────────────────────────────────────────────────
+
+const SETUP_STEPS = [
+  { key: "hours" as const, label: "Horario", href: "/vendor/setup/horario", emoji: "🕐" },
+  { key: "menu" as const, label: "Menú", href: "/vendor/setup/menu", emoji: "🍽️" },
+  { key: "rewards" as const, label: "Recompensas", href: "/vendor/setup/recompensas", emoji: "🎁" },
+] as const;
+
+const REASON_TO_STEP: Record<string, typeof SETUP_STEPS[number]["key"]> = {
+  business_hours: "hours",
+  menu_items: "menu",
+  reward_tiers: "rewards",
+  first_purchase_reward: "rewards",
+};
+
+function SetupBanner({ reasons }: { reasons: string[] }) {
+  // completedStepCount counts 4 groups (business, hours, menu, rewards).
+  // We only show 3 web steps (hours, menu, rewards — business is done at signup).
+  // Cap at 3 to avoid "4 de 3 · 133% listo".
+  const doneCount = Math.min(completedStepCount(reasons), 3);
+  const total = 3;
+  const pct = Math.round((doneCount / total) * 100);
+  const pendingKeys = new Set(reasons.map((r) => REASON_TO_STEP[r]).filter(Boolean));
+
+  return (
+    <Link href="/vendor/setup"
+      className="mb-5 flex flex-col rounded-2xl p-5 transition-all hover:shadow-md active:scale-[0.99]"
+      style={{
+        background: "linear-gradient(135deg, #fff8f5 0%, #ffffff 100%)",
+        border: "1px solid rgba(217,119,87,0.22)",
+        boxShadow: "0 2px 12px rgba(217,119,87,0.08)",
+      }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
+            style={{ background: "rgba(217,119,87,0.12)" }}>
+            🚀
+          </div>
+          <div>
+            <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>
+              Completa tu configuración
+            </p>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
+              {doneCount} de {total} pasos · {pct}% listo
+            </p>
+          </div>
+        </div>
+        <span style={{ color: "#d97757", fontSize: 12, fontWeight: 600 }}>Ver →</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mb-3 h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(28,37,38,0.07)" }}>
+        <div className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #d97757)" }} />
+      </div>
+
+      {/* Step chips */}
+      <div className="flex gap-2 flex-wrap">
+        {SETUP_STEPS.map((step) => {
+          const pending = pendingKeys.has(step.key);
+          return (
+            <div key={step.key}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              style={pending
+                ? { background: "rgba(217,119,87,0.1)", color: "#d97757" }
+                : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.45)" }
+              }>
+              {pending ? step.emoji : "✓"} {step.label}
+            </div>
+          );
+        })}
+      </div>
+    </Link>
+  );
+}
+
 // ─── WeekChart ────────────────────────────────────────────────────────────────
 
 function WeekChart({ days }: { days: WeekDay[] }) {
@@ -689,7 +775,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
           <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
             {day.count > 0 && (
               <span className="text-[10px] font-bold tabular-nums"
-                style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
+                style={{ color: day.isToday ? "#d97757" : "rgba(28,37,38,0.4)" }}>
                 {day.count}
               </span>
             )}
@@ -699,7 +785,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               style={{
                 height: barPx,
                 background: day.isToday
-                  ? "linear-gradient(180deg, #FF9A45 0%, #F28C38 100%)"
+                  ? "linear-gradient(180deg, #FF9A45 0%, #d97757 100%)"
                   : day.count > 0
                   ? "rgba(242,140,56,0.35)"
                   : "rgba(28,37,38,0.07)",
@@ -707,7 +793,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               }}
             />
             <span className="text-[10px] font-medium"
-              style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
+              style={{ color: day.isToday ? "#d97757" : "rgba(28,37,38,0.4)" }}>
               {day.label}
             </span>
           </div>
@@ -729,7 +815,7 @@ function NavItem({
       className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors"
       title={!open ? label : undefined}
       style={active
-        ? { background: "rgba(242,140,56,0.16)", color: "#F28C38" }
+        ? { background: "rgba(242,140,56,0.16)", color: "#d97757" }
         : { color: "rgba(255,255,255,0.52)" }
       }
     >
@@ -757,7 +843,7 @@ function StatCard({
       <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
         style={{
           background: dangerActive ? "rgba(239,68,68,0.08)" : "rgba(242,140,56,0.09)",
-          color: dangerActive ? "#EF4444" : "#F28C38",
+          color: dangerActive ? "#EF4444" : "#d97757",
         }}>
         {icon}
       </div>
@@ -814,7 +900,7 @@ function Atajo({
 
 function Spinner() {
   return (
-    <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
