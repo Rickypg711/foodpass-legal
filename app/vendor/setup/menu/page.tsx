@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   addDoc,
+  updateDoc,
   collection,
   onSnapshot,
   serverTimestamp,
@@ -137,19 +138,26 @@ function MenuSetupPageInner() {
     setAiError(null);
     setPhotoStep("uploading");
     try {
+      const db = getFirebaseDb();
+      // Step 1: create job with empty photoPaths (CF uses onDocumentUpdated,
+      // so it needs an UPDATE where photoPaths goes from [] to [path])
+      const jobRef = await addDoc(collection(db, "restaurants", restaurantId, "menuImportJobs"), {
+        photoPaths: [],
+        status: "processing",
+        createdAt: serverTimestamp(),
+      });
+      setJobId(jobRef.id);
+
+      // Step 2: upload image
       const storage = getFirebaseStorage();
       const storageRef = ref(storage, `menuImports/${restaurantId}/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, file);
 
       setPhotoStep("processing");
-      const db = getFirebaseDb();
-      // CF (menu_import_ai.js) triggers on status="processing" + photoPaths array
-      const jobRef = await addDoc(collection(db, "restaurants", restaurantId, "menuImportJobs"), {
+      // Step 3: update photoPaths — this triggers the CF
+      await updateDoc(jobRef, {
         photoPaths: [storageRef.fullPath],
-        status: "processing",
-        createdAt: serverTimestamp(),
       });
-      setJobId(jobRef.id);
     } catch (e) {
       console.error(e);
       setAiError("No se pudo subir la foto. Intenta de nuevo.");
