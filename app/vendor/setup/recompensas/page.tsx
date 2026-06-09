@@ -21,16 +21,31 @@ import { persistReadiness } from "@/lib/vendorReadiness";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  imageUrl?: string;
+}
+
 interface RewardTier {
+  id?: string;
   pointsRequired: number;
+  visitsRequired?: number; // back-compat
+  menuItemId?: string;
   menuItemName: string;
+  menuItemImageUrl?: string;
   menuItemDescription?: string;
   hasMenuItem: boolean;
 }
 
 interface FirstPurchaseReward {
   enabled: boolean;
+  menuItemId?: string;
   menuItemName: string;
+  menuItemImageUrl?: string;
   menuItemDescription?: string;
   pointsAwarded: number;
 }
@@ -57,18 +72,21 @@ function RecompensasSetupPageInner() {
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
   // Current rewards (pre-existing or after apply)
   const [currentFPR, setCurrentFPR] = useState<FirstPurchaseReward>({
     enabled: true,
+    menuItemId: "",
     menuItemName: "",
+    menuItemImageUrl: "",
     menuItemDescription: "",
     pointsAwarded: 100,
   });
   const [currentTiers, setCurrentTiers] = useState<RewardTier[]>([
-    { pointsRequired: 500, menuItemName: "", menuItemDescription: "", hasMenuItem: false },
-    { pointsRequired: 1000, menuItemName: "", menuItemDescription: "", hasMenuItem: false },
-    { pointsRequired: 2000, menuItemName: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 500, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 1000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 2000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
   ]);
 
   // AI draft
@@ -89,15 +107,38 @@ function RecompensasSetupPageInner() {
       const uSnap = await getDoc(doc(db, "users", u.uid));
       const rid = uSnap.data()?.ownedRestaurantId as string | undefined;
       if (!rid) { router.push("/activar"); return; }
+
+      // Load existing menu items
+      const menuSnap = await getDocs(collection(db, "restaurants", rid, "menu"));
+      const items = menuSnap.docs.map((d) => ({ id: d.id, ...d.data() } as MenuItem));
+      setMenuItems(items);
+
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data();
 
       if (data?.firstPurchaseReward) {
-        const fpr = data.firstPurchaseReward as FirstPurchaseReward;
-        setCurrentFPR({ ...fpr, enabled: fpr.enabled ?? true });
+        const fpr = data.firstPurchaseReward as any;
+        setCurrentFPR({
+          enabled: fpr.enabled ?? true,
+          menuItemId: fpr.menuItemId ?? "",
+          menuItemName: fpr.menuItemName ?? "",
+          menuItemImageUrl: fpr.menuItemImageUrl ?? "",
+          menuItemDescription: fpr.menuItemDescription ?? "",
+          pointsAwarded: fpr.pointsAwarded ?? 100,
+        });
       }
-      if (Array.isArray(data?.rewardTiers) && (data.rewardTiers as RewardTier[]).length > 0) {
-        setCurrentTiers(data.rewardTiers as RewardTier[]);
+      if (Array.isArray(data?.rewardTiers) && (data.rewardTiers as any[]).length > 0) {
+        const mapped = (data.rewardTiers as any[]).map((t, index) => ({
+          id: t.id ?? `tier_${index + 1}`,
+          pointsRequired: t.pointsRequired ?? t.visitsRequired ?? 0,
+          visitsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+          menuItemId: t.menuItemId ?? "",
+          menuItemName: t.menuItemName ?? "",
+          menuItemDescription: t.menuItemDescription ?? "",
+          menuItemImageUrl: t.menuItemImageUrl ?? "",
+          hasMenuItem: t.hasMenuItem ?? !!t.menuItemId,
+        }));
+        setCurrentTiers(mapped);
       }
 
       setRestaurantId(rid);
@@ -120,15 +161,40 @@ function RecompensasSetupPageInner() {
         if (snap.empty) return;
         const d = snap.docs[0];
         const data = d.data();
-        if (data.status === "ready" || data.firstPurchaseReward) {
+        
+        // CF writes status as 'draft' or 'failed', keys are prefixed with 'proposed'
+        const isSuccess = data.status === "draft" || data.status === "ready" || data.firstPurchaseReward || data.proposedFirstPurchaseReward;
+        const isFailed = data.status === "failed" || data.status === "error";
+
+        if (isSuccess) {
+          const fpr = data.proposedFirstPurchaseReward || data.firstPurchaseReward;
+          const tiers = data.proposedRewardTiers || data.rewardTiers || [];
+          const notes = data.proposedNotes || data.reasoning || "";
+
           setDraft({
             id: d.id,
-            firstPurchaseReward: data.firstPurchaseReward as FirstPurchaseReward,
-            rewardTiers: (data.rewardTiers as RewardTier[]) ?? [],
-            reasoning: data.reasoning as string | undefined,
+            firstPurchaseReward: {
+              enabled: fpr.enabled ?? true,
+              menuItemId: fpr.menuItemId ?? "",
+              menuItemName: fpr.menuItemName ?? "",
+              menuItemImageUrl: fpr.menuItemImageUrl ?? "",
+              menuItemDescription: fpr.menuItemDescription ?? "",
+              pointsAwarded: fpr.pointsAwarded ?? 100,
+            },
+            rewardTiers: (tiers as any[]).map((t, idx) => ({
+              id: t.id ?? `tier_${idx + 1}`,
+              pointsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+              visitsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+              menuItemId: t.menuItemId ?? "",
+              menuItemName: t.menuItemName ?? "",
+              menuItemDescription: t.menuItemDescription ?? "",
+              menuItemImageUrl: t.menuItemImageUrl ?? "",
+              hasMenuItem: !!t.menuItemId,
+            })),
+            reasoning: notes,
           });
           setAiStep("review");
-        } else if (data.status === "error") {
+        } else if (isFailed) {
           setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
           setAiStep("idle");
         }
@@ -144,8 +210,18 @@ function RecompensasSetupPageInner() {
     try {
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       const generateRewardDraft = httpsCallable(functions, "generateRewardDraft");
-      await generateRewardDraft({ restaurantId });
-      // Listener above will catch the result
+      const res = await generateRewardDraft({ restaurantId });
+      const resultData = res.data as { status: string; reason?: string };
+      if (resultData?.status === "skipped") {
+        if (resultData.reason === "insufficient_menu_items") {
+          setAiError("Necesitas agregar al menos 2 platillos en tu menú para usar la IA.");
+        } else if (resultData.reason === "rate_limited") {
+          setAiError("Has excedido el límite de intentos de la IA. Por favor intenta más tarde.");
+        } else {
+          setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
+        }
+        setAiStep("idle");
+      }
     } catch (e) {
       console.error(e);
       setAiError("No se pudo conectar con la IA. Edita manualmente.");
@@ -164,12 +240,12 @@ function RecompensasSetupPageInner() {
   async function handleSave() {
     if (!restaurantId) return;
     // Validate first purchase reward
-    if (currentFPR.enabled && !currentFPR.menuItemName.trim()) {
-      setError("Escribe el nombre del platillo de bienvenida.");
+    if (currentFPR.enabled && !currentFPR.menuItemId) {
+      setError("Selecciona un platillo del menú para la recompensa de bienvenida.");
       return;
     }
-    if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemName.trim())) {
-      setError("Escribe el nombre del platillo para cada nivel activo.");
+    if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemId)) {
+      setError("Selecciona un platillo del menú para todos los niveles activos.");
       return;
     }
     setSaving(true);
@@ -177,14 +253,34 @@ function RecompensasSetupPageInner() {
     try {
       const functions = getFunctions(getFirebaseApp(), "us-central1");
 
-      // Find latest draft ID to use with applyRewardDraft, or save directly
+      // Map rewardTiers pointsRequired -> visitsRequired and ensure id/menuItemId are correctly populated
+      const mappedTiers = currentTiers.map((t, idx) => ({
+        id: t.id || `tier_${idx + 1}`,
+        visitsRequired: t.pointsRequired,
+        pointsRequired: t.pointsRequired,
+        menuItemId: t.menuItemId || null,
+        menuItemName: t.menuItemName || null,
+        menuItemImageUrl: t.menuItemImageUrl || null,
+        menuItemDescription: t.menuItemDescription || null,
+        hasMenuItem: !!t.menuItemId,
+      }));
+
+      const mappedFPR = {
+        enabled: currentFPR.enabled,
+        menuItemId: currentFPR.menuItemId || null,
+        menuItemName: currentFPR.menuItemName || null,
+        menuItemImageUrl: currentFPR.menuItemImageUrl || null,
+        menuItemDescription: currentFPR.menuItemDescription || null,
+        pointsAwarded: currentFPR.pointsAwarded,
+      };
+
       if (draft) {
         const applyRewardDraft = httpsCallable(functions, "applyRewardDraft");
         await applyRewardDraft({
           restaurantId,
           draftId: draft.id,
-          firstPurchaseReward: currentFPR,
-          rewardTiers: currentTiers,
+          firstPurchaseReward: mappedFPR,
+          rewardTiers: mappedTiers.filter((t) => t.hasMenuItem),
         });
       } else {
         // No draft — save directly to Firestore
@@ -192,8 +288,8 @@ function RecompensasSetupPageInner() {
         const { serverTimestamp } = await import("firebase/firestore");
         const db = getFirebaseDb();
         await updateDoc(doc(db, "restaurants", restaurantId), {
-          firstPurchaseReward: currentFPR,
-          rewardTiers: currentTiers.map((t) => ({ ...t, hasMenuItem: !!t.menuItemName.trim() })),
+          firstPurchaseReward: mappedFPR,
+          rewardTiers: mappedTiers,
           rewardsConfigured: true,
           lastUpdated: serverTimestamp(),
         });
@@ -343,20 +439,47 @@ function RecompensasSetupPageInner() {
             <p className="text-xs text-[#141413]/45">Primer escaneo = regalo. Crea el primer hábito de visita.</p>
             {currentFPR.enabled && (
               <>
-                <input
-                  type="text"
-                  placeholder="Platillo de bienvenida (ej. Café de la casa)"
-                  value={currentFPR.menuItemName}
-                  onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemName: e.target.value }))}
-                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Descripción (opcional)"
-                  value={currentFPR.menuItemDescription ?? ""}
-                  onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemDescription: e.target.value }))}
-                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
-                />
+                <select
+                  value={currentFPR.menuItemId || ""}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const item = menuItems.find((m) => m.id === selectedId);
+                    if (item) {
+                      setCurrentFPR((f) => ({
+                        ...f,
+                        menuItemId: item.id,
+                        menuItemName: item.name,
+                        menuItemDescription: item.description ?? "",
+                        menuItemImageUrl: item.imageUrl ?? "",
+                      }));
+                    } else {
+                      setCurrentFPR((f) => ({
+                        ...f,
+                        menuItemId: "",
+                        menuItemName: "",
+                        menuItemDescription: "",
+                        menuItemImageUrl: "",
+                      }));
+                    }
+                  }}
+                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                >
+                  <option value="">-- Selecciona un platillo del menú --</option>
+                  {menuItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} (${item.price.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+                {currentFPR.menuItemId && (
+                  <input
+                    type="text"
+                    placeholder="Descripción (opcional)"
+                    value={currentFPR.menuItemDescription ?? ""}
+                    onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemDescription: e.target.value }))}
+                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                  />
+                )}
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-[#141413]/50 shrink-0">Puntos al registrarse:</label>
                   <input
@@ -410,28 +533,53 @@ function RecompensasSetupPageInner() {
               </div>
               {tier.hasMenuItem && (
                 <>
-                  <input
-                    type="text"
-                    placeholder="Platillo (ej. Postre del día)"
-                    value={tier.menuItemName}
+                  <select
+                    value={tier.menuItemId || ""}
                     onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const item = menuItems.find((m) => m.id === selectedId);
                       const updated = [...currentTiers];
-                      updated[i] = { ...tier, menuItemName: e.target.value };
+                      if (item) {
+                        updated[i] = {
+                          ...tier,
+                          menuItemId: item.id,
+                          menuItemName: item.name,
+                          menuItemDescription: item.description ?? "",
+                          menuItemImageUrl: item.imageUrl ?? "",
+                        };
+                      } else {
+                        updated[i] = {
+                          ...tier,
+                          menuItemId: "",
+                          menuItemName: "",
+                          menuItemDescription: "",
+                          menuItemImageUrl: "",
+                        };
+                      }
                       setCurrentTiers(updated);
                     }}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Descripción (opcional)"
-                    value={tier.menuItemDescription ?? ""}
-                    onChange={(e) => {
-                      const updated = [...currentTiers];
-                      updated[i] = { ...tier, menuItemDescription: e.target.value };
-                      setCurrentTiers(updated);
-                    }}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
-                  />
+                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                  >
+                    <option value="">-- Selecciona un platillo del menú --</option>
+                    {menuItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} (${item.price.toFixed(2)})
+                      </option>
+                    ))}
+                  </select>
+                  {tier.menuItemId && (
+                    <input
+                      type="text"
+                      placeholder="Descripción (opcional)"
+                      value={tier.menuItemDescription ?? ""}
+                      onChange={(e) => {
+                        const updated = [...currentTiers];
+                        updated[i] = { ...tier, menuItemDescription: e.target.value };
+                        setCurrentTiers(updated);
+                      }}
+                      className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                    />
+                  )}
                 </>
               )}
             </div>

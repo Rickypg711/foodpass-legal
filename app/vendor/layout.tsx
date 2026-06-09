@@ -354,7 +354,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       />
 
       {/* ── Page content ── */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div 
+        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${aiOpen ? "md:pr-[380px]" : ""}`}
+      >
         {children}
       </div>
 
