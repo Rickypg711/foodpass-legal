@@ -16,7 +16,8 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
+import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
 import { waitForAuthReady } from "@/lib/auth";
 import { getAuth, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
@@ -40,6 +41,15 @@ interface WeekDay {
   isToday: boolean;
 }
 
+interface NbaMetrics {
+  atRiskCount: number;
+  scans30d: number;
+  redemptions30d: number;
+  uniqueCustomers30d: number;
+  menuItemCount: number;
+  rewardCount: number;
+}
+
 interface DashboardData {
   restaurantId: string;
   restaurantName: string;
@@ -54,6 +64,13 @@ interface DashboardData {
   recentScans: RecentScan[];
   isSetupComplete: boolean;
   setupIncompleteReasons: string[];
+  // NBA (Next Best Action) from vendorInsights/current
+  nbaActionCode: string;
+  nbaTitle: string;
+  nbaBody: string;
+  nbaMetrics: NbaMetrics;
+  // Revenue goal
+  dailyGoal: number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -187,6 +204,7 @@ export default function VendorDashboard() {
           timestamp: (d.data().timestamp as Timestamp) ?? null,
         }));
 
+        const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
         setData({
           restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
@@ -195,12 +213,24 @@ export default function VendorDashboard() {
           pointsToday,
           weeklyScans,
           weekTotal,
-          weeklyBriefText: ins.weeklyBriefText as string | undefined,
-          atRiskCount: ins.atRiskCount as number | undefined,
+          weeklyBriefText: ins?.weeklyBriefText as string | undefined,
+          atRiskCount: (insMetrics.atRiskCount as number | undefined) ?? (ins?.atRiskCount as number | undefined),
           restaurantStatus: (r.status as string) ?? "active",
           recentScans,
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
+          nbaActionCode: (ins?.actionCode as string) ?? "unknown",
+          nbaTitle: (ins?.title_es as string) ?? "Siguiente mejor acción",
+          nbaBody: (ins?.body_es as string) ?? "",
+          nbaMetrics: {
+            atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
+            scans30d: (insMetrics.scans30d as number) ?? 0,
+            redemptions30d: (insMetrics.redemptions30d as number) ?? 0,
+            uniqueCustomers30d: (insMetrics.uniqueCustomers30d as number) ?? 0,
+            menuItemCount: (insMetrics.menuItemCount as number) ?? 0,
+            rewardCount: (insMetrics.rewardCount as number) ?? 0,
+          },
+          dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
         });
         setLoadState("ready");
       } catch (err) {
@@ -468,6 +498,14 @@ export default function VendorDashboard() {
             <SetupBanner reasons={data.setupIncompleteReasons} />
           )}
 
+          {/* ── Next Best Action (Brain NBA) ── */}
+          <NextBestActionCard
+            actionCode={data.nbaActionCode}
+            title={data.nbaTitle}
+            body={data.nbaBody}
+            metrics={data.nbaMetrics}
+          />
+
           {/* ── Stats ── */}
           <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard label="Scans hoy" value={data.scansToday} icon={<IconScan />} accent={isLive} />
@@ -543,71 +581,47 @@ export default function VendorDashboard() {
             </Link>
           </div>
 
-          {/* ── 7-day chart + Brain ── */}
-          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_380px]">
-
-            {/* 7-day chart */}
-            <div className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.07)",
-                boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-              }}>
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                    Scans — últimos 7 días
-                  </p>
-                  <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-                    {data.weekTotal} visitas esta semana
-                  </p>
-                </div>
-                <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.45)" }}>
-                  7d
-                </span>
-              </div>
-              <WeekChart days={data.weeklyScans} />
-            </div>
-
-            {/* Brain AI */}
-            <div className="rounded-2xl p-5"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(242,140,56,0.16)",
-                boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-              }}>
-              <div className="mb-4 flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl text-[15px]"
-                  style={{ background: "rgba(242,140,56,0.1)" }}>
-                  🧠
-                </div>
-                <div>
-                  <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                    Comeleal Brain
-                  </p>
-                  <p className="text-[10px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-                    Resumen semanal con IA
-                  </p>
-                </div>
-              </div>
-              {data.weeklyBriefText ? (
-                <p className="text-[13px] leading-relaxed" style={{ color: "rgba(28,37,38,0.65)" }}>
-                  {data.weeklyBriefText}
+          {/* ── 7-day chart ── */}
+          <div className="mb-5 rounded-2xl p-5"
+            style={{
+              background: "#ffffff",
+              border: "1px solid rgba(28,37,38,0.07)",
+              boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+            }}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
+                  Scans — últimos 7 días
                 </p>
-              ) : (
-                <div className="rounded-xl p-4"
-                  style={{ background: "rgba(242,140,56,0.05)", border: "1px dashed rgba(242,140,56,0.22)" }}>
-                  <p className="text-[12px] font-medium" style={{ color: "rgba(28,37,38,0.5)" }}>
-                    Se activa con más visitas
-                  </p>
-                  <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.35)" }}>
-                    Escanea clientes y el Brain generará patrones de retención, días pico y recomendaciones automáticamente.
-                  </p>
-                </div>
-              )}
+                <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
+                  {data.weekTotal} visitas esta semana
+                </p>
+              </div>
+              <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.45)" }}>
+                7d
+              </span>
             </div>
+            <WeekChart days={data.weeklyScans} />
           </div>
+
+          {/* ── Loyalty proof (30d lookback) ── */}
+          <OwnerLookbackCard restaurantId={data.restaurantId} />
+
+          {/* ── Weekly AI Brief ── */}
+          <WeeklyGrowthBriefCard
+            restaurantId={data.restaurantId}
+            restaurantName={data.restaurantName}
+          />
+
+          {/* ── Ask the Brain ── */}
+          <BrainQueryCard restaurantId={data.restaurantId} />
+
+          {/* ── At-risk customers ── */}
+          <AtRiskCustomersCard
+            restaurantId={data.restaurantId}
+            restaurantName={data.restaurantName}
+          />
 
           {/* ── Recent activity ── */}
           <div className="mb-5 rounded-2xl p-5"
@@ -998,6 +1012,675 @@ function Atajo({
     );
   }
   return <Link href={href}>{inner}</Link>;
+}
+
+// ─── NextBestActionCard ───────────────────────────────────────────────────────
+
+function getNbaFallbackBody(actionCode: string): string {
+  switch (actionCode) {
+    case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
+    case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
+    case "configure_rewards": return "Crea tu primera recompensa para empezar a motivar visitas recurrentes.";
+    case "get_first_scan": return "Comparte tu QR con tus clientes para conseguir tus primeros escaneos.";
+    case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
+    case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
+    case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
+    case "healthy":
+    case "keep_going": return "Tu negocio va avanzando. Sigue compartiendo tu QR y mantén tus recompensas claras.";
+    default: return "Estamos preparando tus recomendaciones. Cuando tengas más actividad, Comeleal te mostrará el siguiente mejor paso.";
+  }
+}
+
+function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
+  switch (actionCode) {
+    case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
+    case "complete_profile": return "Completar perfil";
+    case "add_menu_items": return "Agregar productos";
+    case "lower_reward_threshold":
+    case "configure_rewards":
+    case "review_rewards": return "Configurar recompensas";
+    case "get_first_scan":
+    case "healthy":
+    case "keep_going": return "Ver mi código QR";
+    default: return "Ver recompensas";
+  }
+}
+
+function getNbaCtaHref(actionCode: string): string {
+  switch (actionCode) {
+    case "complete_profile": return "/vendor/configuracion";
+    case "add_menu_items": return "/vendor/menu";
+    case "lower_reward_threshold":
+    case "configure_rewards":
+    case "review_rewards": return "/vendor/recompensas";
+    case "get_first_scan":
+    case "healthy":
+    case "keep_going": return "/vendor/scanner";
+    case "send_winback": return "#at-risk";
+    default: return "/vendor/recompensas";
+  }
+}
+
+function NextBestActionCard({
+  actionCode, title, body, metrics,
+}: {
+  actionCode: string;
+  title: string;
+  body: string;
+  metrics: NbaMetrics;
+}) {
+  const displayTitle = title || "Siguiente mejor acción";
+  const displayBody = body || getNbaFallbackBody(actionCode);
+  const ctaLabel = getNbaCtaLabel(actionCode, metrics.atRiskCount);
+  const ctaHref = getNbaCtaHref(actionCode);
+
+  const parts: string[] = [];
+  if (metrics.scans30d > 0) parts.push(`${metrics.scans30d} escaneos`);
+  if (metrics.redemptions30d > 0) parts.push(`${metrics.redemptions30d} redenciones`);
+  if (metrics.uniqueCustomers30d > 0) parts.push(`${metrics.uniqueCustomers30d} clientes`);
+  const metricsLine = parts.length > 0 ? `Actividad: ${parts.join(" · ")} (últimos 30d)` : null;
+
+  return (
+    <div className="mb-5 overflow-hidden rounded-2xl"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(217,119,87,0.18)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+        borderLeft: "4px solid #d97757",
+      }}>
+      <div className="p-5">
+        {/* Header */}
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[14px] font-bold" style={{ color: "#d97757" }}>{displayTitle}</p>
+            <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.45)" }}>
+              Comeleal te recomienda esta acción
+            </p>
+          </div>
+          <span className="text-[18px] shrink-0">✨</span>
+        </div>
+
+        {/* Body */}
+        <p className="text-[13px] leading-relaxed mb-3" style={{ color: "rgba(28,37,38,0.8)" }}>
+          {displayBody}
+        </p>
+
+        {/* Metrics */}
+        {metricsLine && (
+          <div className="mb-3 flex items-center gap-1.5">
+            <span className="text-[11px]">📊</span>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>{metricsLine}</p>
+          </div>
+        )}
+
+        {/* Win-back urgency banner */}
+        {actionCode === "send_winback" && metrics.atRiskCount > 0 && (
+          <div className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2"
+            style={{ background: "#FFF3E0", border: "1px solid #FFB300" }}>
+            <span className="text-[13px]">⚠️</span>
+            <p className="text-[12px] font-semibold" style={{ color: "#E65100" }}>
+              {metrics.atRiskCount} {metrics.atRiskCount === 1 ? "cliente está" : "clientes están"} a punto de no regresar
+            </p>
+          </div>
+        )}
+
+        {/* CTA */}
+        <a href={ctaHref}
+          className="inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[12px] font-semibold transition hover:opacity-80"
+          style={{ borderColor: "rgba(217,119,87,0.4)", color: "#d97757" }}>
+          {ctaLabel} <span>→</span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── OwnerLookbackCard ────────────────────────────────────────────────────────
+
+function OwnerLookbackCard({ restaurantId }: { restaurantId: string }) {
+  type LookbackStats = {
+    comelealCustomers: number;
+    returnedCustomers: number;
+    returnRatePercent: number;
+    redemptionsCount: number;
+  };
+  const [stats, setStats] = useState<LookbackStats | null>(null);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    async function load() {
+      const db = getFirebaseDb();
+      const cutoff = Timestamp.fromDate(
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      );
+      const [visitSnap, redemptionSnap] = await Promise.all([
+        getDocs(query(
+          collection(db, "restaurants", restaurantId, "visitHistory"),
+          where("timestamp", ">=", cutoff)
+        )),
+        getDocs(query(
+          collection(db, "restaurants", restaurantId, "redemptions"),
+          where("timestamp", ">=", cutoff)
+        )),
+      ]);
+      const visitCounts: Record<string, number> = {};
+      visitSnap.forEach((d) => {
+        const uid = d.data().userId as string | undefined;
+        if (uid) visitCounts[uid] = (visitCounts[uid] ?? 0) + 1;
+      });
+      const comelealCustomers = Object.keys(visitCounts).length;
+      const returnedCustomers = Object.values(visitCounts).filter((c) => c >= 2).length;
+      setStats({
+        comelealCustomers,
+        returnedCustomers,
+        returnRatePercent: comelealCustomers > 0 ? (returnedCustomers / comelealCustomers) * 100 : 0,
+        redemptionsCount: redemptionSnap.size,
+      });
+    }
+    load().catch(console.error);
+  }, [restaurantId]);
+
+  return (
+    <div className="mb-5 rounded-2xl p-5"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(28,37,38,0.07)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+      }}>
+      <p className="mb-4 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.85)" }}>
+        Lealtad — últimos 30 días
+      </p>
+      {!stats ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 rounded" style={{ background: "rgba(28,37,38,0.07)", width: "60%" }} />
+              <div className="h-5 rounded" style={{ background: "rgba(28,37,38,0.07)", width: "40%" }} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[
+            { label: "Clientes con Comeleal", value: stats.comelealCustomers },
+            { label: "Regresaron", value: stats.returnedCustomers },
+            { label: "Tasa de retorno", value: `${stats.returnRatePercent.toFixed(0)}%` },
+            { label: "Canjes", value: stats.redemptionsCount },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
+              <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="mt-4 flex gap-3">
+        <Link href="/vendor/recompensas"
+          className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-80"
+          style={{ borderColor: "rgba(217,119,87,0.35)", color: "#d97757" }}>
+          Ver programa
+        </Link>
+        <Link href="/vendor/scanner"
+          className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-white transition hover:opacity-90"
+          style={{ background: "#d97757" }}>
+          Escanear
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── WeeklyGrowthBriefCard ────────────────────────────────────────────────────
+
+// Module-level cache: restaurantId → { title, text, actionCode, fetchedAt }
+const _briefCache = new Map<string, { title: string; text: string; actionCode: string; fetchedAt: number }>();
+
+function WeeklyGrowthBriefCard({
+  restaurantId, restaurantName,
+}: { restaurantId: string; restaurantName: string }) {
+  const [brief, setBrief] = useState<{ title: string; text: string; actionCode: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  async function load(forceRefresh = false) {
+    setLoading(true); setError(false);
+    const cached = _briefCache.get(restaurantId);
+    if (!forceRefresh && cached && Date.now() - cached.fetchedAt < 24 * 3600 * 1000) {
+      setBrief(cached); setLoading(false); return;
+    }
+    try {
+      // Load 30d stats from Firestore
+      const db = getFirebaseDb();
+      const cutoff = Timestamp.fromDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+      const [visitSnap, redemptionSnap] = await Promise.all([
+        getDocs(query(
+          collection(db, "restaurants", restaurantId, "visitHistory"),
+          where("timestamp", ">=", cutoff)
+        )),
+        getDocs(query(
+          collection(db, "restaurants", restaurantId, "redemptions"),
+          where("timestamp", ">=", cutoff)
+        )),
+      ]);
+      const userCounts: Record<string, number> = {};
+      visitSnap.forEach((d) => {
+        const uid = d.data().userId as string | undefined;
+        if (uid) userCounts[uid] = (userCounts[uid] ?? 0) + 1;
+      });
+      const uniqueCustomers = Object.keys(userCounts).length;
+      const returned = Object.values(userCounts).filter((c) => c >= 2).length;
+
+      // Call CF
+      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
+        getFirebaseFunctions(), "generateWeeklyGrowthBrief"
+      );
+      const result = await fn({
+        restaurantId,
+        restaurantName: restaurantName || "mi restaurante",
+        scans30d: visitSnap.size,
+        redemptions30d: redemptionSnap.size,
+        uniqueCustomers30d: uniqueCustomers,
+        returnRatePercent: uniqueCustomers > 0 ? Math.round((returned / uniqueCustomers) * 100) : 0,
+      });
+      const title = (result.data.briefTitle ?? "").trim() || "¡Tu negocio sigue creciendo!";
+      const text = (result.data.growthBriefText_es ?? "").trim();
+      const actionCode = (result.data.suggestedActionCode ?? "keep_going").trim();
+      if (!text) throw new Error("empty");
+      const entry = { title, text, actionCode, fetchedAt: Date.now() };
+      _briefCache.set(restaurantId, entry);
+      setBrief(entry);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { if (restaurantId) load(); }, [restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ctaRoutes: Record<string, string> = {
+    get_first_scan: "/vendor/scanner",
+    share_with_customers: "/vendor/scanner",
+    review_rewards: "/vendor/recompensas",
+  };
+
+  return (
+    <div className="mb-5 rounded-2xl"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(217,119,87,0.18)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+      }}>
+      <div className="p-5">
+        {/* Header */}
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+            style={{ background: "rgba(217,119,87,0.1)" }}>
+            <span className="text-[11px]">✨</span>
+            <span className="text-[11px] font-bold" style={{ color: "#d97757" }}>Resumen semanal</span>
+          </div>
+          <button onClick={() => load(true)}
+            className="rounded-lg p-1.5 transition hover:bg-[#F5F3EF]"
+            title="Actualizar">
+            <span className="text-[14px]" style={{ color: "rgba(28,37,38,0.35)" }}>↻</span>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-2.5">
+            <div className="h-4 w-3/4 rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
+            <div className="h-3 w-full rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
+            <div className="h-3 w-5/6 rounded" style={{ background: "rgba(28,37,38,0.07)" }} />
+          </div>
+        ) : error ? (
+          <div className="flex items-center gap-2">
+            <p className="flex-1 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+              No se pudo generar el resumen.
+            </p>
+            <button onClick={() => load(true)}
+              className="text-[12px] font-semibold" style={{ color: "#d97757" }}>
+              Reintentar
+            </button>
+          </div>
+        ) : brief ? (
+          <>
+            <p className="mb-2 text-[14px] font-bold" style={{ color: "#1C2526" }}>{brief.title}</p>
+            <p className="text-[13px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>{brief.text}</p>
+            {ctaRoutes[brief.actionCode] && (
+              <Link href={ctaRoutes[brief.actionCode]}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition hover:opacity-80"
+                style={{ background: "rgba(217,119,87,0.09)", border: "1px solid rgba(217,119,87,0.22)", color: "#d97757" }}>
+                {brief.actionCode === "review_rewards" ? "Ver recompensas" : "Compartir QR"} →
+              </Link>
+            )}
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ─── BrainQueryCard ───────────────────────────────────────────────────────────
+
+const SUGGESTED_QUESTIONS = [
+  "¿Qué debo hacer esta semana?",
+  "¿Por qué bajaron mis visitas?",
+  "¿Mi recompensa está funcionando?",
+  "¿Cuáles son mis mejores clientes?",
+];
+
+function BrainQueryCard({ restaurantId }: { restaurantId: string }) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [lastQ, setLastQ] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function ask(q: string) {
+    const trimmed = q.trim();
+    if (!trimmed || !restaurantId || loading) return;
+    setLoading(true); setAnswer(null); setError(null); setLastQ(trimmed);
+    try {
+      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
+        getFirebaseFunctions(), "queryRestaurantBrain"
+      );
+      const result = await fn({ restaurantId, question: trimmed });
+      setAnswer((result.data.answer ?? "Sin respuesta.").trim());
+    } catch {
+      setError("No se pudo conectar con el cerebro. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mb-5 overflow-hidden rounded-2xl"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(217,119,87,0.18)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+        borderLeft: "4px solid #d97757",
+      }}>
+      <div className="p-5">
+        {/* Header */}
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>Pregúntale al cerebro</p>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+              Responde con datos reales de tu negocio
+            </p>
+          </div>
+          <span className="text-[18px]">🧠</span>
+        </div>
+
+        {/* Suggested questions */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {SUGGESTED_QUESTIONS.map((q) => (
+            <button key={q} disabled={loading}
+              onClick={() => { setQuestion(q); ask(q); }}
+              className="rounded-full border px-3 py-1.5 text-[11px] font-medium transition hover:opacity-80"
+              style={{ borderColor: "rgba(217,119,87,0.28)", color: "#d97757", background: "rgba(217,119,87,0.06)" }}>
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* Text input */}
+        <div className="flex gap-2">
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") ask(question); }}
+            disabled={loading}
+            placeholder="Escribe tu pregunta…"
+            className="flex-1 rounded-full border px-4 py-2 text-[13px] outline-none focus:ring-2"
+            style={{
+              borderColor: "rgba(217,119,87,0.28)",
+              color: "#1C2526",
+              background: "#fff",
+            }}
+          />
+          <button
+            onClick={() => ask(question)}
+            disabled={loading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition"
+            style={{ background: loading ? "rgba(217,119,87,0.4)" : "#d97757" }}>
+            {loading ? <Spinner /> : <span className="text-[14px]">→</span>}
+          </button>
+        </div>
+
+        {/* Answer */}
+        {(answer !== null || error !== null) && (
+          <div className="mt-3 rounded-xl p-4"
+            style={{
+              background: error ? "rgba(239,68,68,0.05)" : "rgba(217,119,87,0.05)",
+              border: `1px solid ${error ? "rgba(239,68,68,0.2)" : "rgba(217,119,87,0.15)"}`,
+            }}>
+            {lastQ && (
+              <p className="mb-1.5 text-[11px] italic" style={{ color: "rgba(28,37,38,0.45)" }}>
+                {lastQ}
+              </p>
+            )}
+            <p className="text-[13px] leading-relaxed"
+              style={{ color: error ? "#DC2626" : "rgba(28,37,38,0.85)" }}>
+              {error ?? answer}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── AtRiskCustomersCard ──────────────────────────────────────────────────────
+
+interface AtRiskCustomer {
+  userId: string;
+  displayName: string;
+  firstName: string;
+  phone: string | null;
+  daysSinceVisit: number;
+  visitCount: number;
+  pointsAvailable: number;
+  isDormant: boolean;
+}
+
+function AtRiskCustomersCard({
+  restaurantId, restaurantName,
+}: { restaurantId: string; restaurantName: string }) {
+  const [customers, setCustomers] = useState<AtRiskCustomer[] | null>(null);
+  const [loadingWa, setLoadingWa] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    async function load() {
+      const db = getFirebaseDb();
+      const cutoff = Timestamp.fromDate(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
+      let visitSnap;
+      try {
+        visitSnap = await getDocs(query(
+          collection(db, "restaurants", restaurantId, "visitHistory"),
+          where("timestamp", ">=", cutoff),
+          orderBy("timestamp", "desc"),
+          limit(300)
+        ));
+      } catch { return; }
+      if (visitSnap.empty) { setCustomers([]); return; }
+
+      // Group by userId → most recent + count
+      const lastVisit: Record<string, Date> = {};
+      const visitCount: Record<string, number> = {};
+      const now = new Date();
+      visitSnap.forEach((d) => {
+        const uid = d.data().userId as string | undefined;
+        const ts = d.data().timestamp;
+        if (!uid || !(ts instanceof Timestamp)) return;
+        const dt = ts.toDate();
+        if (!lastVisit[uid] || dt > lastVisit[uid]) lastVisit[uid] = dt;
+        visitCount[uid] = (visitCount[uid] ?? 0) + 1;
+      });
+
+      // Filter >= 14 days
+      const atRisk = Object.entries(lastVisit)
+        .map(([uid, dt]) => ({ uid, days: Math.floor((now.getTime() - dt.getTime()) / 86400000) }))
+        .filter((e) => e.days >= 14)
+        .sort((a, b) => b.days - a.days)
+        .slice(0, 20);
+
+      if (atRisk.length === 0) { setCustomers([]); return; }
+
+      // Fetch user profiles in parallel
+      const results = await Promise.all(
+        atRisk.map(async ({ uid, days }) => {
+          try {
+            const { getDoc, doc: fsDoc } = await import("firebase/firestore");
+            const [userSnap, loyaltySnap] = await Promise.all([
+              getDoc(fsDoc(db, "users", uid)),
+              getDoc(fsDoc(db, "users", uid, "loyaltyByRestaurant", restaurantId)).catch(() => null),
+            ]);
+            const ud = userSnap?.data() ?? {};
+            const name = ((ud.displayName ?? ud.name ?? "") as string).trim();
+            if (!name) return null;
+            const rawPhone = ((ud.phone ?? ud.phoneNumber ?? "") as string).trim();
+            const points = (loyaltySnap?.data()?.pointsAvailable as number) ?? 0;
+            const firstName = name.split(/\s+/)[0] ?? name;
+            return {
+              userId: uid,
+              displayName: name,
+              firstName,
+              phone: rawPhone || null,
+              daysSinceVisit: days,
+              visitCount: visitCount[uid] ?? 1,
+              pointsAvailable: points,
+              isDormant: days >= 30,
+            } as AtRiskCustomer;
+          } catch { return null; }
+        })
+      );
+      setCustomers(results.filter((c): c is AtRiskCustomer => c !== null));
+    }
+    load().catch(console.error);
+  }, [restaurantId]);
+
+  async function sendWhatsApp(c: AtRiskCustomer) {
+    const raw = c.phone!.replace(/[\s\-()]/g, "");
+    const phone = raw.startsWith("+") ? raw : `+52${raw}`;
+    setLoadingWa(c.userId);
+    let text: string;
+    try {
+      const fn = httpsCallable<Record<string, unknown>, Record<string, string>>(
+        getFirebaseFunctions(), "generateWinBackMessage"
+      );
+      const result = await fn({
+        restaurantId,
+        userId: c.userId,
+        restaurantName: restaurantName || "nuestro lugar",
+        daysSinceVisit: c.daysSinceVisit,
+      });
+      text = (result.data.message ?? "").trim();
+      if (!text) throw new Error("empty");
+    } catch {
+      const name = restaurantName || "nuestro lugar";
+      text = c.pointsAvailable > 0
+        ? `¡Hola ${c.firstName}! 👋 Te extrañamos en ${name}. Todavía tienes ${c.pointsAvailable} puntos esperándote 🎁`
+        : `¡Hola ${c.firstName}! 👋 Hace ${c.daysSinceVisit} días que no te vemos en ${name}. Esta semana tenemos algo especial para ti 🎁`;
+    } finally {
+      setLoadingWa(null);
+    }
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+  }
+
+  const displayed = customers?.slice(0, 5) ?? [];
+  const extraCount = (customers?.length ?? 0) - 5;
+
+  return (
+    <div id="at-risk" className="mb-5 rounded-2xl p-5"
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(28,37,38,0.07)",
+        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+      }}>
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.85)" }}>
+          Clientes que podrías perder
+        </p>
+        {customers !== null && customers.length > 0 && (
+          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+            style={{ background: "rgba(217,119,87,0.12)", color: "#d97757" }}>
+            {customers.length}
+          </span>
+        )}
+      </div>
+      <p className="mb-4 text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+        Sin visita reciente — un mensaje puede traerlos de vuelta.
+      </p>
+
+      {customers === null ? (
+        <div className="flex items-center justify-center py-6">
+          <Spinner />
+        </div>
+      ) : customers.length === 0 ? (
+        <div className="flex items-center gap-2">
+          <span className="text-[16px]">✅</span>
+          <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+            ¡Todos tus clientes han visitado recientemente!
+          </p>
+        </div>
+      ) : (
+        <>
+          {displayed.map((c) => {
+            const riskColor = c.isDormant ? "#EF4444" : "#F57C00";
+            const isLoadingThis = loadingWa === c.userId;
+            return (
+              <div key={c.userId} className="mb-3 flex items-center gap-2.5">
+                {/* Risk dot */}
+                <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: riskColor }} />
+                {/* Avatar */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
+                  style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.65)" }}>
+                  {(c.firstName[0] ?? "?").toUpperCase()}
+                </div>
+                {/* Name + stats */}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    {c.displayName}
+                  </p>
+                  <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                    {c.daysSinceVisit}d sin visita · {c.visitCount} visita{c.visitCount !== 1 ? "s" : ""}
+                    {c.pointsAvailable > 0 ? ` · ${c.pointsAvailable} pts` : ""}
+                  </p>
+                </div>
+                {/* WA button */}
+                {c.phone ? (
+                  <button
+                    onClick={() => !isLoadingThis && sendWhatsApp(c)}
+                    disabled={!!loadingWa}
+                    className="flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition hover:opacity-80"
+                    style={{
+                      borderColor: "rgba(37,211,102,0.35)",
+                      color: "#25D366",
+                      background: isLoadingThis ? "rgba(37,211,102,0.04)" : "rgba(37,211,102,0.08)",
+                    }}>
+                    {isLoadingThis ? <Spinner /> : <>💬 WA</>}
+                  </button>
+                ) : (
+                  <span className="rounded-lg px-2.5 py-1.5 text-[11px]"
+                    style={{ background: "rgba(28,37,38,0.05)", color: "rgba(28,37,38,0.3)" }}>
+                    Sin tel.
+                  </span>
+                )}
+              </div>
+            );
+          })}
+          {extraCount > 0 && (
+            <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
+              y {extraCount} más sin visita reciente
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

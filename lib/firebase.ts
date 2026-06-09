@@ -1,6 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { getFunctions as _getFunctions, type Functions } from "firebase/functions";
 
 // Public client config (same project as the Comeleal / Foodpass app).
 const firebaseConfig = {
@@ -29,4 +30,8 @@ export function getFirebaseDb(): Firestore {
 
 export function getFirebaseStorage(): FirebaseStorage {
   return getStorage(getFirebaseApp());
+}
+
+export function getFirebaseFunctions(): Functions {
+  return _getFunctions(getFirebaseApp(), "us-central1");
 }
