@@ -140,7 +140,7 @@ export default function RecompensasPage() {
                     </p>
                   )}
                   <p className="pt-1 text-[11px] font-bold" style={{ color: "#d97757" }}>
-                    +{data.firstPurchaseReward.pointsAwarded} puntos al registrarse
+                    Se desbloquea en la 1ª visita y se regala en la 2ª
                   </p>
                 </div>
               </div>
