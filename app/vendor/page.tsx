@@ -71,6 +71,11 @@ interface DashboardData {
   ventasHoy: number;
   pedidosCola: number;
   cuentasAbiertas: number;
+  // Win-back proof (reEngagementStats/current, written by Cloud Functions)
+  winbackSent: number;
+  winbackReturned: number;
+  /** Estimated MXN recovered = returned × 30d avg paid ticket. Null when no ticket data. */
+  winbackPesos: number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,7 +133,12 @@ export default function VendorDashboard() {
           return Timestamp.fromDate(d);
         })();
 
-        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap] =
+        const thirtyDaysAgo = (() => {
+          const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0);
+          return Timestamp.fromDate(d);
+        })();
+
+        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -150,6 +160,14 @@ export default function VendorDashboard() {
               collection(db, "restaurants", rid, "orders"),
               where("createdAt", ">=", todayStart)
             )),
+            // Win-back counters. Wrapped in catch: if Firestore rules for
+            // reEngagementStats aren't deployed yet, the dashboard still loads.
+            getDoc(doc(db, "restaurants", rid, "reEngagementStats", "current")).catch(() => null),
+            // 30d orders → avg paid ticket for the "pesos recuperados" estimate.
+            getDocs(query(
+              collection(db, "restaurants", rid, "orders"),
+              where("createdAt", ">=", thirtyDaysAgo)
+            )).catch(() => null),
           ]);
 
         const r = restaurantSnap.data() ?? {};
@@ -189,6 +207,26 @@ export default function VendorDashboard() {
             cuentasAbiertas++;
           }
         });
+
+        // Win-back proof: recovered customers × 30d avg paid ticket
+        const wb = winbackSnap?.exists() ? winbackSnap.data() ?? {} : {};
+        const winbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
+        const winbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
+
+        let paidTotal = 0, paidCount = 0;
+        monthOrdersSnap?.forEach((d) => {
+          const o = d.data();
+          if (o.paymentStatus === "paid" && typeof o.total === "number" && o.total > 0) {
+            paidTotal += o.total;
+            paidCount++;
+          }
+        });
+        // Need at least 3 paid orders for a meaningful avg ticket.
+        const avgTicket = paidCount >= 3 ? paidTotal / paidCount : null;
+        const winbackPesos =
+          winbackReturned > 0 && avgTicket !== null
+            ? Math.round(winbackReturned * avgTicket)
+            : null;
 
         // 7-day chart data
         const dailyCounts: Record<string, number> = {};
@@ -265,6 +303,9 @@ export default function VendorDashboard() {
           ventasHoy,
           pedidosCola,
           cuentasAbiertas,
+          winbackSent,
+          winbackReturned,
+          winbackPesos,
         });
         setLoadState("ready");
       } catch (err) {
@@ -479,6 +520,66 @@ export default function VendorDashboard() {
 
             </div>
           </div>
+
+          {/* ── Win-back proof banner ── */}
+          {data.winbackSent > 0 && (
+            <div className="mb-6 rounded-2xl p-5"
+              style={{
+                background: data.winbackReturned > 0
+                  ? "linear-gradient(135deg, #0d3321 0%, #14532d 100%)"
+                  : "#ffffff",
+                border: data.winbackReturned > 0
+                  ? "1px solid rgba(34,197,94,0.35)"
+                  : "1px solid rgba(28,37,38,0.07)",
+                boxShadow: data.winbackReturned > 0
+                  ? "0 4px 20px rgba(20,83,45,0.25)"
+                  : "0 1px 4px rgba(28,37,38,0.05)",
+              }}>
+              {data.winbackReturned > 0 ? (
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+                    style={{ background: "rgba(34,197,94,0.18)" }}>
+                    💸
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[16px] font-extrabold text-white">
+                      Comeleal te trajo de vuelta{" "}
+                      <span style={{ color: "#4ade80" }}>
+                        {data.winbackReturned} cliente{data.winbackReturned !== 1 ? "s" : ""}
+                      </span>
+                      {data.winbackPesos !== null && (
+                        <>
+                          {" "}≈{" "}
+                          <span style={{ color: "#4ade80" }}>
+                            ${data.winbackPesos.toLocaleString("es-MX")} MXN
+                          </span>
+                        </>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      De {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación enviado{data.winbackSent !== 1 ? "s" : ""}
+                      {data.winbackPesos !== null && " · estimado con tu ticket promedio de 30 días"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
+                    style={{ background: "rgba(242,140,56,0.08)" }}>
+                    📨
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
+                      {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación enviado{data.winbackSent !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                      Aquí verás cuántos clientes regresaron — y cuánto dinero representa.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Acciones rápidas ── */}
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
