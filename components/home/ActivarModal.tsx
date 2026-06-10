@@ -19,6 +19,11 @@ import {
 } from "@/lib/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import type { User } from "firebase/auth";
+import { pixelLead } from "@/lib/meta/pixel";
+import { generateEventId } from "@/lib/meta/eventId";
+import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
+import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
+import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -156,6 +161,34 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       });
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       await httpsCallable(functions, "ensureOwnerMember")({ restaurantId: restaurantRef.id });
+
+      // ── Conversion tracking — restaurant successfully created ──────────────
+      // This is the real "Lead": Meta optimizes leads campaigns on this event.
+      // Pixel + CAPI share one event_id so Meta deduplicates the pair.
+      // Wrapped so analytics failures can never break the signup flow.
+      try {
+        const utms = readAndPersistUtms(window.location.search);
+        const leadEventId = generateEventId();
+        pixelLead(leadEventId);
+        sendBrowserCapiEvents([
+          {
+            event_name: "Lead",
+            event_id: leadEventId,
+            event_source_url: window.location.href,
+            custom_data: {
+              utm_source: utms.utm_source,
+              utm_medium: utms.utm_medium,
+              utm_campaign: utms.utm_campaign,
+              utm_content: utms.utm_content,
+              utm_term: utms.utm_term,
+            },
+          },
+        ]);
+        // GA4 — mark restaurant_created as a key event in GA4 admin.
+        trackRestaurantCreated({ category, ...utms });
+      } catch (trackErr) {
+        console.warn("[activar] tracking failed (non-blocking):", trackErr);
+      }
 
       // Geocode address → lat/lng (same pattern as Flutter app)
       // Non-blocking: if it fails, restaurant is still created with lat:0, lng:0

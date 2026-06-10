@@ -5,6 +5,35 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { pixelCompleteRegistration } from "@/lib/meta/pixel";
+import { generateEventId } from "@/lib/meta/eventId";
+import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
+import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisition";
+
+/**
+ * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
+ * localStorage guard prevents refires when the vendor revisits this page.
+ */
+function fireOnboardingCompletedOnce(restaurantId: string) {
+  try {
+    const guardKey = `cml_onboarding_done_${restaurantId}`;
+    if (localStorage.getItem(guardKey)) return;
+    localStorage.setItem(guardKey, "1");
+
+    const eventId = generateEventId();
+    pixelCompleteRegistration(eventId);
+    sendBrowserCapiEvents([
+      {
+        event_name: "CompleteRegistration",
+        event_id: eventId,
+        event_source_url: window.location.href,
+      },
+    ]);
+    trackVendorOnboardingCompleted();
+  } catch {
+    // Tracking must never break the page.
+  }
+}
 
 export default function SetupDonePage() {
   const router = useRouter();
@@ -25,6 +54,7 @@ export default function SetupDonePage() {
       if (name) setRestaurantName(name);
       setRestaurantId(rid);
       setLoading(false);
+      fireOnboardingCompletedOnce(rid);
     }
     init().catch(() => setLoading(false));
   }, [router]);

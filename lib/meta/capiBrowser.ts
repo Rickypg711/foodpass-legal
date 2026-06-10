@@ -10,7 +10,11 @@
  *   4. Is entirely fire-and-forget — errors are logged server-side, never thrown here.
  */
 
-export type BrowserCapiEventName = "Lead" | "Contact" | "ViewContent";
+export type BrowserCapiEventName =
+  | "Lead"
+  | "Contact"
+  | "ViewContent"
+  | "CompleteRegistration";
 
 export interface BrowserCapiEvent {
   event_name: BrowserCapiEventName;

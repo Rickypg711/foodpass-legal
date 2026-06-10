@@ -141,6 +141,17 @@ export function pixelContact(eventId?: string): void {
 }
 
 /**
+ * Track CompleteRegistration.
+ * Fires when a vendor finishes the full onboarding wizard (/vendor/setup/done).
+ *
+ * @param eventId - Deduplication ID. Generate with generateEventId() and
+ *                  pass the same value to sendBrowserCapiEvents().
+ */
+export function pixelCompleteRegistration(eventId?: string): void {
+  callFbq("CompleteRegistration", undefined, eventId);
+}
+
+/**
  * Track ViewContent.
  *
  * @param params  - content_name and content_category for the event.

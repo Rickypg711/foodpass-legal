@@ -33,6 +33,7 @@ import {
   sendLeadEvent,
   sendContactEvent,
   sendViewContentEvent,
+  sendCompleteRegistrationEvent,
   type CapiUserData,
 } from "@/lib/meta/capi";
 
@@ -40,7 +41,12 @@ import {
 // Input validation
 // ---------------------------------------------------------------------------
 
-const ALLOWED_EVENT_NAMES = ["Lead", "Contact", "ViewContent"] as const;
+const ALLOWED_EVENT_NAMES = [
+  "Lead",
+  "Contact",
+  "ViewContent",
+  "CompleteRegistration",
+] as const;
 type AllowedEventName = (typeof ALLOWED_EVENT_NAMES)[number];
 
 function isAllowedEventName(value: unknown): value is AllowedEventName {
@@ -154,6 +160,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       case "Contact":
         sends.push(sendContactEvent(base));
+        break;
+
+      case "CompleteRegistration":
+        sends.push(sendCompleteRegistrationEvent(base));
         break;
 
       case "ViewContent":

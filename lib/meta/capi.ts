@@ -195,6 +195,25 @@ export async function sendContactEvent(
 }
 
 /**
+ * Send a CompleteRegistration event via CAPI.
+ * Fires when a vendor finishes the full onboarding wizard (/vendor/setup/done).
+ */
+export async function sendCompleteRegistrationEvent(
+  params: BaseCapiParams,
+): Promise<void> {
+  await sendCapiEvents([
+    {
+      event_name: "CompleteRegistration",
+      event_time: params.eventTime ?? Math.floor(Date.now() / 1000),
+      action_source: "website",
+      event_source_url: params.eventSourceUrl,
+      event_id: params.eventId,
+      user_data: params.userData,
+    },
+  ]);
+}
+
+/**
  * Send a ViewContent event via CAPI.
  * Fires when the user views /para-restaurantes.
  */

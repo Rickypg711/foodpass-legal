@@ -9,6 +9,8 @@ export const VENDOR_ACQUISITION_EVENTS = {
   ctaClick: "vendor_cta_click",
   leadStarted: "vendor_lead_started",
   leadSubmitted: "vendor_lead_submitted",
+  restaurantCreated: "restaurant_created",
+  onboardingCompleted: "vendor_onboarding_completed",
 } as const;
 
 export type VendorUtmParams = {
@@ -123,6 +125,41 @@ export function trackVendorLeadSubmitted(params: SafeLeadSubmittedParams): void 
     void logEventSafe(VENDOR_ACQUISITION_EVENTS.leadSubmitted, {
       source: "para_restaurantes",
       ...params,
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/**
+ * Fires when a restaurant document is successfully created via web signup
+ * (ActivarModal). This is the web "Lead" moment — mark it as a key event
+ * in GA4 admin so paid traffic conversions become visible.
+ * No PII — only category + UTMs.
+ */
+export function trackRestaurantCreated(
+  params: VendorUtmParams & { category?: string },
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(VENDOR_ACQUISITION_EVENTS.restaurantCreated, {
+      source: "web_activar",
+      ...params,
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/**
+ * Fires once when the vendor reaches /vendor/setup/done (wizard finished).
+ * Matches the Flutter app's vendor_onboarding_completed event name.
+ */
+export function trackVendorOnboardingCompleted(): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(VENDOR_ACQUISITION_EVENTS.onboardingCompleted, {
+      source: "web_activar",
     });
   } catch {
     // no-op

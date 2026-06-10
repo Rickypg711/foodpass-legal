@@ -89,10 +89,12 @@ function RecompensasSetupPageInner() {
     { pointsRequired: 2000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
   ]);
 
-  // AI draft
+  // AI recommendation state
   const [aiStep, setAiStep] = useState<AiStep>("idle");
-  const [draft, setDraft] = useState<RewardDraft | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
+  const [aiApplied, setAiApplied] = useState(false);
 
   // Save state
   const [saving, setSaving] = useState(false);
@@ -116,16 +118,20 @@ function RecompensasSetupPageInner() {
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data();
 
+      let hasRewards = false;
       if (data?.firstPurchaseReward) {
         const fpr = data.firstPurchaseReward as any;
-        setCurrentFPR({
-          enabled: fpr.enabled ?? true,
-          menuItemId: fpr.menuItemId ?? "",
-          menuItemName: fpr.menuItemName ?? "",
-          menuItemImageUrl: fpr.menuItemImageUrl ?? "",
-          menuItemDescription: fpr.menuItemDescription ?? "",
-          pointsAwarded: fpr.pointsAwarded ?? 100,
-        });
+        if (fpr.menuItemId && fpr.enabled) {
+          setCurrentFPR({
+            enabled: fpr.enabled ?? true,
+            menuItemId: fpr.menuItemId ?? "",
+            menuItemName: fpr.menuItemName ?? "",
+            menuItemImageUrl: fpr.menuItemImageUrl ?? "",
+            menuItemDescription: fpr.menuItemDescription ?? "",
+            pointsAwarded: fpr.pointsAwarded ?? 0,
+          });
+          hasRewards = true;
+        }
       }
       if (Array.isArray(data?.rewardTiers) && (data.rewardTiers as any[]).length > 0) {
         const mapped = (data.rewardTiers as any[]).map((t, index) => ({
@@ -139,6 +145,56 @@ function RecompensasSetupPageInner() {
           hasMenuItem: t.hasMenuItem ?? !!t.menuItemId,
         }));
         setCurrentTiers(mapped);
+        if (mapped.some(t => t.menuItemId && t.hasMenuItem)) {
+          hasRewards = true;
+        }
+      }
+
+      // Check for latest draft recommendation
+      const draftsSnap = await getDocs(
+        query(
+          collection(db, "restaurants", rid, "rewardRecommendationDrafts"),
+          orderBy("createdAt", "desc"),
+          limit(1)
+        )
+      );
+      if (!draftsSnap.empty) {
+        const d = draftsSnap.docs[0];
+        const draftData = d.data();
+        if (draftData.status === "draft" || draftData.status === "ready") {
+          const fpr = draftData.proposedFirstPurchaseReward || draftData.firstPurchaseReward;
+          const tiers = draftData.proposedRewardTiers || draftData.rewardTiers || [];
+          const notes = draftData.proposedNotes || draftData.reasoning || "";
+
+          // Auto-populate the form if the restaurant has no existing rewards
+          if (!hasRewards) {
+            if (fpr) {
+              setCurrentFPR({
+                enabled: fpr.enabled ?? true,
+                menuItemId: fpr.menuItemId ?? "",
+                menuItemName: fpr.menuItemName ?? "",
+                menuItemImageUrl: fpr.menuItemImageUrl ?? "",
+                menuItemDescription: fpr.menuItemDescription ?? "",
+                pointsAwarded: fpr.pointsAwarded ?? 100,
+              });
+            }
+            if (tiers.length > 0) {
+              setCurrentTiers((tiers as any[]).map((t, idx) => ({
+                id: t.id ?? `tier_${idx + 1}`,
+                pointsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+                visitsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+                menuItemId: t.menuItemId ?? "",
+                menuItemName: t.menuItemName ?? "",
+                menuItemDescription: t.menuItemDescription ?? "",
+                menuItemImageUrl: t.menuItemImageUrl ?? "",
+                hasMenuItem: !!t.menuItemId,
+              })));
+            }
+            setAiApplied(true);
+          }
+          setAiReasoning(notes);
+          setActiveDraftId(d.id);
+        }
       }
 
       setRestaurantId(rid);
@@ -171,29 +227,31 @@ function RecompensasSetupPageInner() {
           const tiers = data.proposedRewardTiers || data.rewardTiers || [];
           const notes = data.proposedNotes || data.reasoning || "";
 
-          setDraft({
-            id: d.id,
-            firstPurchaseReward: {
-              enabled: fpr.enabled ?? true,
-              menuItemId: fpr.menuItemId ?? "",
-              menuItemName: fpr.menuItemName ?? "",
-              menuItemImageUrl: fpr.menuItemImageUrl ?? "",
-              menuItemDescription: fpr.menuItemDescription ?? "",
-              pointsAwarded: fpr.pointsAwarded ?? 100,
-            },
-            rewardTiers: (tiers as any[]).map((t, idx) => ({
-              id: t.id ?? `tier_${idx + 1}`,
-              pointsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
-              visitsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
-              menuItemId: t.menuItemId ?? "",
-              menuItemName: t.menuItemName ?? "",
-              menuItemDescription: t.menuItemDescription ?? "",
-              menuItemImageUrl: t.menuItemImageUrl ?? "",
-              hasMenuItem: !!t.menuItemId,
-            })),
-            reasoning: notes,
+          // Auto-populate the form directly
+          setCurrentFPR({
+            enabled: fpr.enabled ?? true,
+            menuItemId: fpr.menuItemId ?? "",
+            menuItemName: fpr.menuItemName ?? "",
+            menuItemImageUrl: fpr.menuItemImageUrl ?? "",
+            menuItemDescription: fpr.menuItemDescription ?? "",
+            pointsAwarded: fpr.pointsAwarded ?? 0,
           });
-          setAiStep("review");
+
+          setCurrentTiers((tiers as any[]).map((t, idx) => ({
+            id: t.id ?? `tier_${idx + 1}`,
+            pointsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+            visitsRequired: t.visitsRequired ?? t.pointsRequired ?? 0,
+            menuItemId: t.menuItemId ?? "",
+            menuItemName: t.menuItemName ?? "",
+            menuItemDescription: t.menuItemDescription ?? "",
+            menuItemImageUrl: t.menuItemImageUrl ?? "",
+            hasMenuItem: !!t.menuItemId,
+          })));
+
+          setAiReasoning(notes);
+          setActiveDraftId(d.id);
+          setAiApplied(true);
+          setAiStep("idle");
         } else if (isFailed) {
           setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
           setAiStep("idle");
@@ -229,12 +287,33 @@ function RecompensasSetupPageInner() {
     }
   }
 
-  function applyDraftToForm() {
-    if (!draft) return;
-    setCurrentFPR(draft.firstPurchaseReward);
-    setCurrentTiers(draft.rewardTiers);
-    setAiStep("idle");
-    setDraft(null);
+  async function handleDismissDraft() {
+    if (!restaurantId || !activeDraftId) return;
+    try {
+      const db = getFirebaseDb();
+      const { updateDoc } = await import("firebase/firestore");
+      await updateDoc(doc(db, "restaurants", restaurantId, "rewardRecommendationDrafts", activeDraftId), {
+        status: "dismissed"
+      });
+      setCurrentFPR({
+        enabled: true,
+        menuItemId: "",
+        menuItemName: "",
+        menuItemImageUrl: "",
+        menuItemDescription: "",
+        pointsAwarded: 100,
+      });
+      setCurrentTiers([
+        { pointsRequired: 500, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+        { pointsRequired: 1000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+        { pointsRequired: 2000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+      ]);
+      setAiReasoning(null);
+      setActiveDraftId(null);
+      setAiApplied(false);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function handleSave() {
@@ -274,11 +353,11 @@ function RecompensasSetupPageInner() {
         pointsAwarded: currentFPR.pointsAwarded,
       };
 
-      if (draft) {
+      if (activeDraftId) {
         const applyRewardDraft = httpsCallable(functions, "applyRewardDraft");
         await applyRewardDraft({
           restaurantId,
-          draftId: draft.id,
+          draftId: activeDraftId,
           firstPurchaseReward: mappedFPR,
           rewardTiers: mappedTiers.filter((t) => t.hasMenuItem),
         });
@@ -337,81 +416,46 @@ function RecompensasSetupPageInner() {
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
         )}
 
-        {/* ── AI Draft Section ── */}
-        <div className="rounded-2xl border border-[#141413]/8 bg-white p-5">
-          <div className="flex items-start gap-3 mb-4">
+        {/* ── AI Recommendation Assistant ── */}
+        <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-4 shadow-sm">
+          <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/10 text-lg">🤖</div>
-            <div>
-              <p className="text-sm font-semibold text-[#141413]">Sugerencia de la IA</p>
-              <p className="mt-0.5 text-xs text-[#141413]/50">Analizamos tu menú y diseñamos recompensas que funcionan</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[#141413]">
+                {aiApplied ? "✨ Sugerencia cargada por Comeleal" : "Sugerencia de la IA"}
+              </p>
+              <p className="text-xs text-[#141413]/50">
+                {aiApplied ? "Revísala y ajústala si quieres antes de guardar." : "Autocompleta tu programa basado en tu menú"}
+              </p>
             </div>
+            {aiStep === "idle" && (
+              <button
+                type="button"
+                onClick={handleGenerateDraft}
+                className="shrink-0 rounded-xl bg-[#d97757]/10 hover:bg-[#d97757]/15 px-3 py-1.5 text-xs font-semibold text-[#d97757] transition-all"
+              >
+                {aiApplied ? "✨ Regenerar" : "✨ Autocompletar"}
+              </button>
+            )}
+            {aiStep === "generating" && (
+              <div className="flex items-center gap-2.5 py-1 text-xs text-[#141413]/50">
+                <svg className="h-4 w-4 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
+                </svg>
+                <span>Analizando menú...</span>
+              </div>
+            )}
           </div>
 
           {aiError && (
-            <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{aiError}</div>
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{aiError}</div>
           )}
 
-          {aiStep === "idle" && (
-            <button
-              onClick={handleGenerateDraft}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] py-3 text-sm font-semibold text-white hover:bg-[#c46644] transition-colors"
-            >
-              ✨ Generar recompensas con IA
-            </button>
-          )}
-
-          {aiStep === "generating" && (
-            <div className="flex flex-col items-center gap-3 py-5">
-              <svg className="h-7 w-7 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
-              </svg>
-              <p className="text-sm text-[#141413]/60">Analizando tu menú…</p>
-              <p className="text-xs text-[#141413]/35">Esto toma unos segundos</p>
-            </div>
-          )}
-
-          {aiStep === "review" && draft && (
-            <div className="space-y-3">
-              {draft.reasoning && (
-                <div className="rounded-xl bg-[#d97757]/5 border border-[#d97757]/15 px-3 py-2.5">
-                  <p className="text-xs text-[#d97757]/80 leading-relaxed">{draft.reasoning}</p>
-                </div>
-              )}
-
-              {/* Draft FPR preview */}
-              <div className="rounded-xl border border-[#141413]/8 px-3 py-3">
-                <p className="text-xs font-semibold text-[#141413]/50 mb-2">Bienvenida</p>
-                <p className="text-sm font-medium text-[#141413]">{draft.firstPurchaseReward.menuItemName || "—"}</p>
-                {draft.firstPurchaseReward.menuItemDescription && (
-                  <p className="text-xs text-[#141413]/45 mt-0.5">{draft.firstPurchaseReward.menuItemDescription}</p>
-                )}
-                <p className="text-xs text-[#d97757] mt-1">Regalo de bienvenida (se desbloquea en la 1ra visita, se reclama en la 2da)</p>
-              </div>
-
-              {/* Draft tiers preview */}
-              {draft.rewardTiers.map((t, i) => (
-                <div key={i} className="rounded-xl border border-[#141413]/8 px-3 py-3">
-                  <p className="text-xs font-semibold text-[#141413]/50 mb-1">{t.pointsRequired} puntos</p>
-                  <p className="text-sm font-medium text-[#141413]">{t.menuItemName || "—"}</p>
-                  {t.menuItemDescription && <p className="text-xs text-[#141413]/45 mt-0.5">{t.menuItemDescription}</p>}
-                </div>
-              ))}
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={applyDraftToForm}
-                  className="flex-1 rounded-xl bg-[#d97757] py-2.5 text-sm font-semibold text-white hover:bg-[#c46644] transition-colors"
-                >
-                  Usar esta sugerencia →
-                </button>
-                <button
-                  onClick={() => { setAiStep("idle"); setDraft(null); }}
-                  className="rounded-xl border border-[#141413]/12 px-4 py-2.5 text-sm text-[#141413]/50 hover:text-[#141413] transition-colors"
-                >
-                  Descartar
-                </button>
-              </div>
+          {aiReasoning && (
+            <div className="rounded-xl bg-[#d97757]/5 border border-[#d97757]/15 p-3.5 space-y-1.5">
+              <p className="text-xs font-bold text-[#d97757] uppercase tracking-wider">🤖 Análisis de la IA</p>
+              <p className="text-xs text-[#141413]/70 leading-relaxed font-medium">{aiReasoning}</p>
             </div>
           )}
         </div>
@@ -582,6 +626,18 @@ function RecompensasSetupPageInner() {
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar recompensas →"}
         </button>
+
+        {aiApplied && (
+          <div className="flex justify-center mt-2">
+            <button
+              type="button"
+              onClick={handleDismissDraft}
+              className="text-xs text-[#141413]/40 hover:text-red-500 transition-colors font-medium"
+            >
+              Descartar sugerencia
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
