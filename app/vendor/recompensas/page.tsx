@@ -55,7 +55,12 @@ export default function RecompensasPage() {
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const d = restSnap.data() ?? {};
 
-      const rawTiers = (d.rewardTiers as RewardTier[] | undefined) ?? [];
+      const rawTiers = ((d.rewardTiers as any[] | undefined) ?? []).map((t) => ({
+        pointsRequired: t.pointsRequired ?? t.visitsRequired ?? 0,
+        menuItemName: t.menuItemName ?? "",
+        menuItemDescription: t.menuItemDescription ?? "",
+        hasMenuItem: t.hasMenuItem ?? !!t.menuItemId,
+      }));
       const rawFpr = d.firstPurchaseReward as FirstPurchaseReward | undefined | null;
 
       setData({
