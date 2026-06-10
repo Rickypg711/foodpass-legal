@@ -6,6 +6,8 @@ import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirebaseApp } from "@/lib/firebase";
 import { ActivarModal } from "@/components/home/ActivarModal";
+import { trackVendorCtaClick } from "@/lib/analytics/vendorAcquisition";
+import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 
 const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
@@ -28,6 +30,13 @@ export function HomeHeader() {
   async function handleSignOut() {
     await signOut(getAuth());
     setLoggedIn(false);
+  }
+
+  function openSignupModal(section: string) {
+    // Funnel step 2: landing → CTA click (UTMs persisted for attribution).
+    const utms = readAndPersistUtms(window.location.search);
+    trackVendorCtaClick({ cta: "empieza_gratis", section, ...utms });
+    setModalOpen(true);
   }
 
   return (
@@ -74,7 +83,7 @@ export function HomeHeader() {
                 Entrar
               </Link>
               <button
-                onClick={() => setModalOpen(true)}
+                onClick={() => openSignupModal("header_desktop")}
                 className="shrink-0 rounded-full bg-[#d97757] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#c46644]">
                 Empieza gratis
               </button>
@@ -107,7 +116,7 @@ export function HomeHeader() {
               ) : (
                 <>
                   <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
-                  <button onClick={() => setModalOpen(true)} className="block w-full rounded-full bg-[#d97757] px-3 py-2 text-center text-sm font-semibold text-white">Empieza gratis</button>
+                  <button onClick={() => openSignupModal("header_mobile")} className="block w-full rounded-full bg-[#d97757] px-3 py-2 text-center text-sm font-semibold text-white">Empieza gratis</button>
                 </>
               )}
             </div>
