@@ -128,8 +128,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [isLive] = useState(false);
   const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState<string>("V");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Setup pages should render without the sidebar (hooks must come before any return)
   const isSetupFlow = pathname.startsWith("/vendor/setup");
@@ -143,6 +145,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       const displayName = u.displayName ?? "";
       const email = u.email ?? "";
       setUserName(displayName.split(" ")[0] || email.split("@")[0] || "");
+      setUserEmail(email);
       setUserPhoto(u.photoURL ?? null);
       setUserInitial((displayName[0] ?? email[0] ?? "V").toUpperCase());
 
@@ -287,10 +290,57 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </span>
         </button>
 
-        {/* User section */}
-        {open ? (
-          <div className="shrink-0 p-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2.5">
+        {/* User section — click opens account popover (email · plan · ayuda · salir) */}
+        <div className="relative shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          {/* Popover */}
+          {userMenuOpen && open && (
+            <div
+              className="absolute bottom-full left-2 right-2 z-50 mb-2 overflow-hidden rounded-xl"
+              style={{
+                background: "#ffffff",
+                boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
+              }}
+            >
+              <p className="truncate px-3.5 pb-1 pt-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                {userEmail || userName || "Mi cuenta"}
+              </p>
+              <Link
+                href="/vendor/configuracion"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-black/5"
+                style={{ color: "#1C2526" }}
+              >
+                ✦ Mejorar plan
+              </Link>
+              <div style={{ height: 1, background: "rgba(28,37,38,0.08)" }} />
+              <Link
+                href="/para-restaurantes"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2 px-3.5 py-2.5 text-[13px] transition-colors hover:bg-black/5"
+                style={{ color: "rgba(28,37,38,0.75)" }}
+              >
+                <IconHelp /> Ayuda
+              </Link>
+              <button
+                onClick={async () => {
+                  setUserMenuOpen(false);
+                  await signOut(getAuth());
+                  router.push("/activar");
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-black/5"
+                style={{ color: "#b91c1c" }}
+              >
+                <IconLogOut /> Cerrar sesión
+              </button>
+            </div>
+          )}
+
+          {open ? (
+            <button
+              onClick={() => setUserMenuOpen((o) => !o)}
+              className="flex w-full items-center gap-2.5 p-3 text-left transition-colors hover:bg-white/5"
+              title="Mi cuenta"
+            >
               {userPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -318,34 +368,47 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                   Free
                 </span>
               </div>
-              <button
-                onClick={async () => {
-                  await signOut(getAuth());
-                  router.push("/activar");
+              <span
+                className="shrink-0 text-white/35"
+                style={{
+                  transform: userMenuOpen ? "rotate(-90deg)" : "rotate(90deg)",
+                  display: "inline-block",
+                  transition: "transform 0.15s",
                 }}
-                className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-white/10"
-                title="Cerrar sesión"
               >
-                <IconLogOut />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex shrink-0 items-center justify-center py-3">
-            {userPhoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={userPhoto} alt="" className="h-7 w-7 rounded-full" />
-            ) : (
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}
-              >
-                {userInitial}
-              </div>
-            )}
-          </div>
-        )}
+                <IconChevronLeft />
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => { setOpen(true); setUserMenuOpen(true); }}
+              className="flex w-full items-center justify-center py-3 transition-colors hover:bg-white/5"
+              title="Mi cuenta"
+            >
+              {userPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={userPhoto} alt="" className="h-7 w-7 rounded-full" />
+              ) : (
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}
+                >
+                  {userInitial}
+                </div>
+              )}
+            </button>
+          )}
+        </div>
       </aside>
+
+      {/* Click-outside backdrop for the user popover */}
+      {userMenuOpen && (
+        <div
+          className="fixed inset-0 z-20"
+          onClick={() => setUserMenuOpen(false)}
+          aria-hidden
+        />
+      )}
 
       {/* Sidebar spacer — pushes content right (sidebar is fixed/out-of-flow) */}
       <div

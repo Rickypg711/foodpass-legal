@@ -407,6 +407,11 @@ export default function VendorDashboard() {
                 <span className="text-[11px] font-semibold text-green-700">En vivo</span>
               </div>
             )}
+            <Link href="/vendor/pos"
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition hover:opacity-80"
+              style={{ background: "#ffffff", color: "#1C2526", border: "1px solid rgba(28,37,38,0.14)" }}>
+              🖥️ Modo POS
+            </Link>
             <Link href="/vendor/scanner"
               className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90"
               style={{ background: "#1C2526" }}>
@@ -440,6 +445,46 @@ export default function VendorDashboard() {
           {/* ── Setup banner ── */}
           {!data.isSetupComplete && (
             <SetupBanner reasons={data.setupIncompleteReasons} />
+          )}
+
+          {/* ── Requieren tu atención ── */}
+          {(riskCount > 0 || data.pedidosCola > 0) && (
+            <div className="mb-6">
+              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
+                style={{ color: "rgba(28,37,38,0.35)" }}>
+                Requieren tu atención
+              </p>
+              <div className="space-y-2">
+                {data.pedidosCola > 0 && (
+                  <Link href="/vendor/pedidos"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
+                    style={{ background: "#ffffff", border: "1px solid rgba(217,119,87,0.35)" }}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+                      style={{ background: "rgba(217,119,87,0.1)" }}>
+                      ⏳
+                    </div>
+                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                      {data.pedidosCola} pedido{data.pedidosCola !== 1 ? "s" : ""} en cola esperando
+                    </p>
+                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
+                  </Link>
+                )}
+                {riskCount > 0 && (
+                  <Link href="/vendor/clientes"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
+                    style={{ background: "#fff5f5", border: "1px solid rgba(220,38,38,0.25)" }}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+                      style={{ background: "rgba(220,38,38,0.08)" }}>
+                      ⚠️
+                    </div>
+                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                      {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo de no volver — mándale{riskCount !== 1 ? "s" : ""} un mensaje
+                    </p>
+                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
+                  </Link>
+                )}
+              </div>
+            </div>
           )}
 
           {/* ── Coach Comeleal AI Card ── */}
