@@ -253,10 +253,12 @@ export default function ConfiguracionPage() {
           </p>
         </div>
 
-        <div className="max-w-xl">
+        <div className="max-w-6xl">
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : (
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+          {/* ── Left column: cuenta ── */}
           <div className="space-y-4">
 
             {/* ── Profile pill ── */}
@@ -318,6 +320,74 @@ export default function ConfiguracionPage() {
                 last
               />
             </SectionCard>
+
+            {/* ── Suscripción ── */}
+            <SectionCard label="Plan">
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    {plan === "pro" ? "Plan Pro activo ⭐" : "Plan Gratuito"}
+                  </p>
+                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    {plan === "pro"
+                      ? "Scans ilimitados y todas las funciones"
+                      : "50 scans/mes · Para más, activa Pro en la app"}
+                  </p>
+                </div>
+                {plan === "free" && (
+                  <a
+                    href="https://apps.apple.com/mx/app/foodpass/id6745301069"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold"
+                    style={{ background: "rgba(217,119,87,0.1)", color: "#d97757" }}
+                  >
+                    Activar →
+                  </a>
+                )}
+              </div>
+            </SectionCard>
+
+            {/* ── Soporte ── */}
+            <SectionCard label="Soporte">
+              <ManageLink
+                href="https://apps.apple.com/mx/app/foodpass/id6745301069"
+                emoji="📱"
+                title="App cliente (iOS)"
+                subtitle="Descarga la app para los clientes"
+                external
+              />
+              <ManageLink
+                href="/para-restaurantes"
+                emoji="❓"
+                title="Centro de ayuda"
+                subtitle="Documentación y tutoriales"
+                last
+              />
+            </SectionCard>
+
+            {/* ── Cerrar sesión ── */}
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(28,37,38,0.07)",
+                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
+              }}
+            >
+              {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
+            </button>
+
+            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
+              Comeleal · v{new Date().getFullYear()}
+            </p>
+
+          </div>
+
+          {/* ── Right column: negocio ── */}
+          <div className="space-y-4">
 
             {/* ── Datos del restaurante ── */}
             <SectionCard label="Información del negocio">
@@ -500,69 +570,7 @@ export default function ConfiguracionPage() {
               {saved ? "✓ Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
             </button>
 
-            {/* ── Suscripción ── */}
-            <SectionCard label="Plan">
-              <div className="flex items-center justify-between py-1">
-                <div>
-                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    {plan === "pro" ? "Plan Pro activo ⭐" : "Plan Gratuito"}
-                  </p>
-                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    {plan === "pro"
-                      ? "Scans ilimitados y todas las funciones"
-                      : "50 scans/mes · Para más, activa Pro en la app"}
-                  </p>
-                </div>
-                {plan === "free" && (
-                  <a
-                    href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold"
-                    style={{ background: "rgba(217,119,87,0.1)", color: "#d97757" }}
-                  >
-                    Activar →
-                  </a>
-                )}
-              </div>
-            </SectionCard>
-
-            {/* ── Soporte ── */}
-            <SectionCard label="Soporte">
-              <ManageLink
-                href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                emoji="📱"
-                title="App cliente (iOS)"
-                subtitle="Descarga la app para los clientes"
-                external
-              />
-              <ManageLink
-                href="/para-restaurantes"
-                emoji="❓"
-                title="Centro de ayuda"
-                subtitle="Documentación y tutoriales"
-                last
-              />
-            </SectionCard>
-
-            {/* ── Cerrar sesión ── */}
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.07)",
-                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
-              }}
-            >
-              {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
-            </button>
-
-            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
-              Comeleal · v{new Date().getFullYear()}
-            </p>
-
+          </div>
           </div>
         )}
         </div>
