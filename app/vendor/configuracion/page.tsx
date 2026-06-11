@@ -37,7 +37,6 @@ export default function ConfiguracionPage() {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
-  const [pointsPerVisit, setPointsPerVisit] = useState(1);
   const [dailyRevenueGoal, setDailyRevenueGoal] = useState<number | "">("");
 
   // Images state
@@ -67,7 +66,6 @@ export default function ConfiguracionPage() {
       setAddress((data.address as string) ?? "");
       setPhone((data.phone as string) ?? "");
       setCategories((data.categories as string[]) ?? []);
-      setPointsPerVisit((data.pointsPerVisit as number) ?? 1);
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
 
@@ -199,8 +197,6 @@ export default function ConfiguracionPage() {
     if (!restaurantId) return;
     if (!name.trim()) { setError("El nombre del restaurante es obligatorio."); return; }
     if (!address.trim()) { setError("La dirección es obligatoria."); return; }
-    const pts = Number(pointsPerVisit);
-    if (!pts || pts < 1) { setError("Los puntos por visita deben ser al menos 1."); return; }
     setSaving(true);
     setError(null);
     try {
@@ -211,7 +207,6 @@ export default function ConfiguracionPage() {
         address: address.trim(),
         phone: phone.trim(),
         categories,
-        pointsPerVisit: pts,
         lastUpdated: serverTimestamp(),
       };
       if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
@@ -505,31 +500,9 @@ export default function ConfiguracionPage() {
               </div>
             </SectionCard>
 
-            {/* ── Programa de lealtad ── */}
-            <SectionCard label="Programa de lealtad">
-              <Field label="Puntos por visita">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={pointsPerVisit}
-                    onChange={(e) => { setPointsPerVisit(Math.max(1, parseInt(e.target.value) || 1)); setSaved(false); }}
-                    className="w-24 rounded-xl px-3 py-2.5 text-[13px] outline-none"
-                    style={{
-                      background: "#F5F3EF",
-                      border: "1px solid rgba(28,37,38,0.12)",
-                      color: "#1C2526",
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = "#d97757")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
-                  />
-                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    pts cada vez que escaneen
-                  </span>
-                </div>
-              </Field>
-            </SectionCard>
+            {/* NOTE: "Puntos por visita" intentionally NOT editable — the app fixes
+                pointsPerVisit to 1 and earning is governed by loyaltyEarnPolicy.
+                Exposing it here would desync web from app reward math. */}
 
             {/* ── Meta de ingresos ── */}
             <SectionCard label="Meta de ingresos diaria">
