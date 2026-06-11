@@ -407,11 +407,6 @@ export default function VendorDashboard() {
                 <span className="text-[11px] font-semibold text-green-700">En vivo</span>
               </div>
             )}
-            <Link href="/vendor/pos"
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition hover:opacity-80"
-              style={{ background: "#ffffff", color: "#1C2526", border: "1px solid rgba(28,37,38,0.14)" }}>
-              🖥️ Modo POS
-            </Link>
             <Link href="/vendor/scanner"
               className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90"
               style={{ background: "#1C2526" }}>
@@ -761,7 +756,7 @@ export default function VendorDashboard() {
           <div className="grid grid-cols-3 gap-3 md:hidden">
             <Atajo href="/vendor/scanner" emoji="📷" label="Escanear" />
             <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
-            <Atajo href="/vendor?ai=1" emoji="🧠" label="Coach AI" />
+            <Atajo href="/vendor?ai=1" emoji="🧠" label="Comeleal AI" />
             <Atajo href="/vendor/reportes" emoji="📊" label="Reportes" />
             <Atajo href="/vendor/configuracion" emoji="⚙️" label="Config" />
             <Atajo
@@ -1164,7 +1159,7 @@ function AICoachPreviewCard({
           <div className="flex items-center gap-2.5">
             <span className="text-[20px]">🧠</span>
             <div>
-              <p className="text-[14px] font-extrabold tracking-tight" style={{ color: "#FF9A45" }}>Coach Comeleal</p>
+              <p className="text-[14px] font-extrabold tracking-tight" style={{ color: "#FF9A45" }}>Comeleal AI</p>
               <p className="text-[11px] text-white/50 font-medium">Tu asistente de negocio con IA</p>
             </div>
           </div>
@@ -1172,7 +1167,7 @@ function AICoachPreviewCard({
             onClick={() => router.push(`${window.location.pathname}?ai=1`)}
             className="rounded-full px-3.5 py-1 text-[11.5px] font-bold text-[#FF9A45] transition hover:bg-white/5"
             style={{ border: "1px solid rgba(255,154,69,0.3)" }}>
-            Ir al Coach →
+            Abrir Comeleal AI →
           </button>
         </div>
 
@@ -1213,7 +1208,7 @@ function AICoachPreviewCard({
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Pregúntale al Coach (ej. ¿Quiénes son mis clientes más fieles?)..."
+            placeholder="Pregúntale a Comeleal AI (ej. ¿Quiénes son mis clientes más fieles?)..."
             className="flex-1 rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all placeholder-white/30 text-white"
             style={{
               background: "rgba(255,255,255,0.06)",

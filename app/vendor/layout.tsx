@@ -220,9 +220,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         className="fixed left-0 top-0 z-30 hidden h-screen flex-col transition-all duration-200 md:flex"
         style={{ width: w, background: "#1C2526", overflow: "hidden" }}
       >
-        {/* Logo */}
+        {/* Logo + collapse toggle */}
         <div
-          className="flex h-[60px] shrink-0 items-center gap-3 px-4"
+          className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", minWidth: w }}
         >
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
@@ -240,7 +240,28 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </Link>
+          {open && (
+            <button
+              onClick={() => setOpen(false)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+              title="Colapsar menú"
+            >
+              <IconChevronLeft />
+            </button>
+          )}
         </div>
+        {!open && (
+          <button
+            onClick={() => setOpen(true)}
+            className="flex h-9 w-full shrink-0 items-center justify-center text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+            title="Expandir menú"
+          >
+            <span style={{ transform: "rotate(180deg)", display: "inline-block" }}>
+              <IconChevronLeft />
+            </span>
+          </button>
+        )}
 
         {/* Restaurant name */}
         {open && restaurantName && (
@@ -274,21 +295,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
             <NavLink key={item.href} {...item} />
           ))}
         </nav>
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="flex h-11 w-full shrink-0 items-center justify-center transition-colors hover:bg-white/5"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-          title={open ? "Colapsar menú" : "Expandir menú"}
-        >
-          <span
-            className="text-white/40"
-            style={{ transform: open ? "none" : "rotate(180deg)", display: "inline-block", transition: "transform 0.2s" }}
-          >
-            <IconChevronLeft />
-          </span>
-        </button>
 
         {/* User section — click opens account popover (email · plan · ayuda · salir) */}
         <div className="relative shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
