@@ -776,7 +776,8 @@ export default function VendorDashboard() {
 function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
   const [expanded, setExpanded] = useState(false);
   const qrUrl = `https://comeleal.com/menu/${restaurantId}`;
-  const qrImgSrc = `https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=${encodeURIComponent(qrUrl)}&choe=UTF-8&chld=M|1`;
+  // NOTE: chart.googleapis.com QR API was shut down by Google — use qrserver.com instead.
+  const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=${encodeURIComponent(qrUrl)}`;
 
   function handlePrint() {
     const win = window.open("", "_blank");

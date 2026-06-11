@@ -65,7 +65,8 @@ export default function SetupDonePage() {
 
   // Google Charts QR API — no extra dep, reliable, produces crisp PNG
   const qrImageSrc = qrUrl
-    ? `https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=${encodeURIComponent(qrUrl)}&choe=UTF-8&chld=M|1`
+    // NOTE: chart.googleapis.com QR API was shut down by Google — use qrserver.com instead.
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=${encodeURIComponent(qrUrl)}`
     : null;
 
   function handlePrint() {
