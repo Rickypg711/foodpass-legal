@@ -123,7 +123,9 @@ function CustomerCard({
       const res = await fn({
         restaurantId,
         restaurantName,
+        userId: customer.userId,
         customerName: customer.name,
+        daysSinceVisit: customer.daysSince,
         daysSinceLastVisit: customer.daysSince,
         totalVisits: customer.totalVisits,
         pointsAvailable: customer.totalPoints,

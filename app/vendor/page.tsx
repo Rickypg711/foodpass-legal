@@ -1102,7 +1102,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "get_first_scan":
     case "healthy":
     case "keep_going": return "/vendor/scanner";
-    case "send_winback": return "#at-risk";
+    case "send_winback": return "/vendor/clientes";
     default: return "/vendor/recompensas";
   }
 }
