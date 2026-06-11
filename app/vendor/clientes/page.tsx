@@ -220,6 +220,8 @@ export default function ClientesPage() {
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [winbackSent, setWinbackSent] = useState<number>(0);
+  const [winbackReturned, setWinbackReturned] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
 
   const loadCustomers = useCallback(async (rid: string) => {
@@ -301,7 +303,13 @@ export default function ClientesPage() {
       const userSnap = await getDoc(doc(db, "users", u.uid));
       const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
       if (!rid) { router.push("/activar"); return; }
-      const restSnap = await getDoc(doc(db, "restaurants", rid));
+      const [restSnap, statsSnap] = await Promise.all([
+        getDoc(doc(db, "restaurants", rid)),
+        getDoc(doc(db, "restaurants", rid, "reEngagementStats", "current")).catch(() => null)
+      ]);
+      const stats = statsSnap?.exists() ? statsSnap.data() ?? {} : {};
+      setWinbackSent(typeof stats.totalSent === "number" ? stats.totalSent : 0);
+      setWinbackReturned(typeof stats.returned === "number" ? stats.returned : 0);
       setRestaurantId(rid);
       setRestaurantName((restSnap.data()?.name as string | undefined) ?? "");
       await loadCustomers(rid);
@@ -338,6 +346,9 @@ export default function ClientesPage() {
             {!loading && customers.length > 0 && (
               <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
                 {customers.length} cliente{customers.length !== 1 ? "s" : ""} registrados
+                {(winbackSent > 0 || winbackReturned > 0) && (
+                  <> · 📨 {winbackSent} mensajes enviados · {winbackReturned} clientes recuperados</>
+                )}
               </p>
             )}
           </div>
