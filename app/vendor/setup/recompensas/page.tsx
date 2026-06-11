@@ -19,6 +19,10 @@ import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness } from "@/lib/vendorReadiness";
 
+// must match hardFailRatio/bumpStartRatio in FOODPASS functions/reward_recommendation_core.js
+const HARD_FAIL_RATIO = 0.20;
+const BUMP_START_RATIO = 0.15;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MenuItem {
@@ -73,6 +77,7 @@ function RecompensasSetupPageInner() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [spendStepAmount, setSpendStepAmount] = useState<number>(30);
 
   // Current rewards (pre-existing or after apply)
   const [currentFPR, setCurrentFPR] = useState<FirstPurchaseReward>({
@@ -117,6 +122,11 @@ function RecompensasSetupPageInner() {
 
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data();
+
+      const loyaltyEarnPolicy = data?.loyaltyEarnPolicy as any;
+      if (loyaltyEarnPolicy && typeof loyaltyEarnPolicy.spendStepAmount === "number" && loyaltyEarnPolicy.spendStepAmount > 0) {
+        setSpendStepAmount(loyaltyEarnPolicy.spendStepAmount);
+      }
 
       let hasRewards = false;
       if (data?.firstPurchaseReward) {
@@ -316,8 +326,38 @@ function RecompensasSetupPageInner() {
     }
   }
 
+  const getTierValidation = (tier: RewardTier) => {
+    if (!tier.hasMenuItem || !tier.menuItemId) return null;
+    
+    // Skip welcome / first-visit reward
+    if (tier.pointsRequired <= 0 || tier.id === "tier_welcome") {
+      return null;
+    }
+
+    const item = menuItems.find((m) => m.id === tier.menuItemId);
+    // Skip if item has no price or <= 0
+    if (!item || typeof item.price !== "number" || item.price <= 0) {
+      return null;
+    }
+
+    const ratio = item.price / (tier.pointsRequired * spendStepAmount);
+    if (ratio > HARD_FAIL_RATIO + 1e-12) {
+      return {
+        type: "error" as const,
+        message: "Esta recompensa regalaría demasiado margen. Ajusta las visitas requeridas o elige un platillo de menor costo.",
+      };
+    } else if (ratio > BUMP_START_RATIO + 1e-12) {
+      return {
+        type: "warning" as const,
+        message: "⚠️ Esta recompensa regala más del 15% de margen estimado. Te sugerimos subir los puntos requeridos o elegir un platillo de menor costo.",
+      };
+    }
+    return null;
+  };
+
   async function handleSave() {
     if (!restaurantId) return;
+
     // Validate first purchase reward
     if (currentFPR.enabled && !currentFPR.menuItemId) {
       setError("Selecciona un platillo del menú para la recompensa de bienvenida.");
@@ -326,6 +366,15 @@ function RecompensasSetupPageInner() {
     if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemId)) {
       setError("Selecciona un platillo del menú para todos los niveles activos.");
       return;
+    }
+
+    // Economics Safeguard Validation
+    for (const tier of currentTiers) {
+      const val = getTierValidation(tier);
+      if (val && val.type === "error") {
+        setError(val.message);
+        return;
+      }
     }
     setSaving(true);
     setError(null);
@@ -613,6 +662,19 @@ function RecompensasSetupPageInner() {
                       className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
                     />
                   )}
+                  {(() => {
+                    const validation = getTierValidation(tier);
+                    if (!validation) return null;
+                    return (
+                      <p
+                        className={`text-xs mt-1.5 font-medium ${
+                          validation.type === "error" ? "text-red-500" : "text-amber-600"
+                        }`}
+                      >
+                        {validation.message}
+                      </p>
+                    );
+                  })()}
                 </>
               )}
             </div>
