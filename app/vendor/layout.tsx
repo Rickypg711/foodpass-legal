@@ -319,14 +319,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 ✦ Mejorar plan
               </Link>
               <div style={{ height: 1, background: "rgba(28,37,38,0.08)" }} />
-              <Link
-                href="/para-restaurantes"
-                onClick={() => setUserMenuOpen(false)}
-                className="flex items-center gap-2 px-3.5 py-2.5 text-[13px] transition-colors hover:bg-black/5"
-                style={{ color: "rgba(28,37,38,0.75)" }}
-              >
-                <IconHelp /> Ayuda
-              </Link>
               <button
                 onClick={async () => {
                   setUserMenuOpen(false);
