@@ -217,6 +217,21 @@ function RecompensasSetupPageInner() {
   useEffect(() => {
     if (aiStep !== "generating" || !restaurantId) return;
     const db = getFirebaseDb();
+
+    let settled = false;
+
+    // Safety net: ONLY for the case where generation silently dies and never
+    // writes a draft/failed doc. The server callable (generateRewardDraft) has a
+    // 90s timeout, so we wait past that (120s) — a normal generation resolves
+    // well before this and is unaffected. This only trips when the server is
+    // truly dead, so it can't false-alarm on a slow-but-working draft.
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setAiError("La IA no respondió a tiempo. Reintenta o edita manualmente.");
+      setAiStep("idle");
+    }, 120_000);
+
     const unsub = onSnapshot(
       query(
         collection(db, "restaurants", restaurantId, "rewardRecommendationDrafts"),
@@ -227,7 +242,7 @@ function RecompensasSetupPageInner() {
         if (snap.empty) return;
         const d = snap.docs[0];
         const data = d.data();
-        
+
         // CF writes status as 'draft' or 'failed', keys are prefixed with 'proposed'
         const isSuccess = data.status === "draft" || data.status === "ready" || data.firstPurchaseReward || data.proposedFirstPurchaseReward;
         const isFailed = data.status === "failed" || data.status === "error";
@@ -261,14 +276,28 @@ function RecompensasSetupPageInner() {
           setAiReasoning(notes);
           setActiveDraftId(d.id);
           setAiApplied(true);
+          settled = true;
+          clearTimeout(timeoutId);
           setAiStep("idle");
         } else if (isFailed) {
+          settled = true;
+          clearTimeout(timeoutId);
           setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
           setAiStep("idle");
         }
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        setAiError("Se perdió la conexión con la IA. Reintenta o edita manualmente.");
+        setAiStep("idle");
       }
     );
-    return () => unsub();
+    return () => {
+      clearTimeout(timeoutId);
+      unsub();
+    };
   }, [aiStep, restaurantId]);
 
   async function handleGenerateDraft() {

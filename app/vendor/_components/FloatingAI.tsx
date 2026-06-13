@@ -99,6 +99,9 @@ export default function FloatingAI({
     if (!restaurantId || !q.trim() || asking) return;
     const userMsg = q.trim();
     setQuestion("");
+    // Snapshot the conversation so far (before adding this question) so the
+    // brain has context for follow-ups like "¿y por qué?".
+    const priorHistory = messages.slice(-6).map((m) => ({ role: m.role, text: m.text }));
     setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
     setAsking(true);
     try {
@@ -106,7 +109,7 @@ export default function FloatingAI({
         getFirebaseFunctions(),
         "queryRestaurantBrain"
       );
-      const res = await fn({ restaurantId, question: userMsg });
+      const res = await fn({ restaurantId, question: userMsg, history: priorHistory });
       setMessages((prev) => [...prev, { role: "ai", text: res.data.answer ?? "Sin respuesta." }]);
     } catch {
       setMessages((prev) => [...prev, { role: "ai", text: "No pude conectar con Comeleal AI. Intenta de nuevo." }]);

@@ -103,6 +103,24 @@ function MenuSetupPageInner() {
   useEffect(() => {
     if (!jobId || !restaurantId) return;
     const db = getFirebaseDb();
+
+    let settled = false;
+
+    // Safety net: ONLY for the case where the job silently dies and never writes
+    // a terminal status. The server function (onMenuImportJobUpdated) is allowed
+    // up to 540s, so we wait past that (570s) — a legit slow/large menu finishes
+    // well within the server limit and is unaffected. This only ever trips when
+    // the server is truly dead. (If a late result still arrives, the listener
+    // below stays attached and recovers into the review screen.)
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setAiError(
+        "La IA no respondió a tiempo. Puedes reintentar con otra foto o agregar los platillos manualmente."
+      );
+      setPhotoStep("idle");
+    }, 570_000);
+
     const unsub = onSnapshot(
       doc(db, "restaurants", restaurantId, "menuImportJobs", jobId),
       (snap) => {
@@ -110,6 +128,8 @@ function MenuSetupPageInner() {
         if (!data) return;
         const status = data.status as string;
         if (status === "needs_review") {
+          settled = true;
+          clearTimeout(timeoutId);
           // Load draftItems subcollection
           getDocs(collection(db, "restaurants", restaurantId, "menuImportJobs", jobId, "draftItems")).then((s) => {
             setDraftItems(
@@ -125,12 +145,25 @@ function MenuSetupPageInner() {
             setPhotoStep("review");
           });
         } else if (status === "failed" || status === "error") {
+          settled = true;
+          clearTimeout(timeoutId);
           setAiError("La IA no pudo leer el menú. Intenta con otra foto o agrega los platillos manualmente.");
           setPhotoStep("idle");
         }
+      },
+      () => {
+        // Snapshot listener error (permissions/network) — fail gracefully
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        setAiError("Se perdió la conexión al leer el menú. Reintenta o agrega los platillos manualmente.");
+        setPhotoStep("idle");
       }
     );
-    return () => unsub();
+    return () => {
+      clearTimeout(timeoutId);
+      unsub();
+    };
   }, [jobId, restaurantId]);
 
   // Handle photo upload
