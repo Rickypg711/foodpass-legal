@@ -56,7 +56,7 @@ export function MenuItemCard({
               <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#1C2526] sm:text-base">
                 {name}
               </p>
-              <p className="shrink-0 text-base font-bold tabular-nums text-[#d97757]">
+              <p className="shrink-0 text-base font-bold tabular-nums text-[#F28C38]">
                 {formatPrice(price)}
               </p>
             </div>
@@ -84,7 +84,7 @@ export function MenuItemCard({
                   type="button"
                   aria-label={`Agregar uno de ${name}`}
                   onClick={onIncrement}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757] text-lg font-semibold text-white shadow-sm transition-colors hover:bg-[#c46644] active:bg-[#d67428]"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F28C38] text-lg font-semibold text-white shadow-sm transition-colors hover:bg-[#c46644] active:bg-[#d67428]"
                 >
                   +
                 </button>
@@ -93,7 +93,7 @@ export function MenuItemCard({
               <button
                 type="button"
                 onClick={onAdd}
-                className="mt-3 min-h-10 w-full rounded-xl bg-[#d97757] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#c46644] active:bg-[#d67428] sm:mt-2.5 sm:w-auto sm:self-end"
+                className="mt-3 min-h-10 w-full rounded-xl bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#c46644] active:bg-[#d67428] sm:mt-2.5 sm:w-auto sm:self-end"
               >
                 Agregar
               </button>

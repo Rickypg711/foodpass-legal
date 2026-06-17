@@ -19,7 +19,7 @@ export function CheckoutCartLines() {
               <p className="text-sm font-semibold text-[#1C2526]">{l.name}</p>
               <p className="text-xs text-[#1C2526]/65">{formatPrice(l.price)} c/u</p>
             </div>
-            <p className="shrink-0 text-sm font-bold" style={{ color: "#d97757" }}>
+            <p className="shrink-0 text-sm font-bold" style={{ color: "#F28C38" }}>
               {formatPrice(l.subtotal)}
             </p>
           </div>
@@ -62,7 +62,7 @@ export function CheckoutCartLines() {
       ))}
       <li className="flex justify-between border-t border-black/10 pt-3 font-bold">
         <span>Total</span>
-        <span style={{ color: "#d97757" }}>
+        <span style={{ color: "#F28C38" }}>
           {formatPrice(lines.reduce((s, line) => s + line.subtotal, 0))}
         </span>
       </li>

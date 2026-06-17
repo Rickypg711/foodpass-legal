@@ -94,7 +94,7 @@ function MenuRestaurantHeader({
             />
           ) : (
             <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#d97757]/15 text-2xl ring-2 ring-white/10"
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#F28C38]/15 text-2xl ring-2 ring-white/10"
               aria-hidden
             >
               🍽
@@ -106,7 +106,7 @@ function MenuRestaurantHeader({
             </h1>
             {!loading && restaurantName ? (
               <div className="mt-2 space-y-1.5">
-                <p className="inline-flex max-w-full items-center rounded-full border border-[#d97757]/35 bg-[#d97757]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
+                <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
                   🔥 Recompensas en Comeleal
                 </p>
                 {secondarySubtitle ? (
@@ -118,7 +118,7 @@ function MenuRestaurantHeader({
         </div>
       </div>
       <div
-        className="h-px bg-gradient-to-r from-transparent via-[#d97757]/50 to-transparent"
+        className="h-px bg-gradient-to-r from-transparent via-[#F28C38]/50 to-transparent"
         aria-hidden
       />
     </header>

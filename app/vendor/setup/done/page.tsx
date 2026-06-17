@@ -87,14 +87,14 @@ export default function SetupDonePage() {
               background: #fff;
             }
             .logo { font-size: 14px; font-weight: 700; letter-spacing: 0.08em;
-              color: #d97757; margin-bottom: 28px; text-transform: uppercase; }
+              color: #F28C38; margin-bottom: 28px; text-transform: uppercase; }
             img { width: 260px; height: 260px; }
             h1 { margin-top: 24px; font-size: 22px; font-weight: 800; color: #141413;
               text-align: center; }
             p { margin-top: 8px; font-size: 13px; color: #141413; opacity: 0.5;
               text-align: center; max-width: 220px; line-height: 1.5; }
             .cta { margin-top: 20px; font-size: 15px; font-weight: 700;
-              color: #d97757; text-align: center; }
+              color: #F28C38; text-align: center; }
           </style>
         </head>
         <body>
@@ -113,7 +113,7 @@ export default function SetupDonePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-        <svg className="h-6 w-6 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+        <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
         </svg>
@@ -126,7 +126,7 @@ export default function SetupDonePage() {
       <div className="mx-auto w-full max-w-sm text-center">
 
         {/* Celebration icon */}
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#d97757]/10">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#F28C38]/10">
           <span className="text-4xl" role="img" aria-label="confetti">🎉</span>
         </div>
 
@@ -142,7 +142,7 @@ export default function SetupDonePage() {
         {/* QR Code block */}
         {qrImageSrc && (
           <div className="mt-8 rounded-2xl border border-[#141413]/8 bg-white p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#d97757]">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
               Tu código QR de menú
             </p>
             <p className="mb-4 text-xs text-[#141413]/50">
@@ -166,7 +166,7 @@ export default function SetupDonePage() {
             {/* Print button */}
             <button
               onClick={handlePrint}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#d97757]/30 bg-[#d97757]/5 px-4 py-3 text-sm font-semibold text-[#d97757] hover:bg-[#d97757]/10 transition-all"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-3 text-sm font-semibold text-[#F28C38] hover:bg-[#F28C38]/10 transition-all"
             >
               🖨️ Imprimir QR
             </button>
@@ -176,7 +176,7 @@ export default function SetupDonePage() {
         {/* CTA */}
         <button
           onClick={() => router.push("/vendor")}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
         >
           Ver mi panel →
         </button>

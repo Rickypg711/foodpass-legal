@@ -77,7 +77,7 @@ export default function SetupPage() {
       {/* Header */}
       <div className="border-b border-[#141413]/8 bg-white px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-lg">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#d97757]">Configuración inicial</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#F28C38]">Configuración inicial</p>
           <h1 className="mt-1 text-xl font-bold text-[#141413]">
             Activa {restaurantName}
           </h1>
@@ -89,11 +89,11 @@ export default function SetupPage() {
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs text-[#141413]/45 mb-1.5">
               <span>{done} de {total} pasos completados</span>
-              <span className="font-medium text-[#d97757]">{donePct}%</span>
+              <span className="font-medium text-[#F28C38]">{donePct}%</span>
             </div>
             <div className="h-2 w-full rounded-full bg-[#141413]/8 overflow-hidden">
               <div
-                className="h-full rounded-full bg-[#d97757] transition-all duration-500"
+                className="h-full rounded-full bg-[#F28C38] transition-all duration-500"
                 style={{ width: `${donePct}%` }}
               />
             </div>
@@ -112,17 +112,17 @@ export default function SetupPage() {
                 href={step.href}
                 className={`group flex items-center gap-4 rounded-2xl border p-5 transition-all ${
                   isDone
-                    ? "border-[#d97757]/20 bg-[#d97757]/5"
-                    : "border-[#141413]/8 bg-white hover:border-[#d97757]/40 hover:shadow-sm"
+                    ? "border-[#F28C38]/20 bg-[#F28C38]/5"
+                    : "border-[#141413]/8 bg-white hover:border-[#F28C38]/40 hover:shadow-sm"
                 }`}
               >
                 <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${
-                  isDone ? "bg-[#d97757]/15" : "bg-[#141413]/5 group-hover:bg-[#d97757]/10"
+                  isDone ? "bg-[#F28C38]/15" : "bg-[#141413]/5 group-hover:bg-[#F28C38]/10"
                 }`}>
                   {isDone ? "✓" : step.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold ${isDone ? "text-[#d97757]" : "text-[#141413]"}`}>
+                  <p className={`text-sm font-semibold ${isDone ? "text-[#F28C38]" : "text-[#141413]"}`}>
                     {isDone ? step.doneLabel : step.title}
                   </p>
                   <p className="mt-0.5 text-xs text-[#141413]/45 truncate">
@@ -130,7 +130,7 @@ export default function SetupPage() {
                   </p>
                 </div>
                 {!isDone && (
-                  <svg className="h-5 w-5 shrink-0 text-[#141413]/25 group-hover:text-[#d97757] transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 shrink-0 text-[#141413]/25 group-hover:text-[#F28C38] transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 )}
@@ -153,7 +153,7 @@ export default function SetupPage() {
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
       </svg>

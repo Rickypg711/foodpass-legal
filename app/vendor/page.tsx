@@ -333,7 +333,7 @@ export default function VendorDashboard() {
         </p>
         <button onClick={() => window.location.reload()}
           className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: "#d97757" }}>
+          style={{ background: "#F28C38" }}>
           Reintentar
         </button>
       </div>
@@ -374,7 +374,7 @@ export default function VendorDashboard() {
             )}
             <Link href="/vendor/scanner"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
-              style={{ background: "#d97757" }}>
+              style={{ background: "#F28C38" }}>
               <IconQr size={11} /> Escanear
             </Link>
           </div>
@@ -422,7 +422,7 @@ export default function VendorDashboard() {
           <Link href="/vendor/scanner"
             className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
             style={{
-              background: "linear-gradient(135deg, #FF9A45 0%, #d97757 55%, #E07830 100%)",
+              background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
               boxShadow: "0 6px 28px rgba(242,140,56,0.28)",
             }}>
             <div>
@@ -503,14 +503,14 @@ export default function VendorDashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas hoy</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     💵
                   </div>
                 </div>
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
                   ${data.ventasHoy.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ver reportes →</p>
+                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ver reportes →</p>
               </Link>
 
               <Link href="/vendor/pedidos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
@@ -518,14 +518,14 @@ export default function VendorDashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Pedidos en cola</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     ⏳
                   </div>
                 </div>
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
                   {data.pedidosCola}
                 </p>
-                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ver cocina →</p>
+                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ver cocina →</p>
               </Link>
 
               <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
@@ -533,14 +533,14 @@ export default function VendorDashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Cuentas abiertas</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     📖
                   </div>
                 </div>
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
                   {data.cuentasAbiertas}
                 </p>
-                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Ir a POS →</p>
+                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ir a POS →</p>
               </Link>
 
               <Link href="/vendor/scanner" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
@@ -548,14 +548,14 @@ export default function VendorDashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Escaneos hoy</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#d97757" }}>
+                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     📷
                   </div>
                 </div>
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
                   {data.scansToday}
                 </p>
-                <p className="mt-1 text-[11px] text-[#d97757] font-semibold group-hover:underline">Escanear →</p>
+                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Escanear →</p>
               </Link>
 
             </div>
@@ -705,7 +705,7 @@ export default function VendorDashboard() {
               </p>
               <Link href="/vendor/clientes"
                 className="text-[11px] font-semibold"
-                style={{ color: "#d97757" }}>
+                style={{ color: "#F28C38" }}>
                 Ver todos →
               </Link>
             </div>
@@ -716,7 +716,7 @@ export default function VendorDashboard() {
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                     style={{ background: i === 0 ? "rgba(242,140,56,0.06)" : "transparent" }}>
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                      style={{ background: "rgba(242,140,56,0.12)", color: "#d97757" }}>
+                      style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}>
                       {(scan.customerName[0] ?? "C").toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -790,13 +790,13 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
           body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
             min-height:100vh;padding:40px;background:#fff}
-          .logo{font-size:14px;font-weight:700;letter-spacing:.08em;color:#d97757;
+          .logo{font-size:14px;font-weight:700;letter-spacing:.08em;color:#F28C38;
             margin-bottom:28px;text-transform:uppercase}
           img{width:260px;height:260px}
           h1{margin-top:24px;font-size:22px;font-weight:800;color:#141413;text-align:center}
           p{margin-top:8px;font-size:13px;color:#141413;opacity:.5;text-align:center;
             max-width:220px;line-height:1.5}
-          .cta{margin-top:20px;font-size:15px;font-weight:700;color:#d97757;text-align:center}
+          .cta{margin-top:20px;font-size:15px;font-weight:700;color:#F28C38;text-align:center}
         </style>
       </head><body>
         <span class="logo">Comeleal</span>
@@ -854,8 +854,8 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
           </p>
           <button
             onClick={handlePrint}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#d97757]/10"
-            style={{ borderColor: "rgba(217,119,87,0.3)", color: "#d97757", background: "rgba(217,119,87,0.05)" }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
+            style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
           >
             🖨️ Imprimir QR
           </button>
@@ -918,13 +918,13 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
             </p>
           </div>
         </div>
-        <span style={{ color: "#d97757", fontSize: 12, fontWeight: 600 }}>Ver →</span>
+        <span style={{ color: "#F28C38", fontSize: 12, fontWeight: 600 }}>Ver →</span>
       </div>
 
       {/* Progress bar */}
       <div className="mb-3 h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(28,37,38,0.07)" }}>
         <div className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #d97757)" }} />
+          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #F28C38)" }} />
       </div>
 
       {/* Step chips */}
@@ -935,7 +935,7 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
             <div key={step.key}
               className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
               style={pending
-                ? { background: "rgba(217,119,87,0.1)", color: "#d97757" }
+                ? { background: "rgba(217,119,87,0.1)", color: "#F28C38" }
                 : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.45)" }
               }>
               {pending ? step.emoji : "✓"} {step.label}
@@ -961,7 +961,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
           <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
             {day.count > 0 && (
               <span className="text-[10px] font-bold tabular-nums"
-                style={{ color: day.isToday ? "#d97757" : "rgba(28,37,38,0.4)" }}>
+                style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
                 {day.count}
               </span>
             )}
@@ -971,7 +971,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               style={{
                 height: barPx,
                 background: day.isToday
-                  ? "linear-gradient(180deg, #FF9A45 0%, #d97757 100%)"
+                  ? "linear-gradient(180deg, #FF9A45 0%, #F28C38 100%)"
                   : day.count > 0
                   ? "rgba(242,140,56,0.35)"
                   : "rgba(28,37,38,0.07)",
@@ -979,7 +979,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               }}
             />
             <span className="text-[10px] font-medium"
-              style={{ color: day.isToday ? "#d97757" : "rgba(28,37,38,0.4)" }}>
+              style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
               {day.label}
             </span>
           </div>
@@ -1008,7 +1008,7 @@ function StatCard({
       <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
         style={{
           background: dangerActive ? "rgba(239,68,68,0.08)" : "rgba(242,140,56,0.09)",
-          color: dangerActive ? "#EF4444" : "#d97757",
+          color: dangerActive ? "#EF4444" : "#F28C38",
         }}>
         {icon}
       </div>
@@ -1257,12 +1257,12 @@ function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
       <div className="mt-4 flex gap-3">
         <Link href="/vendor/recompensas"
           className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-85"
-          style={{ borderColor: "rgba(217,119,87,0.35)", color: "#d97757" }}>
+          style={{ borderColor: "rgba(217,119,87,0.35)", color: "#F28C38" }}>
           Ver programa
         </Link>
         <Link href="/vendor/scanner"
           className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-white transition hover:opacity-90"
-          style={{ background: "#d97757" }}>
+          style={{ background: "#F28C38" }}>
           Escanear
         </Link>
       </div>
@@ -1278,7 +1278,7 @@ function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
 
 function Spinner() {
   return (
-    <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>

@@ -186,7 +186,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors text-left"
           title={!open ? label : undefined}
           style={aiOpen
-            ? { background: "rgba(242,140,56,0.16)", color: "#d97757" }
+            ? { background: "rgba(242,140,56,0.16)", color: "#F28C38" }
             : { color: "rgba(255,255,255,0.52)" }
           }
         >
@@ -202,7 +202,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors"
         title={!open ? label : undefined}
         style={active
-          ? { background: "rgba(242,140,56,0.16)", color: "#d97757" }
+          ? { background: "rgba(242,140,56,0.16)", color: "#F28C38" }
           : { color: "rgba(255,255,255,0.52)" }
         }
       >
@@ -350,7 +350,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               ) : (
                 <div
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                  style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}
+                  style={{ background: "rgba(242,140,56,0.2)", color: "#F28C38" }}
                 >
                   {userInitial}
                 </div>
@@ -361,7 +361,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 </p>
                 <span
                   className="inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ background: "rgba(242,140,56,0.18)", color: "#d97757" }}
+                  style={{ background: "rgba(242,140,56,0.18)", color: "#F28C38" }}
                 >
                   Free
                 </span>
@@ -389,7 +389,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               ) : (
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
-                  style={{ background: "rgba(242,140,56,0.2)", color: "#d97757" }}
+                  style={{ background: "rgba(242,140,56,0.2)", color: "#F28C38" }}
                 >
                   {userInitial}
                 </div>

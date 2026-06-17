@@ -112,7 +112,7 @@ function DownloadContent() {
                 priority
               />
             </div>
-            <p className="mb-4 inline-block rounded-full border border-[#d97757]/30 bg-[#d97757]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#d97757]">
+            <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
               Restaurantes locales · Recompensas
             </p>
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
@@ -123,7 +123,7 @@ function DownloadContent() {
             </p>
 
             {ctxHint && (
-              <div className="mx-auto mt-6 max-w-md rounded-xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3 text-sm font-semibold text-[#FFB366]">
+              <div className="mx-auto mt-6 max-w-md rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/10 px-4 py-3 text-sm font-semibold text-[#FFB366]">
                 {ctxHint}
               </div>
             )}
@@ -174,7 +174,7 @@ function DownloadContent() {
                   key={i}
                   className="flex items-center gap-4 rounded-2xl border border-[#1C2526]/8 bg-white p-5 shadow-sm"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/10 text-xl" aria-hidden>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-xl" aria-hidden>
                     {card.icon}
                   </span>
                   <span className="font-semibold text-[#1C2526] text-sm sm:text-base">{card.title}</span>
@@ -221,7 +221,7 @@ export default function DownloadPage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-[#FAF7F2]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d97757] border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#F28C38] border-t-transparent"></div>
       </div>
     }>
       <DownloadContent />

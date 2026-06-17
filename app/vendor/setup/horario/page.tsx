@@ -167,7 +167,7 @@ function HorarioSetupPageInner() {
                     type="button"
                     onClick={() => setDayHours(key, { isClosed: !day.isClosed })}
                     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                      day.isClosed ? "bg-[#141413]/20" : "bg-[#d97757]"
+                      day.isClosed ? "bg-[#141413]/20" : "bg-[#F28C38]"
                     }`}
                   >
                     <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
@@ -182,14 +182,14 @@ function HorarioSetupPageInner() {
                         type="time"
                         value={fmtTime(day.openingTime.hour, day.openingTime.minute)}
                         onChange={(e) => setDayHours(key, { openingTime: parseTimeStr(e.target.value) })}
-                        className="rounded-lg border border-[#141413]/12 bg-[#faf9f5] px-2 py-1.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                        className="rounded-lg border border-[#141413]/12 bg-[#faf9f5] px-2 py-1.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                       />
                       <span className="text-[#141413]/30">—</span>
                       <input
                         type="time"
                         value={fmtTime(day.closingTime.hour, day.closingTime.minute)}
                         onChange={(e) => setDayHours(key, { closingTime: parseTimeStr(e.target.value) })}
-                        className="rounded-lg border border-[#141413]/12 bg-[#faf9f5] px-2 py-1.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                        className="rounded-lg border border-[#141413]/12 bg-[#faf9f5] px-2 py-1.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                       />
                     </div>
                   ) : (
@@ -204,7 +204,7 @@ function HorarioSetupPageInner() {
         <button
           onClick={handleSave}
           disabled={saving || saved}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar horario →"}
         </button>
@@ -224,7 +224,7 @@ export default function HorarioSetupPage() {
 function Spinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
       </svg>

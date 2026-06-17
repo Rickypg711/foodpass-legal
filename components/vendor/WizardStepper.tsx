@@ -32,9 +32,9 @@ export function WizardStepper({ current }: { current: StepKey }) {
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
                       done
-                        ? "bg-[#d97757] text-white"
+                        ? "bg-[#F28C38] text-white"
                         : active
-                        ? "bg-[#d97757] text-white ring-4 ring-[#d97757]/15"
+                        ? "bg-[#F28C38] text-white ring-4 ring-[#F28C38]/15"
                         : "bg-[#141413]/10 text-[#141413]/35"
                     }`}
                   >
@@ -43,7 +43,7 @@ export function WizardStepper({ current }: { current: StepKey }) {
                   <span
                     className={`text-xs font-semibold ${
                       active  ? "text-[#141413]"
-                      : done  ? "text-[#d97757]"
+                      : done  ? "text-[#F28C38]"
                       : "text-[#141413]/30"
                     }`}
                   >
@@ -55,7 +55,7 @@ export function WizardStepper({ current }: { current: StepKey }) {
                 {!isLast && (
                   <div
                     className={`mx-2 flex-1 h-px transition-all ${
-                      done ? "bg-[#d97757]" : "bg-[#141413]/10"
+                      done ? "bg-[#F28C38]" : "bg-[#141413]/10"
                     }`}
                   />
                 )}

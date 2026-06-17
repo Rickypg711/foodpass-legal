@@ -69,7 +69,7 @@ function fmt(n: number) {
 
 function Spinner() {
   return (
-    <svg className="h-7 w-7 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-7 w-7 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
@@ -268,7 +268,7 @@ export default function ReportesPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#F5F3EF" }}>
         <p className="text-sm text-gray-500">No pudimos cargar tus reportes.</p>
-        <button onClick={() => window.location.reload()} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#d97757]">
+        <button onClick={() => window.location.reload()} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#F28C38]">
           Reintentar
         </button>
       </div>
@@ -336,13 +336,13 @@ export default function ReportesPage() {
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meta diaria</p>
                 <p className="text-[18px] font-black text-[#1C2526]">{fmt(data.todayRevenue)} / {fmt(data.dailyGoal)}</p>
-                <p className="text-[11px] text-[#d97757] font-bold">{goalProgressDisplay}% de la meta alcanzado</p>
+                <p className="text-[11px] text-[#F28C38] font-bold">{goalProgressDisplay}% de la meta alcanzado</p>
               </div>
               <div className="relative w-16 h-16">
                 {/* SVG circular progress indicator */}
                 <svg className="w-full h-full" viewBox="0 0 36 36">
                   <path className="text-gray-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-[#d97757]" strokeWidth="3.2" strokeDasharray={`${goalProgressDisplay}, 100`} strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path className="text-[#F28C38]" strokeWidth="3.2" strokeDasharray={`${goalProgressDisplay}, 100`} strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[#1C2526]">{goalProgressDisplay}%</div>
               </div>
@@ -350,7 +350,7 @@ export default function ReportesPage() {
           ) : (
             <div className="rounded-2xl p-5 bg-white flex flex-col justify-center text-center space-y-1" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
               <p className="text-[12px] font-bold text-gray-400">Meta diaria no configurada</p>
-              <Link href="/vendor/configuracion" className="text-[11px] font-bold text-[#d97757] hover:underline">
+              <Link href="/vendor/configuracion" className="text-[11px] font-bold text-[#F28C38] hover:underline">
                 Establecer meta en Configuración →
               </Link>
             </div>
@@ -370,7 +370,7 @@ export default function ReportesPage() {
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <div>
               <p className="text-[14px] font-bold text-[#1C2526]">Ingresos de la semana</p>
-              <p className="text-[22px] font-black text-[#d97757]">{fmt(data.weeklyRevenueTotal)}</p>
+              <p className="text-[22px] font-black text-[#F28C38]">{fmt(data.weeklyRevenueTotal)}</p>
             </div>
             
             {/* Custom SVG Bar Chart */}
@@ -386,7 +386,7 @@ export default function ReportesPage() {
                       className="w-full rounded-t-lg transition-all duration-300"
                       style={{
                         height: `${Math.max(heightPct, 2)}%`,
-                        background: "linear-gradient(180deg, #FF9A45 0%, #d97757 100%)",
+                        background: "linear-gradient(180deg, #FF9A45 0%, #F28C38 100%)",
                       }}
                     />
                     <div className="text-center">
@@ -449,7 +449,7 @@ export default function ReportesPage() {
                 {data.topProducts.map((p, idx) => (
                   <div key={idx} className="flex justify-between items-center py-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-50 text-[11px] font-black text-[#d97757]">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-50 text-[11px] font-black text-[#F28C38]">
                         #{idx + 1}
                       </span>
                       <span className="text-[13px] font-bold text-[#1C2526]">{p.name}</span>
@@ -483,7 +483,7 @@ export default function ReportesPage() {
                 </div>
                 <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clientes en riesgo</p>
-                  <p className="text-[20px] font-black text-[#d97757]">{data.metrics30d.atRiskCount}</p>
+                  <p className="text-[20px] font-black text-[#F28C38]">{data.metrics30d.atRiskCount}</p>
                 </div>
               </div>
             ) : (

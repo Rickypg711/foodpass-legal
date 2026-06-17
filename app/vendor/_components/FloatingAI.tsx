@@ -29,7 +29,7 @@ interface Message {
 
 function Spinner() {
   return (
-    <svg className="h-4 w-4 animate-spin shrink-0" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 animate-spin shrink-0" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
@@ -224,7 +224,7 @@ export default function FloatingAI({
                     className="rounded-full px-3 py-1.5 text-[11px] font-medium transition-all hover:scale-[1.02] disabled:opacity-40"
                     style={{
                       background: "rgba(217,119,87,0.08)",
-                      color: "#d97757",
+                      color: "#F28C38",
                       border: "1px solid rgba(217,119,87,0.18)",
                     }}
                   >
@@ -288,7 +288,7 @@ export default function FloatingAI({
                   className="rounded-full px-3 py-1 text-[11px] font-medium transition-all hover:scale-[1.02] disabled:opacity-40"
                   style={{
                     background: "rgba(217,119,87,0.06)",
-                    color: "#d97757",
+                    color: "#F28C38",
                     border: "1px solid rgba(217,119,87,0.14)",
                   }}
                 >
@@ -323,7 +323,7 @@ export default function FloatingAI({
               type="submit"
               disabled={!question.trim() || asking || !restaurantId}
               className="rounded-xl px-4 py-2.5 text-[13px] font-bold text-white transition-opacity disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)" }}
+              style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" }}
             >
               →
             </button>
@@ -336,7 +336,7 @@ export default function FloatingAI({
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-6 right-6 z-[49] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95"
         style={{
-          background: open ? "#1C2526" : "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)",
+          background: open ? "#1C2526" : "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)",
           boxShadow: open
             ? "0 4px 20px rgba(28,37,38,0.4)"
             : "0 4px 20px rgba(217,119,87,0.5)",

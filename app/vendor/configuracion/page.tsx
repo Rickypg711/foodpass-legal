@@ -263,7 +263,7 @@ export default function ConfiguracionPage() {
             >
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
-                style={{ background: "rgba(217,119,87,0.12)", color: "#d97757" }}
+                style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38" }}
               >
                 {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
               </div>
@@ -279,7 +279,7 @@ export default function ConfiguracionPage() {
                 className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
                 style={
                   plan === "pro"
-                    ? { background: "rgba(217,119,87,0.15)", color: "#d97757" }
+                    ? { background: "rgba(217,119,87,0.15)", color: "#F28C38" }
                     : { background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.4)" }
                 }
               >
@@ -335,7 +335,7 @@ export default function ConfiguracionPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold"
-                    style={{ background: "rgba(217,119,87,0.1)", color: "#d97757" }}
+                    style={{ background: "rgba(217,119,87,0.1)", color: "#F28C38" }}
                   >
                     Activar →
                   </a>
@@ -489,7 +489,7 @@ export default function ConfiguracionPage() {
                       className="rounded-full px-3 py-1.5 text-[12px] font-medium transition-all"
                       style={
                         active
-                          ? { background: "#d97757", color: "#fff", border: "1.5px solid #d97757" }
+                          ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
                           : { background: "transparent", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
                       }
                     >
@@ -522,7 +522,7 @@ export default function ConfiguracionPage() {
                       border: "1px solid rgba(28,37,38,0.12)",
                       color: "#1C2526",
                     }}
-                    onFocus={(e) => (e.target.style.borderColor = "#d97757")}
+                    onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
                     onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
                   />
                   <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>MXN / día</span>
@@ -538,7 +538,7 @@ export default function ConfiguracionPage() {
               onClick={handleSave}
               disabled={saving || saved}
               className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[13px] font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60"
-              style={{ background: saved ? "#22c55e" : "#d97757" }}
+              style={{ background: saved ? "#22c55e" : "#F28C38" }}
             >
               {saved ? "✓ Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
             </button>
@@ -602,7 +602,7 @@ function TextInput({
         border: "1px solid rgba(28,37,38,0.12)",
         color: "#1C2526",
       }}
-      onFocus={(e) => (e.target.style.borderColor = "#d97757")}
+      onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
       onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
     />
   );
@@ -645,7 +645,7 @@ function ManageLink({
 
 function Spinner() {
   return (
-    <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>

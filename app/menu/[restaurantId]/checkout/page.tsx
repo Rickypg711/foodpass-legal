@@ -92,7 +92,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen p-6 text-center" style={{ backgroundColor: "#F0E3D2" }}>
         <p className="text-sm">Pedidos en línea no disponibles.</p>
-        <Link href={`/menu/${restaurantId}`} className="mt-4 inline-block text-[#d97757] underline">
+        <Link href={`/menu/${restaurantId}`} className="mt-4 inline-block text-[#F28C38] underline">
           Volver al menú
         </Link>
       </div>
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
   if (!cartReady) {
     return (
       <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-        <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#d97757" }}>
+        <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
           <h1 className="text-lg font-semibold text-white">Confirmar pedido</h1>
         </header>
         <main className="mx-auto max-w-md px-4 py-6">
@@ -122,7 +122,7 @@ export default function CheckoutPage() {
         <p className="text-sm">Tu carrito está vacío.</p>
         <Link
           href={`/menu/${encodeURIComponent(restaurantId)}`}
-          className="mt-4 inline-block text-[#d97757] font-semibold"
+          className="mt-4 inline-block text-[#F28C38] font-semibold"
         >
           Volver al menú
         </Link>
@@ -285,7 +285,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#d97757" }}>
+      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
         <h1 className="text-lg font-semibold text-white">Confirmar pedido</h1>
         <p className="text-xs text-white/90">{restaurantName} · Recoger en local</p>
       </header>
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
             </a>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 ml-3 inline-block text-sm font-semibold text-[#d97757] underline"
+              className="mt-3 ml-3 inline-block text-sm font-semibold text-[#F28C38] underline"
             >
               Ver estado del pedido
             </Link>
@@ -344,14 +344,14 @@ export default function CheckoutPage() {
             </p>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 inline-block text-sm font-semibold text-[#d97757] underline"
+              className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline"
             >
               Ver estado del pedido
             </Link>
           </div>
         ) : checkoutOrder && itemCount === 0 ? (
           <div
-            className="mb-4 rounded-xl border border-[#d97757]/30 bg-white p-4 text-sm text-[#1C2526]"
+            className="mb-4 rounded-xl border border-[#F28C38]/30 bg-white p-4 text-sm text-[#1C2526]"
             role="status"
           >
             <p className="font-medium">Pedido creado.</p>
@@ -360,7 +360,7 @@ export default function CheckoutPage() {
             </p>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 inline-block text-sm font-semibold text-[#d97757] underline"
+              className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline"
             >
               Ver estado del pedido
             </Link>
@@ -402,7 +402,7 @@ export default function CheckoutPage() {
             type="submit"
             disabled={submitting || !mercadoPagoAvailable}
             className="rounded-xl py-3 font-semibold text-white disabled:opacity-60"
-            style={{ backgroundColor: "#d97757" }}
+            style={{ backgroundColor: "#F28C38" }}
           >
             {submitting ? "Redirigiendo a Mercado Pago…" : "Pagar con Mercado Pago"}
           </button>

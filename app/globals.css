@@ -3,12 +3,12 @@
 /* ==========================================================================
    Comeleal brand tokens — single source of truth for the web.
    Flutter equivalent: lib/styles/styles.dart
-   Change colors here; Tailwind arbitrary values like text-[#d97757] still
+   Change colors here; Tailwind arbitrary values like text-[#F28C38] still
    work but new code should prefer these vars for consistency.
    ========================================================================== */
 :root {
   /* Brand palette */
-  --comeleal-primary: #d97757;        /* Warm orange — CTAs, icons, highlights */
+  --comeleal-primary: #F28C38;        /* Warm orange — CTAs, icons, highlights */
   --comeleal-primary-dark: #de7626;   /* Hover / pressed state */
   --comeleal-primary-light: #ff9a45;  /* Gradient top */
   --comeleal-accent: #1C2526;         /* Deep black — body text, headings */
@@ -114,9 +114,9 @@ a.menu-cta-enter {
   animation: menu-cta-enter 0.28s ease-out forwards;
 }
 
-/* Brand base #d97757 at 55%; dimensional gradient + pulse. Both classes required on <a>. */
+/* Brand base #F28C38 at 55%; dimensional gradient + pulse. Both classes required on <a>. */
 a.menu-cta-enter.menu-cta-pulse {
-  background: linear-gradient(180deg, #ff9a45 0%, #d97757 55%, #de7626 100%);
+  background: linear-gradient(180deg, #ff9a45 0%, #F28C38 55%, #de7626 100%);
   animation:
     menu-cta-enter 0.28s ease-out forwards,
     menu-cta-pulse 2.4s ease-in-out 0.35s infinite;
@@ -136,7 +136,7 @@ a.menu-cta-enter.menu-cta-pulse {
 /* Pause both stacked anims so Tailwind active:scale-[0.98] owns transform while pressed. */
 a.menu-cta-enter.menu-cta-pulse:active:not([aria-disabled="true"]) {
   animation-play-state: paused, paused;
-  background: linear-gradient(180deg, #d97757 0%, #de7626 52%, #c86a1f 100%);
+  background: linear-gradient(180deg, #F28C38 0%, #de7626 52%, #c86a1f 100%);
   box-shadow:
     inset 0 2px 3px rgba(28, 37, 38, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
@@ -150,7 +150,7 @@ a.menu-cta-enter.menu-cta-pulse:active:not([aria-disabled="true"]) {
 @media (prefers-reduced-motion: reduce) {
   a.menu-cta-enter.menu-cta-pulse {
     animation: menu-cta-enter 0.28s ease-out forwards;
-    background: linear-gradient(180deg, #ff9a45 0%, #d97757 55%, #de7626 100%);
+    background: linear-gradient(180deg, #ff9a45 0%, #F28C38 55%, #de7626 100%);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
       0 5px 14px rgba(242, 140, 56, 0.24),

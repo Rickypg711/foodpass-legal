@@ -48,7 +48,7 @@ function fmt(n: number) {
 function Spinner({ size = 20 }: { size?: number }) {
   return (
     <svg
-      style={{ width: size, height: size, color: "#d97757" }}
+      style={{ width: size, height: size, color: "#F28C38" }}
       className="animate-spin"
       fill="none"
       viewBox="0 0 24 24"
@@ -103,12 +103,12 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
           </p>
         )}
         <div className="mt-auto flex items-end justify-between pt-2">
-          <p className="text-[14px] font-bold" style={{ color: "#d97757" }}>
+          <p className="text-[14px] font-bold" style={{ color: "#F28C38" }}>
             {fmt(item.price)}
           </p>
           <span
             className="flex h-7 w-7 items-center justify-center rounded-xl text-[18px] font-bold text-white transition-transform group-hover:scale-110"
-            style={{ background: "#d97757", lineHeight: 1 }}
+            style={{ background: "#F28C38", lineHeight: 1 }}
           >
             +
           </span>
@@ -155,7 +155,7 @@ function CartRow({
         <button
           onClick={() => onIncrement(index)}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-[16px] font-bold transition-colors"
-          style={{ background: "rgba(217,119,87,0.12)", color: "#d97757" }}
+          style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38" }}
         >
           +
         </button>
@@ -223,7 +223,7 @@ function CheckoutDialog({
                   className="flex flex-col items-center gap-1.5 rounded-2xl p-4 transition-all"
                   style={
                     mode === opt.key
-                      ? { background: "rgba(217,119,87,0.1)", border: "2px solid #d97757" }
+                      ? { background: "rgba(217,119,87,0.1)", border: "2px solid #F28C38" }
                       : { background: "#F5F3EF", border: "2px solid transparent" }
                   }
                 >
@@ -250,7 +250,7 @@ function CheckoutDialog({
                     className="flex items-center gap-2.5 rounded-xl px-4 py-3 transition-all"
                     style={
                       method === m.key
-                        ? { background: "rgba(217,119,87,0.1)", border: "2px solid #d97757" }
+                        ? { background: "rgba(217,119,87,0.1)", border: "2px solid #F28C38" }
                         : { background: "#F5F3EF", border: "2px solid transparent" }
                     }
                   >
@@ -295,7 +295,7 @@ function CheckoutDialog({
             onClick={() => onConfirm(mode, method, name, notes)}
             disabled={processing || (mode === "tab" && !name.trim())}
             className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-opacity disabled:opacity-40"
-            style={{ background: mode === "now" ? "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)" : "#1C2526" }}
+            style={{ background: mode === "now" ? "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" : "#1C2526" }}
           >
             {processing ? (
               <span className="flex items-center justify-center gap-2">
@@ -337,7 +337,7 @@ function SuccessOverlay({ mode, total, onDone }: { mode: CheckoutMode; total: nu
         <p className="text-[22px] font-extrabold" style={{ color: "#1C2526" }}>
           {mode === "now" ? "¡Cobrado!" : "Cuenta abierta"}
         </p>
-        <p className="text-[15px] font-bold" style={{ color: "#d97757" }}>{fmt(total)}</p>
+        <p className="text-[15px] font-bold" style={{ color: "#F28C38" }}>{fmt(total)}</p>
         <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
           {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
         </p>
@@ -704,7 +704,7 @@ export default function PosPage() {
               {activeOpenTabs.length > 0 && (
                 <span
                   className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white animate-pulse"
-                  style={{ background: "#d97757" }}
+                  style={{ background: "#F28C38" }}
                 >
                   {activeOpenTabs.length}
                 </span>
@@ -749,7 +749,7 @@ export default function PosPage() {
               />
 
               {addingToTab && (
-                <div className="p-3 rounded-xl flex items-center justify-between text-[13px] font-semibold animate-pulse" style={{ background: "rgba(217,119,87,0.12)", color: "#d97757", border: "1px solid rgba(217,119,87,0.25)" }}>
+                <div className="p-3 rounded-xl flex items-center justify-between text-[13px] font-semibold animate-pulse" style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38", border: "1px solid rgba(217,119,87,0.25)" }}>
                   <span>📝 Agregando a: {addingToTab.customerName || `Cuenta #${addingToTab.id.slice(-4)}`}</span>
                   <button
                     onClick={() => {
@@ -757,7 +757,7 @@ export default function PosPage() {
                       clearCart();
                     }}
                     className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-95"
-                    style={{ background: "#d97757" }}
+                    style={{ background: "#F28C38" }}
                   >
                     Cancelar
                   </button>
@@ -786,7 +786,7 @@ export default function PosPage() {
                     className="shrink-0 rounded-full px-4 py-1.5 text-[12px] font-bold transition-all"
                     style={
                       selectedCategory === cat
-                        ? { background: "#d97757", color: "#ffffff" }
+                        ? { background: "#F28C38", color: "#ffffff" }
                         : { background: "rgba(28,37,38,0.08)", color: "rgba(28,37,38,0.6)" }
                     }
                   >
@@ -845,7 +845,7 @@ export default function PosPage() {
               style={{ borderBottom: "1px solid rgba(28,37,38,0.06)" }}
             >
               <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
-                Carrito {cartCount > 0 && <span style={{ color: "#d97757" }}>({cartCount})</span>}
+                Carrito {cartCount > 0 && <span style={{ color: "#F28C38" }}>({cartCount})</span>}
               </p>
               {cart.length > 0 && (
                 <button
@@ -901,7 +901,7 @@ export default function PosPage() {
                 }}
                 disabled={cart.length === 0}
                 className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-all disabled:opacity-30 hover:opacity-90 active:scale-[0.98]"
-                style={{ background: "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
+                style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
               >
                 {addingToTab ? "Actualizar Cuenta" : "Listo →"}
               </button>
@@ -928,7 +928,7 @@ export default function PosPage() {
                 }
               }}
               className="rounded-xl px-6 py-3 text-[14px] font-extrabold"
-              style={{ background: "linear-gradient(135deg, #d97757 0%, #FF9A45 100%)", color: "#fff" }}
+              style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", color: "#fff" }}
             >
               {addingToTab ? "Actualizar Cuenta" : "Cobrar →"}
             </button>
@@ -1083,7 +1083,7 @@ function OpenTabsModal({
                         Creada a las {formattedTime} · {itemCount} {itemCount === 1 ? "producto" : "productos"}
                       </p>
                     </div>
-                    <p className="text-[15px] font-bold text-[#d97757]">{fmt(tab.total || 0)}</p>
+                    <p className="text-[15px] font-bold text-[#F28C38]">{fmt(tab.total || 0)}</p>
                   </div>
 
                   {/* Tab Items List */}
@@ -1112,7 +1112,7 @@ function OpenTabsModal({
                     </button>
                     <button
                       onClick={() => onCloseTab(tab.id)}
-                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-white bg-[#d97757] hover:opacity-90 transition-all"
+                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-white bg-[#F28C38] hover:opacity-90 transition-all"
                     >
                       Cobrar Cuenta
                     </button>
@@ -1142,14 +1142,14 @@ function CloseTabDialog({
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onConfirm("cash")}
-            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#d97757] transition-all"
+            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💵</span>
             <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
           </button>
           <button
             onClick={() => onConfirm("card")}
-            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#d97757] transition-all"
+            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💳</span>
             <span className="text-[12px] font-bold text-[#1C2526]">Tarjeta</span>

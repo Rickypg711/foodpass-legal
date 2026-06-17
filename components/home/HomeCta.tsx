@@ -24,7 +24,7 @@ export function HomeCta() {
     return (
       <div className="mt-8">
         <Link href="/vendor"
-          className="inline-flex items-center gap-2 rounded-full bg-[#d97757] px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#c46644]">
+          className="inline-flex items-center gap-2 rounded-full bg-[#F28C38] px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#c46644]">
           Ir a mi panel
           <span aria-hidden>→</span>
         </Link>
@@ -41,7 +41,7 @@ export function HomeCta() {
           trackVendorCtaClick({ cta: "empieza_gratis", section: "home_hero", ...utms });
           setModalOpen(true);
         }}
-        className="inline-flex items-center gap-2 rounded-full bg-[#d97757] px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#c46644]">
+        className="inline-flex items-center gap-2 rounded-full bg-[#F28C38] px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#c46644]">
         Empieza gratis
         <span aria-hidden>→</span>
       </button>

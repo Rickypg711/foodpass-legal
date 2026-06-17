@@ -324,7 +324,7 @@ function MenuSetupPageInner() {
         {/* ── AI Photo Import Section ── */}
         <div className="rounded-2xl border border-[#141413]/8 bg-white p-5">
           <div className="flex items-start gap-3 mb-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/10 text-lg">✨</div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-lg">✨</div>
             <div>
               <p className="text-sm font-semibold text-[#141413]">Importar con foto de menú</p>
               <p className="mt-0.5 text-xs text-[#141413]/50">La IA lee tu menú físico y agrega los platillos automáticamente</p>
@@ -350,7 +350,7 @@ function MenuSetupPageInner() {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#d97757]/30 bg-[#d97757]/5 px-4 py-5 text-sm font-medium text-[#d97757] hover:border-[#d97757]/60 hover:bg-[#d97757]/10 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-5 text-sm font-medium text-[#F28C38] hover:border-[#F28C38]/60 hover:bg-[#F28C38]/10 transition-all"
               >
                 📷 Subir foto del menú
               </button>
@@ -359,7 +359,7 @@ function MenuSetupPageInner() {
 
           {(photoStep === "uploading" || photoStep === "processing") && (
             <div className="flex flex-col items-center gap-3 py-6">
-              <svg className="h-7 w-7 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+              <svg className="h-7 w-7 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
               </svg>
@@ -372,13 +372,13 @@ function MenuSetupPageInner() {
 
           {photoStep === "review" && draftItems.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#d97757]">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
                 Encontramos {draftItems.length} platillos — revisa y confirma
               </p>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {draftItems.map((item, i) => (
                   <label key={item.id} className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all ${
-                    item.selected ? "border-[#d97757]/30 bg-[#d97757]/5" : "border-[#141413]/8 bg-white"
+                    item.selected ? "border-[#F28C38]/30 bg-[#F28C38]/5" : "border-[#141413]/8 bg-white"
                   }`}>
                     <input
                       type="checkbox"
@@ -388,12 +388,12 @@ function MenuSetupPageInner() {
                         updated[i] = { ...item, selected: e.target.checked };
                         setDraftItems(updated);
                       }}
-                      className="mt-0.5 h-4 w-4 rounded accent-[#d97757]"
+                      className="mt-0.5 h-4 w-4 rounded accent-[#F28C38]"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#141413] truncate">{item.name}</p>
                       {item.description && <p className="text-xs text-[#141413]/45 truncate">{item.description}</p>}
-                      {item.price > 0 && <p className="text-xs text-[#d97757] font-medium">${item.price.toFixed(2)}</p>}
+                      {item.price > 0 && <p className="text-xs text-[#F28C38] font-medium">${item.price.toFixed(2)}</p>}
                     </div>
                   </label>
                 ))}
@@ -402,7 +402,7 @@ function MenuSetupPageInner() {
                 <button
                   onClick={handlePublishDrafts}
                   disabled={draftItems.filter((d) => d.selected).length === 0}
-                  className="flex-1 rounded-xl bg-[#d97757] py-2.5 text-sm font-semibold text-white hover:bg-[#c46644] disabled:opacity-50 transition-colors"
+                  className="flex-1 rounded-xl bg-[#F28C38] py-2.5 text-sm font-semibold text-white hover:bg-[#c46644] disabled:opacity-50 transition-colors"
                 >
                   Agregar {draftItems.filter((d) => d.selected).length} platillos ✓
                 </button>
@@ -418,7 +418,7 @@ function MenuSetupPageInner() {
 
           {photoStep === "publishing" && (
             <div className="flex items-center justify-center gap-2 py-4 text-sm text-[#141413]/60">
-              <svg className="h-4 w-4 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
               </svg>
@@ -436,7 +436,7 @@ function MenuSetupPageInner() {
             </div>
             <button
               onClick={() => setShowManual((v) => !v)}
-              className="text-xs text-[#d97757] font-medium hover:text-[#c46644] transition-colors"
+              className="text-xs text-[#F28C38] font-medium hover:text-[#c46644] transition-colors"
             >
               {showManual ? "Cancelar" : "+ Agregar"}
             </button>
@@ -449,14 +449,14 @@ function MenuSetupPageInner() {
                 placeholder="Nombre del platillo *"
                 value={manualForm.name}
                 onChange={(e) => setManualForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="Descripción (opcional)"
                 value={manualForm.description}
                 onChange={(e) => setManualForm((f) => ({ ...f, description: e.target.value }))}
-                className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
               />
               <div className="flex gap-2">
                 <input
@@ -466,14 +466,14 @@ function MenuSetupPageInner() {
                   min={0}
                   step={0.5}
                   onChange={(e) => setManualForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
-                  className="w-28 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                  className="w-28 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Categoría (ej. Bebidas)"
                   value={manualForm.category}
                   onChange={(e) => setManualForm((f) => ({ ...f, category: e.target.value }))}
-                  className="flex-1 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                  className="flex-1 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                 />
               </div>
               <button
@@ -502,7 +502,7 @@ function MenuSetupPageInner() {
                     {item.category && <p className="text-xs text-[#141413]/40">{item.category}</p>}
                   </div>
                   {item.price > 0 && (
-                    <span className="text-xs font-semibold text-[#d97757]">${item.price.toFixed(2)}</span>
+                    <span className="text-xs font-semibold text-[#F28C38]">${item.price.toFixed(2)}</span>
                   )}
                 </div>
               ))}
@@ -514,7 +514,7 @@ function MenuSetupPageInner() {
         <button
           onClick={handleDone}
           disabled={saving || saved || menuItems.length === 0}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : menuItems.length === 0 ? "Agrega al menos un platillo" : `Guardar menú (${menuItems.length}) →`}
         </button>
@@ -534,7 +534,7 @@ export default function MenuSetupPage() {
 function Spinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
       </svg>

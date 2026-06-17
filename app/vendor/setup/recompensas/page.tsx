@@ -497,7 +497,7 @@ function RecompensasSetupPageInner() {
         {/* ── AI Recommendation Assistant ── */}
         <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/10 text-lg">🤖</div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-lg">🤖</div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#141413]">
                 {aiApplied ? "✨ Sugerencia cargada por Comeleal" : "Sugerencia de la IA"}
@@ -510,14 +510,14 @@ function RecompensasSetupPageInner() {
               <button
                 type="button"
                 onClick={handleGenerateDraft}
-                className="shrink-0 rounded-xl bg-[#d97757]/10 hover:bg-[#d97757]/15 px-3 py-1.5 text-xs font-semibold text-[#d97757] transition-all"
+                className="shrink-0 rounded-xl bg-[#F28C38]/10 hover:bg-[#F28C38]/15 px-3 py-1.5 text-xs font-semibold text-[#F28C38] transition-all"
               >
                 {aiApplied ? "✨ Regenerar" : "✨ Autocompletar"}
               </button>
             )}
             {aiStep === "generating" && (
               <div className="flex items-center gap-2.5 py-1 text-xs text-[#141413]/50">
-                <svg className="h-4 w-4 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
                 </svg>
@@ -531,8 +531,8 @@ function RecompensasSetupPageInner() {
           )}
 
           {aiReasoning && (
-            <div className="rounded-xl bg-[#d97757]/5 border border-[#d97757]/15 p-3.5 space-y-1.5">
-              <p className="text-xs font-bold text-[#d97757] uppercase tracking-wider">🤖 Análisis de la IA</p>
+            <div className="rounded-xl bg-[#F28C38]/5 border border-[#F28C38]/15 p-3.5 space-y-1.5">
+              <p className="text-xs font-bold text-[#F28C38] uppercase tracking-wider">🤖 Análisis de la IA</p>
               <p className="text-xs text-[#141413]/70 leading-relaxed font-medium">{aiReasoning}</p>
             </div>
           )}
@@ -550,7 +550,7 @@ function RecompensasSetupPageInner() {
                 type="button"
                 onClick={() => setCurrentFPR((f) => ({ ...f, enabled: !f.enabled }))}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                  currentFPR.enabled ? "bg-[#d97757]" : "bg-[#141413]/20"
+                  currentFPR.enabled ? "bg-[#F28C38]" : "bg-[#141413]/20"
                 }`}
               >
                 <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
@@ -584,7 +584,7 @@ function RecompensasSetupPageInner() {
                       }));
                     }
                   }}
-                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                 >
                   <option value="">-- Selecciona un platillo del menú --</option>
                   {menuItems.map((item) => (
@@ -599,7 +599,7 @@ function RecompensasSetupPageInner() {
                     placeholder="Descripción (opcional)"
                     value={currentFPR.menuItemDescription ?? ""}
                     onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemDescription: e.target.value }))}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                   />
                 )}
               </>
@@ -619,7 +619,7 @@ function RecompensasSetupPageInner() {
                     setCurrentTiers(updated);
                   }}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                    tier.hasMenuItem ? "bg-[#d97757]" : "bg-[#141413]/20"
+                    tier.hasMenuItem ? "bg-[#F28C38]" : "bg-[#141413]/20"
                   }`}
                 >
                   <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
@@ -639,7 +639,7 @@ function RecompensasSetupPageInner() {
                     updated[i] = { ...tier, pointsRequired: parseInt(e.target.value) || 0 };
                     setCurrentTiers(updated);
                   }}
-                  className="w-24 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                  className="w-24 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                 />
               </div>
               {tier.hasMenuItem && (
@@ -669,7 +669,7 @@ function RecompensasSetupPageInner() {
                       }
                       setCurrentTiers(updated);
                     }}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#d97757] focus:outline-none"
+                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                   >
                     <option value="">-- Selecciona un platillo del menú --</option>
                     {menuItems.map((item) => (
@@ -688,7 +688,7 @@ function RecompensasSetupPageInner() {
                         updated[i] = { ...tier, menuItemDescription: e.target.value };
                         setCurrentTiers(updated);
                       }}
-                      className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#d97757] focus:outline-none"
+                      className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                     />
                   )}
                   {(() => {
@@ -713,7 +713,7 @@ function RecompensasSetupPageInner() {
         <button
           onClick={handleSave}
           disabled={saving || saved}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar recompensas →"}
         </button>
@@ -745,7 +745,7 @@ export default function RecompensasSetupPage() {
 function Spinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#d97757]" fill="none" viewBox="0 0 24 24">
+      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
       </svg>

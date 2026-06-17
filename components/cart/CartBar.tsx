@@ -31,7 +31,7 @@ export function CartBar({
         {hasItems ? (
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
-            className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#d97757] px-4 py-2.5 text-white shadow-md transition-colors hover:bg-[#c46644]"
+            className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-white shadow-md transition-colors hover:bg-[#c46644]"
           >
             <span className="text-sm font-semibold">
               {itemCount} {itemCount === 1 ? "artículo" : "artículos"}

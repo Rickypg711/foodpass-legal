@@ -179,7 +179,7 @@ export function VendorLeadForm() {
   if (formState === "success") {
     return (
       <div
-        className="mt-8 rounded-2xl border border-[#d97757]/30 bg-white p-6 sm:p-8"
+        className="mt-8 rounded-2xl border border-[#F28C38]/30 bg-white p-6 sm:p-8"
         role="status"
       >
         <p className="text-lg font-semibold text-[#1C2526]">
@@ -232,7 +232,7 @@ export function VendorLeadForm() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="vendor-name" className="block text-sm font-medium text-[#1C2526]">
-            Tu nombre <span className="text-[#d97757]">*</span>
+            Tu nombre <span className="text-[#F28C38]">*</span>
           </label>
           <input
             id="vendor-name"
@@ -243,7 +243,7 @@ export function VendorLeadForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onFocus={onFirstFieldFocus}
-            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#d97757]/30 focus:ring-2"
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
           />
         </div>
         <div>
@@ -251,7 +251,7 @@ export function VendorLeadForm() {
             htmlFor="vendor-business-name"
             className="block text-sm font-medium text-[#1C2526]"
           >
-            Nombre del negocio <span className="text-[#d97757]">*</span>
+            Nombre del negocio <span className="text-[#F28C38]">*</span>
           </label>
           <input
             id="vendor-business-name"
@@ -261,7 +261,7 @@ export function VendorLeadForm() {
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             onFocus={onFirstFieldFocus}
-            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#d97757]/30 focus:ring-2"
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
           />
         </div>
       </div>
@@ -269,7 +269,7 @@ export function VendorLeadForm() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="vendor-city" className="block text-sm font-medium text-[#1C2526]">
-            Ciudad <span className="text-[#d97757]">*</span>
+            Ciudad <span className="text-[#F28C38]">*</span>
           </label>
           <input
             id="vendor-city"
@@ -280,12 +280,12 @@ export function VendorLeadForm() {
             onChange={(e) => setCity(e.target.value)}
             onFocus={onFirstFieldFocus}
             placeholder="Tu ciudad"
-            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#d97757]/30 focus:ring-2"
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
           />
         </div>
         <div>
           <label htmlFor="vendor-whatsapp" className="block text-sm font-medium text-[#1C2526]">
-            WhatsApp <span className="text-[#d97757]">*</span>
+            WhatsApp <span className="text-[#F28C38]">*</span>
           </label>
           <input
             id="vendor-whatsapp"
@@ -298,14 +298,14 @@ export function VendorLeadForm() {
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             onFocus={onFirstFieldFocus}
-            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#d97757]/30 focus:ring-2"
+            className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
           />
         </div>
       </div>
 
       <div>
         <label htmlFor="vendor-business-type" className="block text-sm font-medium text-[#1C2526]">
-          Tipo de negocio <span className="text-[#d97757]">*</span>
+          Tipo de negocio <span className="text-[#F28C38]">*</span>
         </label>
         <select
           id="vendor-business-type"
@@ -314,7 +314,7 @@ export function VendorLeadForm() {
           value={businessType}
           onChange={(e) => setBusinessType(e.target.value as VendorBusinessType)}
           onFocus={onFirstFieldFocus}
-          className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#d97757]/30 focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-[#1C2526]/15 bg-white px-4 py-3 text-sm text-[#1C2526] outline-none ring-[#F28C38]/30 focus:ring-2"
         >
           <option value="" disabled>
             Selecciona una opción
@@ -335,11 +335,11 @@ export function VendorLeadForm() {
           required
           checked={consent}
           onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-[#1C2526]/25 text-[#d97757] focus:ring-[#d97757]"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-[#1C2526]/25 text-[#F28C38] focus:ring-[#F28C38]"
         />
         <label htmlFor="vendor-consent" className="text-sm leading-relaxed text-[#1C2526]/80">
           Acepto que Comeleal me contacte sobre mi negocio usando los datos que comparto.{" "}
-          <Link href="/privacy-policy.html" className="font-medium text-[#d97757] hover:underline">
+          <Link href="/privacy-policy.html" className="font-medium text-[#F28C38] hover:underline">
             Política de privacidad
           </Link>
           .
@@ -367,7 +367,7 @@ export function VendorLeadForm() {
         <button
           type="submit"
           disabled={formState === "submitting"}
-          className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#d97757] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {formState === "submitting" ? "Enviando…" : "Activar por WhatsApp"}
         </button>

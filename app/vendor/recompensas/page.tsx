@@ -28,7 +28,7 @@ interface RewardsData {
 
 function Spinner() {
   return (
-    <svg className="h-5 w-5 animate-spin" style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
@@ -115,7 +115,7 @@ export default function RecompensasPage() {
             <Link
               href="/vendor/setup/recompensas"
               className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold text-white"
-              style={{ background: "#d97757" }}>
+              style={{ background: "#F28C38" }}>
               Configurar recompensas →
             </Link>
           </div>
@@ -144,7 +144,7 @@ export default function RecompensasPage() {
                       {data.firstPurchaseReward.menuItemDescription}
                     </p>
                   )}
-                  <p className="pt-1 text-[11px] font-bold" style={{ color: "#d97757" }}>
+                  <p className="pt-1 text-[11px] font-bold" style={{ color: "#F28C38" }}>
                     Se desbloquea en la 1ª visita y se regala en la 2ª
                   </p>
                 </div>

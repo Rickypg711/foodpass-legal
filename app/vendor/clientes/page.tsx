@@ -46,7 +46,7 @@ const SEGMENT_META: Record<Segment, { label: string; emoji: string; bg: string; 
   regular:  { label: "Regular",   emoji: "🔁", bg: "rgba(59,130,246,0.1)",   color: "#2563eb" },
   riesgo:   { label: "En riesgo", emoji: "⚠️", bg: "rgba(239,68,68,0.1)",    color: "#dc2626" },
   perdido:  { label: "Perdido",   emoji: "💤", bg: "rgba(107,114,128,0.1)",  color: "#6b7280" },
-  nuevo:    { label: "Nuevo",     emoji: "✨", bg: "rgba(217,119,87,0.1)",   color: "#d97757" },
+  nuevo:    { label: "Nuevo",     emoji: "✨", bg: "rgba(217,119,87,0.1)",   color: "#F28C38" },
 };
 
 const TABS: { key: Segment | "todos"; label: string; emoji: string }[] = [
@@ -72,7 +72,7 @@ function timeAgo(ts: Timestamp | null): string {
 function Spinner({ small = false }: { small?: boolean }) {
   const s = small ? "h-3.5 w-3.5" : "h-5 w-5";
   return (
-    <svg className={`${s} animate-spin`} style={{ color: "#d97757" }} fill="none" viewBox="0 0 24 24">
+    <svg className={`${s} animate-spin`} style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
@@ -170,7 +170,7 @@ function CustomerCard({
           <div className="mt-1 flex items-center gap-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
             <span>{customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""}</span>
             <span>·</span>
-            <span style={{ color: "#d97757", fontWeight: 600 }}>{customer.totalPoints} pts</span>
+            <span style={{ color: "#F28C38", fontWeight: 600 }}>{customer.totalPoints} pts</span>
             <span>·</span>
             <span>{timeAgo(customer.lastVisit)}</span>
           </div>
@@ -366,7 +366,7 @@ export default function ClientesPage() {
             </p>
             <Link href="/vendor/scanner"
               className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
-              style={{ background: "#d97757" }}>
+              style={{ background: "#F28C38" }}>
               Ir al escáner →
             </Link>
           </div>

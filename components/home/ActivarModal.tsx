@@ -232,7 +232,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       {/* ── idle / signing ── */}
       {(stage === "idle" || stage === "signing") && (
         <div className="text-center">
-          <p className="mb-1 inline-block rounded-full border border-[#d97757]/25 bg-[#d97757]/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#d97757]">
+          <p className="mb-1 inline-block rounded-full border border-[#F28C38]/25 bg-[#F28C38]/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#F28C38]">
             Para restaurantes
           </p>
           <h2 className="mt-3 text-2xl font-bold leading-tight text-[#141413] sm:text-3xl">
@@ -292,7 +292,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
               onChange={(e) => setEmailInput(e.target.value)}
               required
               disabled={stage === "signing"}
-              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#d97757]"
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]"
             />
             <input
               type="password"
@@ -301,12 +301,12 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
               onChange={(e) => setPasswordInput(e.target.value)}
               required
               disabled={stage === "signing"}
-              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#d97757]"
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]"
             />
             <button
               type="submit"
               disabled={stage === "signing"}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
             >
               {stage === "signing" ? <Spinner className="text-white" /> : "Iniciar sesión →"}
             </button>
@@ -353,7 +353,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="El Rancho de Don Pepe"
                 disabled={stage === "creating"}
-                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#d97757] focus:outline-none focus:ring-2 focus:ring-[#d97757]/15 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
               />
             </div>
             <div>
@@ -365,7 +365,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Av. Juárez 123, Col. Centro, Chihuahua"
                 disabled={stage === "creating"}
-                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#d97757] focus:outline-none focus:ring-2 focus:ring-[#d97757]/15 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
               />
               <p className="mt-1 text-[10px] text-[#141413]/35">Para que tus clientes te encuentren en el mapa</p>
             </div>
@@ -378,7 +378,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+52 614 123 4567"
                 disabled={stage === "creating"}
-                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#d97757] focus:outline-none focus:ring-2 focus:ring-[#d97757]/15 disabled:opacity-50"
+                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
               />
             </div>
             <div>
@@ -392,7 +392,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                     disabled={stage === "creating"}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50 ${
                       category === cat
-                        ? "border-[#d97757] bg-[#d97757]/8 text-[#d97757]"
+                        ? "border-[#F28C38] bg-[#F28C38]/8 text-[#F28C38]"
                         : "border-[#e8e6dc] bg-white text-[#141413]/55 hover:border-[#b0aea5] hover:text-[#141413]"
                     }`}
                   >{cat}</button>
@@ -402,7 +402,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             <button
               type="submit"
               disabled={!name.trim() || !phone.trim() || stage === "creating"}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {stage === "creating"
                 ? <><Spinner className="text-white" />Creando tu restaurante…</>
@@ -415,14 +415,14 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       {/* ── done ── */}
       {stage === "done" && (
         <div className="text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#d97757]/10 text-3xl">🎉</div>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#F28C38]/10 text-3xl">🎉</div>
           <h2 className="text-xl font-bold text-[#141413]">¡Restaurante creado!</h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
             Solo faltan 3 pasos rápidos: horario, menú y recompensas. Tardas menos de 5 minutos.
           </p>
           <button
             onClick={() => router.push("/vendor/setup/horario?wizard=1")}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
           >
             Configurar mi restaurante →
           </button>
@@ -432,14 +432,14 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       {/* ── existing ── */}
       {stage === "existing" && (
         <div className="text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#d97757]/10 text-3xl">✓</div>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#F28C38]/10 text-3xl">✓</div>
           <h2 className="text-xl font-bold text-[#141413]">Ya tienes un restaurante en Comeleal</h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
             Entra a tu panel para administrar tu negocio.
           </p>
           <button
             onClick={() => router.push("/vendor")}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
           >
             Ir a mi panel →
           </button>
