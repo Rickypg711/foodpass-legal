@@ -76,6 +76,8 @@ interface DashboardData {
   winbackReturned: number;
   /** Estimated MXN recovered = returned × 30d avg paid ticket. Null when no ticket data. */
   winbackPesos: number | null;
+  // Top 3 products by quantity sold (30d, excludes synthetic quick-sell line).
+  topProducts: { name: string; qty: number }[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -273,6 +275,24 @@ export default function VendorDashboard() {
           timestamp: (d.data().timestamp as Timestamp) ?? null,
         }));
 
+        // Top products (30d) by quantity — excludes the synthetic quick-sell line,
+        // matching the app dashboard's top-products behavior.
+        const productQtyMap: Record<string, number> = {};
+        monthOrdersSnap?.forEach((d) => {
+          const items = (d.data().items as any[]) ?? [];
+          items.forEach((item) => {
+            if (item?.menuItemId === "__quick_sell__") return;
+            const name = item?.name as string | undefined;
+            const quantity = (item?.quantity as number) ?? 0;
+            if (!name || quantity <= 0) return;
+            productQtyMap[name] = (productQtyMap[name] ?? 0) + quantity;
+          });
+        });
+        const topProducts = Object.entries(productQtyMap)
+          .map(([name, qty]) => ({ name, qty }))
+          .sort((a, b) => b.qty - a.qty)
+          .slice(0, 3);
+
         const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
         setData({
           restaurantId: rid,
@@ -306,6 +326,7 @@ export default function VendorDashboard() {
           winbackSent,
           winbackReturned,
           winbackPesos,
+          topProducts,
         });
         setLoadState("ready");
       } catch (err) {
@@ -558,6 +579,40 @@ export default function VendorDashboard() {
                 <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Escanear →</p>
               </Link>
 
+            </div>
+          </div>
+
+          {/* ── Top productos ── */}
+          <div className="mb-6">
+            <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
+              Top productos
+            </h2>
+            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+              <p className="mb-3 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>Más vendidos · últimos 30 días</p>
+              {data.topProducts.length === 0 ? (
+                <p className="py-1 text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                  Aún no hay productos vendidos. Cobra desde el POS para ver tus más vendidos aquí.
+                </p>
+              ) : (
+                <div className="flex flex-col divide-y" style={{ borderColor: "rgba(28,37,38,0.06)" }}>
+                  {data.topProducts.map((p, idx) => (
+                    <div key={p.name} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[11px] font-black text-[#F28C38]">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate text-[14px] font-semibold" style={{ color: "#1C2526" }}>{p.name}</span>
+                      </div>
+                      <span className="ml-3 shrink-0 text-[13px] font-bold tabular-nums" style={{ color: "rgba(28,37,38,0.6)" }}>
+                        {p.qty} {p.qty === 1 ? "vendida" : "vendidas"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Link href="/vendor/reportes" className="mt-3 inline-block text-[11px] font-semibold text-[#F28C38] hover:underline">
+                Ver reporte completo →
+              </Link>
             </div>
           </div>
 
