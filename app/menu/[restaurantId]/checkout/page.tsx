@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
+import { UpsellCard } from "@/components/cart/UpsellCard";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
 import { ensureAnonymousUser } from "@/lib/auth";
@@ -367,6 +368,9 @@ export default function CheckoutPage() {
           </div>
         ) : null}
         <CheckoutCartLines />
+
+        {/* AI upsell suggestion (renders nothing if there's no suggestion) */}
+        <UpsellCard restaurantId={restaurantId} />
 
         <div className="mb-4 rounded-xl bg-white p-4">
           <p className="mb-2 text-sm font-semibold">Forma de pago</p>
