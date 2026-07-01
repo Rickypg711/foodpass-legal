@@ -243,6 +243,13 @@ function PublicMenuPageWithOrdering() {
         const rSnap = await getDoc(rRef);
         if (cancelled) return;
         if (!rSnap.exists()) {
+          const allSnap = await getDocs(collection(db, "restaurants"));
+          const match = allSnap.docs.find((d) => d.id.toLowerCase() === restaurantId.toLowerCase());
+          if (match) {
+            window.location.replace(`/menu/${match.id}`);
+            return;
+          }
+
           setError("No encontramos este menú");
           setRestaurantName("");
           setItems([]);
@@ -391,6 +398,13 @@ function PublicMenuPageBrowseOnly() {
         const rSnap = await getDoc(rRef);
         if (cancelled) return;
         if (!rSnap.exists()) {
+          const allSnap = await getDocs(collection(db, "restaurants"));
+          const match = allSnap.docs.find((d) => d.id.toLowerCase() === restaurantId.toLowerCase());
+          if (match) {
+            window.location.replace(`/menu/${match.id}`);
+            return;
+          }
+
           setError("No encontramos este menú");
           setRestaurantName("");
           setItems([]);
