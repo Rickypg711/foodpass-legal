@@ -18,6 +18,10 @@ export type OrderItemPayload = {
   subtotal: number;
   selectedModifiers?: unknown[];
   notes?: string | null;
+  /** Points-powered upsell metadata (mirrors OrderItem in lib/models/order.dart). */
+  isUpsell?: boolean;
+  upsellBonusPoints?: number;
+  upsellSurprise?: boolean;
 };
 
 export type CustomerOrderPayload = {

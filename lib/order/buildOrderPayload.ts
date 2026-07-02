@@ -26,13 +26,24 @@ export type BuildOrderInput = {
 export function buildCustomerWebOrderPayload(
   input: BuildOrderInput,
 ): CustomerOrderPayload {
-  const items = input.cartLines.map((line) => ({
-    menuItemId: line.menuItemId,
-    name: line.name,
-    price: line.price,
-    quantity: line.quantity,
-    subtotal: line.subtotal,
-  }));
+  const items = input.cartLines.map((line) => {
+    const item: CustomerOrderPayload["items"][number] = {
+      menuItemId: line.menuItemId,
+      name: line.name,
+      price: line.price,
+      quantity: line.quantity,
+      subtotal: line.subtotal,
+    };
+    // Points-powered upsell: carry the server-decided bonus onto the order so
+    // it's credited at loyalty award time (order scan). Never a discount.
+    if (line.isUpsell) {
+      item.isUpsell = true;
+      const bonus = Math.floor(line.upsellBonusPoints ?? 0);
+      if (bonus > 0) item.upsellBonusPoints = bonus;
+      if (line.upsellSurprise) item.upsellSurprise = true;
+    }
+    return item;
+  });
 
   const total = items.reduce((sum, i) => sum + i.subtotal, 0);
   const paymentMethod = assertCustomerWebPaymentMethod(
