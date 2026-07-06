@@ -55,9 +55,11 @@ export function CartProvider({
     void Promise.resolve().then(() => {
       if (cancelled) return;
       if (!webOrderingAvailable) {
-        clearCart(restaurantId);
+        // DO NOT clear sessionStorage here: a transient restaurant-doc fetch
+        // failure (offline blip, race on deep-link) used to WIPE the customer's
+        // cart. Keep storage intact; just don't surface lines while blocked.
         setLines([]);
-        mpWebDebugClient("cart_cleared_mp_unavailable", { restaurantId });
+        mpWebDebugClient("cart_hidden_mp_unavailable", { restaurantId });
         return;
       }
       const loaded = loadCart(restaurantId);

@@ -167,11 +167,12 @@ function MenuCategoryList({
         <section key={`${group.category}-${index}`} aria-labelledby={`menu-cat-${index}`}>
           <h2
             id={`menu-cat-${index}`}
-            className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#1C2526]/45"
+            className="mb-3 flex items-center gap-2.5 text-lg font-bold capitalize tracking-tight text-[#1C2526]"
           >
-            {group.category}
+            <span className="h-5 w-1 rounded-full bg-[#F28C38]" aria-hidden />
+            {group.category.toLowerCase()}
           </h2>
-          <ul className="flex flex-col gap-3">
+          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {group.items.map((item) => (
               <MenuItemCard
                 key={item.id}

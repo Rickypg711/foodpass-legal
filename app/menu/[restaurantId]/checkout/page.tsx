@@ -23,6 +23,36 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { formatPrice } from "@/lib/priceFormat";
+
+/** Orange brand header, content aligned to the checkout column, with a back arrow. */
+function CheckoutHeader({
+  restaurantId,
+  restaurantName,
+}: {
+  restaurantId: string;
+  restaurantName: string;
+}) {
+  return (
+    <header className="bg-[#F28C38] shadow-sm">
+      <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3.5">
+        <Link
+          href={`/menu/${encodeURIComponent(restaurantId)}`}
+          aria-label="Volver al menú"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white transition-colors hover:bg-white/25"
+        >
+          ←
+        </Link>
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold leading-tight text-white">Confirmar pedido</h1>
+          <p className="truncate text-xs text-white/85">
+            {restaurantName} · Recoger en local
+          </p>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -106,12 +136,10 @@ export default function CheckoutPage() {
 
   if (!cartReady) {
     return (
-      <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-        <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
-          <h1 className="text-lg font-semibold text-white">Confirmar pedido</h1>
-        </header>
-        <main className="mx-auto max-w-md px-4 py-6">
-          <p className="text-center text-sm text-[#1C2526]/80">Cargando carrito…</p>
+      <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
+        <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
+        <main className="mx-auto max-w-md px-4 py-10">
+          <p className="text-center text-sm text-[#1C2526]/70">Cargando carrito…</p>
         </main>
       </div>
     );
@@ -119,14 +147,26 @@ export default function CheckoutPage() {
 
   if (itemCount === 0 && !checkoutOrder) {
     return (
-      <div className="min-h-screen p-6 text-center" style={{ backgroundColor: "#F0E3D2" }}>
-        <p className="text-sm">Tu carrito está vacío.</p>
-        <Link
-          href={`/menu/${encodeURIComponent(restaurantId)}`}
-          className="mt-4 inline-block text-[#F28C38] font-semibold"
-        >
-          Volver al menú
-        </Link>
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
+        <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
+        <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
+          <div
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-4xl shadow-sm"
+            aria-hidden
+          >
+            🛒
+          </div>
+          <p className="mt-5 text-lg font-bold text-[#1C2526]">Tu carrito está vacío</p>
+          <p className="mt-1 text-sm text-[#1C2526]/60">
+            Agrega algo delicioso del menú para continuar.
+          </p>
+          <Link
+            href={`/menu/${encodeURIComponent(restaurantId)}`}
+            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F28C38] px-8 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#d67428]"
+          >
+            Ver el menú
+          </Link>
+        </main>
       </div>
     );
   }
@@ -285,11 +325,8 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
-        <h1 className="text-lg font-semibold text-white">Confirmar pedido</h1>
-        <p className="text-xs text-white/90">{restaurantName} · Recoger en local</p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
+      <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
 
       <main className="mx-auto max-w-md px-4 py-6">
         {checkoutOrder?.mpPopupBlocked && checkoutOrder.mpRedirectUrl ? (
@@ -389,27 +426,38 @@ export default function CheckoutPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="block">
-            <span className="text-sm font-medium">Tu nombre</span>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2"
-              placeholder="Ej. Juan Pérez"
-              autoComplete="name"
-              disabled={submitting}
-            />
-          </label>
-          {error ? <p className="text-sm text-red-700">{error}</p> : null}
+          <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <label className="block">
+              <span className="text-sm font-semibold">Tu nombre</span>
+              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+                Para avisarte cuando tu pedido esté listo.
+              </span>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                placeholder="Ej. Juan Pérez"
+                autoComplete="name"
+                disabled={submitting}
+              />
+            </label>
+          </div>
+          {error ? (
+            <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
           <button
             type="submit"
             disabled={submitting || !mercadoPagoAvailable}
-            className="rounded-xl py-3 font-semibold text-white disabled:opacity-60"
-            style={{ backgroundColor: "#F28C38" }}
+            className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
           >
-            {submitting ? "Redirigiendo a Mercado Pago…" : "Pagar con Mercado Pago"}
+            {submitting ? "Redirigiendo a Mercado Pago…" : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
           </button>
+          <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
+            🔒 Pago procesado de forma segura por Mercado Pago
+          </p>
         </form>
 
         <Link
