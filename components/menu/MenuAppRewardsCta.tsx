@@ -30,11 +30,13 @@ export function MenuAppRewardsCta({
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
   const reward = firstVisitRewardLabel?.trim() || null;
+  // Honest mechanic: 1st visit UNLOCKS the gift, it's claimed on the next
+  // visit within 7 days. Sell the gift in the headline, the rule in the sub.
   const headline = reward
-    ? `🎁 Tu primera visita: ${reward} GRATIS`
+    ? `🎁 Regalo de bienvenida: ${reward} GRATIS`
     : "Descarga Comeleal y guarda tus puntos";
   const subline = reward
-    ? "Descarga Comeleal y reclámalo cuando visites"
+    ? "Tu 1ª compra lo desbloquea y lo reclamas en la siguiente. Descarga Comeleal para no perderlo."
     : "Gana recompensas con este restaurante";
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -59,7 +61,7 @@ export function MenuAppRewardsCta({
         }
       >
         {reward
-          ? `🎁 ${reward} gratis en tu 1ª visita — descarga Comeleal`
+          ? `🎁 ${reward} gratis de bienvenida — descarga Comeleal`
           : "Descarga Comeleal y guarda tus puntos"}
       </a>
     );

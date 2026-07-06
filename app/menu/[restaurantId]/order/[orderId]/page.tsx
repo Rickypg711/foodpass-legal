@@ -34,9 +34,49 @@ type OrderDoc = {
     name?: string;
     quantity?: number;
     subtotal?: number;
+    isUpsell?: boolean;
+    upsellBonusPoints?: number;
   }>;
   restaurantName?: string;
 };
+
+/**
+ * Estimated loyalty points this order earns (mirrors the app's
+ * LoyaltyPurchaseEarnPolicy: base + floor(total/step) + upsell bonuses).
+ * Credited at pickup scan — the copy must say "al recoger", never "ya en tu cuenta".
+ */
+function estimateOrderPoints(
+  total: number,
+  items: OrderDoc["items"],
+  earn: { base: number; step: number },
+): number {
+  if (!Number.isFinite(total) || total <= 0) return 0;
+  const base = earn.base + Math.floor(total / earn.step);
+  const bonus = (items ?? []).reduce(
+    (s, it) =>
+      s +
+      (it?.isUpsell === true && typeof it.upsellBonusPoints === "number" && it.upsellBonusPoints > 0
+        ? Math.floor(it.upsellBonusPoints)
+        : 0),
+    0,
+  );
+  return base + bonus;
+}
+
+/** Same fallbacks as the app's LoyaltyEarnPolicyConfig. */
+function earnPolicyFromRestaurant(d: Record<string, unknown>): { base: number; step: number } {
+  const nested = d.loyaltyEarnPolicy;
+  if (nested && typeof nested === "object") {
+    const m = nested as Record<string, unknown>;
+    const base = Number(m.basePointsPerPurchase);
+    const step = Number(m.spendStepAmount);
+    if (Number.isFinite(base) && base >= 1 && Number.isFinite(step) && step >= 1) {
+      return { base: Math.floor(base), step: Math.floor(step) };
+    }
+  }
+  const cc = typeof d.currencyCode === "string" ? d.currencyCode.trim().toUpperCase() : "MXN";
+  return { base: 1, step: cc === "USD" ? 2 : 30 };
+}
 
 function OrderStatusSkeleton() {
   return (
@@ -79,6 +119,11 @@ function OrderStatusPageContent() {
   const mounted = useIsClient();
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
+  const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
+    base: 1,
+    step: 30,
+  });
+  const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const prevStatusRef = useRef<{ status?: string; paymentStatus?: string }>({});
@@ -173,6 +218,14 @@ function OrderStatusPageContent() {
           const wa = d.whatsapp;
           if (typeof wa === "string" && wa.trim()) {
             setWhatsapp(wa.trim());
+          }
+          setEarnPolicy(earnPolicyFromRestaurant(d));
+          const fpr = d.firstPurchaseReward;
+          if (fpr && typeof fpr === "object") {
+            const m = fpr as Record<string, unknown>;
+            if (m.enabled === true && typeof m.menuItemName === "string" && m.menuItemName.trim()) {
+              setFirstVisitReward(m.menuItemName.trim());
+            }
           }
         }
       } catch {
@@ -373,14 +426,35 @@ function OrderStatusPageContent() {
               </p>
             )}
 
-            <div className="rounded-xl border border-[#F28C38]/30 bg-white/80 p-4 text-center">
-              <p className="text-sm font-semibold">Crea tu cuenta para guardar tus puntos</p>
-              <a
-                href={downloadHref}
-                className="mt-2 inline-block text-sm font-semibold text-[#F28C38] underline"
-              >
-                Descargar Comeleal
-              </a>
+            {/* Receipt → install loop: the highest-intent moment. This order
+                already generated points — download to claim them at pickup. */}
+            <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
+              {(() => {
+                const pts = mounted
+                  ? estimateOrderPoints(displayTotal, order?.items, earnPolicy)
+                  : 0;
+                return (
+                  <>
+                    <p className="text-base font-bold text-[#1C2526]">
+                      {pts > 0
+                        ? `🎉 Esta orden te ganó ${pts} ⭐ en ${displayRestaurant}`
+                        : "Esta orden genera puntos en Comeleal"}
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                      Descarga Comeleal y escanea al recoger para reclamarlos.
+                      {firstVisitReward
+                        ? ` Además, esta compra desbloquea ${firstVisitReward} GRATIS para la siguiente. 🎁`
+                        : ""}
+                    </p>
+                    <a
+                      href={downloadHref}
+                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+                    >
+                      {pts > 0 ? `Reclamar mis ${pts} ⭐` : "Descargar Comeleal"}
+                    </a>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
