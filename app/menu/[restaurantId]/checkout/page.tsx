@@ -34,22 +34,32 @@ function CheckoutHeader({
   restaurantName: string;
 }) {
   return (
-    <header className="bg-[#F28C38] shadow-sm">
-      <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3.5">
+    <header className="relative overflow-hidden bg-[#141414] shadow-md">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
+        aria-hidden
+      />
+      <div className="relative mx-auto flex max-w-md items-center gap-3 px-4 py-4">
         <Link
           href={`/menu/${encodeURIComponent(restaurantId)}`}
           aria-label="Volver al menú"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white transition-colors hover:bg-white/25"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white ring-1 ring-white/15 transition-colors hover:bg-white/20"
         >
           ←
         </Link>
         <div className="min-w-0">
-          <h1 className="text-lg font-bold leading-tight text-white">Confirmar pedido</h1>
-          <p className="truncate text-xs text-white/85">
+          <h1 className="text-lg font-bold leading-tight tracking-tight text-white">
+            Confirmar pedido
+          </h1>
+          <p className="truncate text-xs text-white/55">
             {restaurantName} · Recoger en local
           </p>
         </div>
       </div>
+      <div
+        className="h-px bg-gradient-to-r from-transparent via-[#F28C38]/50 to-transparent"
+        aria-hidden
+      />
     </header>
   );
 }
