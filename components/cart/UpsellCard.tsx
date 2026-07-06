@@ -82,8 +82,8 @@ export function UpsellCard({ restaurantId }: { restaurantId: string }) {
 
   if (added) {
     const headline = added.surprise
-      ? `🎰 ¡DOBLE PUNTOS! +${added.bonus} ⭐`
-      : `🎉 ¡Agregado! +${added.bonus} ⭐`;
+      ? `🎰 ¡DOBLE PUNTOS! +${added.bonus} puntos ⭐`
+      : `🎉 ¡Agregado! +${added.bonus} puntos ⭐`;
     return (
       <div className="mb-4 rounded-xl border border-[#F28C38] bg-[#FFF3E8] p-4">
         <p className="text-sm font-bold text-[#B05E14]">{headline}</p>
@@ -145,11 +145,11 @@ export function UpsellCard({ restaurantId }: { restaurantId: string }) {
       {bonus > 0 ? (
         surprise ? (
           <span className="mt-2 inline-block rounded-full bg-gradient-to-r from-[#F28C38] to-[#E85D75] px-3 py-1 text-xs font-bold text-white">
-            🎰 ¡DOBLE PUNTOS! +{bonus} ⭐ si lo agregas
+            🎰 ¡DOBLE PUNTOS! +{bonus} puntos si lo agregas
           </span>
         ) : (
           <span className="mt-2 inline-block rounded-full bg-[#F28C38]/15 px-3 py-1 text-xs font-semibold text-[#B05E14]">
-            +{bonus} ⭐ para tu recompensa
+            +{bonus} puntos para tu recompensa ⭐
           </span>
         )
       ) : null}

@@ -437,7 +437,7 @@ function OrderStatusPageContent() {
                   <>
                     <p className="text-base font-bold text-[#1C2526]">
                       {pts > 0
-                        ? `🎉 Esta orden te ganó ${pts} ⭐ en ${displayRestaurant}`
+                        ? `🎉 Esta orden te ganó ${pts} puntos en ${displayRestaurant} ⭐`
                         : "Esta orden genera puntos en Comeleal"}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
@@ -450,7 +450,7 @@ function OrderStatusPageContent() {
                       href={downloadHref}
                       className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
                     >
-                      {pts > 0 ? `Reclamar mis ${pts} ⭐` : "Descargar Comeleal"}
+                      {pts > 0 ? `Reclamar mis ${pts} puntos` : "Descargar Comeleal"}
                     </a>
                   </>
                 );
