@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,13 +26,19 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { formatPrice } from "@/lib/priceFormat";
 
-/** Orange brand header, content aligned to the checkout column, with a back arrow. */
+/**
+ * Same dark brand app bar as the menu (same container widths, same glow,
+ * same divider), personalized with the restaurant's logo. One header
+ * language across the whole ordering flow.
+ */
 function CheckoutHeader({
   restaurantId,
   restaurantName,
+  logoUrl,
 }: {
   restaurantId: string;
   restaurantName: string;
+  logoUrl?: string | null;
 }) {
   return (
     <header className="relative overflow-hidden bg-[#141414] shadow-md">
@@ -39,14 +46,31 @@ function CheckoutHeader({
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
         aria-hidden
       />
-      <div className="relative mx-auto flex max-w-md items-center gap-3 px-4 py-4">
+      <div className="relative mx-auto flex max-w-3xl items-center gap-3.5 px-4 py-4 sm:px-6 lg:max-w-4xl">
         <Link
           href={`/menu/${encodeURIComponent(restaurantId)}`}
           aria-label="Volver al menú"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white ring-1 ring-white/15 transition-colors hover:bg-white/20"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white ring-1 ring-white/15 transition-colors hover:bg-white/20"
         >
           ←
         </Link>
+        {logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt=""
+            width={44}
+            height={44}
+            unoptimized
+            className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-lg ring-2 ring-white/15"
+          />
+        ) : (
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/15 text-xl ring-2 ring-white/10"
+            aria-hidden
+          >
+            🍽
+          </div>
+        )}
         <div className="min-w-0">
           <h1 className="text-lg font-bold leading-tight tracking-tight text-white">
             Confirmar pedido
@@ -147,7 +171,11 @@ export default function CheckoutPage() {
   if (!cartReady) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-        <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
+        <CheckoutHeader
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          logoUrl={restaurantImageUrl}
+        />
         <main className="mx-auto max-w-md px-4 py-10">
           <p className="text-center text-sm text-[#1C2526]/70">Cargando carrito…</p>
         </main>
@@ -158,7 +186,11 @@ export default function CheckoutPage() {
   if (itemCount === 0 && !checkoutOrder) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-        <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
+        <CheckoutHeader
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          logoUrl={restaurantImageUrl}
+        />
         <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
           <div
             className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-4xl shadow-sm"
@@ -336,7 +368,11 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-      <CheckoutHeader restaurantId={restaurantId} restaurantName={restaurantName} />
+      <CheckoutHeader
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          logoUrl={restaurantImageUrl}
+        />
 
       <main className="mx-auto max-w-md px-4 py-6">
         {checkoutOrder?.mpPopupBlocked && checkoutOrder.mpRedirectUrl ? (
