@@ -17,7 +17,6 @@ import { ORDER_SOURCE_CUSTOMER_WEB } from "@/lib/types/order";
 import {
   CUSTOMER_WEB_PAYMENT_METHOD,
   MP_UNAVAILABLE_MESSAGE,
-  mercadoPagoCheckoutSubtitle,
   mercadoPagoCheckoutTitle,
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
@@ -97,6 +96,9 @@ export default function CheckoutPage() {
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
+  /** True once the restaurant MP check resolved — prevents the "MP no disponible"
+   * warning from flashing while the check is still in flight. */
+  const [mpChecked, setMpChecked] = useState(false);
   const mpSandboxUi =
     isMpWebDebugClient() || process.env.NEXT_PUBLIC_MERCADO_PAGO_SANDBOX === "true";
   const [submitting, setSubmitting] = useState(false);
@@ -144,6 +146,8 @@ export default function CheckoutPage() {
         }
       } catch {
         /* ignore */
+      } finally {
+        setMpChecked(true);
       }
     })();
   }, [orderingEnabled, restaurantId]);
@@ -455,21 +459,18 @@ export default function CheckoutPage() {
         {/* AI upsell suggestion (renders nothing if there's no suggestion) */}
         <UpsellCard restaurantId={restaurantId} />
 
-        <div className="mb-4 rounded-xl bg-white p-4">
-          <p className="mb-2 text-sm font-semibold">Forma de pago</p>
-          {mercadoPagoAvailable ? (
-            <div className="rounded-lg border border-[#009EE3]/30 p-3">
-              <p className="text-sm font-medium">
-                {mercadoPagoCheckoutTitle(mpSandboxUi)}
-              </p>
-              <p className="mt-1 text-xs text-[#1C2526]/70">
-                {mercadoPagoCheckoutSubtitle(mpSandboxUi)}
-              </p>
-            </div>
-          ) : (
+        {/* Single payment method → no "Forma de pago" card (the pay button +
+            🔒 line already say Mercado Pago). Only surface a notice when MP
+            is NOT available. Sandbox mode still shows its debug hint. */}
+        {mpChecked && !mercadoPagoAvailable ? (
+          <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
             <p className="text-sm text-red-800">{MP_UNAVAILABLE_MESSAGE}</p>
-          )}
-        </div>
+          </div>
+        ) : mpSandboxUi ? (
+          <p className="mb-4 text-center text-xs text-[#1C2526]/45">
+            {mercadoPagoCheckoutTitle(mpSandboxUi)} · modo prueba
+          </p>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm">
