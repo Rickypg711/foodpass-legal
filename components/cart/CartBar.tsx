@@ -9,9 +9,11 @@ import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 export function CartBar({
   restaurantId,
   restaurantName,
+  firstVisitRewardLabel = null,
 }: {
   restaurantId: string;
   restaurantName: string;
+  firstVisitRewardLabel?: string | null;
 }) {
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
@@ -45,6 +47,7 @@ export function CartBar({
           restaurantId={restaurantId}
           restaurantName={restaurantName}
           variant={hasItems ? "compact" : "prominent"}
+          firstVisitRewardLabel={firstVisitRewardLabel}
         />
       </div>
     </div>

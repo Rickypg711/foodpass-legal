@@ -12,6 +12,12 @@ type MenuAppRewardsCtaProps = {
   /** compact = below checkout; prominent = primary bottom CTA; banner = MP unavailable; browse = ordering off */
   variant: "compact" | "prominent" | "banner" | "browse";
   disabled?: boolean;
+  /**
+   * The restaurant's first-visit reward (e.g. "Personal queso"). When set,
+   * the CTA sells the CONCRETE reward ("🎁 gratis en tu primera visita")
+   * instead of generic "guarda tus puntos" copy — concrete converts.
+   */
+  firstVisitRewardLabel?: string | null;
 };
 
 export function MenuAppRewardsCta({
@@ -19,9 +25,17 @@ export function MenuAppRewardsCta({
   restaurantName,
   variant,
   disabled = false,
+  firstVisitRewardLabel = null,
 }: MenuAppRewardsCtaProps) {
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
+  const reward = firstVisitRewardLabel?.trim() || null;
+  const headline = reward
+    ? `🎁 Tu primera visita: ${reward} GRATIS`
+    : "Descarga Comeleal y guarda tus puntos";
+  const subline = reward
+    ? "Descarga Comeleal y reclámalo cuando visites"
+    : "Gana recompensas con este restaurante";
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
     if (isDisabled) {
@@ -40,11 +54,13 @@ export function MenuAppRewardsCta({
         href={href}
         onClick={handleClick}
         className={
-          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#F28C38] underline decoration-[#F28C38]/40 underline-offset-2 transition-colors hover:text-[#c46644] " +
+          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#F28C38] underline decoration-[#F28C38]/40 underline-offset-2 transition-colors hover:text-[#d67428] " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >
-        Descarga Comeleal y guarda tus puntos
+        {reward
+          ? `🎁 ${reward} gratis en tu 1ª visita — descarga Comeleal`
+          : "Descarga Comeleal y guarda tus puntos"}
       </a>
     );
   }
@@ -56,9 +72,13 @@ export function MenuAppRewardsCta({
           className="rounded-2xl border border-[#F28C38]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
           role="status"
         >
-          <p className="font-semibold">Este lugar tiene recompensas en Comeleal</p>
+          <p className="font-semibold">
+            {reward ? headline : "Este lugar tiene recompensas en Comeleal"}
+          </p>
           <p className="mt-1.5 text-xs leading-relaxed text-[#1C2526]/70">
-            Descarga la app para acumular puntos y volver fácil a tus favoritos.
+            {reward
+              ? subline
+              : "Descarga la app para acumular puntos y volver fácil a tus favoritos."}
           </p>
         </div>
         <a
@@ -80,10 +100,12 @@ export function MenuAppRewardsCta({
     return (
       <div className="space-y-3">
         <p className="text-center text-sm font-medium text-[#1C2526]/75">
-          Este lugar tiene recompensas en Comeleal
+          {reward ? headline : "Este lugar tiene recompensas en Comeleal"}
         </p>
         <p className="text-center text-xs leading-relaxed text-[#1C2526]/70">
-          Descarga la app para acumular puntos y volver fácil a tus favoritos.
+          {reward
+            ? subline
+            : "Descarga la app para acumular puntos y volver fácil a tus favoritos."}
         </p>
         <a
           href={href}
@@ -102,14 +124,14 @@ export function MenuAppRewardsCta({
 
   return (
     <div className="rounded-xl border border-[#F28C38]/15 bg-white/90 px-3 py-2.5 text-center shadow-sm">
-      <p className="text-sm font-semibold text-[#1C2526]">Descarga Comeleal y guarda tus puntos</p>
-      <p className="mt-0.5 text-xs text-[#1C2526]/65">Gana recompensas con este restaurante</p>
+      <p className="text-sm font-semibold text-[#1C2526]">{headline}</p>
+      <p className="mt-0.5 text-xs text-[#1C2526]/65">{subline}</p>
       <a
         href={href}
         onClick={handleClick}
         aria-disabled={isDisabled}
         className={
-          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl border-2 border-[#F28C38] bg-white px-4 py-2 text-sm font-semibold text-[#F28C38] transition-colors hover:bg-[#F28C38]/5 " +
+          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#d67428] " +
           (isDisabled ? "pointer-events-none opacity-60" : "")
         }
       >

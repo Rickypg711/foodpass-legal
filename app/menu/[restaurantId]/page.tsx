@@ -24,6 +24,27 @@ type MenuRow = {
   isAvailable: boolean;
 };
 
+/**
+ * First-visit reward label from the restaurant doc (firstPurchaseReward map,
+ * same shape the Flutter app reads). Null when missing/disabled → CTAs fall
+ * back to generic copy.
+ */
+function firstVisitRewardLabelFromRestaurant(
+  data: Record<string, unknown>,
+): string | null {
+  const fpr = data.firstPurchaseReward;
+  if (!fpr || typeof fpr !== "object") return null;
+  const m = fpr as Record<string, unknown>;
+  if (m.enabled !== true) return null;
+  const name =
+    typeof m.menuItemName === "string" && m.menuItemName.trim()
+      ? m.menuItemName.trim()
+      : typeof m.description === "string" && m.description.trim()
+        ? m.description.trim()
+        : null;
+  return name;
+}
+
 function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
   const priceRaw = data.price;
   const price =
@@ -224,6 +245,7 @@ function PublicMenuPageWithOrdering() {
   const [error, setError] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
 
   useEffect(() => {
@@ -263,6 +285,7 @@ function PublicMenuPageWithOrdering() {
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
 
         const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
         if (cancelled) return;
@@ -353,7 +376,11 @@ function PublicMenuPageWithOrdering() {
         )}
       </main>
 
-      <CartBar restaurantId={restaurantId} restaurantName={restaurantName} />
+      <CartBar
+        restaurantId={restaurantId}
+        restaurantName={restaurantName}
+        firstVisitRewardLabel={firstVisitReward}
+      />
 
       {showMpUnavailableDock ? (
         <MenuBottomDock>
@@ -361,6 +388,7 @@ function PublicMenuPageWithOrdering() {
             restaurantId={restaurantId}
             restaurantName={restaurantName}
             variant="banner"
+            firstVisitRewardLabel={firstVisitReward}
           />
         </MenuBottomDock>
       ) : null}
@@ -376,6 +404,7 @@ function PublicMenuPageBrowseOnly() {
   const [error, setError] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
 
@@ -419,6 +448,7 @@ function PublicMenuPageBrowseOnly() {
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
 
         try {
           await getDoc(doc(db, "restaurants", restaurantId, "settings", "menu_link"));
@@ -494,6 +524,7 @@ function PublicMenuPageBrowseOnly() {
           restaurantName={restaurantName}
           variant="browse"
           disabled={!menuLinkResolved}
+          firstVisitRewardLabel={firstVisitReward}
         />
       </MenuBottomDock>
     </div>
