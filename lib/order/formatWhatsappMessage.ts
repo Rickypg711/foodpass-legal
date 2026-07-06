@@ -8,6 +8,9 @@ export type WhatsappOrderContext = {
   customerName: string;
   cartLines: CartLine[];
   total: number;
+  /** Order-status URL — lands in the CUSTOMER's own chat history too, making
+   * the WhatsApp message double as their tappable receipt (points card lives there). */
+  orderUrl?: string;
 };
 
 export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
@@ -27,7 +30,8 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     "",
     `Total: ${formatPrice(ctx.total)}`,
     "",
-    "Pago con Mercado Pago. Estado del pedido en Comeleal.",
+    "Pago con Mercado Pago.",
+    ...(ctx.orderUrl ? [`Estado del pedido: ${ctx.orderUrl}`] : ["Estado del pedido en Comeleal."]),
   ].join("\n");
 }
 

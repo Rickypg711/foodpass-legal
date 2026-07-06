@@ -304,6 +304,10 @@ function OrderStatusPageContent() {
       orderId,
       pickupPin: displayPin,
       customerName: displayName,
+      orderUrl:
+        typeof window !== "undefined"
+          ? `${window.location.origin}/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(orderId)}`
+          : undefined,
       cartLines: cartLinesForWa,
       total: displayTotal,
     });
