@@ -20,6 +20,7 @@ export type CreateOrderResult = {
 export async function createCustomerWebOrder(params: {
   restaurantId: string;
   customerName: string;
+  customerPhone?: string;
   cartLines: CartLine[];
   restaurantName: string;
   restaurantImageUrl?: string | null;
@@ -32,6 +33,7 @@ export async function createCustomerWebOrder(params: {
     restaurantId: params.restaurantId,
     customerId: user.uid,
     customerName: params.customerName,
+    customerPhone: params.customerPhone,
     pickupPin,
     cartLines: params.cartLines,
     restaurantName: params.restaurantName,

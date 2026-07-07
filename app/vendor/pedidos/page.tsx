@@ -39,6 +39,8 @@ interface Order {
   restaurantName: string;
   customerId?: string;
   customerName?: string;
+  /** Digits-only customer WhatsApp captured at web checkout. */
+  customerPhone?: string;
   items: OrderItem[];
   total: number;
   subtotal: number;
@@ -377,6 +379,16 @@ export default function PedidosPage() {
                           <div className="pt-2 text-[12px] font-semibold text-gray-700 flex items-center gap-1.5">
                             👤 <span>{order.customerName}</span>
                           </div>
+                        )}
+                        {order.customerPhone && (
+                          <a
+                            href={`https://wa.me/${order.customerPhone.length === 10 ? `52${order.customerPhone}` : order.customerPhone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"
+                          >
+                            💬 <span>{order.customerPhone}</span>
+                          </a>
                         )}
                       </div>
 

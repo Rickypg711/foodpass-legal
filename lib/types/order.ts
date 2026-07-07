@@ -36,6 +36,9 @@ export type CustomerOrderPayload = {
   orderType: "pickup";
   orderSource: typeof ORDER_SOURCE_CUSTOMER_WEB;
   customerName: string;
+  /** Customer WhatsApp/phone, digits only (e.g. "6141234567"). Required at
+   * checkout for BOTH methods — contact for the order + future loyalty capture. */
+  customerPhone?: string;
   pickupPin: string;
   createdByUserId: string;
   createdByName: string;

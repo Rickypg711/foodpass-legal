@@ -100,6 +100,7 @@ export default function CheckoutPage() {
   const { lines, itemCount, subtotal, clear, cartReady } = useCart();
 
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
@@ -244,6 +245,11 @@ export default function CheckoutPage() {
       setError("Ingresa tu nombre (mínimo 2 caracteres).");
       return;
     }
+    const phoneDigits = customerPhone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      setError("Ingresa tu WhatsApp (10 dígitos) para avisarte de tu pedido.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -275,6 +281,7 @@ export default function CheckoutPage() {
         const result = await createCustomerWebOrder({
           restaurantId,
           customerName: name,
+          customerPhone: phoneDigits,
           cartLines: lines,
           restaurantName,
           restaurantImageUrl,
@@ -337,6 +344,7 @@ export default function CheckoutPage() {
       const result = await createCustomerWebOrder({
         restaurantId,
         customerName: name,
+        customerPhone: phoneDigits,
         cartLines: lines,
         restaurantName,
         restaurantImageUrl,
@@ -608,6 +616,23 @@ export default function CheckoutPage() {
                 className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
                 placeholder="Ej. Juan Pérez"
                 autoComplete="name"
+                disabled={submitting}
+              />
+            </label>
+            <label className="mt-4 block">
+              <span className="text-sm font-semibold">Tu WhatsApp</span>
+              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+                Para avisarte de tu pedido.
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                placeholder="Ej. 614 123 4567"
+                autoComplete="tel"
+                maxLength={16}
                 disabled={submitting}
               />
             </label>

@@ -13,6 +13,8 @@ export type BuildOrderInput = {
   restaurantId: string;
   customerId: string;
   customerName: string;
+  /** Digits-only customer phone/WhatsApp (already normalized by the caller). */
+  customerPhone?: string;
   pickupPin: string;
   cartLines: CartLine[];
   restaurantName: string;
@@ -80,6 +82,11 @@ export function buildCustomerWebOrderPayload(
   const img = input.restaurantImageUrl?.trim();
   if (img) {
     payload.restaurantImageUrl = img;
+  }
+
+  const phone = input.customerPhone?.replace(/\D/g, "") ?? "";
+  if (phone) {
+    payload.customerPhone = phone;
   }
 
   return payload;
