@@ -38,6 +38,9 @@ export default function ConfiguracionPage() {
   const [phone, setPhone] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [dailyRevenueGoal, setDailyRevenueGoal] = useState<number | "">("");
+  /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
+   * y paga en el local; el pedido llega a Pedidos y se cobra ahí. */
+  const [payAtPickup, setPayAtPickup] = useState(false);
 
   // Images state
   const [logoUrl, setLogoUrl] = useState("");
@@ -68,6 +71,7 @@ export default function ConfiguracionPage() {
       setCategories((data.categories as string[]) ?? []);
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
+      setPayAtPickup(data.payAtPickupEnabled === true);
 
       const logo = (data.logoUrl as string) || (data.imageUrl as string) || "";
       const cover = (data.coverImageUrl as string) || (data.menuBannerUrl as string) || "";
@@ -207,6 +211,7 @@ export default function ConfiguracionPage() {
         address: address.trim(),
         phone: phone.trim(),
         categories,
+        payAtPickupEnabled: payAtPickup,
         lastUpdated: serverTimestamp(),
       };
       if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
@@ -531,6 +536,48 @@ export default function ConfiguracionPage() {
                   El Brain AI usa esta meta para calcular el progreso diario.
                 </p>
               </Field>
+            </SectionCard>
+
+            {/* ── Pedidos en línea ── */}
+            <SectionCard label="Pedidos en línea">
+              <button
+                type="button"
+                onClick={() => { setPayAtPickup((v) => !v); setSaved(false); }}
+                aria-pressed={payAtPickup}
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                style={{
+                  background: payAtPickup ? "#FFF3E8" : "#F5F3EF",
+                  border: payAtPickup
+                    ? "1px solid rgba(242,140,56,0.5)"
+                    : "1px solid rgba(28,37,38,0.12)",
+                }}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    💵 Aceptar &quot;Pagar al recoger&quot;
+                  </span>
+                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                    Tus clientes ordenan desde el menú sin pagar en línea y pagan
+                    al recoger. El pedido llega a Pedidos y lo cobras ahí
+                    (efectivo o tarjeta).
+                  </span>
+                </span>
+                <span
+                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                  style={{ background: payAtPickup ? "#F28C38" : "rgba(28,37,38,0.2)" }}
+                  aria-hidden
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
+                    style={{ left: payAtPickup ? "22px" : "2px" }}
+                  />
+                </span>
+              </button>
+              <p className="mt-2 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                Con Mercado Pago conectado, el cliente elige entre pagar en línea
+                o al recoger. Sin Mercado Pago, esta opción es la única forma de
+                recibir pedidos en línea.
+              </p>
             </SectionCard>
 
             {/* ── Guardar ── */}

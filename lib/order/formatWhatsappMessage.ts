@@ -11,6 +11,8 @@ export type WhatsappOrderContext = {
   /** Order-status URL — lands in the CUSTOMER's own chat history too, making
    * the WhatsApp message double as their tappable receipt (points card lives there). */
   orderUrl?: string;
+  /** "pay_at_pickup" | "mercado_pago" (defaults to MP copy for legacy callers). */
+  paymentMethod?: string | null;
 };
 
 export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
@@ -30,7 +32,9 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     "",
     `Total: ${formatPrice(ctx.total)}`,
     "",
-    "Pago con Mercado Pago.",
+    ctx.paymentMethod === "pay_at_pickup"
+      ? "Pago al recoger en el local. 💵"
+      : "Pago con Mercado Pago.",
     ...(ctx.orderUrl ? [`Estado del pedido: ${ctx.orderUrl}`] : ["Estado del pedido en Comeleal."]),
   ].join("\n");
 }

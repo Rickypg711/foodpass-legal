@@ -10,7 +10,10 @@ import {
   type ReactNode,
 } from "react";
 import { getFirebaseDb } from "@/lib/firebase";
-import { restaurantSupportsWebCheckout } from "@/lib/order/customerWebCheckoutPolicy";
+import {
+  restaurantAllowsPayAtPickup,
+  restaurantSupportsWebCheckout,
+} from "@/lib/order/customerWebCheckoutPolicy";
 
 export type WebOrderingContextValue = {
   /** False until restaurant doc has been evaluated. */
@@ -47,7 +50,12 @@ export function WebOrderingProvider({
         const data = snap.exists()
           ? (snap.data() as Record<string, unknown>)
           : undefined;
-        setWebOrderingAvailable(restaurantSupportsWebCheckout(restaurantId, data));
+        // Ordering works with EITHER online payment (MP) or the vendor-enabled
+        // "Pagar al recoger" — the checkout page resolves the method.
+        setWebOrderingAvailable(
+          restaurantSupportsWebCheckout(restaurantId, data) ||
+            restaurantAllowsPayAtPickup(data),
+        );
       } catch {
         if (!cancelled) setWebOrderingAvailable(false);
       } finally {

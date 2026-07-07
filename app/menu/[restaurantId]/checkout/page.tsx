@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
 import { UpsellCard } from "@/components/cart/UpsellCard";
@@ -13,11 +13,17 @@ import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreference
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
-import { ORDER_SOURCE_CUSTOMER_WEB } from "@/lib/types/order";
+import {
+  ORDER_SOURCE_CUSTOMER_WEB,
+  PAYMENT_METHOD_MERCADO_PAGO,
+  PAYMENT_METHOD_PAY_AT_PICKUP,
+  type OrderPaymentMethod,
+} from "@/lib/types/order";
 import {
   CUSTOMER_WEB_PAYMENT_METHOD,
-  MP_UNAVAILABLE_MESSAGE,
+  ORDERING_UNAVAILABLE_MESSAGE,
   mercadoPagoCheckoutTitle,
+  restaurantAllowsPayAtPickup,
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
 import { doc, getDoc } from "firebase/firestore";
@@ -89,6 +95,7 @@ function CheckoutHeader({
 
 export default function CheckoutPage() {
   const params = useParams();
+  const router = useRouter();
   const restaurantId = typeof params.restaurantId === "string" ? params.restaurantId : "";
   const { lines, itemCount, subtotal, clear, cartReady } = useCart();
 
@@ -96,6 +103,9 @@ export default function CheckoutPage() {
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
+  /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
+  const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
+  const [payMethod, setPayMethod] = useState<OrderPaymentMethod | null>(null);
   /** True once the restaurant MP check resolved — prevents the "MP no disponible"
    * warning from flashing while the check is still in flight. */
   const [mpChecked, setMpChecked] = useState(false);
@@ -140,8 +150,18 @@ export default function CheckoutPage() {
             typeof data.name === "string" && data.name.trim() ? data.name : "Restaurante";
           setRestaurantName(name);
           setRestaurantImageUrl(getRestaurantImageUrl(data));
-          setMercadoPagoAvailable(
-            restaurantSupportsWebCheckout(restaurantId, data),
+          const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
+          const papOk = restaurantAllowsPayAtPickup(data);
+          setMercadoPagoAvailable(mpOk);
+          setPayAtPickupAvailable(papOk);
+          // Default selection: MP when available (pay-before-prepare stays the
+          // preferred path); otherwise pay-at-pickup if the vendor allows it.
+          setPayMethod(
+            mpOk
+              ? PAYMENT_METHOD_MERCADO_PAGO
+              : papOk
+                ? PAYMENT_METHOD_PAY_AT_PICKUP
+                : null,
           );
         }
       } catch {
@@ -227,9 +247,67 @@ export default function CheckoutPage() {
     setError(null);
     setSubmitting(true);
 
-    if (!mercadoPagoAvailable) {
-      setError(MP_UNAVAILABLE_MESSAGE);
+    const chosenMethod =
+      payMethod ??
+      (mercadoPagoAvailable
+        ? PAYMENT_METHOD_MERCADO_PAGO
+        : payAtPickupAvailable
+          ? PAYMENT_METHOD_PAY_AT_PICKUP
+          : null);
+
+    if (chosenMethod === null) {
+      setError(ORDERING_UNAVAILABLE_MESSAGE);
+      setSubmitting(false);
       return;
+    }
+
+    // ── Pagar al recoger: create the order and go straight to the order page
+    // (WhatsApp handoff lives there). No MP preference, no redirect. Loyalty
+    // is NOT awarded here — points credit when the vendor marks it cobrada.
+    if (chosenMethod === PAYMENT_METHOD_PAY_AT_PICKUP) {
+      mpWebDebugClient("checkout_submit_start", {
+        restaurantId,
+        cartItemCount: itemCount,
+        paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+        mercadoPagoAvailable,
+      });
+      try {
+        const result = await createCustomerWebOrder({
+          restaurantId,
+          customerName: name,
+          cartLines: lines,
+          restaurantName,
+          restaurantImageUrl,
+          paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+        });
+        mpWebDebugClient("order_create_success", {
+          restaurantId,
+          orderId: result.orderId,
+          paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+        });
+        setCheckoutOrder({ orderId: result.orderId });
+        trackOrderPlaced({
+          restaurantId,
+          orderId: result.orderId,
+          orderSource: ORDER_SOURCE_CUSTOMER_WEB,
+          total: result.total,
+        });
+        clear();
+        router.push(
+          `/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(result.orderId)}`,
+        );
+        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "No pudimos crear tu pedido.";
+        mpWebDebugClient("order_create_error", {
+          restaurantId,
+          paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+          message,
+        });
+        setError(message);
+        setSubmitting(false);
+        return;
+      }
     }
 
     const mpDebugMode = isMpWebDebugClient();
@@ -459,14 +537,58 @@ export default function CheckoutPage() {
         {/* AI upsell suggestion (renders nothing if there's no suggestion) */}
         <UpsellCard restaurantId={restaurantId} />
 
-        {/* Single payment method → no "Forma de pago" card (the pay button +
-            🔒 line already say Mercado Pago). Only surface a notice when MP
-            is NOT available. Sandbox mode still shows its debug hint. */}
-        {mpChecked && !mercadoPagoAvailable ? (
+        {/* Payment method: selector only when the restaurant offers BOTH
+            methods. One method → no card (the pay button says it all).
+            Neither → notice. Sandbox mode still shows its debug hint. */}
+        {mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
           <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-sm text-red-800">{MP_UNAVAILABLE_MESSAGE}</p>
+            <p className="text-sm font-semibold">Forma de pago</p>
+            <div className="mt-2.5 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
+                aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
+                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                  payMethod === PAYMENT_METHOD_MERCADO_PAGO
+                    ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                    : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                }`}
+              >
+                <span className="text-xl" aria-hidden>💳</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">Pagar en línea</span>
+                  <span className="block text-xs text-[#1C2526]/55">
+                    Mercado Pago · tarjeta, OXXO y más
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setPayMethod(PAYMENT_METHOD_PAY_AT_PICKUP)}
+                aria-pressed={payMethod === PAYMENT_METHOD_PAY_AT_PICKUP}
+                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                  payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                    ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                    : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                }`}
+              >
+                <span className="text-xl" aria-hidden>💵</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">Pagar al recoger</span>
+                  <span className="block text-xs text-[#1C2526]/55">
+                    Efectivo o tarjeta en el local
+                  </span>
+                </span>
+              </button>
+            </div>
           </div>
-        ) : mpSandboxUi ? (
+        ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
+          <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
+            <p className="text-sm text-red-800">{ORDERING_UNAVAILABLE_MESSAGE}</p>
+          </div>
+        ) : mpSandboxUi && payMethod !== PAYMENT_METHOD_PAY_AT_PICKUP ? (
           <p className="mb-4 text-center text-xs text-[#1C2526]/45">
             {mercadoPagoCheckoutTitle(mpSandboxUi)} · modo prueba
           </p>
@@ -497,13 +619,21 @@ export default function CheckoutPage() {
           ) : null}
           <button
             type="submit"
-            disabled={submitting || !mercadoPagoAvailable}
+            disabled={submitting || (!mercadoPagoAvailable && !payAtPickupAvailable)}
             className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
           >
-            {submitting ? "Redirigiendo a Mercado Pago…" : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
+            {submitting
+              ? payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                ? "Enviando tu pedido…"
+                : "Redirigiendo a Mercado Pago…"
+              : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                ? `Ordenar ${formatPrice(subtotal)} · Pagas al recoger`
+                : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
           </button>
           <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
-            🔒 Pago procesado de forma segura por Mercado Pago
+            {payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+              ? "💵 Pagas en el local al recoger tu pedido"
+              : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
         </form>
 

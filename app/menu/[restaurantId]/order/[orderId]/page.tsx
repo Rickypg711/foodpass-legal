@@ -304,6 +304,7 @@ function OrderStatusPageContent() {
       orderId,
       pickupPin: displayPin,
       customerName: displayName,
+      paymentMethod: order?.paymentMethod ?? null,
       orderUrl:
         typeof window !== "undefined"
           ? `${window.location.origin}/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(orderId)}`
@@ -401,6 +402,11 @@ function OrderStatusPageContent() {
               <p className="mt-1 text-sm font-bold" suppressHydrationWarning>
                 Total: {formatPrice(displayTotal)}
               </p>
+              {order?.paymentMethod === "pay_at_pickup" && paymentStatus !== "paid" ? (
+                <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                  💵 Pagas al recoger en el local
+                </p>
+              ) : null}
             </div>
 
             {order?.items?.length ? (
