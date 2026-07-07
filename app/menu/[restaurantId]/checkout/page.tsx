@@ -605,12 +605,16 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <label className="block">
-              <span className="text-sm font-semibold">Tu nombre</span>
+              <span className="text-sm font-semibold">
+                Tu nombre <span className="text-[#F28C38]">*</span>
+              </span>
               <span className="mt-0.5 block text-xs text-[#1C2526]/55">
                 Para avisarte cuando tu pedido esté listo.
               </span>
               <input
                 type="text"
+                required
+                minLength={2}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
@@ -620,13 +624,16 @@ export default function CheckoutPage() {
               />
             </label>
             <label className="mt-4 block">
-              <span className="text-sm font-semibold">Tu WhatsApp</span>
+              <span className="text-sm font-semibold">
+                Tu WhatsApp <span className="text-[#F28C38]">*</span>
+              </span>
               <span className="mt-0.5 block text-xs text-[#1C2526]/55">
-                Para avisarte de tu pedido.
+                Para avisarte de tu pedido. Solo números, 10 dígitos.
               </span>
               <input
                 type="tel"
                 inputMode="numeric"
+                required
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
