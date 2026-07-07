@@ -8,7 +8,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
-import { persistReadiness } from "@/lib/vendorReadiness";
+import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -41,6 +41,9 @@ export default function ConfiguracionPage() {
   /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
    * y paga en el local; el pedido llega a Pedidos y se cobra ahí. */
   const [payAtPickup, setPayAtPickup] = useState(false);
+  /** Saving re-runs the readiness check; incomplete → restaurant demoted to
+   * "setup" and web Mercado Pago pauses. Surface it — never fail silently. */
+  const [setupReasons, setSetupReasons] = useState<string[]>([]);
 
   // Images state
   const [logoUrl, setLogoUrl] = useState("");
@@ -72,6 +75,9 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
+      if (data.isSetupComplete === false) {
+        setSetupReasons((data.setupIncompleteReasons as string[]) ?? []);
+      }
 
       const logo = (data.logoUrl as string) || (data.imageUrl as string) || "";
       const cover = (data.coverImageUrl as string) || (data.menuBannerUrl as string) || "";
@@ -220,7 +226,8 @@ export default function ConfiguracionPage() {
         update.dailyRevenueGoal = 0;
       }
       await updateDoc(doc(db, "restaurants", restaurantId), update);
-      await persistReadiness(restaurantId);
+      const readiness = await persistReadiness(restaurantId);
+      setSetupReasons(readiness && !readiness.isComplete ? readiness.reasons : []);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -579,6 +586,42 @@ export default function ConfiguracionPage() {
                 recibir pedidos en línea.
               </p>
             </SectionCard>
+
+            {/* ── Configuración incompleta → pagos en línea pausados ── */}
+            {setupReasons.length > 0 && (() => {
+              const pending = stepGroupFromReasons(setupReasons);
+              const labels = [
+                pending.business ? "Información del negocio" : null,
+                pending.hours ? "Horario" : null,
+                pending.menu ? "Menú" : null,
+                pending.rewards ? "Recompensas" : null,
+              ].filter(Boolean);
+              return (
+                <div
+                  className="rounded-2xl p-4"
+                  style={{
+                    background: "#FFF7ED",
+                    border: "1px solid rgba(234,88,12,0.35)",
+                  }}
+                >
+                  <p className="text-[13px] font-bold" style={{ color: "#9A3412" }}>
+                    ⚠️ Tu configuración está incompleta
+                  </p>
+                  <p className="mt-1 text-[12px]" style={{ color: "rgba(154,52,18,0.85)" }}>
+                    Falta: {labels.join(", ")}. Mientras tanto, los pagos en línea
+                    con Mercado Pago están pausados en tu menú
+                    {payAtPickup ? " (Pagar al recoger sigue funcionando)" : ""}.
+                  </p>
+                  <Link
+                    href="/vendor/setup"
+                    className="mt-2 inline-block rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
+                    style={{ background: "#EA580C" }}
+                  >
+                    Completar configuración →
+                  </Link>
+                </div>
+              );
+            })()}
 
             {/* ── Guardar ── */}
             <button

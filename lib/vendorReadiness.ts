@@ -110,10 +110,12 @@ export function completedStepCount(reasons: string[]): number {
 
 // ─── Persist (mirrors RestaurantReadinessService.persistReadinessForRestaurantId) ─
 
-export async function persistReadiness(restaurantId: string): Promise<void> {
+export async function persistReadiness(
+  restaurantId: string,
+): Promise<ReadinessResult | null> {
   const db = getFirebaseDb();
   const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
-  if (!rSnap.exists()) return;
+  if (!rSnap.exists()) return null;
   const data = rSnap.data() as Record<string, unknown>;
 
   const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
@@ -128,4 +130,8 @@ export async function persistReadiness(restaurantId: string): Promise<void> {
     status,
     lastUpdated: serverTimestamp(),
   });
+
+  // Returned so save flows can WARN the vendor when this write just demoted
+  // the restaurant to "setup" (which pauses web Mercado Pago checkout).
+  return result;
 }
