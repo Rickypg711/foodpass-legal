@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,19 @@ export default function PedidosPage() {
       }
 
       await updateDoc(orderRef, updateData);
+
+      // Phone Points v1: completing an already-PAID order (e.g. MP-paid)
+      // credits phone loyalty. Idempotent — no-op if already awarded.
+      if (newStatus === "completed") {
+        try {
+          const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
+          if (res.credited) {
+            console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+          }
+        } catch (e) {
+          console.error("[phonePoints] credit on complete failed", e);
+        }
+      }
     } catch (err) {
       console.error("Error updating status", err);
       alert("No se pudo actualizar el estado del pedido.");
@@ -191,6 +205,17 @@ export default function PedidosPage() {
         updatedAt: serverTimestamp(),
       });
       setChargingOrderId(null);
+
+      // Phone Points v1: payment confirmed → credit phone loyalty (§4:
+      // points ONLY on confirmed payment). Idempotent via loyaltyAwarded.
+      try {
+        const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
+        if (res.credited) {
+          console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+        }
+      } catch (e) {
+        console.error("[phonePoints] credit on charge failed", e);
+      }
     } catch (err) {
       console.error("Error charging order", err);
       alert("No se pudo registrar el pago.");

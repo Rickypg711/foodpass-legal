@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -178,12 +179,13 @@ function CheckoutDialog({
 }: {
   total: number;
   onClose: () => void;
-  onConfirm: (mode: CheckoutMode, method: PaymentMethod, name: string, notes: string) => void;
+  onConfirm: (mode: CheckoutMode, method: PaymentMethod, name: string, phone: string, notes: string) => void;
   processing: boolean;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
 
   return (
@@ -278,6 +280,24 @@ function CheckoutDialog({
               />
             </div>
             <div>
+              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
+                📱 Teléfono del cliente (opcional)
+              </label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Para sus puntos — 614 123 4567"
+                maxLength={16}
+                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
+                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+              />
+              <p className="mt-1 text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                Con su número el cliente junta puntos automáticamente. ⭐
+              </p>
+            </div>
+            <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
               <input
                 type="text"
@@ -292,7 +312,7 @@ function CheckoutDialog({
 
           {/* Confirm */}
           <button
-            onClick={() => onConfirm(mode, method, name, notes)}
+            onClick={() => onConfirm(mode, method, name, phone, notes)}
             disabled={processing || (mode === "tab" && !name.trim())}
             className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-opacity disabled:opacity-40"
             style={{ background: mode === "now" ? "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" : "#1C2526" }}
@@ -515,7 +535,18 @@ export default function PosPage() {
         completedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      
+
+      // Phone Points v1: tab closed = payment confirmed → credit if the
+      // order carries a customerPhone. Idempotent.
+      try {
+        const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
+        if (res.credited) {
+          console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+        }
+      } catch (e) {
+        console.error("[phonePoints] tab-close credit failed", e);
+      }
+
       alert("¡Cuenta pagada y cerrada!");
       loadOpenTabs(restaurantId);
     } catch (err) {
@@ -604,6 +635,7 @@ export default function PosPage() {
     mode: CheckoutMode,
     method: PaymentMethod,
     customerName: string,
+    customerPhone: string,
     notes: string
   ) {
     if (!restaurantId || !uid) return;
@@ -635,9 +667,31 @@ export default function PosPage() {
       };
 
       if (customerName.trim()) orderData.customerName = customerName.trim();
+      const phoneDigits = customerPhone.replace(/\D/g, "");
+      if (phoneDigits.length >= 10) orderData.customerPhone = phoneDigits;
       if (notes.trim()) orderData.notes = notes.trim();
 
-      await addDoc(collection(db, "restaurants", restaurantId, "orders"), orderData);
+      const orderRef = await addDoc(
+        collection(db, "restaurants", restaurantId, "orders"),
+        orderData,
+      );
+
+      // Phone Points v1: "cobrar ahora" = confirmed payment → credit loyalty
+      // to the phone if the cashier captured it. (Open tabs credit at close.)
+      if (mode === "now" && phoneDigits.length >= 10) {
+        try {
+          const res = await creditPhonePointsForOrder({
+            db,
+            restaurantId,
+            orderId: orderRef.id,
+          });
+          if (res.credited) {
+            console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+          }
+        } catch (e) {
+          console.error("[phonePoints] POS credit failed", e);
+        }
+      }
 
       setSuccess({ mode, total: subtotal });
       setShowCheckout(false);

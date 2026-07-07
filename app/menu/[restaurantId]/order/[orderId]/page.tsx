@@ -18,6 +18,7 @@ import {
   paymentReturnBannerMessage,
 } from "@/lib/order/paymentReturnMessage";
 import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
+import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
 import type { CartLine } from "@/lib/cart/types";
@@ -28,6 +29,7 @@ type OrderDoc = {
   paymentStatus?: string;
   paymentMethod?: string;
   customerName?: string;
+  customerPhone?: string;
   pickupPin?: string;
   total?: number;
   items?: Array<{
@@ -435,6 +437,16 @@ function OrderStatusPageContent() {
                 El restaurante no tiene WhatsApp registrado.
               </p>
             )}
+
+            {/* Phone Points v1: real balance behind an SMS verification —
+                the number IS the account, no app required. */}
+            {order?.customerPhone ? (
+              <PhonePointsCard
+                restaurantId={restaurantId}
+                restaurantName={displayRestaurant}
+                phone={order.customerPhone}
+              />
+            ) : null}
 
             {/* Receipt → install loop: the highest-intent moment. This order
                 already generated points — download to claim them at pickup. */}
