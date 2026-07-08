@@ -116,6 +116,30 @@ function CustomerCard({
   const [msgLoading, setMsgLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgError, setMsgError] = useState(false);
+  const [rewardRedeemed, setRewardRedeemed] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+
+  /** Web-side redemption of the first-visit reward (parity with the app's
+   * scanner "Marcar premio como entregado"). */
+  async function markRewardDelivered() {
+    if (!customer.isPhoneOnly || !customer.phone || redeeming) return;
+    const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
+    setRedeeming(true);
+    try {
+      await updateDoc(
+        doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
+        {
+          firstVisitRewardUnlocked: false,
+          firstVisitRewardRedeemedAt: serverTimestamp(),
+        },
+      );
+      setRewardRedeemed(true);
+    } catch {
+      /* vendor can retry */
+    } finally {
+      setRedeeming(false);
+    }
+  }
 
   /** Marks the winback tap on the phoneCustomer doc (closes the measure leg
    * of the loop — AI_NATIVE_CLOSED_LOOPS §3.1). Fire-and-forget. */
@@ -215,7 +239,7 @@ function CustomerCard({
                 📱 Tel
               </span>
             )}
-            {customer.rewardUnlocked && (
+            {customer.rewardUnlocked && !rewardRedeemed && (
               <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
                 style={
                   (customer.rewardDaysLeft ?? 9) <= 2
@@ -225,6 +249,12 @@ function CustomerCard({
                 🎁 {(customer.rewardDaysLeft ?? 9) <= 2
                   ? `Premio vence ${customer.rewardDaysLeft === 0 ? "HOY" : customer.rewardDaysLeft === 1 ? "mañana" : "en 2d"}`
                   : "Premio sin usar"}
+              </span>
+            )}
+            {rewardRedeemed && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{ background: "rgba(22,163,74,0.12)", color: "#16A34A" }}>
+                ✓ Premio entregado
               </span>
             )}
           </div>
@@ -267,6 +297,17 @@ function CustomerCard({
         )}
         {msgError && (
           <span className="text-[11px]" style={{ color: "#dc2626" }}>Error, intenta de nuevo</span>
+        )}
+        {customer.isPhoneOnly && customer.rewardUnlocked && !rewardRedeemed && (
+          <button
+            onClick={markRewardDelivered}
+            disabled={redeeming}
+            className="rounded-xl px-3 py-2 text-[12px] font-bold disabled:opacity-60"
+            style={{ background: "rgba(255,180,0,0.15)", color: "#b8860b" }}
+            title="Entrega el premio de bienvenida y márcalo como usado"
+          >
+            {redeeming ? "…" : "🎁 Entregar premio"}
+          </button>
         )}
       </div>
     </div>

@@ -225,7 +225,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", minWidth: w }}
         >
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          {/* Brand → vendor Panel (never the marketing site — this is the
+              vendor's workplace; comeleal.com mid-shift is an escape hatch). */}
+          <Link href="/vendor" className="flex shrink-0 items-center gap-2.5">
             <Image
               src="/comeleal-app-icon.png"
               alt="Comeleal"
