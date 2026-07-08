@@ -28,6 +28,32 @@ type Balance = {
   firstVisitRewardUnlocked: boolean;
 } | null;
 
+type TierLite = { id: string; name: string; points: number };
+
+/** rewardTiers from the (public-read) restaurant doc — `visitsRequired` is
+ * legacy-named but holds POINTS. First-visit tier handled separately. */
+function parseTiers(raw: unknown): TierLite[] {
+  if (!Array.isArray(raw)) return [];
+  const tiers: TierLite[] = [];
+  raw.forEach((t, i) => {
+    if (!t || typeof t !== "object") return;
+    const tier = t as Record<string, unknown>;
+    if (tier.isFirstVisitReward === true) return;
+    const points = Number(tier.visitsRequired);
+    const name =
+      (typeof tier.menuItemName === "string" && tier.menuItemName.trim()) ||
+      (typeof tier.description === "string" && tier.description.trim()) ||
+      "";
+    if (!name || !Number.isFinite(points) || points <= 0) return;
+    tiers.push({
+      id: typeof tier.id === "string" ? tier.id : `tier_${i}`,
+      name,
+      points: Math.floor(points),
+    });
+  });
+  return tiers.sort((a, b) => a.points - b.points);
+}
+
 function last10(digits: string): string {
   const d = digits.replace(/\D/g, "");
   return d.length > 10 ? d.slice(-10) : d;
@@ -52,6 +78,7 @@ export function PhonePointsCard({
   const [code, setCode] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [balance, setBalance] = useState<Balance>(null);
+  const [tiers, setTiers] = useState<TierLite[]>([]);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
   const recaptchaHostRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +157,13 @@ export function PhonePointsCard({
   }
 
   async function loadBalance() {
+    // Reward tiers (public restaurant doc) — for the progress/unlocked lines.
+    try {
+      const rSnap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId));
+      setTiers(parseTiers(rSnap.data()?.rewardTiers));
+    } catch {
+      /* progress lines are optional */
+    }
     const snap = await getDoc(
       doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
     );
@@ -162,6 +196,33 @@ export function PhonePointsCard({
                 ? " · 🎁 Tienes un premio de bienvenida desbloqueado — pregunta en el local"
                 : ""}
             </p>
+            {(() => {
+              const unlocked = tiers.filter((t) => balance.points >= t.points);
+              const next = tiers.find((t) => balance.points < t.points);
+              if (unlocked.length === 0 && !next) return null;
+              return (
+                <div className="mt-3 space-y-1.5 border-t border-[#F28C38]/15 pt-3 text-left">
+                  {unlocked.map((t) => (
+                    <p key={t.id} className="text-xs font-semibold text-[#1C2526]">
+                      🎁 Ya puedes canjear:{" "}
+                      <span style={{ color: "#F28C38" }}>{t.name}</span>{" "}
+                      <span className="text-[#1C2526]/50">
+                        ({t.points} pts) — pídelo al pagar en el local
+                      </span>
+                    </p>
+                  ))}
+                  {next ? (
+                    <p className="text-xs text-[#1C2526]/60">
+                      ⏳ Te faltan{" "}
+                      <span className="font-bold" style={{ color: "#F28C38" }}>
+                        {next.points - balance.points} puntos
+                      </span>{" "}
+                      para: {next.name}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <p className="text-center text-sm text-[#1C2526]/70">
