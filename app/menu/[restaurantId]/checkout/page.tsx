@@ -552,86 +552,33 @@ export default function CheckoutPage() {
         ) : null}
         <CheckoutCartLines />
 
-        {/* AI upsell suggestion (renders nothing if there's no suggestion).
-            Goal-gradient: with a verified balance, the bonus line becomes
-            "te faltarían solo N pts para tu X GRATIS". */}
-        <UpsellCard
-          restaurantId={restaurantId}
-          goal={(() => {
-            if (!loyalty) return null;
-            const next = loyalty.tiers.find((t) => t.points > loyalty.points);
-            if (!next) return null;
-            return {
-              balance: loyalty.points,
-              nextTierName: next.name,
-              nextTierPoints: next.points,
-              earnBase: earnPolicy.base,
-              earnStep: earnPolicy.step,
-              cartTotal: subtotal,
-            } satisfies UpsellGoalContext;
-          })()}
-        />
-
-        {/* Payment method: selector only when the restaurant offers BOTH
-            methods. One method → no card (the pay button says it all).
-            Neither → notice. Sandbox mode still shows its debug hint. */}
-        {mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
-          <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold">Forma de pago</p>
-            <div className="mt-2.5 flex flex-col gap-2">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
-                aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
-                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                  payMethod === PAYMENT_METHOD_MERCADO_PAGO
-                    ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                    : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                }`}
-              >
-                <span className="text-xl" aria-hidden>💳</span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">Pagar en línea</span>
-                  <span className="block text-xs text-[#1C2526]/55">
-                    Mercado Pago · tarjeta, OXXO y más
-                  </span>
-                </span>
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => setPayMethod(PAYMENT_METHOD_PAY_AT_PICKUP)}
-                aria-pressed={payMethod === PAYMENT_METHOD_PAY_AT_PICKUP}
-                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                  payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                    ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                    : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                }`}
-              >
-                <span className="text-xl" aria-hidden>💵</span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">Pagar al recoger</span>
-                  <span className="block text-xs text-[#1C2526]/55">
-                    Efectivo o tarjeta en el local
-                  </span>
-                </span>
-              </button>
-            </div>
-          </div>
-        ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
-          <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-sm text-red-800">{ORDERING_UNAVAILABLE_MESSAGE}</p>
-          </div>
-        ) : mpSandboxUi && payMethod !== PAYMENT_METHOD_PAY_AT_PICKUP ? (
-          <p className="mb-4 text-center text-xs text-[#1C2526]/45">
-            {mercadoPagoCheckoutTitle(mpSandboxUi)} · modo prueba
-          </p>
-        ) : null}
-
+        {/* Identity-first checkout: the PHONE is the key — it activates the
+            redemption block and personalizes the upsell (goal-gradient).
+            Screen order: identity → tus premios → upsell → forma de pago → CTA. */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <label className="block">
+              <span className="text-sm font-semibold">
+                Tu WhatsApp <span className="text-[#F28C38]">*</span>
+              </span>
+              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+                Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu
+                pedido. Solo números, 10 dígitos.
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                required
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                placeholder="Ej. 614 123 4567"
+                autoComplete="tel"
+                maxLength={16}
+                disabled={submitting}
+              />
+            </label>
+            <label className="mt-4 block">
               <span className="text-sm font-semibold">
                 Tu nombre <span className="text-[#F28C38]">*</span>
               </span>
@@ -650,26 +597,6 @@ export default function CheckoutPage() {
                 disabled={submitting}
               />
             </label>
-            <label className="mt-4 block">
-              <span className="text-sm font-semibold">
-                Tu WhatsApp <span className="text-[#F28C38]">*</span>
-              </span>
-              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
-                Para avisarte de tu pedido. Solo números, 10 dígitos.
-              </span>
-              <input
-                type="tel"
-                inputMode="numeric"
-                required
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
-                placeholder="Ej. 614 123 4567"
-                autoComplete="tel"
-                maxLength={16}
-                disabled={submitting}
-              />
-            </label>
           </div>
 
           {/* Redemption: use unlocked rewards on THIS order (phone-verified). */}
@@ -685,6 +612,82 @@ export default function CheckoutPage() {
               🎁 En este pedido: {redemption.name} GRATIS (canje de {redemption.points} pts)
             </p>
           ) : null}
+
+          {/* AI upsell — arrives AFTER identity, so the goal-gradient line
+              ("te faltarían solo N pts para tu X GRATIS") is live when the
+              customer reaches it. */}
+          <UpsellCard
+            restaurantId={restaurantId}
+            goal={(() => {
+              if (!loyalty) return null;
+              const next = loyalty.tiers.find((t) => t.points > loyalty.points);
+              if (!next) return null;
+              return {
+                balance: loyalty.points,
+                nextTierName: next.name,
+                nextTierPoints: next.points,
+                earnBase: earnPolicy.base,
+                earnStep: earnPolicy.step,
+                cartTotal: subtotal,
+              } satisfies UpsellGoalContext;
+            })()}
+          />
+
+          {/* Forma de pago — last decision before the CTA it controls. */}
+          {mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold">Forma de pago</p>
+              <div className="mt-2.5 flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
+                  aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
+                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                    payMethod === PAYMENT_METHOD_MERCADO_PAGO
+                      ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                      : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                  }`}
+                >
+                  <span className="text-xl" aria-hidden>💳</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">Pagar en línea</span>
+                    <span className="block text-xs text-[#1C2526]/55">
+                      Mercado Pago · tarjeta, OXXO y más
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setPayMethod(PAYMENT_METHOD_PAY_AT_PICKUP)}
+                  aria-pressed={payMethod === PAYMENT_METHOD_PAY_AT_PICKUP}
+                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                    payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                      ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                      : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                  }`}
+                >
+                  <span className="text-xl" aria-hidden>💵</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">Pagar al recoger</span>
+                    <span className="block text-xs text-[#1C2526]/55">
+                      Efectivo o tarjeta en el local
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="text-sm text-red-800">{ORDERING_UNAVAILABLE_MESSAGE}</p>
+            </div>
+          ) : mpSandboxUi && payMethod !== PAYMENT_METHOD_PAY_AT_PICKUP ? (
+            <p className="text-center text-xs text-[#1C2526]/45">
+              {mercadoPagoCheckoutTitle(mpSandboxUi)} · modo prueba
+            </p>
+          ) : null}
+
           {error ? (
             <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-800" role="alert">
               {error}
