@@ -11,6 +11,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import {
   buildWhatsappUrl,
   formatWhatsappOrderMessage,
+  shortOrderCode,
 } from "@/lib/order/formatWhatsappMessage";
 import { loadOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import {
@@ -344,7 +345,7 @@ function OrderStatusPageContent() {
             {mounted && snapshot?.orderId === orderId && snapshot.pickupPin ? (
               <div className="mt-4 space-y-2">
                 <p>
-                  <span className="font-medium">Orden:</span> {orderId}
+                  <span className="font-medium">Pedido:</span> #{shortOrderCode(orderId)}
                 </p>
                 <p suppressHydrationWarning>
                   <span className="font-medium">PIN:</span> {snapshot.pickupPin}
@@ -373,8 +374,10 @@ function OrderStatusPageContent() {
             </div>
 
             <div className="rounded-xl bg-white p-4">
-              <p className="text-xs text-[#1C2526]/60">Número de orden</p>
-              <p className="break-all font-mono text-sm">{orderId}</p>
+              <p className="text-xs text-[#1C2526]/60">Pedido</p>
+              <p className="font-mono text-lg font-bold tracking-wider">
+                #{shortOrderCode(orderId)}
+              </p>
               <p className="mt-3 text-xs text-[#1C2526]/60">PIN de recogida</p>
               {displayPin ? (
                 <p

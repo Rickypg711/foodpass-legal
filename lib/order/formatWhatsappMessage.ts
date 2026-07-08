@@ -15,27 +15,33 @@ export type WhatsappOrderContext = {
   paymentMethod?: string | null;
 };
 
+/** Short human order code — same as the vendor's Pedidos card (#XXXXXX). */
+export function shortOrderCode(orderId: string): string {
+  return orderId.slice(-6).toUpperCase();
+}
+
+// Mirrors the app's buildReceiptText structure (receipt_share.dart): name
+// header, order #, items, bold total, payment line, one link. WhatsApp
+// renders *bold*. No exotic emojis — several render as � on desktop clients.
 export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
   const itemsLines = ctx.cartLines
-    .map((l) => `• ${l.quantity}x ${l.name} — ${formatPrice(l.subtotal)}`)
+    .map((l) => `${l.quantity}x ${l.name} — ${formatPrice(l.subtotal)}`)
     .join("\n");
 
   return [
-    "Hola, hice un pedido en Comeleal 🍽️",
+    `Hola! Acabo de hacer un pedido en *${ctx.restaurantName}*:`,
     "",
-    `Restaurante: ${ctx.restaurantName}`,
-    `Orden: ${ctx.orderId}`,
-    `PIN de recogida: ${ctx.pickupPin}`,
+    `Pedido *#${shortOrderCode(ctx.orderId)}*`,
     `Nombre: ${ctx.customerName}`,
+    `PIN de recogida: *${ctx.pickupPin}*`,
     "",
     itemsLines,
     "",
-    `Total: ${formatPrice(ctx.total)}`,
-    "",
+    `*Total: ${formatPrice(ctx.total)}*`,
     ctx.paymentMethod === "pay_at_pickup"
-      ? "Pago al recoger en el local. 💵"
-      : "Pago con Mercado Pago.",
-    ...(ctx.orderUrl ? [`Estado del pedido: ${ctx.orderUrl}`] : ["Estado del pedido en Comeleal."]),
+      ? "Pago al recoger en el local."
+      : "Pago en línea con Mercado Pago.",
+    ...(ctx.orderUrl ? ["", `Mi recibo y puntos: ${ctx.orderUrl}`] : []),
   ].join("\n");
 }
 
