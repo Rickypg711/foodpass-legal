@@ -19,6 +19,7 @@ import {
   paymentReturnBannerMessage,
 } from "@/lib/order/paymentReturnMessage";
 import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
+import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
@@ -126,6 +127,7 @@ function OrderStatusPageContent() {
   const mounted = useIsClient();
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
     base: 1,
     step: 30,
@@ -226,6 +228,7 @@ function OrderStatusPageContent() {
           if (typeof wa === "string" && wa.trim()) {
             setWhatsapp(wa.trim());
           }
+          setRestaurantLogo(getRestaurantImageUrl(d));
           setEarnPolicy(earnPolicyFromRestaurant(d));
           const fpr = d.firstPurchaseReward;
           if (fpr && typeof fpr === "object") {
@@ -361,7 +364,29 @@ function OrderStatusPageContent() {
   return (
     <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
       <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
-        <h1 className="text-lg font-semibold text-white">Pedido enviado</h1>
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          {restaurantLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={restaurantLogo}
+              alt=""
+              className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-md ring-2 ring-white/25"
+            />
+          ) : (
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-xl"
+              aria-hidden
+            >
+              🍽
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold leading-tight text-white">
+              {displayRestaurant}
+            </h1>
+            <p className="text-xs text-white/75">Tu pedido y tus puntos</p>
+          </div>
+        </div>
       </header>
 
       <main className="mx-auto max-w-md px-4 py-6">
