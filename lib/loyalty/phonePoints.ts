@@ -17,6 +17,7 @@
 // transaction — an order can never credit twice.
 
 import {
+  arrayUnion,
   doc,
   runTransaction,
   serverTimestamp,
@@ -148,23 +149,43 @@ export async function creditPhonePointsForOrder(params: {
     const now = new Date();
     const inSameMonth = lastReset !== null && sameCalendarMonth(lastReset, now);
     const effectiveCount = inSameMonth ? Number(rdata.scanCount ?? 0) || 0 : 0;
+    const capReached = !unlimited && effectiveCount >= limit;
 
-    if (!unlimited && effectiveCount >= limit) {
-      return { credited: false, reason: "cap_reached" } as const;
-    }
-
+    // Earning is gated by the cap; REDEEMING is not (deduction ≠ earn, and
+    // blocking it would break a promise the customer already holds).
     const earn = earnPolicyFromRestaurant(rdata);
     const total = Number(order.total ?? 0) || 0;
     const items = (order.items as OrderItemLike[] | undefined) ?? [];
-    const points = computeOrderPoints(total, items, earn);
-    if (points <= 0) {
-      return { credited: false, reason: "zero_points" } as const;
+    const points = capReached ? 0 : computeOrderPoints(total, items, earn);
+
+    // Checkout redemption request (unprivileged, customer-written) — executed
+    // here with a live balance re-check. Faked/double requests fail safely.
+    const rr = order.redemptionRequest as
+      | { tierId?: unknown; name?: unknown; points?: unknown }
+      | undefined;
+    const redemptionCost =
+      rr && Number.isFinite(Number(rr.points)) && Number(rr.points) > 0
+        ? Math.floor(Number(rr.points))
+        : 0;
+
+    if (points <= 0 && redemptionCost <= 0) {
+      return {
+        credited: false,
+        reason: capReached ? "cap_reached" : "zero_points",
+      } as const;
     }
 
     const phoneRef = doc(db, "restaurants", restaurantId, "phoneCustomers", phone);
     const phoneSnap = await tx.get(phoneRef);
     const firstVisit = !phoneSnap.exists();
     const prev = (phoneSnap.data() ?? {}) as Record<string, unknown>;
+
+    const balanceAfterEarn = (Number(prev.points) || 0) + points;
+    const redemptionApplied =
+      redemptionCost > 0 && balanceAfterEarn >= redemptionCost;
+    const finalPoints = redemptionApplied
+      ? balanceAfterEarn - redemptionCost
+      : balanceAfterEarn;
 
     const name = String(order.customerName ?? "").trim();
     const restaurantName = String(rdata.name ?? "").trim();
@@ -175,16 +196,28 @@ export async function creditPhonePointsForOrder(params: {
         restaurantId,
         ...(restaurantName ? { restaurantName } : {}),
         ...(name ? { name } : {}),
-        points: (Number(prev.points) || 0) + points,
+        points: finalPoints,
         visits: (Number(prev.visits) || 0) + 1,
         totalSpend: (Number(prev.totalSpend) || 0) + total,
         // First confirmed purchase unlocks the first-visit reward for the
-        // NEXT visit (§4) — redemption ships in v2, the data starts now.
+        // NEXT visit (§4).
         firstVisitRewardUnlocked:
           prev.firstVisitRewardUnlocked === true ? true : firstVisit,
         lastVisitAt: serverTimestamp(),
         ...(firstVisit ? { createdAt: serverTimestamp() } : {}),
         source: firstVisit ? "web_order" : (prev.source ?? "web_order"),
+        ...(redemptionApplied
+          ? {
+              lastRedemptionAt: serverTimestamp(),
+              redemptions: arrayUnion({
+                tierId: String(rr?.tierId ?? ""),
+                name: String(rr?.name ?? ""),
+                points: redemptionCost,
+                at: Timestamp.now(),
+                via: "checkout",
+              }),
+            }
+          : {}),
       },
       { merge: true },
     );
@@ -193,12 +226,18 @@ export async function creditPhonePointsForOrder(params: {
       loyaltyAwarded: true,
       phonePointsAwarded: points,
       phoneLoyaltyAt: serverTimestamp(),
+      ...(redemptionCost > 0
+        ? { redemptionResult: redemptionApplied ? "applied" : "insufficient" }
+        : {}),
     });
 
-    tx.update(restaurantRef, {
-      scanCount: effectiveCount + 1,
-      ...(inSameMonth ? {} : { lastReset: Timestamp.fromDate(now) }),
-    });
+    // Counter burns only when something was EARNED.
+    if (points > 0) {
+      tx.update(restaurantRef, {
+        scanCount: effectiveCount + 1,
+        ...(inSameMonth ? {} : { lastReset: Timestamp.fromDate(now) }),
+      });
+    }
 
     return { credited: true, phone, points, firstVisit } as const;
   });

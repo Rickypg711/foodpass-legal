@@ -25,6 +25,7 @@ export async function createCustomerWebOrder(params: {
   restaurantName: string;
   restaurantImageUrl?: string | null;
   paymentMethod?: OrderPaymentMethod;
+  redemptionRequest?: import("@/lib/types/order").OrderRedemptionRequest | null;
 }): Promise<CreateOrderResult> {
   const user = await ensureAnonymousUser();
   const pickupPin = generatePickupPin();
@@ -34,6 +35,7 @@ export async function createCustomerWebOrder(params: {
     customerId: user.uid,
     customerName: params.customerName,
     customerPhone: params.customerPhone,
+    redemptionRequest: params.redemptionRequest,
     pickupPin,
     cartLines: params.cartLines,
     restaurantName: params.restaurantName,

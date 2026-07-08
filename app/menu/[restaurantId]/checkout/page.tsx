@@ -18,7 +18,11 @@ import {
   PAYMENT_METHOD_MERCADO_PAGO,
   PAYMENT_METHOD_PAY_AT_PICKUP,
   type OrderPaymentMethod,
+  type OrderRedemptionRequest,
 } from "@/lib/types/order";
+import { CheckoutRedemption } from "@/components/loyalty/CheckoutRedemption";
+import { earnPolicyFromRestaurant } from "@/lib/loyalty/phonePoints";
+import type { UpsellGoalContext } from "@/components/cart/UpsellCard";
 import {
   CUSTOMER_WEB_PAYMENT_METHOD,
   ORDERING_UNAVAILABLE_MESSAGE,
@@ -101,6 +105,9 @@ export default function CheckoutPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [redemption, setRedemption] = useState<OrderRedemptionRequest | null>(null);
+  const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({ base: 1, step: 30 });
+  const [loyalty, setLoyalty] = useState<{ points: number; tiers: { id: string; name: string; points: number }[] } | null>(null);
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
@@ -151,6 +158,7 @@ export default function CheckoutPage() {
             typeof data.name === "string" && data.name.trim() ? data.name : "Restaurante";
           setRestaurantName(name);
           setRestaurantImageUrl(getRestaurantImageUrl(data));
+          setEarnPolicy(earnPolicyFromRestaurant(data));
           const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
           const papOk = restaurantAllowsPayAtPickup(data);
           setMercadoPagoAvailable(mpOk);
@@ -286,6 +294,7 @@ export default function CheckoutPage() {
           restaurantName,
           restaurantImageUrl,
           paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+          redemptionRequest: redemption,
         });
         mpWebDebugClient("order_create_success", {
           restaurantId,
@@ -349,6 +358,7 @@ export default function CheckoutPage() {
         restaurantName,
         restaurantImageUrl,
         paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
+        redemptionRequest: redemption,
       });
 
       mpWebDebugClient("order_create_success", {
@@ -542,8 +552,25 @@ export default function CheckoutPage() {
         ) : null}
         <CheckoutCartLines />
 
-        {/* AI upsell suggestion (renders nothing if there's no suggestion) */}
-        <UpsellCard restaurantId={restaurantId} />
+        {/* AI upsell suggestion (renders nothing if there's no suggestion).
+            Goal-gradient: with a verified balance, the bonus line becomes
+            "te faltarían solo N pts para tu X GRATIS". */}
+        <UpsellCard
+          restaurantId={restaurantId}
+          goal={(() => {
+            if (!loyalty) return null;
+            const next = loyalty.tiers.find((t) => t.points > loyalty.points);
+            if (!next) return null;
+            return {
+              balance: loyalty.points,
+              nextTierName: next.name,
+              nextTierPoints: next.points,
+              earnBase: earnPolicy.base,
+              earnStep: earnPolicy.step,
+              cartTotal: subtotal,
+            } satisfies UpsellGoalContext;
+          })()}
+        />
 
         {/* Payment method: selector only when the restaurant offers BOTH
             methods. One method → no card (the pay button says it all).
@@ -644,6 +671,20 @@ export default function CheckoutPage() {
               />
             </label>
           </div>
+
+          {/* Redemption: use unlocked rewards on THIS order (phone-verified). */}
+          <CheckoutRedemption
+            restaurantId={restaurantId}
+            phoneDigits={customerPhone}
+            selected={redemption}
+            onSelect={setRedemption}
+            onLoyalty={setLoyalty}
+          />
+          {redemption ? (
+            <p className="-mt-2 rounded-xl bg-[#F0FBF4] px-3.5 py-2.5 text-sm font-semibold text-[#16A34A]">
+              🎁 En este pedido: {redemption.name} GRATIS (canje de {redemption.points} pts)
+            </p>
+          ) : null}
           {error ? (
             <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-800" role="alert">
               {error}

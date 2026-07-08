@@ -13,6 +13,8 @@ export type WhatsappOrderContext = {
   orderUrl?: string;
   /** "pay_at_pickup" | "mercado_pago" (defaults to MP copy for legacy callers). */
   paymentMethod?: string | null;
+  /** Checkout redemption riding on the order (name of the free item). */
+  redemptionName?: string | null;
 };
 
 /** Short human order code — same as the vendor's Pedidos card (#XXXXXX). */
@@ -36,6 +38,7 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     `PIN de recogida: *${ctx.pickupPin}*`,
     "",
     itemsLines,
+    ...(ctx.redemptionName ? [`🎁 Premio en este pedido: ${ctx.redemptionName} — GRATIS`] : []),
     "",
     `*Total: ${formatPrice(ctx.total)}*`,
     ctx.paymentMethod === "pay_at_pickup"

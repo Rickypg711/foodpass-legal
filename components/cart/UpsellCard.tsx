@@ -32,7 +32,26 @@ type Suggestion = {
   accelerated?: boolean;
 };
 
-export function UpsellCard({ restaurantId }: { restaurantId: string }) {
+/** Goal-gradient context: the verified customer's balance + next goal, so the
+ * bonus line can say "con esto te faltarían solo N pts para tu X GRATIS" —
+ * the closer the goal feels, the harder people accelerate toward it. */
+export type UpsellGoalContext = {
+  balance: number;
+  nextTierName: string;
+  nextTierPoints: number;
+  /** Earn policy (base + floor(total/step)) to estimate this order's points. */
+  earnBase: number;
+  earnStep: number;
+  cartTotal: number;
+};
+
+export function UpsellCard({
+  restaurantId,
+  goal = null,
+}: {
+  restaurantId: string;
+  goal?: UpsellGoalContext | null;
+}) {
   const { lines, addItem } = useCart();
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [added, setAdded] = useState<{ bonus: number; surprise: boolean } | null>(
@@ -153,6 +172,23 @@ export function UpsellCard({ restaurantId }: { restaurantId: string }) {
           </span>
         )
       ) : null}
+      {(() => {
+        // Goal-gradient line (verified customers only): estimate the balance
+        // AFTER this order WITH the upsell, against their next reward.
+        if (!goal || goal.nextTierPoints <= 0) return null;
+        const estimateEarn = (total: number) =>
+          goal.earnBase + Math.floor(total / Math.max(1, goal.earnStep));
+        const prospective =
+          goal.balance + estimateEarn(goal.cartTotal + delta) + bonus;
+        const gap = goal.nextTierPoints - prospective;
+        return (
+          <p className="mt-2 text-xs font-bold" style={{ color: gap <= 0 ? "#16A34A" : "#B05E14" }}>
+            {gap <= 0
+              ? `🎉 ¡Con esto DESBLOQUEAS tu ${goal.nextTierName} GRATIS!`
+              : `🎯 Con esto te faltarían solo ${gap} pts para tu ${goal.nextTierName} GRATIS`}
+          </p>
+        );
+      })()}
     </div>
   );
 }

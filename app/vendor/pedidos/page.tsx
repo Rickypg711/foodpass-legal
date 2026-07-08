@@ -45,6 +45,10 @@ interface Order {
   customerName?: string;
   /** Digits-only customer WhatsApp captured at web checkout. */
   customerPhone?: string;
+  /** Checkout redemption request — deduction executes at cobro. */
+  redemptionRequest?: { tierId: string; name: string; points: number };
+  /** Set by the credit transaction: "applied" | "insufficient". */
+  redemptionResult?: string;
   items: OrderItem[];
   total: number;
   subtotal: number;
@@ -425,6 +429,24 @@ export default function PedidosPage() {
                           {!isPaid && (
                             <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-600">
                               Sin Pagar
+                            </span>
+                          )}
+                          {order.redemptionRequest && (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                order.redemptionResult === "insufficient"
+                                  ? "bg-red-100 text-red-600"
+                                  : "bg-green-100 text-green-700"
+                              }`}
+                              title={
+                                order.redemptionResult === "insufficient"
+                                  ? "Puntos insuficientes al cobrar — cobra normal, no entregues el premio"
+                                  : `Entregar GRATIS: ${order.redemptionRequest.name} (canje de ${order.redemptionRequest.points} pts)`
+                              }
+                            >
+                              🎁 {order.redemptionResult === "insufficient"
+                                ? "Canje inválido"
+                                : `Canje: ${order.redemptionRequest.name}`}
                             </span>
                           )}
                         </div>

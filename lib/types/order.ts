@@ -24,6 +24,15 @@ export type OrderItemPayload = {
   upsellSurprise?: boolean;
 };
 
+/** Customer-side reward redemption REQUEST riding on the order. Unprivileged:
+ * the deduction executes vendor-side at cobro, inside the credit transaction,
+ * with a live balance re-check — a faked request simply fails there. */
+export type OrderRedemptionRequest = {
+  tierId: string;
+  name: string;
+  points: number;
+};
+
 export type CustomerOrderPayload = {
   restaurantId: string;
   customerId: string;
@@ -39,6 +48,7 @@ export type CustomerOrderPayload = {
   /** Customer WhatsApp/phone, digits only (e.g. "6141234567"). Required at
    * checkout for BOTH methods — contact for the order + future loyalty capture. */
   customerPhone?: string;
+  redemptionRequest?: OrderRedemptionRequest;
   pickupPin: string;
   createdByUserId: string;
   createdByName: string;

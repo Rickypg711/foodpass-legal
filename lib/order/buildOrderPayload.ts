@@ -6,6 +6,7 @@ import {
   PAYMENT_METHOD_MERCADO_PAGO,
   type CustomerOrderPayload,
   type OrderPaymentMethod,
+  type OrderRedemptionRequest,
 } from "@/lib/types/order";
 import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
 
@@ -20,6 +21,7 @@ export type BuildOrderInput = {
   restaurantName: string;
   restaurantImageUrl?: string | null;
   paymentMethod?: OrderPaymentMethod;
+  redemptionRequest?: OrderRedemptionRequest | null;
 };
 
 /**
@@ -87,6 +89,15 @@ export function buildCustomerWebOrderPayload(
   const phone = input.customerPhone?.replace(/\D/g, "") ?? "";
   if (phone) {
     payload.customerPhone = phone;
+  }
+
+  const r = input.redemptionRequest;
+  if (r && r.tierId && r.name && Number.isFinite(r.points) && r.points > 0) {
+    payload.redemptionRequest = {
+      tierId: r.tierId,
+      name: r.name,
+      points: Math.floor(r.points),
+    };
   }
 
   return payload;

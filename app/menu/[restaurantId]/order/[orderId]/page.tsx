@@ -33,6 +33,8 @@ type OrderDoc = {
   customerName?: string;
   customerPhone?: string;
   loyaltyAwarded?: boolean;
+  redemptionRequest?: { tierId: string; name: string; points: number };
+  redemptionResult?: string;
   pickupPin?: string;
   total?: number;
   items?: Array<{
@@ -331,6 +333,10 @@ function OrderStatusPageContent() {
       pickupPin: displayPin,
       customerName: displayName,
       paymentMethod: order?.paymentMethod ?? null,
+      redemptionName:
+        order?.redemptionResult === "insufficient"
+          ? null
+          : order?.redemptionRequest?.name ?? null,
       orderUrl:
         typeof window !== "undefined"
           ? `${window.location.origin}/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(orderId)}`
@@ -446,6 +452,11 @@ function OrderStatusPageContent() {
               {order?.paymentMethod === "pay_at_pickup" && paymentStatus !== "paid" ? (
                 <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
                   💵 Pagas al recoger en el local
+                </p>
+              ) : null}
+              {order?.redemptionRequest && order?.redemptionResult !== "insufficient" ? (
+                <p className="mt-1 text-sm font-semibold" style={{ color: "#16A34A" }}>
+                  🎁 Premio en este pedido: {order.redemptionRequest.name} — GRATIS
                 </p>
               ) : null}
             </div>
