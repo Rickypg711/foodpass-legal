@@ -111,6 +111,7 @@ const FAQ_ITEMS = [
 ] as const;
 
 const FOOTER_LINKS = [
+  { href: "/puntos", label: "⭐ Mis puntos" },
   { href: "/support.html", label: "Soporte" },
   { href: "/privacy-policy.html", label: "Privacy Policy" },
   { href: "/terms-of-use.html", label: "Terms of Use" },

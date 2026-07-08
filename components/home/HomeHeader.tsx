@@ -13,6 +13,9 @@ const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#beneficios", label: "Beneficios" },
   { href: "#preguntas", label: "Preguntas" },
+  // Customer door on a vendor-first homepage: diners who land here reach
+  // their balance without touching the vendor funnel.
+  { href: "/puntos", label: "⭐ Mis puntos" },
 ] as const;
 
 export function HomeHeader() {
