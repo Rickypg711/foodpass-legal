@@ -18,6 +18,7 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
+import { shortOrderCode } from "@/lib/order/formatWhatsappMessage";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,6 @@ export default function PedidosPage() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<OrderTab>("pending");
   const [error, setError] = useState<string | null>(null);
   const [chargingOrderId, setChargingOrderId] = useState<string | null>(null);
 
@@ -230,7 +230,38 @@ export default function PedidosPage() {
     updateStatus(orderId, "cancelled");
   };
 
-  // ── Tab Filtering ────────────────────────────────────────────────────────────
+  /** Vendor-sent WhatsApp receipt (vendor's own WhatsApp, human tap — §4).
+   * Also how POS walk-ins get their receipt/points link into their chat. */
+  const sendReceiptWhatsapp = (order: Order) => {
+    if (!order.customerPhone || !restaurantId) return;
+    const items = order.items
+      .map((i) => `${i.quantity}x ${i.name} — ${fmt(i.price * i.quantity)}`)
+      .join("\n");
+    const url = `${window.location.origin}/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(order.id)}`;
+    const text = [
+      `¡Gracias por tu compra en *${order.restaurantName || "nuestro local"}*!`,
+      "",
+      `Recibo *#${shortOrderCode(order.id)}*`,
+      ...(order.customerName ? [`Nombre: ${order.customerName}`] : []),
+      "",
+      items,
+      "",
+      `*Total: ${fmt(order.total)}*`,
+      "",
+      `Tu recibo y tus puntos: ${url}`,
+    ].join("\n");
+    const phone =
+      order.customerPhone.length === 10
+        ? `52${order.customerPhone}`
+        : order.customerPhone;
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  // ── Grouping (board columns = tab filters, one source of truth) ─────────────
 
   const startOfToday = (() => {
     const d = new Date();
@@ -238,28 +269,30 @@ export default function PedidosPage() {
     return d.getTime();
   })();
 
-  const filteredOrders = orders.filter((o) => {
-    if (activeTab === "pending") {
-      return o.status === "pending" || o.status === "open_tab";
-    }
-    if (activeTab === "preparing") {
-      return o.status === "preparing";
-    }
-    if (activeTab === "ready") {
-      return o.status === "ready";
-    }
-    if (activeTab === "completed") {
-      // Show only completed today
+  const groups: Record<OrderTab, Order[]> = {
+    pending: orders.filter((o) => o.status === "pending" || o.status === "open_tab"),
+    preparing: orders.filter((o) => o.status === "preparing"),
+    ready: orders.filter((o) => o.status === "ready"),
+    completed: orders.filter((o) => {
       const dateMs = o.createdAt?.toMillis ? o.createdAt.toMillis() : 0;
       return o.status === "completed" && dateMs >= startOfToday;
-    }
-    return false;
-  });
+    }),
+  };
 
-  // Count active open tabs to display as helper (or orders with legacy open_tab status)
-  const pendingCount = orders.filter((o) => o.status === "pending" || o.status === "open_tab").length;
-  const preparingCount = orders.filter((o) => o.status === "preparing").length;
-  const readyCount = orders.filter((o) => o.status === "ready").length;
+  /** Column definitions — color language: orange = needs attention,
+   * blue = working, green = ready to hand over, gray = done. */
+  const COLUMNS: {
+    key: OrderTab;
+    label: string;
+    accent: string;
+    tint: string;
+    emptyCopy: string;
+  }[] = [
+    { key: "pending", label: "Pendientes", accent: "#F28C38", tint: "rgba(242,140,56,0.06)", emptyCopy: "Sin pedidos nuevos" },
+    { key: "preparing", label: "En cocina", accent: "#2563EB", tint: "rgba(37,99,235,0.05)", emptyCopy: "Nada en preparación" },
+    { key: "ready", label: "Listos", accent: "#16A34A", tint: "rgba(22,163,74,0.05)", emptyCopy: "Nada listo por entregar" },
+    { key: "completed", label: "Entregados hoy", accent: "#6B7280", tint: "rgba(107,114,128,0.05)", emptyCopy: "Aún no hay entregas hoy" },
+  ];
 
   return (
     <>
@@ -282,46 +315,42 @@ export default function PedidosPage() {
         ) : (
           <div className="space-y-6">
             
-            {/* Status Tabs Selector */}
-            <div className="flex gap-2 border-b border-gray-200/50 pb-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {([
-                { key: "pending", label: "Pendientes", count: pendingCount, color: "bg-orange-500" },
-                { key: "preparing", label: "En Cocina", count: preparingCount, color: "bg-blue-500" },
-                { key: "ready", label: "Listos", count: readyCount, color: "bg-green-500" },
-                { key: "completed", label: "Entregados hoy", count: null, color: "bg-gray-500" },
-              ] as { key: OrderTab; label: string; count: number | null; color: string }[]).map((tab) => {
-                const active = activeTab === tab.key;
+            {/* Board: every stage visible at once — no clicking through tabs.
+                Stacks on phones, 2 columns on tablets, full 4-column board on
+                desktop. Live via onSnapshot: cards move between columns alone. */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+              {COLUMNS.map((col) => {
+                const list = groups[col.key];
                 return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-bold transition-all shrink-0"
-                    style={
-                      active
-                        ? { background: "#1C2526", color: "#ffffff" }
-                        : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1px solid rgba(28,37,38,0.07)" }
-                    }
+                  <section
+                    key={col.key}
+                    className="rounded-2xl p-3"
+                    style={{ background: col.tint, border: `1px solid ${col.accent}22` }}
                   >
-                    <span>{tab.label}</span>
-                    {tab.count !== null && tab.count > 0 && (
-                      <span className={`h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-black text-white ${tab.color}`}>
-                        {tab.count}
+                    <header className="flex items-center justify-between px-1.5 pb-3 pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.accent }} aria-hidden />
+                        <h2 className="text-[13px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>
+                          {col.label}
+                        </h2>
+                      </div>
+                      <span
+                        className="flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-black text-white"
+                        style={{ background: list.length > 0 ? col.accent : "rgba(28,37,38,0.18)" }}
+                      >
+                        {list.length}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Orders Grid */}
-            {filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center py-20 text-center text-gray-400">
-                <span className="text-4xl block mb-2">🍽️</span>
-                No hay pedidos en esta sección.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredOrders.map((order) => {
+                    </header>
+                    {list.length === 0 ? (
+                      <div
+                        className="rounded-xl border border-dashed py-8 text-center text-[12px]"
+                        style={{ borderColor: `${col.accent}33`, color: "rgba(28,37,38,0.35)" }}
+                      >
+                        {col.emptyCopy}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {list.map((order) => {
                   const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
                   const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
                   const isPaid = order.paymentStatus === "paid";
@@ -406,14 +435,22 @@ export default function PedidosPage() {
                           </div>
                         )}
                         {order.customerPhone && (
-                          <a
-                            href={`https://wa.me/${order.customerPhone.length === 10 ? `52${order.customerPhone}` : order.customerPhone}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"
-                          >
-                            💬 <span>{order.customerPhone}</span>
-                          </a>
+                          <div className="flex items-center justify-between gap-2">
+                            <a
+                              href={`https://wa.me/${order.customerPhone.length === 10 ? `52${order.customerPhone}` : order.customerPhone}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"
+                            >
+                              💬 <span>{order.customerPhone}</span>
+                            </a>
+                            <button
+                              onClick={() => sendReceiptWhatsapp(order)}
+                              className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 transition-colors"
+                            >
+                              🧾 Enviar recibo
+                            </button>
+                          </div>
                         )}
                       </div>
 
@@ -473,9 +510,13 @@ export default function PedidosPage() {
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            )}
+                        })}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
