@@ -428,7 +428,7 @@ function OrderStatusPageContent() {
               </ul>
             ) : null}
 
-            {whatsapp ? (
+            {whatsapp && status !== "completed" && status !== "cancelled" ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
                 <p className="text-sm font-bold text-[#1C2526]">
                   📲 Confírmalo por WhatsApp
