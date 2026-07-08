@@ -217,7 +217,7 @@ export function CheckoutRedemption({
                       {isSel ? "✓ " : ""}{t.name} GRATIS
                     </span>
                     <span className="block text-xs text-[#1C2526]/55">
-                      Canje de {t.points} puntos — te quedan {points - t.points}
+                      Canje de {t.points} puntos — te quedarían {points - t.points}
                     </span>
                   </span>
                   <span className="text-lg" aria-hidden>🎁</span>

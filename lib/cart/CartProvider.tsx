@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -46,6 +47,11 @@ export function CartProvider({
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
   const [lines, setLines] = useState<CartLine[]>([]);
   const cartReady = webOrderingReady;
+  /** Guards the save effect until sessionStorage has been READ once. Without
+   * it, the save fires on the render where cartReady flips true — with lines
+   * still [] — and WIPES the stored cart on every deep-link/refresh, right
+   * before the async loader reads it. (Symptom: cart vanished on reload.) */
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     if (!webOrderingReady) return;
@@ -64,6 +70,7 @@ export function CartProvider({
       }
       const loaded = loadCart(restaurantId);
       setLines(loaded);
+      hydratedRef.current = true;
       mpWebDebugClient("cart_loaded", {
         restaurantId,
         itemCount: loaded.reduce((s, l) => s + l.quantity, 0),
@@ -80,7 +87,7 @@ export function CartProvider({
   }, [restaurantId, webOrderingReady, webOrderingAvailable]);
 
   useEffect(() => {
-    if (!cartReady) return;
+    if (!cartReady || !hydratedRef.current) return;
     saveCart(restaurantId, lines);
   }, [restaurantId, lines, cartReady]);
 
