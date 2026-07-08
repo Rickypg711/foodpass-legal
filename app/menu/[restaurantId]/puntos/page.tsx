@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 
 export default function PuntosPage() {
@@ -16,6 +17,7 @@ export default function PuntosPage() {
   const restaurantId =
     typeof params.restaurantId === "string" ? params.restaurantId : "";
   const [restaurantName, setRestaurantName] = useState("este lugar");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
 
@@ -23,8 +25,10 @@ export default function PuntosPage() {
     if (!restaurantId) return;
     getDoc(doc(getFirebaseDb(), "restaurants", restaurantId))
       .then((snap) => {
-        const n = (snap.data()?.name as string | undefined)?.trim();
+        const data = snap.data() as Record<string, unknown> | undefined;
+        const n = (data?.name as string | undefined)?.trim();
         if (n) setRestaurantName(n);
+        setLogoUrl(getRestaurantImageUrl(data));
       })
       .catch(() => {});
   }, [restaurantId]);
@@ -51,6 +55,15 @@ export default function PuntosPage() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl}
+            alt={restaurantName}
+            className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-md ring-1 ring-[#1C2526]/10"
+          />
+        ) : null}
+
         {!phone ? (
           <div className="rounded-2xl bg-white p-5 text-center">
             <p className="text-base font-bold">
@@ -85,6 +98,23 @@ export default function PuntosPage() {
               restaurantName={restaurantName}
               phone={phone}
             />
+            {/* App-as-wallet upsell — post-value moment, same pitch as the
+                receipt banner. Never a requirement, always an upgrade. */}
+            <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
+              <p className="text-sm font-bold text-[#1C2526]">
+                Llévate tus puntos contigo 🔔
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                Con la app Comeleal entras con tu número, ves tus puntos de
+                todos tus lugares y te avisamos cuando tengas premios.
+              </p>
+              <a
+                href={`/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`}
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+              >
+                Descargar Comeleal
+              </a>
+            </div>
             <button
               type="button"
               onClick={() => {
