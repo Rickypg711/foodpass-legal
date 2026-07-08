@@ -9,6 +9,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  increment,
+  setDoc,
   updateDoc,
   serverTimestamp,
   orderBy,
@@ -227,7 +229,37 @@ export default function PedidosPage() {
       "¿Estás seguro de que deseas cancelar este pedido?"
     );
     if (!confirmCancel) return;
-    updateStatus(orderId, "cancelled");
+    await updateStatus(orderId, "cancelled");
+
+    // No-show accounting (v2-10): cancelling an UNPAID pay-at-pickup order
+    // with a phone counts against that number. The clientes page surfaces
+    // repeat offenders; enforcement (require prepay) can build on this later.
+    const o = orders.find((x) => x.id === orderId);
+    if (
+      o &&
+      o.paymentMethod === "pay_at_pickup" &&
+      o.paymentStatus !== "paid" &&
+      o.customerPhone &&
+      restaurantId
+    ) {
+      const phone10 = o.customerPhone.replace(/\D/g, "").slice(-10);
+      if (phone10.length === 10) {
+        try {
+          const db = getFirebaseDb();
+          await setDoc(
+            doc(db, "restaurants", restaurantId, "phoneCustomers", phone10),
+            {
+              phone: phone10,
+              noShowCount: increment(1),
+              lastNoShowAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        } catch (e) {
+          console.error("[noShow] count failed", e);
+        }
+      }
+    }
   };
 
   /** Vendor-sent WhatsApp receipt (vendor's own WhatsApp, human tap — §4).

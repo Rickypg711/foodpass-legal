@@ -4,12 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  arrayUnion,
   doc,
   getDoc,
   collection,
   query,
   where,
   getDocs,
+  runTransaction,
   serverTimestamp,
   Timestamp,
   updateDoc,
@@ -37,10 +39,42 @@ interface Customer {
   rewardUnlocked?: boolean;
   /** Days left in the 7-day claim window (mirrors the app's rule). */
   rewardDaysLeft?: number;
+  /** Cancelled unpaid pay-at-pickup orders — repeat offenders flagged. */
+  noShowCount?: number;
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
 const FIRST_VISIT_CLAIM_DAYS = 7;
+
+/** Reward tier parsed from restaurants/{rid}.rewardTiers (Firestore field
+ * `visitsRequired` is legacy-named but holds POINTS). */
+interface RewardTierLite {
+  id: string;
+  name: string;
+  points: number;
+}
+
+function parseRewardTiers(raw: unknown): RewardTierLite[] {
+  if (!Array.isArray(raw)) return [];
+  const tiers: RewardTierLite[] = [];
+  raw.forEach((t, i) => {
+    if (!t || typeof t !== "object") return;
+    const tier = t as Record<string, unknown>;
+    if (tier.isFirstVisitReward === true) return;
+    const points = Number(tier.visitsRequired);
+    const name =
+      (typeof tier.menuItemName === "string" && tier.menuItemName.trim()) ||
+      (typeof tier.description === "string" && tier.description.trim()) ||
+      "";
+    if (!name || !Number.isFinite(points) || points <= 0) return;
+    tiers.push({
+      id: typeof tier.id === "string" ? tier.id : `tier_${i}`,
+      name,
+      points: Math.floor(points),
+    });
+  });
+  return tiers.sort((a, b) => a.points - b.points);
+}
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 
@@ -106,11 +140,13 @@ function CustomerCard({
   customer,
   restaurantId,
   restaurantName,
+  rewardTiers = [],
   isActuaHoy = false,
 }: {
   customer: Customer;
   restaurantId: string;
   restaurantName: string;
+  rewardTiers?: RewardTierLite[];
   isActuaHoy?: boolean;
 }) {
   const [msgLoading, setMsgLoading] = useState(false);
@@ -118,6 +154,50 @@ function CustomerCard({
   const [msgError, setMsgError] = useState(false);
   const [rewardRedeemed, setRewardRedeemed] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
+  /** Points already spent in this session (tier redemptions) — keeps the UI
+   * honest without refetching. */
+  const [spentPoints, setSpentPoints] = useState(0);
+  const [redeemingTierId, setRedeemingTierId] = useState<string | null>(null);
+
+  const livePoints = customer.totalPoints - spentPoints;
+
+  /** Tier redemption for phone customers: transactional deduct + log on the
+   * phoneCustomer doc (no new collections → no rules change). */
+  async function redeemTier(tier: RewardTierLite) {
+    if (!customer.isPhoneOnly || !customer.phone || redeemingTierId) return;
+    if (livePoints < tier.points) return;
+    if (!confirm(`¿Canjear "${tier.name}" por ${tier.points} puntos?`)) return;
+    const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
+    setRedeemingTierId(tier.id);
+    try {
+      const db = getFirebaseDb();
+      const ref = doc(db, "restaurants", restaurantId, "phoneCustomers", phone10);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const pts = Number(snap.data()?.points) || 0;
+        if (pts < tier.points) throw new Error("insufficient_points");
+        tx.update(ref, {
+          points: pts - tier.points,
+          lastRedemptionAt: serverTimestamp(),
+          redemptions: arrayUnion({
+            tierId: tier.id,
+            name: tier.name,
+            points: tier.points,
+            at: Timestamp.now(),
+          }),
+        });
+      });
+      setSpentPoints((s) => s + tier.points);
+    } catch (e) {
+      alert(
+        e instanceof Error && e.message === "insufficient_points"
+          ? "Puntos insuficientes (saldo actualizado en otro lado)."
+          : "No se pudo canjear. Intenta de nuevo.",
+      );
+    } finally {
+      setRedeemingTierId(null);
+    }
+  }
 
   /** Web-side redemption of the first-visit reward (parity with the app's
    * scanner "Marcar premio como entregado"). */
@@ -257,11 +337,18 @@ function CustomerCard({
                 ✓ Premio entregado
               </span>
             )}
+            {(customer.noShowCount ?? 0) >= 2 && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626" }}
+                title="Pedidos 'pagar al recoger' cancelados sin pagar">
+                ⚠️ {customer.noShowCount} no-shows
+              </span>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
             <span>{customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""}</span>
             <span>·</span>
-            <span style={{ color: "#F28C38", fontWeight: 600 }}>{customer.totalPoints} pts</span>
+            <span style={{ color: "#F28C38", fontWeight: 600 }}>{customer.isPhoneOnly ? livePoints : customer.totalPoints} pts</span>
             <span>·</span>
             <span>{timeAgo(customer.lastVisit)}</span>
           </div>
@@ -310,6 +397,27 @@ function CustomerCard({
           </button>
         )}
       </div>
+
+      {/* Tier redemption (phone customers): tiers the balance can afford. */}
+      {customer.isPhoneOnly &&
+        rewardTiers.some((t) => livePoints >= t.points) && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {rewardTiers
+              .filter((t) => livePoints >= t.points)
+              .map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => redeemTier(t)}
+                  disabled={redeemingTierId !== null}
+                  className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold disabled:opacity-50"
+                  style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
+                  title={`Canjear por ${t.points} puntos`}
+                >
+                  {redeemingTierId === t.id ? "…" : `Canjear: ${t.name} · ${t.points} pts`}
+                </button>
+              ))}
+          </div>
+        )}
     </div>
   );
 }
@@ -324,6 +432,7 @@ export default function ClientesPage() {
   const [loading, setLoading] = useState(true);
   const [winbackSent, setWinbackSent] = useState<number>(0);
   const [winbackReturned, setWinbackReturned] = useState<number>(0);
+  const [rewardTiers, setRewardTiers] = useState<RewardTierLite[]>([]);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
 
   const loadCustomers = useCallback(async (rid: string) => {
@@ -432,6 +541,7 @@ export default function ClientesPage() {
           isPhoneOnly: true,
           rewardUnlocked,
           rewardDaysLeft: rewardUnlocked ? rewardDaysLeft : undefined,
+          noShowCount: (data.noShowCount as number) ?? 0,
         });
       });
     } catch {
@@ -468,6 +578,7 @@ export default function ClientesPage() {
       setWinbackReturned(typeof stats.returned === "number" ? stats.returned : 0);
       setRestaurantId(rid);
       setRestaurantName((restSnap.data()?.name as string | undefined) ?? "");
+      setRewardTiers(parseRewardTiers(restSnap.data()?.rewardTiers));
       await loadCustomers(rid);
     }
     init().catch(() => setLoading(false));
@@ -579,6 +690,7 @@ export default function ClientesPage() {
                       customer={c}
                       restaurantId={restaurantId!}
                       restaurantName={restaurantName}
+                      rewardTiers={rewardTiers}
                       isActuaHoy
                     />
                   ))}
@@ -632,6 +744,7 @@ export default function ClientesPage() {
                     customer={c}
                     restaurantId={restaurantId!}
                     restaurantName={restaurantName}
+                    rewardTiers={rewardTiers}
                   />
                 ))}
               </div>

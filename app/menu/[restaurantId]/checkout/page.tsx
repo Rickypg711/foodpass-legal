@@ -667,6 +667,18 @@ export default function CheckoutPage() {
               ? "💵 Pagas en el local al recoger tu pedido"
               : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
+          <p className="-mt-2 text-center text-[11px] text-[#1C2526]/40">
+            Al ordenar aceptas nuestro{" "}
+            <a
+              href="/privacy-policy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Aviso de Privacidad
+            </a>
+            . Usamos tu número solo para tu pedido y tus puntos.
+          </p>
         </form>
 
         <Link

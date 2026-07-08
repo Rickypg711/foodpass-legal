@@ -50,6 +50,16 @@ export function MenuAppRewardsCta({
     });
   }
 
+  /** "Mis puntos" — balance check by phone (no app, SMS-verified). */
+  const pointsLink = restaurantId ? (
+    <a
+      href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+      className="block py-1 text-center text-xs font-semibold text-[#1C2526]/55 underline underline-offset-2 hover:text-[#F28C38]"
+    >
+      ⭐ ¿Ya has comprado aquí? Ver mis puntos
+    </a>
+  ) : null;
+
   if (variant === "compact") {
     return (
       <a
@@ -94,6 +104,7 @@ export function MenuAppRewardsCta({
         >
           Descargar Comeleal
         </a>
+        {pointsLink}
       </div>
     );
   }
@@ -120,6 +131,7 @@ export function MenuAppRewardsCta({
         >
           Descargar Comeleal
         </a>
+        {pointsLink}
       </div>
     );
   }
@@ -139,6 +151,7 @@ export function MenuAppRewardsCta({
       >
         Descargar Comeleal
       </a>
+      {pointsLink}
     </div>
   );
 }

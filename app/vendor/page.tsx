@@ -76,6 +76,8 @@ interface DashboardData {
   winbackReturned: number;
   /** Estimated MXN recovered = returned × 30d avg paid ticket. Null when no ticket data. */
   winbackPesos: number | null;
+  /** % of 30d paid orders with a customer phone — phone-points fuel gauge. Null < 3 paid orders. */
+  captureRate: number | null;
   // Top 3 products by quantity sold (30d, excludes synthetic quick-sell line).
   topProducts: { name: string; qty: number }[];
 }
@@ -215,16 +217,23 @@ export default function VendorDashboard() {
         const winbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
         const winbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
 
-        let paidTotal = 0, paidCount = 0;
+        let paidTotal = 0, paidCount = 0, paidWithPhone = 0;
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
           if (o.paymentStatus === "paid" && typeof o.total === "number" && o.total > 0) {
             paidTotal += o.total;
             paidCount++;
+            if (typeof o.customerPhone === "string" && o.customerPhone.length >= 10) {
+              paidWithPhone++;
+            }
           }
         });
         // Need at least 3 paid orders for a meaningful avg ticket.
         const avgTicket = paidCount >= 3 ? paidTotal / paidCount : null;
+        // Capture rate: % of paid orders with a customer phone — the fuel
+        // gauge of the phone-points system (every capture = future winback).
+        const captureRate =
+          paidCount >= 3 ? Math.round((paidWithPhone / paidCount) * 100) : null;
         const winbackPesos =
           winbackReturned > 0 && avgTicket !== null
             ? Math.round(winbackReturned * avgTicket)
@@ -326,6 +335,7 @@ export default function VendorDashboard() {
           winbackSent,
           winbackReturned,
           winbackPesos,
+          captureRate,
           topProducts,
         });
         setLoadState("ready");
@@ -617,6 +627,33 @@ export default function VendorDashboard() {
           </div>
 
           {/* ── Win-back proof banner ── */}
+          {/* Capture rate — coaches the "¿me das tu número?" habit. */}
+          {data.captureRate !== null && (
+            <div className="mb-6 rounded-2xl p-5 flex flex-wrap items-center gap-x-5 gap-y-2"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(28,37,38,0.07)",
+                boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+              }}>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+                style={{ background: "rgba(242,140,56,0.12)" }}>
+                📱
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
+                  Capturas el número en{" "}
+                  <span style={{ color: "#F28C38" }}>{data.captureRate}%</span>{" "}
+                  de tus ventas
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                  {data.captureRate >= 60
+                    ? "Excelente — cada número es un cliente al que puedes traer de vuelta. 💪"
+                    : "Cada número capturado es un cliente recuperable. Pide el teléfono al cobrar: “¿Tu número para tus puntos?”"}
+                </p>
+              </div>
+            </div>
+          )}
+
           {data.winbackSent > 0 && (
             <div className="mb-6 rounded-2xl p-5"
               style={{

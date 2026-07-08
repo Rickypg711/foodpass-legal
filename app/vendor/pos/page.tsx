@@ -294,7 +294,11 @@ function CheckoutDialog({
                 style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
               />
               <p className="mt-1 text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                Con su número el cliente junta puntos automáticamente. ⭐
+                Con su número el cliente junta puntos automáticamente. ⭐ Al
+                darlo acepta el{" "}
+                <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline">
+                  Aviso de Privacidad
+                </a>.
               </p>
             </div>
             <div>

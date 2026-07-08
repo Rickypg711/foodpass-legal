@@ -20,6 +20,7 @@ import {
 } from "@/lib/order/paymentReturnMessage";
 import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
+import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
 import type { CartLine } from "@/lib/cart/types";
@@ -301,6 +302,27 @@ function OrderStatusPageContent() {
       }))
     : [];
 
+  const [retryingPayment, setRetryingPayment] = useState(false);
+
+  /** Reopens MP Checkout Pro for an abandoned payment_pending order. */
+  async function retryMpPayment() {
+    if (retryingPayment || !restaurantId || !orderId) return;
+    setRetryingPayment(true);
+    try {
+      const user = await ensureAnonymousUser();
+      const pref = await requestMercadoPagoPreference({
+        restaurantId,
+        orderId,
+        customerId: user.uid,
+      });
+      window.location.href = pref.redirectUrl;
+    } catch (e) {
+      console.error("[order] retry MP payment", e);
+      setRetryingPayment(false);
+      alert("No pudimos abrir Mercado Pago. Intenta de nuevo.");
+    }
+  }
+
   function handleWhatsappClick() {
     if (!whatsapp || !orderId || !displayPin || !displayName) return;
     const text = formatWhatsappOrderMessage({
@@ -370,6 +392,19 @@ function OrderStatusPageContent() {
               </p>
               {orderDisplay.subtitle ? (
                 <p className="mt-2 text-sm text-[#1C2526]/80">{orderDisplay.subtitle}</p>
+              ) : null}
+              {/* Abandoned MP checkout → reopen the payment (web parity with
+                  the app's "Pagar ahora"). Reuses the same preference flow. */}
+              {status === "payment_pending" ? (
+                <button
+                  type="button"
+                  disabled={retryingPayment}
+                  onClick={retryMpPayment}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                  style={{ backgroundColor: "#009EE3" }}
+                >
+                  {retryingPayment ? "Abriendo Mercado Pago…" : "Pagar ahora con Mercado Pago"}
+                </button>
               ) : null}
             </div>
 
