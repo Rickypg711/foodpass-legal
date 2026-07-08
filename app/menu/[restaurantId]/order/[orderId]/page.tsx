@@ -30,6 +30,7 @@ type OrderDoc = {
   paymentMethod?: string;
   customerName?: string;
   customerPhone?: string;
+  loyaltyAwarded?: boolean;
   pickupPin?: string;
   total?: number;
   items?: Array<{
@@ -425,22 +426,32 @@ function OrderStatusPageContent() {
             ) : null}
 
             {whatsapp ? (
-              <button
-                type="button"
-                onClick={handleWhatsappClick}
-                className="w-full rounded-xl border border-[#25D366] bg-white py-3 text-sm font-semibold text-[#128C7E]"
-              >
-                Enviar resumen por WhatsApp
-              </button>
+              <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
+                <p className="text-sm font-bold text-[#1C2526]">
+                  📲 Mándale tu pedido al restaurante
+                </p>
+                <p className="mt-1 text-xs text-[#1C2526]/60">
+                  Un mensaje de WhatsApp con tu orden y PIN — y te queda de
+                  recibo en tu chat.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleWhatsappClick}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1ebe5b]"
+                >
+                  Enviar por WhatsApp
+                </button>
+              </div>
             ) : (
               <p className="text-center text-xs text-[#1C2526]/60">
                 El restaurante no tiene WhatsApp registrado.
               </p>
             )}
 
-            {/* Phone Points v1: real balance behind an SMS verification —
-                the number IS the account, no app required. */}
-            {order?.customerPhone ? (
+            {/* Phone Points v1: real balance behind an SMS verification.
+                Only rendered once points were actually credited — before
+                that, the estimate banner below sets the expectation. */}
+            {order?.customerPhone && order?.loyaltyAwarded === true ? (
               <PhonePointsCard
                 restaurantId={restaurantId}
                 restaurantName={displayRestaurant}
@@ -465,7 +476,7 @@ function OrderStatusPageContent() {
                     <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
                       Descarga Comeleal y escanea al recoger para reclamarlos.
                       {firstVisitReward
-                        ? ` Además, esta compra desbloquea ${firstVisitReward} GRATIS para la siguiente. 🎁`
+                        ? ` Y con esta compra desbloqueaste: ${firstVisitReward} GRATIS en tu próxima visita 🎁`
                         : ""}
                     </p>
                     <a
