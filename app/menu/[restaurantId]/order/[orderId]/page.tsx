@@ -428,18 +428,18 @@ function OrderStatusPageContent() {
             {whatsapp ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
                 <p className="text-sm font-bold text-[#1C2526]">
-                  📲 Mándale tu pedido al restaurante
+                  📲 Confírmalo por WhatsApp
                 </p>
                 <p className="mt-1 text-xs text-[#1C2526]/60">
-                  Un mensaje de WhatsApp con tu orden y PIN — y te queda de
-                  recibo en tu chat.
+                  El restaurante ya tiene tu pedido — con el WhatsApp seguro lo
+                  ven al momento, y te queda tu recibo con PIN en el chat.
                 </p>
                 <button
                   type="button"
                   onClick={handleWhatsappClick}
                   className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#1ebe5b]"
                 >
-                  Enviar por WhatsApp
+                  Confirmar por WhatsApp
                 </button>
               </div>
             ) : (
