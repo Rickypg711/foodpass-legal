@@ -434,6 +434,7 @@ export default function ClientesPage() {
   const [winbackReturned, setWinbackReturned] = useState<number>(0);
   const [rewardTiers, setRewardTiers] = useState<RewardTierLite[]>([]);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
+  const [search, setSearch] = useState("");
 
   const loadCustomers = useCallback(async (rid: string) => {
     const db = getFirebaseDb();
@@ -595,9 +596,21 @@ export default function ClientesPage() {
         (c.rewardUnlocked === true && (c.rewardDaysLeft ?? 9) <= 2))
   ).slice(0, 5);
 
-  const filtered = activeTab === "todos"
+  // Search by name or phone (digits match anywhere in the number).
+  const searchDigits = search.replace(/\D/g, "");
+  const searchText = search.trim().toLowerCase();
+  const bySegment = activeTab === "todos"
     ? customers
     : customers.filter((c) => c.segment === activeTab);
+  const filtered = !searchText
+    ? bySegment
+    : bySegment.filter((c) => {
+        const nameHit = c.name.toLowerCase().includes(searchText);
+        const phoneHit =
+          searchDigits.length >= 2 &&
+          (c.phone ?? "").replace(/\D/g, "").includes(searchDigits);
+        return nameHit || phoneHit;
+      });
 
   const counts = {
     todos: customers.length,
@@ -697,6 +710,20 @@ export default function ClientesPage() {
                 </div>
               </div>
             )}
+
+            {/* ── Search ── */}
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍 Buscar por nombre o teléfono…"
+              className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(28,37,38,0.1)",
+                color: "#1C2526",
+              }}
+            />
 
             {/* ── Segment tabs ── */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
