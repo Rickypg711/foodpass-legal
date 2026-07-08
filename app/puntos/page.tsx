@@ -16,12 +16,15 @@ import {
 } from "firebase/auth";
 import {
   collectionGroup,
+  doc,
+  getDoc,
   getDocs,
   query,
   where,
 } from "firebase/firestore";
 import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
+import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -31,6 +34,7 @@ type Balance = {
   points: number;
   visits: number;
   rewardUnlocked: boolean;
+  logoUrl: string | null;
 };
 
 function last10(digits: string): string {
@@ -140,9 +144,28 @@ export default function PuntosGlobalPage() {
           points: Number(data.points) || 0,
           visits: Number(data.visits) || 0,
           rewardUnlocked: data.firstVisitRewardUnlocked === true,
+          logoUrl: null,
         };
       })
       .sort((a, b) => b.points - a.points);
+
+    // Restaurant logos (public-read docs) — the wallet feel. Failures are
+    // cosmetic: card renders with the 🍽 fallback.
+    const db = getFirebaseDb();
+    await Promise.all(
+      list.map(async (b) => {
+        if (!b.restaurantId) return;
+        try {
+          const rSnap = await getDoc(doc(db, "restaurants", b.restaurantId));
+          b.logoUrl = getRestaurantImageUrl(
+            rSnap.data() as Record<string, unknown> | undefined,
+          );
+        } catch {
+          /* keep fallback */
+        }
+      }),
+    );
+
     setBalances(list);
     setStep("done");
   }
@@ -174,7 +197,22 @@ export default function PuntosGlobalPage() {
               {balances.map((b) => (
                 <div key={b.restaurantId} className="rounded-2xl bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                    {b.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={b.logoUrl}
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-[#1C2526]/10"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/12 text-xl"
+                        aria-hidden
+                      >
+                        🍽
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-bold">{b.restaurantName}</p>
                       <p className="mt-0.5 text-xs text-[#1C2526]/60">
                         {b.visits} visita{b.visits !== 1 ? "s" : ""}
