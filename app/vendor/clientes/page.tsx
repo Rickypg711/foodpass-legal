@@ -10,7 +10,9 @@ import {
   query,
   where,
   getDocs,
+  serverTimestamp,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
@@ -29,7 +31,16 @@ interface Customer {
   lastVisit: Timestamp | null;
   daysSince: number;
   segment: Segment;
+  /** Phone Points v1: phone-keyed account (no app) — restaurants/{rid}/phoneCustomers. */
+  isPhoneOnly?: boolean;
+  /** First-visit reward unlocked and not yet redeemed — the winback hook. */
+  rewardUnlocked?: boolean;
+  /** Days left in the 7-day claim window (mirrors the app's rule). */
+  rewardDaysLeft?: number;
 }
+
+/** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
+const FIRST_VISIT_CLAIM_DAYS = 7;
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 
@@ -106,13 +117,45 @@ function CustomerCard({
   const [msg, setMsg] = useState<string | null>(null);
   const [msgError, setMsgError] = useState(false);
 
+  /** Marks the winback tap on the phoneCustomer doc (closes the measure leg
+   * of the loop — AI_NATIVE_CLOSED_LOOPS §3.1). Fire-and-forget. */
+  function logPhoneWinbackTap(phone10: string) {
+    updateDoc(
+      doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
+      { lastWinbackAt: serverTimestamp() },
+    ).catch(() => {});
+  }
+
   async function generateAndOpen() {
     if (!customer.phone) return;
+    const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
     if (msg) {
-      const waUrl = `https://wa.me/${customer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/${customer.phone.length === 10 ? `52${customer.phone}` : customer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, "_blank");
       return;
     }
+
+    // Phone-only customers: no app user for the Gemini fn — build the message
+    // locally from what we know (points + unclaimed reward = the hook).
+    if (customer.isPhoneOnly) {
+      const d = customer.rewardDaysLeft;
+      const rewardLine = customer.rewardUnlocked
+        ? d !== undefined && d <= 2
+          ? ` Y tu premio de bienvenida vence ${d === 0 ? "HOY" : d === 1 ? "mañana" : "en 2 días"} 🎁⏰`
+          : " Y tienes un premio de bienvenida sin usar 🎁"
+        : "";
+      const generated =
+        `¡Hola${customer.name && !customer.name.startsWith("··") ? ` ${customer.name}` : ""}! ` +
+        `Te extrañamos en ${restaurantName}. ` +
+        `Tienes ${customer.totalPoints} punto${customer.totalPoints === 1 ? "" : "s"} guardados en tu número ⭐${rewardLine} ` +
+        `¡Te esperamos pronto!`;
+      setMsg(generated);
+      logPhoneWinbackTap(phone10);
+      const waUrl = `https://wa.me/52${phone10}?text=${encodeURIComponent(generated)}`;
+      window.open(waUrl, "_blank");
+      return;
+    }
+
     setMsgLoading(true);
     setMsgError(false);
     try {
@@ -166,6 +209,24 @@ function CustomerCard({
               {customer.name}
             </p>
             <SegmentBadge segment={customer.segment} />
+            {customer.isPhoneOnly && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{ background: "rgba(37,211,102,0.12)", color: "#128C7E" }}>
+                📱 Tel
+              </span>
+            )}
+            {customer.rewardUnlocked && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={
+                  (customer.rewardDaysLeft ?? 9) <= 2
+                    ? { background: "rgba(239,68,68,0.12)", color: "#dc2626" }
+                    : { background: "rgba(255,180,0,0.12)", color: "#b8860b" }
+                }>
+                🎁 {(customer.rewardDaysLeft ?? 9) <= 2
+                  ? `Premio vence ${customer.rewardDaysLeft === 0 ? "HOY" : customer.rewardDaysLeft === 1 ? "mañana" : "en 2d"}`
+                  : "Premio sin usar"}
+              </span>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
             <span>{customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""}</span>
@@ -282,6 +343,60 @@ export default function ClientesPage() {
       };
     });
 
+    // Phone Points v1: merge phone-keyed loyalty accounts (customers with NO
+    // app — web orders / POS captures). Dedupe by last-10 phone: an app user
+    // with the same number wins (richer profile).
+    try {
+      const phoneSnap = await getDocs(
+        collection(db, "restaurants", rid, "phoneCustomers")
+      );
+      const appPhones = new Set(
+        result
+          .map((c) => (c.phone ?? "").replace(/\D/g, "").slice(-10))
+          .filter((p) => p.length === 10)
+      );
+      phoneSnap.docs.forEach((d) => {
+        const phone10 = d.id;
+        if (appPhones.has(phone10)) return;
+        const data = d.data();
+        const lastVisit = (data.lastVisitAt as Timestamp) ?? null;
+        const daysSince = lastVisit
+          ? Math.floor((now - lastVisit.toMillis()) / 86400000)
+          : 999;
+        const visits = (data.visits as number) ?? 0;
+        const name =
+          ((data.name as string) ?? "").trim().split(" ")[0] ||
+          `··${phone10.slice(-4)}`;
+        // 7-day claim window anchored on the unlock (first credit), same rule
+        // as the app. Expired → no longer a hook, don't promise it.
+        const createdAt = (data.createdAt as Timestamp) ?? null;
+        const rewardAgeDays = createdAt
+          ? Math.floor((now - createdAt.toMillis()) / 86400000)
+          : null;
+        const rewardDaysLeft =
+          rewardAgeDays === null
+            ? FIRST_VISIT_CLAIM_DAYS
+            : FIRST_VISIT_CLAIM_DAYS - rewardAgeDays;
+        const rewardUnlocked =
+          data.firstVisitRewardUnlocked === true && rewardDaysLeft >= 0;
+        result.push({
+          userId: `tel:${phone10}`,
+          name,
+          phone: phone10,
+          totalVisits: visits,
+          totalPoints: (data.points as number) ?? 0,
+          lastVisit,
+          daysSince,
+          segment: computeSegment(visits, daysSince),
+          isPhoneOnly: true,
+          rewardUnlocked,
+          rewardDaysLeft: rewardUnlocked ? rewardDaysLeft : undefined,
+        });
+      });
+    } catch {
+      /* phoneCustomers unavailable → app-user list still renders */
+    }
+
     // Sort: at-risk + lost first (by days desc), then by visits desc
     result.sort((a, b) => {
       const urgencyOrder = ["riesgo", "perdido", "nuevo", "regular", "campeon"];
@@ -319,7 +434,13 @@ export default function ClientesPage() {
 
   // Derived
   const actuaHoy = customers.filter(
-    (c) => (c.segment === "riesgo" || c.segment === "perdido") && c.phone
+    (c) =>
+      c.phone &&
+      (c.segment === "riesgo" ||
+        c.segment === "perdido" ||
+        // Reward about to expire (≤2 days) = today's most urgent nudge,
+        // regardless of segment — the day-5-of-7 reminder moment.
+        (c.rewardUnlocked === true && (c.rewardDaysLeft ?? 9) <= 2))
   ).slice(0, 5);
 
   const filtered = activeTab === "todos"
