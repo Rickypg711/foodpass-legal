@@ -459,32 +459,50 @@ function OrderStatusPageContent() {
               />
             ) : null}
 
-            {/* Receipt → install loop: the highest-intent moment. This order
-                already generated points — download to claim them at pickup. */}
+            {/* Points banner — Phone Points v1 truth (§4): points credit to
+                the customer's NUMBER on confirmed payment; no app required.
+                Pre-payment: future tense promise. Post-credit: the app is
+                pitched as the wallet (see + notifications), never the gate. */}
             <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
               {(() => {
                 const pts = mounted
                   ? estimateOrderPoints(displayTotal, order?.items, earnPolicy)
                   : 0;
+                const credited = order?.loyaltyAwarded === true;
+                if (credited) {
+                  return (
+                    <>
+                      <p className="text-base font-bold text-[#1C2526]">
+                        ⭐ Tus puntos ya están guardados en tu número
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                        Llévalos contigo: con la app Comeleal entras con tu
+                        número, ves tus puntos de todos tus lugares y te
+                        avisamos cuando tengas premios. 🔔
+                      </p>
+                      <a
+                        href={downloadHref}
+                        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+                      >
+                        Descargar Comeleal
+                      </a>
+                    </>
+                  );
+                }
                 return (
                   <>
                     <p className="text-base font-bold text-[#1C2526]">
                       {pts > 0
-                        ? `🎉 Esta orden te ganó ${pts} puntos en ${displayRestaurant} ⭐`
-                        : "Esta orden genera puntos en Comeleal"}
+                        ? `🎉 Esta orden te va a dar ${pts} puntos en ${displayRestaurant} ⭐`
+                        : "Esta orden te da puntos en Comeleal"}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
-                      Descarga Comeleal y escanea al recoger para reclamarlos.
+                      Se guardan solitos en tu número cuando pagues — sin apps,
+                      sin tarjetitas.
                       {firstVisitReward
-                        ? ` Y con esta compra desbloqueaste: ${firstVisitReward} GRATIS en tu próxima visita 🎁`
+                        ? ` Y desbloqueas: ${firstVisitReward} GRATIS en tu próxima visita 🎁`
                         : ""}
                     </p>
-                    <a
-                      href={downloadHref}
-                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
-                    >
-                      {pts > 0 ? `Reclamar mis ${pts} puntos` : "Descargar Comeleal"}
-                    </a>
                   </>
                 );
               })()}
