@@ -35,7 +35,30 @@ type Balance = {
   visits: number;
   rewardUnlocked: boolean;
   logoUrl: string | null;
+  /** Highest tier already affordable (name), if any. */
+  unlockedTier: string | null;
+  /** Next tier not yet reached: name + points missing. */
+  nextTier: { name: string; missing: number } | null;
 };
+
+/** rewardTiers parse (visitsRequired = POINTS, legacy key). */
+function tiersFromRestaurant(raw: unknown): { name: string; points: number }[] {
+  if (!Array.isArray(raw)) return [];
+  const tiers: { name: string; points: number }[] = [];
+  raw.forEach((t) => {
+    if (!t || typeof t !== "object") return;
+    const tier = t as Record<string, unknown>;
+    if (tier.isFirstVisitReward === true) return;
+    const points = Number(tier.visitsRequired);
+    const name =
+      (typeof tier.menuItemName === "string" && tier.menuItemName.trim()) ||
+      (typeof tier.description === "string" && tier.description.trim()) ||
+      "";
+    if (!name || !Number.isFinite(points) || points <= 0) return;
+    tiers.push({ name, points: Math.floor(points) });
+  });
+  return tiers.sort((a, b) => a.points - b.points);
+}
 
 function last10(digits: string): string {
   const d = digits.replace(/\D/g, "");
@@ -145,23 +168,33 @@ export default function PuntosGlobalPage() {
           visits: Number(data.visits) || 0,
           rewardUnlocked: data.firstVisitRewardUnlocked === true,
           logoUrl: null,
+          unlockedTier: null,
+          nextTier: null,
         };
       })
       .sort((a, b) => b.points - a.points);
 
-    // Restaurant logos (public-read docs) — the wallet feel. Failures are
-    // cosmetic: card renders with the 🍽 fallback.
+    // Restaurant logos + reward tiers (public-read docs) — the wallet feel
+    // and the progress hook. Failures are cosmetic.
     const db = getFirebaseDb();
     await Promise.all(
       list.map(async (b) => {
         if (!b.restaurantId) return;
         try {
           const rSnap = await getDoc(doc(db, "restaurants", b.restaurantId));
-          b.logoUrl = getRestaurantImageUrl(
-            rSnap.data() as Record<string, unknown> | undefined,
-          );
+          const rData = rSnap.data() as Record<string, unknown> | undefined;
+          b.logoUrl = getRestaurantImageUrl(rData);
+          const tiers = tiersFromRestaurant(rData?.rewardTiers);
+          const unlocked = tiers.filter((t) => b.points >= t.points);
+          const next = tiers.find((t) => b.points < t.points);
+          b.unlockedTier = unlocked.length
+            ? unlocked[unlocked.length - 1].name
+            : null;
+          b.nextTier = next
+            ? { name: next.name, missing: next.points - b.points }
+            : null;
         } catch {
-          /* keep fallback */
+          /* keep fallbacks */
         }
       }),
     );
@@ -220,6 +253,19 @@ export default function PuntosGlobalPage() {
                           ? " · 🎁 premio de bienvenida disponible"
                           : ""}
                       </p>
+                      {b.unlockedTier ? (
+                        <p className="mt-0.5 text-xs font-semibold" style={{ color: "#16A34A" }}>
+                          🎁 Puedes canjear: {b.unlockedTier} — pídelo al pagar
+                        </p>
+                      ) : b.nextTier ? (
+                        <p className="mt-0.5 text-xs text-[#1C2526]/55">
+                          ⏳ Te faltan{" "}
+                          <span className="font-bold" style={{ color: "#F28C38" }}>
+                            {b.nextTier.missing} pts
+                          </span>{" "}
+                          para: {b.nextTier.name}
+                        </p>
+                      ) : null}
                     </div>
                     <span className="shrink-0 text-xl font-extrabold" style={{ color: "#F28C38" }}>
                       {b.points} ⭐
@@ -233,6 +279,24 @@ export default function PuntosGlobalPage() {
                   </Link>
                 </div>
               ))}
+
+              {/* App-as-wallet upsell — this page IS the wallet; the app is
+                  the better one (push avisos + descubre lugares nuevos). */}
+              <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
+                <p className="text-sm font-bold text-[#1C2526]">
+                  Este es tu monedero de puntos — llévalo contigo 🔔
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                  Con la app Comeleal entras con tu número, te avisamos cuando
+                  tengas premios y descubres lugares nuevos cerca de ti.
+                </p>
+                <a
+                  href="/download.html"
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+                >
+                  Descargar Comeleal
+                </a>
+              </div>
             </>
           ) : (
             <div className="rounded-2xl bg-white p-5 text-center">
