@@ -105,14 +105,17 @@ export function PhonePointsCard({
         typeof e === "object" && e !== null && "code" in e
           ? String((e as { code?: unknown }).code)
           : "";
-      if (codeStr === "auth/credential-already-in-use") {
-        // Number already belongs to another account (e.g. app user):
-        // sign in with the verified credential instead of linking.
+      if (
+        codeStr === "auth/credential-already-in-use" ||
+        codeStr === "auth/account-exists-with-different-credential"
+      ) {
+        // Number already belongs to another account (e.g. app user or a
+        // previous session): sign in with the verified credential instead of
+        // linking. Firebase throws either code depending on provider mix.
         try {
-          const cred = PhoneAuthProvider.credential(
-            confirmation.verificationId,
-            code.trim(),
-          );
+          const cred =
+            PhoneAuthProvider.credentialFromError(e as Parameters<typeof PhoneAuthProvider.credentialFromError>[0]) ??
+            PhoneAuthProvider.credential(confirmation.verificationId, code.trim());
           await signInWithCredential(getFirebaseAuth(), cred);
           await loadBalance();
           return;

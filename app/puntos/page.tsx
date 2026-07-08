@@ -96,17 +96,28 @@ export default function PuntosGlobalPage() {
         typeof e === "object" && e !== null && "code" in e
           ? String((e as { code?: unknown }).code)
           : "";
-      if (codeStr === "auth/credential-already-in-use") {
+      // The code VERIFIED but the number already belongs to another account
+      // (e.g. an app account or a previous session). Sign in with the
+      // verified credential instead of linking. Firebase throws either of
+      // these two codes depending on the account's provider mix.
+      if (
+        codeStr === "auth/credential-already-in-use" ||
+        codeStr === "auth/account-exists-with-different-credential"
+      ) {
         try {
-          const cred = PhoneAuthProvider.credential(
-            confirmation.verificationId,
-            code.trim(),
-          );
+          const cred =
+            PhoneAuthProvider.credentialFromError(e as Parameters<typeof PhoneAuthProvider.credentialFromError>[0]) ??
+            PhoneAuthProvider.credential(confirmation.verificationId, code.trim());
           await signInWithCredential(getFirebaseAuth(), cred);
           await loadBalances();
           return;
         } catch (e2) {
           console.error("[puntos] signInWithCredential", e2);
+          setErrMsg(
+            "Tu número ya está ligado a una cuenta. Pide un código nuevo e intenta otra vez.",
+          );
+          setStep("idle");
+          return;
         }
       }
       console.error("[puntos] confirmCode", e);
