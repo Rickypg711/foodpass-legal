@@ -626,11 +626,29 @@ export default function CheckoutPage() {
           <UpsellCard
             restaurantId={restaurantId}
             goal={(() => {
-              if (!loyalty) return null;
-              const next = loyalty.tiers.find((t) => t.points > loyalty.points);
-              if (!next) return null;
+              if (!loyalty || loyalty.tiers.length === 0) return null;
+              // Gap math on the balance AFTER the canje they selected — if
+              // they're spending 50 pts on this order, the countdown to the
+              // NEXT reward is what's real again.
+              const effective = loyalty.points - (redemption?.points ?? 0);
+              const next = loyalty.tiers.find((t) => t.points > effective);
+              if (!next) {
+                // Everything unlocked (even after the canje): no gap exists —
+                // celebrate + drive the redemption instead of going silent.
+                const top = loyalty.tiers[loyalty.tiers.length - 1];
+                return {
+                  balance: effective,
+                  nextTierName: "",
+                  nextTierPoints: 0,
+                  earnBase: earnPolicy.base,
+                  earnStep: earnPolicy.step,
+                  cartTotal: subtotal,
+                  maxed: true,
+                  topTierName: top?.name,
+                } satisfies UpsellGoalContext;
+              }
               return {
-                balance: loyalty.points,
+                balance: effective,
                 nextTierName: next.name,
                 nextTierPoints: next.points,
                 earnBase: earnPolicy.base,
