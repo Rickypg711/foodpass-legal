@@ -108,7 +108,7 @@ export function UpsellCard({
         <p className="text-sm font-bold text-[#B05E14]">{headline}</p>
         <p className="text-xs text-black/70">
           {added.bonus > 0
-            ? "Se suman a tu recompensa al recoger tu orden."
+            ? "Se suman a tus puntos cuando el restaurante confirme tu pago."
             : "Buen ojo. 😋"}
         </p>
         {added.bonus > 0 ? (
