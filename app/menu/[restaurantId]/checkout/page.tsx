@@ -605,7 +605,14 @@ export default function CheckoutPage() {
             phoneDigits={customerPhone}
             selected={redemption}
             onSelect={setRedemption}
-            onLoyalty={setLoyalty}
+            onLoyalty={(info) => {
+              setLoyalty(info);
+              // Returning customer: autofill the name we already know (only
+              // reachable behind their verified number — no fishing).
+              if (info.name) {
+                setCustomerName((prev) => (prev.trim() ? prev : info.name!));
+              }
+            }}
           />
           {redemption ? (
             <p className="-mt-2 rounded-xl bg-[#F0FBF4] px-3.5 py-2.5 text-sm font-semibold text-[#16A34A]">
@@ -721,7 +728,9 @@ export default function CheckoutPage() {
             >
               Aviso de Privacidad
             </a>
-            . Usamos tu número solo para tu pedido y tus puntos.
+            . Usamos tu número para tu pedido, tus puntos y para que el
+            restaurante te avise de premios o promociones — puedes pedir que
+            dejen de escribirte cuando quieras.
           </p>
         </form>
 

@@ -12,6 +12,7 @@ import { useRef, useState } from "react";
 import {
   linkWithPhoneNumber,
   signInWithCredential,
+  signInWithPhoneNumber,
   PhoneAuthProvider,
   RecaptchaVerifier,
   type ConfirmationResult,
@@ -103,11 +104,11 @@ export function PhonePointsCard({
         });
       }
       if (!verifierRef.current) throw new Error("recaptcha_unavailable");
-      confirmRef.current = await linkWithPhoneNumber(
-        user,
-        toE164Mx(phone),
-        verifierRef.current,
-      );
+      // Session with a DIFFERENT phone linked can't link a second one
+      // (auth/provider-already-linked) → sign in fresh instead.
+      confirmRef.current = user.phoneNumber
+        ? await signInWithPhoneNumber(auth, toE164Mx(phone), verifierRef.current)
+        : await linkWithPhoneNumber(user, toE164Mx(phone), verifierRef.current);
       setStep("code");
     } catch (e) {
       console.error("[PhonePointsCard] sendCode", e);

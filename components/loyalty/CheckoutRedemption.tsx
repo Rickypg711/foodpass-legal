@@ -12,12 +12,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   linkWithPhoneNumber,
   signInWithCredential,
+  signInWithPhoneNumber,
   PhoneAuthProvider,
   RecaptchaVerifier,
   type ConfirmationResult,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
+import { ensureAnonymousUser, getFirebaseAuth, waitForAuthReady } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import type { OrderRedemptionRequest } from "@/lib/types/order";
 
@@ -62,8 +63,9 @@ export function CheckoutRedemption({
   phoneDigits: string;
   selected: OrderRedemptionRequest | null;
   onSelect: (r: OrderRedemptionRequest | null) => void;
-  /** Reports the verified balance + full tier list (goal-gradient upsell). */
-  onLoyalty?: (info: { points: number; tiers: Tier[] }) => void;
+  /** Reports the verified balance + full tier list (goal-gradient upsell)
+   * + the name on file (checkout autofill for returning customers). */
+  onLoyalty?: (info: { points: number; tiers: Tier[]; name?: string }) => void;
 }) {
   const phone10 = last10(phoneDigits);
   const active = phone10.length === 10;
@@ -81,7 +83,8 @@ export function CheckoutRedemption({
   const loadedForRef = useRef<string>("");
 
   // When the typed number matches an already-verified session → load balance
-  // silently. Otherwise stay quiet (a small "¿tienes premios?" hint shows).
+  // silently. Waits for auth restore (currentUser is null for ~1s on fresh
+  // page loads — a sync check would miss verified sessions).
   useEffect(() => {
     if (!active) {
       setState("idle");
@@ -89,15 +92,21 @@ export function CheckoutRedemption({
       return;
     }
     if (loadedForRef.current === phone10) return;
-    const auth = getFirebaseAuth();
-    const u = auth.currentUser;
-    if (u?.phoneNumber && u.phoneNumber.endsWith(phone10)) {
-      loadedForRef.current = phone10;
-      void loadBalance();
-    } else {
-      setState("idle");
-      onSelect(null);
-    }
+    let cancelled = false;
+    void (async () => {
+      const u = await waitForAuthReady();
+      if (cancelled) return;
+      if (u?.phoneNumber && u.phoneNumber.endsWith(phone10)) {
+        loadedForRef.current = phone10;
+        await loadBalance();
+      } else {
+        setState("idle");
+        onSelect(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phone10, active]);
 
@@ -109,13 +118,14 @@ export function CheckoutRedemption({
         getDoc(doc(db, "restaurants", restaurantId)),
       ]);
       const pts = Number(pcSnap.data()?.points) || 0;
+      const savedName = (pcSnap.data()?.name as string | undefined)?.trim();
       const allTiers = parseTiers(rSnap.data()?.rewardTiers);
       setPoints(pts);
       setTiers(allTiers.filter((t) => pts >= t.points));
       setState(
         pts > 0 && allTiers.some((t) => pts >= t.points) ? "verified" : "none",
       );
-      onLoyalty?.({ points: pts, tiers: allTiers });
+      onLoyalty?.({ points: pts, tiers: allTiers, name: savedName });
     } catch {
       setState("none");
     }
@@ -127,17 +137,23 @@ export function CheckoutRedemption({
     try {
       const auth = getFirebaseAuth();
       const user = await ensureAnonymousUser();
+      // Session already verified for THIS number → no OTP needed at all.
+      if (user.phoneNumber && user.phoneNumber.endsWith(phone10)) {
+        loadedForRef.current = phone10;
+        await loadBalance();
+        return;
+      }
       if (!verifierRef.current && recaptchaHostRef.current) {
         verifierRef.current = new RecaptchaVerifier(auth, recaptchaHostRef.current, {
           size: "invisible",
         });
       }
       if (!verifierRef.current) throw new Error("recaptcha_unavailable");
-      confirmRef.current = await linkWithPhoneNumber(
-        user,
-        `+52${phone10}`,
-        verifierRef.current,
-      );
+      // Session with a DIFFERENT phone already linked can't link a second
+      // one (auth/provider-already-linked) → sign in fresh instead.
+      confirmRef.current = user.phoneNumber
+        ? await signInWithPhoneNumber(auth, `+52${phone10}`, verifierRef.current)
+        : await linkWithPhoneNumber(user, `+52${phone10}`, verifierRef.current);
       setState("otp_code");
     } catch (e) {
       console.error("[CheckoutRedemption] startOtp", e);
