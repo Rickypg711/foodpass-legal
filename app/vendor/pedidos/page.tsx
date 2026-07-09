@@ -49,6 +49,8 @@ interface Order {
   redemptionRequest?: { tierId: string; name: string; points: number };
   /** Set by the credit transaction: "applied" | "insufficient". */
   redemptionResult?: string;
+  /** Set by the credit transaction — points earned on this order. */
+  phonePointsAwarded?: number;
   items: OrderItem[];
   total: number;
   subtotal: number;
@@ -283,6 +285,15 @@ export default function PedidosPage() {
       items,
       "",
       `*Total: ${fmt(order.total)}*`,
+      // Dynamic loyalty lines — present only after the credit transaction ran
+      // (send-receipt usually happens post-cobro). Hooked: the reward news
+      // arrives IN the message, not just behind the link.
+      ...(order.redemptionResult === "applied" && order.redemptionRequest
+        ? [`🎁 Premio canjeado: ${order.redemptionRequest.name} — GRATIS`]
+        : []),
+      ...((Number(order.phonePointsAwarded) || 0) > 0
+        ? ["", `⭐ Ganaste *+${Number(order.phonePointsAwarded)} puntos* con esta compra`]
+        : []),
       "",
       `Tu recibo y tus puntos: ${url}`,
     ].join("\n");

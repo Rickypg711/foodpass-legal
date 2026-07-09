@@ -43,6 +43,10 @@ export type UpsellGoalContext = {
   earnBase: number;
   earnStep: number;
   cartTotal: number;
+  /** Every tier already unlocked (after any selected redemption): there is no
+   * gap to count down — celebrate and push the canje instead. */
+  maxed?: boolean;
+  topTierName?: string;
 };
 
 export function UpsellCard({
@@ -103,6 +107,33 @@ export function UpsellCard({
     const headline = added.surprise
       ? `🎰 ¡DOBLE PUNTOS! +${added.bonus} puntos ⭐`
       : `🎉 ¡Agregado! +${added.bonus} puntos ⭐`;
+    // Goal-gradient in the celebration (verified customers): the cart already
+    // includes the added item, so goal.cartTotal is the NEW total. The bar
+    // fills to the REAL progress toward the next reward — endowed progress
+    // beats theater.
+    let goalGap: number | null = null;
+    let goalPct: number | null = null;
+    let goalLine: string | null = null;
+    if (goal?.maxed) {
+      goalGap = 0;
+      goalPct = 100;
+      goalLine = goal.topTierName
+        ? `🏆 Ya tienes tu ${goal.topTierName} GRATIS desbloqueado — canjéalo arriba en este pedido`
+        : "🏆 Ya tienes premios desbloqueados — canjea uno arriba en este pedido";
+    } else if (goal && goal.nextTierPoints > 0) {
+      const estimateEarn = (total: number) =>
+        goal.earnBase + Math.floor(total / Math.max(1, goal.earnStep));
+      const prospective = goal.balance + estimateEarn(goal.cartTotal) + added.bonus;
+      goalGap = goal.nextTierPoints - prospective;
+      goalPct = Math.max(
+        8,
+        Math.min(100, Math.round((prospective / goal.nextTierPoints) * 100)),
+      );
+      goalLine =
+        goalGap <= 0
+          ? `🎉 ¡Con este pedido DESBLOQUEAS tu ${goal.nextTierName} GRATIS!`
+          : `🎯 Quedarás a solo ${goalGap} pts de tu ${goal.nextTierName} GRATIS`;
+    }
     return (
       <div className="mb-4 rounded-xl border border-[#F28C38] bg-[#FFF3E8] p-4">
         <p className="text-sm font-bold text-[#B05E14]">{headline}</p>
@@ -111,11 +142,19 @@ export function UpsellCard({
             ? "Se suman a tus puntos cuando el restaurante confirme tu pago."
             : "Buen ojo. 😋"}
         </p>
+        {added.bonus > 0 && goalLine ? (
+          <p
+            className="mt-1 text-xs font-bold"
+            style={{ color: (goalGap ?? 1) <= 0 ? "#16A34A" : "#B05E14" }}
+          >
+            {goalLine}
+          </p>
+        ) : null}
         {added.bonus > 0 ? (
           <div className="mt-2 h-3 overflow-hidden rounded-full bg-black/10">
             <div
               className="h-full rounded-full bg-[#F28C38] shadow-[0_0_8px_rgba(242,140,56,0.6)] transition-[width] duration-700 ease-out"
-              style={{ width: barFilled ? "100%" : "35%" }}
+              style={{ width: barFilled ? `${goalPct ?? 100}%` : "35%" }}
             />
           </div>
         ) : null}
@@ -175,7 +214,17 @@ export function UpsellCard({
       {(() => {
         // Goal-gradient line (verified customers only): estimate the balance
         // AFTER this order WITH the upsell, against their next reward.
-        if (!goal || goal.nextTierPoints <= 0) return null;
+        if (!goal) return null;
+        if (goal.maxed) {
+          return (
+            <p className="mt-2 text-xs font-bold" style={{ color: "#16A34A" }}>
+              {goal.topTierName
+                ? `🏆 Ya tienes tu ${goal.topTierName} GRATIS desbloqueado — canjéalo arriba`
+                : "🏆 Ya tienes premios desbloqueados — canjea uno arriba"}
+            </p>
+          );
+        }
+        if (goal.nextTierPoints <= 0) return null;
         const estimateEarn = (total: number) =>
           goal.earnBase + Math.floor(total / Math.max(1, goal.earnStep));
         const prospective =
