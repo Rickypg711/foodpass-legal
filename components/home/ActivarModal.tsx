@@ -158,6 +158,9 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
         lastReset: serverTimestamp(),
         status: "setup",
         isSetupComplete: false,
+        // Pay-at-pickup ON by default so a new vendor can take orders and start
+        // the loyalty loop from day one. Vendor can turn it off in Configuración.
+        payAtPickupEnabled: true,
       });
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       await httpsCallable(functions, "ensureOwnerMember")({ restaurantId: restaurantRef.id });
