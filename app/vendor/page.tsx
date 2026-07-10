@@ -867,6 +867,7 @@ export default function VendorDashboard() {
 
 function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const qrUrl = `https://comeleal.com/menu/${restaurantId}`;
   // NOTE: chart.googleapis.com QR API was shut down by Google — use qrserver.com instead.
   const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=${encodeURIComponent(qrUrl)}`;
@@ -900,6 +901,33 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
       </body></html>
     `);
     win.document.close();
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked — the URL is still visible for manual copy */
+    }
+  }
+
+  async function handleShare() {
+    const shareData = {
+      title: restaurantName,
+      text: `Mira el menú de ${restaurantName} y gana puntos 🍽️`,
+      url: qrUrl,
+    };
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData); // native share sheet (WhatsApp, etc.)
+      } else {
+        await handleCopy(); // desktop / no share API → copy the link instead
+      }
+    } catch {
+      /* user dismissed the share sheet — no-op */
+    }
   }
 
   return (
@@ -944,13 +972,31 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
           <p className="text-[10px] font-mono text-[#141413]/30 break-all text-center">
             comeleal.com/menu/{restaurantId}
           </p>
+          {/* Primary: one-tap share to WhatsApp / anywhere */}
           <button
-            onClick={handlePrint}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
-            style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
+            onClick={handleShare}
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition-all hover:opacity-90"
+            style={{ background: "#F28C38" }}
           >
-            🖨️ Imprimir QR
+            📤 Compartir menú
           </button>
+          {/* Secondary: copy link + print, side by side */}
+          <div className="flex w-full gap-2">
+            <button
+              onClick={handleCopy}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
+              style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
+            >
+              {copied ? "✅ Copiado" : "🔗 Copiar enlace"}
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
+              style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
+            >
+              🖨️ Imprimir
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -95,6 +95,14 @@ function IconList() {
   );
 }
 
+function IconShare() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.368-2.684 3 3 0 00-5.368 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    </svg>
+  );
+}
+
 interface NavDef {
   href: string;
   label: string;
@@ -132,6 +140,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState<string>("V");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [menuShared, setMenuShared] = useState(false);
 
   // Setup pages should render without the sidebar (hooks must come before any return)
   const isSetupFlow = pathname.startsWith("/vendor/setup");
@@ -174,6 +183,27 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   function isActive(href: string, exact = false) {
     return exact ? pathname === href : pathname.startsWith(href);
+  }
+
+  async function handleShareMenu() {
+    if (!restaurantId) return;
+    const url = `https://comeleal.com/menu/${restaurantId}`;
+    const shareData = {
+      title: restaurantName || "Comeleal",
+      text: `Mira el menú de ${restaurantName || "nuestro restaurante"} y gana puntos 🍽️`,
+      url,
+    };
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData); // native share sheet (WhatsApp, etc.)
+      } else {
+        await navigator.clipboard.writeText(url); // desktop fallback → copy
+        setMenuShared(true);
+        setTimeout(() => setMenuShared(false), 2000);
+      }
+    } catch {
+      /* user dismissed the share sheet — no-op */
+    }
   }
 
   function NavLink({ href, label, icon, exact }: NavDef) {
@@ -282,6 +312,25 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 <span className="text-[10px] font-semibold text-green-400">En vivo</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Primary growth CTA — share the menu link; visible on every page */}
+        {restaurantId && (
+          <div className="shrink-0 px-2 pt-3">
+            <button
+              onClick={handleShareMenu}
+              title={!open ? "Compartir menú" : undefined}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-[10px] text-[13px] font-bold text-white transition-all hover:opacity-90"
+              style={{ background: "#F28C38", justifyContent: open ? "flex-start" : "center" }}
+            >
+              <span className="shrink-0"><IconShare /></span>
+              {open && (
+                <span className="whitespace-nowrap">
+                  {menuShared ? "Enlace copiado ✅" : "Compartir menú"}
+                </span>
+              )}
+            </button>
           </div>
         )}
 
