@@ -7,7 +7,7 @@ Customer web ordering at `/menu/[restaurantId]` can pay online via **Checkout Pr
 | Piece | Source |
 |--------|--------|
 | `Authorization` | `restaurants/{id}.mercadoPagoAccessToken` (seller OAuth) — **not** platform `MERCADO_PAGO_ACCESS_TOKEN` |
-| `marketplace_fee` | Fixed MXN amount when `MERCADO_PAGO_MARKETPLACE_FEE_RATE` > 0 (target **`0.03` = 3%**; production verification used **`0`**) |
+| `marketplace_fee` | Fixed MXN amount = order total × rate. **LIVE at `0.03` (3%)** — `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0.03` set on Vercel **Production + Preview since May 22, 2026** (verified July 2026) |
 | `collector_id` / `sponsor_id` | **Not** sent (seller token defines collector; preference id prefix = seller user id) |
 
 ## Payment flow
@@ -27,9 +27,13 @@ Payment confirmation is **not** implemented in foodpass-legal. Configure:
 
 The existing `mercadopagoWebhook` handler in `FOODPASS/functions` updates `paymentStatus` and promotes `payment_pending` → `pending` when MP reports approved.
 
-## Marketplace fee (production vs target)
+## Marketplace fee — LIVE at 3% (do not zero out)
 
-Verified production payment tests (Comeleal web, May 2026) used **`MERCADO_PAGO_MARKETPLACE_FEE_RATE=0`** on Vercel Production (`marketplace_fee: 0` on preferences). When enabling commission later, use **`0.03`** for **3%** (`marketplace_fee = order total × 0.03`). Do **not** use **`0.017`** unless intentionally reverting to 1.7%.
+**Current production state (verified on Vercel, July 2026):** `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0.03` is set on **Production AND Preview** (added May 22, 2026). Comeleal takes **3%** on every web MercadoPago online order (`marketplace_fee = order total × 0.03`).
+
+The **app (Flutter)** takes the same 3% via `CommissionConfig.liveDefaultCommissionRate = 0.03` (see `FOODPASS/lib/config/commission_config.dart`), applied in `payment_service.dart`'s production `createMarketplacePreference`. Per-venue override: `restaurants/{id}.commissionRate`.
+
+Historical note: earlier May 2026 test runs used `0` before the fee was switched on — that's no longer the state. Do **not** set it back to `0` (kills web commission) or `0.017` (old 1.7%) unless intentional.
 
 ## Environment
 
@@ -50,7 +54,7 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/foodpass-18b33-service-account.json
 
 **Not required in foodpass-legal:** `MERCADO_PAGO_ACCESS_TOKEN`, `PUBLIC_KEY`, `CLIENT_ID`, `CLIENT_SECRET` — OAuth connect and Pruebas app token live in FOODPASS; web reads the seller token from Firestore.
 
-Set `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0` or omit to create preferences **without** `marketplace_fee` (non-split Checkout Pro).
+Set `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0` or omit to create preferences **without** `marketplace_fee` (non-split Checkout Pro). ⚠️ Production is intentionally `0.03` — do **not** zero it out.
 
 With `MP_WEB_DEBUG=true`, sandbox + `http://localhost` site URL logs **`mp_sandbox_localhost_site_url`** (WARN) — app is not blocked.
 

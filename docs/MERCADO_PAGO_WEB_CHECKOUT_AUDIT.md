@@ -27,7 +27,7 @@
 | Local dev without `MERCADO_PAGO_WEBHOOK_URL` | Medium | Local prefs without `notification_url` → no IPN; order stays `payment_pending` |
 | No `MERCADO_PAGO_*` payment credentials in legal | **OK** | By design: seller token on `restaurants/{id}` |
 
-**Production fee note:** Verified production tests used `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0`. Target commission when enabled: **`0.03` (3%)**, not `0.017` (1.7%).
+**Production fee note (LIVE):** `MERCADO_PAGO_MARKETPLACE_FEE_RATE=0.03` is set on Vercel **Production + Preview since May 22, 2026** (verified July 2026). Web takes **3%** on every MP online order. The app matches it via `CommissionConfig.liveDefaultCommissionRate = 0.03`. Earlier `0` was pre-launch testing only — do not revert to `0` (kills commission) or `0.017` (old 1.7%).
 
 ### Intentional difference from Flutter sandbox
 
