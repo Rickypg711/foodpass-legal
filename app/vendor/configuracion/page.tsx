@@ -31,6 +31,7 @@ export default function ConfiguracionPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [activatingPro, setActivatingPro] = useState(false);
 
   // Form fields
   const [name, setName] = useState("");
@@ -84,9 +85,21 @@ export default function ConfiguracionPage() {
       setLogoUrl(logo);
       setCoverUrl(cover);
 
-      // Detect plan — check subscription doc or top-level field
+      // Detect plan — canonical fields first (what the app IAP + MP webhook write),
+      // then legacy subscription doc / top-level field.
+      const accessStatus = data.subscriptionAccessStatus as string | undefined;
+      const expiresAtRaw = data.subscriptionAccessExpiresAt as
+        | { toMillis?: () => number }
+        | undefined;
+      const expiresMs = expiresAtRaw?.toMillis?.() ?? null;
+      const canonicalPro =
+        data.subscriptionPlan === "pro" &&
+        (accessStatus === "active" || accessStatus === "trialing") &&
+        expiresMs != null &&
+        expiresMs > Date.now();
       const subData = subSnap?.data();
       const isPro =
+        canonicalPro ||
         (subData?.status === "active" && subData?.plan === "pro") ||
         data.plan === "pro";
       setPlan(isPro ? "pro" : "free");
@@ -95,6 +108,35 @@ export default function ConfiguracionPage() {
     }
     init().catch(() => setLoading(false));
   }, [router]);
+
+  /** Pro checkout: create MP preapproval ($299/mes) and redirect to its init_point.
+   * The subscription webhook grants Pro on restaurants/{id}; app + web read the same fields. */
+  async function handleActivatePro() {
+    if (!restaurantId || !user || activatingPro) return;
+    setActivatingPro(true);
+    setError(null);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/mercado-pago/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ restaurantId }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { initPoint?: string };
+      if (!res.ok || !json.initPoint) {
+        throw new Error("checkout_unavailable");
+      }
+      window.location.href = json.initPoint;
+    } catch {
+      setError(
+        "No pudimos iniciar el pago con Mercado Pago. Intenta de nuevo o activa Pro desde la app.",
+      );
+      setActivatingPro(false);
+    }
+  }
 
   function toggleCategory(cat: string) {
     setCategories((prev) =>
@@ -338,19 +380,19 @@ export default function ConfiguracionPage() {
                   <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
                     {plan === "pro"
                       ? "Scans ilimitados y todas las funciones"
-                      : "50 scans/mes · Para más, activa Pro en la app"}
+                      : "50 scans/mes · Pro: $299/mes, scans ilimitados"}
                   </p>
                 </div>
                 {plan === "free" && (
-                  <a
-                    href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold"
+                  <button
+                    type="button"
+                    onClick={handleActivatePro}
+                    disabled={activatingPro}
+                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold disabled:opacity-60"
                     style={{ background: "rgba(217,119,87,0.1)", color: "#F28C38" }}
                   >
-                    Activar →
-                  </a>
+                    {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
+                  </button>
                 )}
               </div>
             </SectionCard>
