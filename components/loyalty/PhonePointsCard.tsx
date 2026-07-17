@@ -20,6 +20,7 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
+import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -220,6 +221,14 @@ export function PhonePointsCard({
                       </span>{" "}
                       para: {next.name}
                     </p>
+                  ) : null}
+                  {/* In-store redemption verification: the cashier asks for
+                      this rotating code (only visible after SMS verification). */}
+                  {unlocked.length > 0 || balance.firstVisitRewardUnlocked ? (
+                    <RedeemCodeBadge
+                      phoneDigits={phone10}
+                      restaurantId={restaurantId}
+                    />
                   ) : null}
                 </div>
               );

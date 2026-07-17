@@ -17,6 +17,10 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
+import {
+  PosRedemption,
+  type PosRedemptionSelection,
+} from "@/components/loyalty/PosRedemption";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -173,13 +177,22 @@ function CartRow({
 
 function CheckoutDialog({
   total,
+  restaurantId,
   onClose,
   onConfirm,
   processing,
 }: {
   total: number;
+  restaurantId: string;
   onClose: () => void;
-  onConfirm: (mode: CheckoutMode, method: PaymentMethod, name: string, phone: string, notes: string) => void;
+  onConfirm: (
+    mode: CheckoutMode,
+    method: PaymentMethod,
+    name: string,
+    phone: string,
+    notes: string,
+    redemption: PosRedemptionSelection | null,
+  ) => void;
   processing: boolean;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
@@ -187,6 +200,7 @@ function CheckoutDialog({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [redemption, setRedemption] = useState<PosRedemptionSelection | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
@@ -301,6 +315,15 @@ function CheckoutDialog({
                 </a>.
               </p>
             </div>
+
+            {/* Redemption: balance + unlocked rewards for the typed phone.
+                Selecting one asks for the customer's código de canje. */}
+            <PosRedemption
+              restaurantId={restaurantId}
+              phoneDigits={phone}
+              onSelect={setRedemption}
+              onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
+            />
             <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
               <input
@@ -315,9 +338,19 @@ function CheckoutDialog({
           </div>
 
           {/* Confirm */}
+          {redemption ? (
+            <p className="text-center text-[12px] font-bold" style={{ color: "#16A34A" }}>
+              🎁 Incluye: {redemption.name} GRATIS
+              {redemption.points > 0 ? ` (−${redemption.points} pts)` : " (bienvenida)"}
+            </p>
+          ) : null}
           <button
-            onClick={() => onConfirm(mode, method, name, phone, notes)}
-            disabled={processing || (mode === "tab" && !name.trim())}
+            onClick={() => onConfirm(mode, method, name, phone, notes, redemption)}
+            disabled={
+              processing ||
+              (mode === "tab" && !name.trim()) ||
+              (total <= 0 && !redemption)
+            }
             className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-opacity disabled:opacity-40"
             style={{ background: mode === "now" ? "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" : "#1C2526" }}
           >
@@ -327,7 +360,7 @@ function CheckoutDialog({
                 Procesando…
               </span>
             ) : mode === "now" ? (
-              `Cobrar ${fmt(total)}`
+              total <= 0 && redemption ? "Entregar premio (canje sin venta)" : `Cobrar ${fmt(total)}`
             ) : (
               `Abrir cuenta — ${fmt(total)}`
             )}
@@ -640,19 +673,37 @@ export default function PosPage() {
     method: PaymentMethod,
     customerName: string,
     customerPhone: string,
-    notes: string
+    notes: string,
+    redemption: PosRedemptionSelection | null = null,
   ) {
     if (!restaurantId || !uid) return;
+    const phoneDigits = customerPhone.replace(/\D/g, "");
+    // A redemption is meaningless without the phone it belongs to.
+    const effectiveRedemption =
+      redemption && phoneDigits.length >= 10 ? redemption : null;
     setProcessing(true);
     try {
       const db = getFirebaseDb();
-      const items = cart.map((c) => ({
+      const items: Record<string, unknown>[] = cart.map((c) => ({
         menuItemId: c.menuItem.id,
         name: c.menuItem.name,
         price: c.menuItem.price,
         quantity: c.quantity,
         subtotal: c.menuItem.price * c.quantity,
       }));
+
+      // Redeemed reward rides the ticket as a $0 line (kitchen sees it, the
+      // receipt shows it, and it never adds to total → no points earned on it).
+      if (effectiveRedemption) {
+        items.push({
+          menuItemId: `reward_${effectiveRedemption.tierId}`,
+          name: `🎁 ${effectiveRedemption.name} (canje)`,
+          price: 0,
+          quantity: 1,
+          subtotal: 0,
+          isReward: true,
+        });
+      }
 
       const orderData: Record<string, unknown> = {
         restaurantId,
@@ -670,8 +721,20 @@ export default function PosPage() {
         createdByUserId: uid,
       };
 
+      if (effectiveRedemption) {
+        // Executed transactionally at cobro by creditPhonePointsForOrder
+        // (live balance re-check — a stale/insufficient request fails safely).
+        orderData.redemptionRequest = {
+          tierId: effectiveRedemption.tierId,
+          name: effectiveRedemption.name,
+          points: effectiveRedemption.points,
+        };
+        // Owner audit trail: was the código de canje validated?
+        orderData.redemptionVerified = effectiveRedemption.verified;
+        orderData.redemptionVia = "pos";
+      }
+
       if (customerName.trim()) orderData.customerName = customerName.trim();
-      const phoneDigits = customerPhone.replace(/\D/g, "");
       if (phoneDigits.length >= 10) orderData.customerPhone = phoneDigits;
       if (notes.trim()) orderData.notes = notes.trim();
 
@@ -924,6 +987,16 @@ export default function PosPage() {
                   <p className="mt-3 text-[14px] font-semibold" style={{ color: "rgba(28,37,38,0.35)" }}>
                     Agrega platillos
                   </p>
+                  {/* Pure redemption: customer came only to claim a reward. */}
+                  {!addingToTab && (
+                    <button
+                      onClick={() => setShowCheckout(true)}
+                      className="mt-4 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-colors"
+                      style={{ background: "rgba(22,163,74,0.1)", color: "#16A34A", border: "1px solid rgba(22,163,74,0.3)" }}
+                    >
+                      🎁 Canjear premio sin venta
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -1030,6 +1103,7 @@ export default function PosPage() {
       {showCheckout && (
         <CheckoutDialog
           total={subtotal}
+          restaurantId={restaurantId ?? ""}
           onClose={() => setShowCheckout(false)}
           onConfirm={confirmOrder}
           processing={processing}

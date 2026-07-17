@@ -438,10 +438,13 @@ export default function VendorDashboard() {
                 <span className="text-[11px] font-semibold text-green-700">En vivo</span>
               </div>
             )}
-            <Link href="/vendor/scanner"
+            {/* Primary daily action = the sale (POS golden rule: every sale →
+                Caja, phone loyalty rides along). Scanner stays in the sidebar
+                for app-QR customers. */}
+            <Link href="/vendor/pos"
               className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90"
               style={{ background: "#1C2526" }}>
-              <IconQr size={13} /> Escanear cliente
+              💰 Nueva venta
             </Link>
           </div>
         </div>
@@ -449,8 +452,8 @@ export default function VendorDashboard() {
         {/* ── Page content ── */}
         <main className="flex-1 px-4 pb-16 pt-5 md:px-8 md:pt-7">
 
-          {/* Mobile scanner CTA */}
-          <Link href="/vendor/scanner"
+          {/* Mobile primary CTA — the sale IS the loop (points + premios en la Caja) */}
+          <Link href="/vendor/pos"
             className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
             style={{
               background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
@@ -460,11 +463,11 @@ export default function VendorDashboard() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
                 Acción principal
               </p>
-              <p className="mt-0.5 text-[20px] font-bold text-white">Escanear cliente</p>
+              <p className="mt-0.5 text-[20px] font-bold text-white">Nueva venta</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl text-white"
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl text-[24px] text-white"
               style={{ background: "rgba(255,255,255,0.2)" }}>
-              <IconQr size={24} />
+              💰
             </div>
           </Link>
 

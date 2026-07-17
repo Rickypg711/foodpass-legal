@@ -25,6 +25,7 @@ import {
 import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -271,6 +272,14 @@ export default function PuntosGlobalPage() {
                       {b.points} ⭐
                     </span>
                   </div>
+                  {/* Redeemable here → show the código de canje the cashier
+                      will ask for (in-store redemption verification). */}
+                  {b.rewardUnlocked || b.unlockedTier ? (
+                    <RedeemCodeBadge
+                      phoneDigits={digits}
+                      restaurantId={b.restaurantId}
+                    />
+                  ) : null}
                   <Link
                     href={`/menu/${encodeURIComponent(b.restaurantId)}`}
                     className="mt-2 inline-block text-xs font-semibold text-[#F28C38] underline"

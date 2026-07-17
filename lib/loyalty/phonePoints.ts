@@ -158,8 +158,9 @@ export async function creditPhonePointsForOrder(params: {
     const items = (order.items as OrderItemLike[] | undefined) ?? [];
     const points = capReached ? 0 : computeOrderPoints(total, items, earn);
 
-    // Checkout redemption request (unprivileged, customer-written) — executed
-    // here with a live balance re-check. Faked/double requests fail safely.
+    // Redemption request (checkout: customer-written / POS: cashier-written) —
+    // executed here with a live balance re-check. Faked/double requests fail
+    // safely.
     const rr = order.redemptionRequest as
       | { tierId?: unknown; name?: unknown; points?: unknown }
       | undefined;
@@ -167,8 +168,11 @@ export async function creditPhonePointsForOrder(params: {
       rr && Number.isFinite(Number(rr.points)) && Number(rr.points) > 0
         ? Math.floor(Number(rr.points))
         : 0;
+    // Welcome reward: 0-pt one-time redemption gated by firstVisitRewardUnlocked.
+    const welcomeRequested =
+      rr != null && String(rr.tierId ?? "") === "first_visit";
 
-    if (points <= 0 && redemptionCost <= 0) {
+    if (points <= 0 && redemptionCost <= 0 && !welcomeRequested) {
       return {
         credited: false,
         reason: capReached ? "cap_reached" : "zero_points",
@@ -181,14 +185,18 @@ export async function creditPhonePointsForOrder(params: {
     const prev = (phoneSnap.data() ?? {}) as Record<string, unknown>;
 
     const balanceAfterEarn = (Number(prev.points) || 0) + points;
+    const welcomeApplied =
+      welcomeRequested && prev.firstVisitRewardUnlocked === true;
     const redemptionApplied =
-      redemptionCost > 0 && balanceAfterEarn >= redemptionCost;
-    const finalPoints = redemptionApplied
-      ? balanceAfterEarn - redemptionCost
-      : balanceAfterEarn;
+      welcomeApplied || (redemptionCost > 0 && balanceAfterEarn >= redemptionCost);
+    const finalPoints =
+      !welcomeApplied && redemptionApplied
+        ? balanceAfterEarn - redemptionCost
+        : balanceAfterEarn;
 
     const name = String(order.customerName ?? "").trim();
     const restaurantName = String(rdata.name ?? "").trim();
+    const redemptionVia = order.orderSource === "pos" ? "pos" : "checkout";
     tx.set(
       phoneRef,
       {
@@ -200,9 +208,15 @@ export async function creditPhonePointsForOrder(params: {
         visits: (Number(prev.visits) || 0) + 1,
         totalSpend: (Number(prev.totalSpend) || 0) + total,
         // First confirmed purchase unlocks the first-visit reward for the
-        // NEXT visit (§4).
-        firstVisitRewardUnlocked:
-          prev.firstVisitRewardUnlocked === true ? true : firstVisit,
+        // NEXT visit (§4). Redeeming it consumes the unlock permanently.
+        firstVisitRewardUnlocked: welcomeApplied
+          ? false
+          : prev.firstVisitRewardUnlocked === true
+            ? true
+            : firstVisit,
+        ...(welcomeApplied
+          ? { firstVisitRewardRedeemedAt: serverTimestamp() }
+          : {}),
         lastVisitAt: serverTimestamp(),
         ...(firstVisit ? { createdAt: serverTimestamp() } : {}),
         source: firstVisit ? "web_order" : (prev.source ?? "web_order"),
@@ -212,9 +226,9 @@ export async function creditPhonePointsForOrder(params: {
               redemptions: arrayUnion({
                 tierId: String(rr?.tierId ?? ""),
                 name: String(rr?.name ?? ""),
-                points: redemptionCost,
+                points: welcomeApplied ? 0 : redemptionCost,
                 at: Timestamp.now(),
-                via: "checkout",
+                via: redemptionVia,
               }),
             }
           : {}),
@@ -226,7 +240,7 @@ export async function creditPhonePointsForOrder(params: {
       loyaltyAwarded: true,
       phonePointsAwarded: points,
       phoneLoyaltyAt: serverTimestamp(),
-      ...(redemptionCost > 0
+      ...(redemptionCost > 0 || welcomeRequested
         ? { redemptionResult: redemptionApplied ? "applied" : "insufficient" }
         : {}),
     });
