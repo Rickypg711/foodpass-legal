@@ -442,8 +442,8 @@ export default function VendorDashboard() {
                 Caja, phone loyalty rides along). Scanner stays in the sidebar
                 for app-QR customers. */}
             <Link href="/vendor/pos"
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90"
-              style={{ background: "#1C2526" }}>
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[14px] font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
+              style={{ background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)", boxShadow: "0 4px 16px rgba(242,140,56,0.28)" }}>
               💰 Nueva venta
             </Link>
           </div>
@@ -722,6 +722,24 @@ export default function VendorDashboard() {
             Acciones rápidas
           </p>
           <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Link href="/vendor/pos"
+              className="flex items-center gap-4 rounded-2xl px-5 py-4 transition hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
+                boxShadow: "0 4px 16px rgba(242,140,56,0.28)",
+              }}>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[20px] text-white"
+                style={{ background: "rgba(255,255,255,0.2)" }}>
+                💰
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-white">Nueva venta</p>
+                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  Cobra y suma puntos en la Caja
+                </p>
+              </div>
+              <span className="ml-auto text-white/40">›</span>
+            </Link>
             <Link href="/vendor/scanner"
               className="flex items-center gap-4 rounded-2xl px-5 py-4 transition hover:opacity-90 active:scale-[0.98]"
               style={{
@@ -735,25 +753,7 @@ export default function VendorDashboard() {
               <div>
                 <p className="text-[14px] font-bold text-white">Escanear cliente</p>
                 <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Registra una visita de fidelidad
-                </p>
-              </div>
-              <span className="ml-auto text-white/30">›</span>
-            </Link>
-            <Link href="/vendor/clientes"
-              className="flex items-center gap-4 rounded-2xl px-5 py-4 transition hover:opacity-90 active:scale-[0.98]"
-              style={{
-                background: "#1C2526",
-                boxShadow: "0 4px 16px rgba(28,37,38,0.18)",
-              }}>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
-                style={{ background: "rgba(255,255,255,0.1)" }}>
-                <IconUsers />
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-white">Ver clientes</p>
-                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Historial de fidelidad
+                  Cliente con la app — suma su visita
                 </p>
               </div>
               <span className="ml-auto text-white/30">›</span>
@@ -781,7 +781,19 @@ export default function VendorDashboard() {
                 7d
               </span>
             </div>
-            <WeekChart days={data.weeklyScans} />
+            {data.weekTotal > 0 ? (
+              <WeekChart days={data.weeklyScans} />
+            ) : (
+              <div className="flex flex-col items-center py-6 text-center">
+                <span className="text-[26px]">📷</span>
+                <p className="mt-2 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+                  Aún sin escaneos esta semana
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.38)" }}>
+                  Cada venta con número suma aquí — empieza en la Caja.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ── Loyalty proof (30d lookback) ── */}
@@ -1434,9 +1446,6 @@ function IconQr({ size = 18 }: { size?: number }) {
   );
 }
 
-function IconUsers() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
-}
 function IconScan() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><line x1="7" y1="12" x2="17" y2="12" /></svg>;
 }
