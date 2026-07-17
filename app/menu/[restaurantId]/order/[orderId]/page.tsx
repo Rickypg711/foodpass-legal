@@ -31,6 +31,7 @@ type OrderDoc = {
   status?: string;
   paymentStatus?: string;
   paymentMethod?: string;
+  orderSource?: string;
   customerName?: string;
   customerPhone?: string;
   loyaltyAwarded?: boolean;
@@ -263,6 +264,8 @@ function OrderStatusPageContent() {
     : 0;
   const displayRestaurant =
     order?.restaurantName ?? snapshot?.restaurantName ?? "Restaurante";
+  /** Counter/POS orders (WhatsApp receipt link): no pickup PIN, no confirm CTA. */
+  const isPosOrder = order?.orderSource === "pos";
   const status = mounted ? (order?.status ?? "pending") : "pending";
   const paymentStatus = mounted ? (order?.paymentStatus ?? "pending") : "pending";
   const orderDisplay = customerOrderDisplay(status, paymentStatus);
@@ -444,19 +447,25 @@ function OrderStatusPageContent() {
               <p className="font-mono text-lg font-bold tracking-wider">
                 #{shortOrderCode(orderId)}
               </p>
-              <p className="mt-3 text-xs text-[#1C2526]/60">PIN de recogida</p>
-              {displayPin ? (
-                <p
-                  className="text-3xl font-bold tracking-widest"
-                  suppressHydrationWarning
-                >
-                  {displayPin}
-                </p>
-              ) : (
-                <div
-                  className="mt-1 h-9 w-28 animate-pulse rounded bg-black/10"
-                  aria-label="Cargando PIN"
-                />
+              {/* POS/counter orders have no pickup PIN — the customer is at the
+                  restaurant already (this page is their WhatsApp receipt). */}
+              {isPosOrder ? null : (
+                <>
+                  <p className="mt-3 text-xs text-[#1C2526]/60">PIN de recogida</p>
+                  {displayPin ? (
+                    <p
+                      className="text-3xl font-bold tracking-widest"
+                      suppressHydrationWarning
+                    >
+                      {displayPin}
+                    </p>
+                  ) : (
+                    <div
+                      className="mt-1 h-9 w-28 animate-pulse rounded bg-black/10"
+                      aria-label="Cargando PIN"
+                    />
+                  )}
+                </>
               )}
               <p className="mt-3 text-sm">
                 Nombre:{" "}
@@ -499,7 +508,7 @@ function OrderStatusPageContent() {
               </ul>
             ) : null}
 
-            {status === "completed" || status === "cancelled" ? null : whatsapp ? (
+            {isPosOrder || status === "completed" || status === "cancelled" ? null : whatsapp ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
                 <p className="text-sm font-bold text-[#1C2526]">
                   📲 Confírmalo por WhatsApp
