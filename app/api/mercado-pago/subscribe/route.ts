@@ -20,7 +20,6 @@ import {
  *
  * Env (Vercel):
  * - MP_SUBSCRIPTIONS_ACCESS_TOKEN  (required)
- * - MP_PREAPPROVAL_PLAN_ID         (optional; associates subscriptions to the plan)
  */
 
 const MP_PREAPPROVAL_URL = "https://api.mercadopago.com/preapproval";
@@ -85,7 +84,10 @@ export async function POST(request: Request) {
     }
 
     // ── Create pending preapproval on MP ──
-    const planId = process.env.MP_PREAPPROVAL_PLAN_ID?.trim();
+    // NOTE: intentionally NOT sending preapproval_plan_id. Plan-linked
+    // subscriptions require card_token_id + status "authorized" (MP docs);
+    // the checkout-link flow is a standalone preapproval with status "pending",
+    // which returns an init_point where the vendor pays.
     const preapprovalBody: Record<string, unknown> = {
       reason: "Comeleal Pro",
       external_reference: restaurantId,
@@ -99,7 +101,6 @@ export async function POST(request: Request) {
       },
       status: "pending",
     };
-    if (planId) preapprovalBody.preapproval_plan_id = planId;
 
     const mpResponse = await fetch(MP_PREAPPROVAL_URL, {
       method: "POST",
