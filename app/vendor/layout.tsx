@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import FloatingAI from "./_components/FloatingAI";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -134,6 +135,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [aiOpen, setAiOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [isLive] = useState(false);
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
@@ -168,6 +170,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       const rData = restSnap.data() ?? {};
       if (!cancelled) {
         setRestaurantName((rData.name as string | undefined) ?? "");
+        setRestaurantLogo(getRestaurantImageUrl(rData));
       }
     }
     load().catch(() => {});
@@ -302,7 +305,25 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               style={{ color: "rgba(255,255,255,0.28)" }}>
               Restaurante
             </p>
-            <p className="truncate text-[13px] font-semibold text-white">{restaurantName}</p>
+            <div className="flex items-center gap-2">
+              {restaurantLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={restaurantLogo}
+                  alt=""
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
+                  style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+                />
+              ) : (
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
+                  style={{ background: "rgba(242,140,56,0.35)" }}
+                >
+                  {(restaurantName[0] ?? "R").toUpperCase()}
+                </span>
+              )}
+              <p className="truncate text-[13px] font-semibold text-white">{restaurantName}</p>
+            </div>
             {isLive && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5">
