@@ -1274,7 +1274,6 @@ function AICoachPreviewCard({
   metrics: NbaMetrics;
   weeklyBriefText?: string;
 }) {
-  const [question, setQuestion] = useState("");
   const router = useRouter();
 
   const displayTitle = nbaTitle || "Siguiente mejor acción";
@@ -1288,16 +1287,11 @@ function AICoachPreviewCard({
   if (metrics.uniqueCustomers30d > 0) parts.push(`${metrics.uniqueCustomers30d} clientes`);
   const metricsLine = parts.length > 0 ? `Actividad: ${parts.join(" · ")} (últimos 30d)` : null;
 
-  // Extract a compact quote/insight from weeklyBriefText
-  const compactInsight = weeklyBriefText
-    ? (weeklyBriefText.length > 200 ? weeklyBriefText.substring(0, 200) + "..." : weeklyBriefText)
-    : "Sigue registrando las visitas de tus clientes para generar más recomendaciones personalizadas.";
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!question.trim()) return;
-    router.push(`${window.location.pathname}?q=${encodeURIComponent(question.trim())}`);
-  }
+  // Only surface a weekly insight when the AI actually produced one — never filler.
+  const hasInsight = !!(weeklyBriefText && weeklyBriefText.trim());
+  const compactInsight = hasInsight
+    ? (weeklyBriefText!.length > 200 ? weeklyBriefText!.substring(0, 200) + "..." : weeklyBriefText!)
+    : "";
 
   return (
     <div className="mb-6 overflow-hidden rounded-2xl"
@@ -1325,58 +1319,39 @@ function AICoachPreviewCard({
           </button>
         </div>
 
-        {/* Inner Grid for NBA & Weekly Brief */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-          {/* NBA Section */}
-          <div className="rounded-xl p-4 transition-all hover:bg-white/[0.02]"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#FF9A45] mb-1.5">Siguiente mejor acción</p>
-            <p className="text-[14px] font-bold text-white mb-1">{displayTitle}</p>
-            <p className="text-[12px] text-white/70 leading-relaxed mb-3">{displayBody}</p>
-            
-            {metricsLine && (
-              <p className="text-[10px] text-white/40 mb-3 flex items-center gap-1">
-                <span>📊</span> {metricsLine}
-              </p>
-            )}
+        {/* Next best action — the hero, full width, real button */}
+        <div className="rounded-xl p-5"
+          style={{ background: "rgba(255,154,69,0.06)", border: "1px solid rgba(255,154,69,0.15)" }}>
+          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#FF9A45]">
+            <span>⚡</span> Tu siguiente movimiento
+          </p>
+          <p className="text-[17px] font-extrabold leading-snug text-white">{displayTitle}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/70">{displayBody}</p>
 
-            <a href={ctaHref}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF9A45] hover:underline">
-              {ctaLabel} <span>→</span>
-            </a>
-          </div>
-
-          {/* Weekly Insight Section */}
-          <div className="rounded-xl p-4 transition-all hover:bg-white/[0.02]"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Consejo de la semana</p>
-            <p className="text-[12px] leading-relaxed text-white/80 italic font-medium">
-              "{compactInsight}"
+          {metricsLine && (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-white/40">
+              <span>📊</span> {metricsLine}
             </p>
-          </div>
+          )}
+
+          <a href={ctaHref}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
+            style={{ background: "#FF9A45" }}>
+            {ctaLabel} <span>→</span>
+          </a>
         </div>
 
-        {/* Quick Question bar */}
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Pregúntale a Comeleal AI (ej. ¿Quiénes son mis clientes más fieles?)..."
-            className="flex-1 rounded-xl px-4 py-2.5 text-[13px] outline-none transition-all placeholder-white/30 text-white"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!question.trim()}
-            className="rounded-xl px-4 py-2.5 text-[12px] font-bold text-white transition-all disabled:opacity-40 hover:opacity-90 shrink-0"
-            style={{ background: "#FF9A45" }}>
-            Preguntar
-          </button>
-        </form>
+        {/* Weekly insight — only when the AI has a real one, never a filler apology */}
+        {hasInsight && (
+          <div className="mt-3 flex gap-3 rounded-xl p-4"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <span className="shrink-0 text-[15px]">💡</span>
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-white/40">Consejo de la semana</p>
+              <p className="text-[12px] leading-relaxed text-white/75">{compactInsight}</p>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
