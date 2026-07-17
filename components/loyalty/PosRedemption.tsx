@@ -204,7 +204,7 @@ export function PosRedemption({
                     <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                       {t.isFirstVisit
                         ? "Premio de bienvenida (1a compra)"
-                        : `Canje de ${t.points} pts — le quedan ${points - t.points}`}
+                        : `Canje de ${t.points} pts — le quedarían ${points - t.points}`}
                     </span>
                   </span>
                   <span aria-hidden>🎁</span>

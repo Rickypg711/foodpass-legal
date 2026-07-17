@@ -202,6 +202,11 @@ function CheckoutDialog({
   const [notes, setNotes] = useState("");
   const [redemption, setRedemption] = useState<PosRedemptionSelection | null>(null);
 
+  // No cart total = pure reward redemption ("Canjear premio sin venta").
+  // There's nothing to charge, so we hide the payment flow and speak "canje",
+  // not "cobro".
+  const isRedeemOnly = total <= 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
       <div
@@ -212,8 +217,8 @@ function CheckoutDialog({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
           <div>
-            <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>Cobrar</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>Total: {fmt(total)}</p>
+            <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>{isRedeemOnly ? "Canjear premio" : "Cobrar"}</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : `Total: ${fmt(total)}`}</p>
           </div>
           <button
             onClick={onClose}
@@ -225,7 +230,8 @@ function CheckoutDialog({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Mode selector */}
+          {/* Mode selector — irrelevant for a $0 reward handoff */}
+          {!isRedeemOnly && (
           <div>
             <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>¿Cómo cobrar?</p>
             <div className="grid grid-cols-2 gap-2">
@@ -250,9 +256,10 @@ function CheckoutDialog({
               ))}
             </div>
           </div>
+          )}
 
-          {/* Payment method (only if cobrar ahora) */}
-          {mode === "now" && (
+          {/* Payment method — only when actually charging money */}
+          {mode === "now" && !isRedeemOnly && (
             <div>
               <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Método de pago</p>
               <div className="grid grid-cols-2 gap-2">
@@ -278,24 +285,12 @@ function CheckoutDialog({
             </div>
           )}
 
-          {/* Customer name + notes */}
+          {/* Customer phone → rewards → name → notes.
+              Phone is first: it's the loyalty identifier that pulls up points. */}
           <div className="space-y-3">
             <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                {mode === "tab" ? "Nombre de la cuenta (requerido)" : "Nombre del cliente (opcional)"}
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={mode === "tab" ? "Mesa 3, Juan..." : "Para el ticket"}
-                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-              />
-            </div>
-            <div>
-              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                📱 Teléfono del cliente (opcional)
+                📱 Teléfono del cliente {isRedeemOnly ? "(requerido para canjear)" : "(opcional)"}
               </label>
               <input
                 type="tel"
@@ -324,6 +319,19 @@ function CheckoutDialog({
               onSelect={setRedemption}
               onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
             />
+            <div>
+              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
+                {mode === "tab" ? "Nombre de la cuenta (requerido)" : "Nombre del cliente (opcional)"}
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={mode === "tab" ? "Mesa 3, Juan..." : "Para el ticket"}
+                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
+                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+              />
+            </div>
             <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
               <input
@@ -360,7 +368,9 @@ function CheckoutDialog({
                 Procesando…
               </span>
             ) : mode === "now" ? (
-              total <= 0 && redemption ? "Entregar premio (canje sin venta)" : `Cobrar ${fmt(total)}`
+              isRedeemOnly
+                ? (redemption ? "Entregar premio ✓" : "Elige un premio para canjear ↑")
+                : `Cobrar ${fmt(total)}`
             ) : (
               `Abrir cuenta — ${fmt(total)}`
             )}
