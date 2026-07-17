@@ -201,6 +201,7 @@ function CheckoutDialog({
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [redemption, setRedemption] = useState<PosRedemptionSelection | null>(null);
+  const [showNote, setShowNote] = useState(false);
 
   // No cart total = pure reward redemption ("Canjear premio sin venta").
   // There's nothing to charge, so we hide the payment flow and speak "canje",
@@ -332,17 +333,32 @@ function CheckoutDialog({
                 style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
               />
             </div>
-            <div>
-              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Sin cebolla, extra salsa..."
-                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-              />
-            </div>
+            {/* Notes: collapsed behind a link during a $0 canje so the fast
+                lane stays clean, but the kitchen note is one tap away (the free
+                premio still rides to the kitchen as a $0 line). */}
+            {isRedeemOnly && !showNote ? (
+              <button
+                type="button"
+                onClick={() => setShowNote(true)}
+                className="text-[12px] font-semibold"
+                style={{ color: "rgba(28,37,38,0.45)" }}
+              >
+                ➕ Nota para cocina
+              </button>
+            ) : (
+              <div>
+                <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Sin cebolla, extra salsa..."
+                  className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
+                  style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+                  autoFocus={isRedeemOnly}
+                />
+              </div>
+            )}
           </div>
 
           {/* Confirm */}
