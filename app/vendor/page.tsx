@@ -40,6 +40,8 @@ interface WeekDay {
 
 interface NbaMetrics {
   atRiskCount: number;
+  atRiskReachableCount: number | null;
+  atRiskTotalCount: number | null;
   scans30d: number;
   redemptions30d: number;
   uniqueCustomers30d: number;
@@ -74,6 +76,9 @@ interface DashboardData {
   // Win-back proof (reEngagementStats/current, written by Cloud Functions)
   winbackSent: number;
   winbackReturned: number;
+  expiryRemindersSent: number;
+  // Phone customers whose welcome reward expires in ≤2 days (day 5-7 of 7)
+  expiringRewards: { name: string; phone: string; daysLeft: number }[];
   /** Estimated MXN recovered = returned × 30d avg paid ticket. Null when no ticket data. */
   winbackPesos: number | null;
   /** % of 30d paid orders with a customer phone — phone-points fuel gauge. Null < 3 paid orders. */
@@ -142,7 +147,7 @@ export default function VendorDashboard() {
           return Timestamp.fromDate(d);
         })();
 
-        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap] =
+        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap, welcomeSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -171,6 +176,12 @@ export default function VendorDashboard() {
             getDocs(query(
               collection(db, "restaurants", rid, "orders"),
               where("createdAt", ">=", thirtyDaysAgo)
+            )).catch(() => null),
+            // Welcome rewards still unclaimed → the day-5 "remind them" nudge.
+            getDocs(query(
+              collection(db, "restaurants", rid, "phoneCustomers"),
+              where("firstVisitRewardUnlocked", "==", true),
+              limit(25)
             )).catch(() => null),
           ]);
 
@@ -216,6 +227,23 @@ export default function VendorDashboard() {
         const wb = winbackSnap?.exists() ? winbackSnap.data() ?? {} : {};
         const winbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
         const winbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
+        const expiryRemindersSent = typeof wb.expiryRemindersSent === "number" ? wb.expiryRemindersSent : 0;
+
+        // Welcome rewards in the day-5-of-7 danger zone (≤2 days left) — the
+        // named "remind them by WhatsApp" nudge for phone customers.
+        const expiringRewards: { name: string; phone: string; daysLeft: number }[] = [];
+        welcomeSnap?.forEach((d) => {
+          const pd = d.data() as Record<string, unknown>;
+          const createdMs = (pd.createdAt as Timestamp | undefined)?.toMillis?.();
+          if (!createdMs) return;
+          const daysLeft = 7 - Math.floor((Date.now() - createdMs) / 86400000);
+          if (daysLeft < 0 || daysLeft > 2) return;
+          const nm = typeof pd.name === "string" && pd.name.trim()
+            ? pd.name.trim().split(" ")[0]
+            : `··${d.id.slice(-4)}`;
+          expiringRewards.push({ name: nm, phone: d.id, daysLeft });
+        });
+        expiringRewards.sort((a, b) => a.daysLeft - b.daysLeft);
 
         let paidTotal = 0, paidCount = 0, paidWithPhone = 0;
         monthOrdersSnap?.forEach((d) => {
@@ -322,6 +350,8 @@ export default function VendorDashboard() {
           nbaBody: (ins?.body_es as string) ?? "",
           nbaMetrics: {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
+            atRiskReachableCount: (insMetrics.atRiskReachableCount as number | null | undefined) ?? null,
+            atRiskTotalCount: (insMetrics.atRiskTotalCount as number | null | undefined) ?? null,
             scans30d: (insMetrics.scans30d as number) ?? 0,
             redemptions30d: (insMetrics.redemptions30d as number) ?? 0,
             uniqueCustomers30d: (insMetrics.uniqueCustomers30d as number) ?? 0,
@@ -333,6 +363,8 @@ export default function VendorDashboard() {
           pedidosCola,
           cuentasAbiertas,
           winbackSent,
+          expiryRemindersSent,
+          expiringRewards,
           winbackReturned,
           winbackPesos,
           captureRate,
@@ -477,7 +509,7 @@ export default function VendorDashboard() {
           )}
 
           {/* ── Requieren tu atención ── */}
-          {(riskCount > 0 || data.pedidosCola > 0) && (
+          {(riskCount > 0 || data.pedidosCola > 0 || data.expiringRewards.length > 0) && (
             <div className="mb-6">
               <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
                 style={{ color: "rgba(28,37,38,0.35)" }}>
@@ -498,6 +530,23 @@ export default function VendorDashboard() {
                     <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
                   </Link>
                 )}
+                {/* Named day-5 nudges: welcome reward about to expire → one
+                    WhatsApp from the owner saves the first-visit hook. */}
+                {data.expiringRewards.slice(0, 2).map((er) => (
+                  <Link key={er.phone} href="/vendor/clientes"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
+                    style={{ background: "#fffbeb", border: "1px solid rgba(255,180,0,0.35)" }}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+                      style={{ background: "rgba(255,180,0,0.12)" }}>
+                      🎁
+                    </div>
+                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                      {er.name} — su premio de bienvenida vence{" "}
+                      {er.daysLeft <= 0 ? "HOY" : er.daysLeft === 1 ? "mañana" : "en 2 días"} · mándale un WhatsApp
+                    </p>
+                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
+                  </Link>
+                ))}
                 {riskCount > 0 && (
                   <Link href="/vendor/clientes"
                     className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
@@ -507,7 +556,22 @@ export default function VendorDashboard() {
                       ⚠️
                     </div>
                     <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                      {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo de no volver — mándale{riskCount !== 1 ? "s" : ""} un mensaje
+                      {data.nbaMetrics.atRiskReachableCount !== null ? (
+                        data.nbaMetrics.atRiskReachableCount > 0 ? (
+                          <>
+                            {data.nbaMetrics.atRiskTotalCount ?? riskCount} clientes sin regresar —{" "}
+                            <b>{data.nbaMetrics.atRiskReachableCount} con WhatsApp para contactar tú</b>; al resto la app ya los trabaja 🤖
+                          </>
+                        ) : (
+                          <>
+                            {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo — la app ya los está trabajando con notificaciones automáticas 🤖
+                          </>
+                        )
+                      ) : (
+                        <>
+                          {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo de no volver — mándale{riskCount !== 1 ? "s" : ""} un mensaje
+                        </>
+                      )}
                     </p>
                     <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
                   </Link>
@@ -657,7 +721,7 @@ export default function VendorDashboard() {
             </div>
           )}
 
-          {data.winbackSent > 0 && (
+          {(data.winbackSent > 0 || data.expiryRemindersSent > 0) && (
             <div className="mb-6 rounded-2xl p-5"
               style={{
                 background: data.winbackReturned > 0
@@ -705,10 +769,14 @@ export default function VendorDashboard() {
                   </div>
                   <div>
                     <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                      {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación enviado{data.winbackSent !== 1 ? "s" : ""}
+                      Comeleal trabajó por ti:{" "}
+                      {[
+                        data.winbackSent > 0 ? `${data.winbackSent} mensaje${data.winbackSent !== 1 ? "s" : ""} de recuperación` : null,
+                        data.expiryRemindersSent > 0 ? `${data.expiryRemindersSent} recordatorio${data.expiryRemindersSent !== 1 ? "s" : ""} de premio` : null,
+                      ].filter(Boolean).join(" · ")}
                     </p>
                     <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                      Aquí verás cuántos clientes regresaron — y cuánto dinero representa.
+                      Automático, sin que muevas un dedo. Aquí verás cuántos regresaron — y cuánto dinero representa.
                     </p>
                   </div>
                 </div>
@@ -853,7 +921,9 @@ export default function VendorDashboard() {
           </div>
 
           {/* ── QR Card ── */}
-          <QrCard restaurantId={data.restaurantId} restaurantName={data.restaurantName} />
+          <div id="compartir-qr">
+            <QrCard restaurantId={data.restaurantId} restaurantName={data.restaurantName} />
+          </div>
 
           {/* ── Atajos — mobile only (sidebar handles desktop nav) ── */}
           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em] md:hidden"
@@ -1226,7 +1296,8 @@ function getNbaFallbackBody(actionCode: string): string {
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "healthy":
-    case "keep_going": return "Tu negocio va avanzando. Sigue compartiendo tu QR y mantén tus recompensas claras.";
+    case "keep_going":
+    case "stable": return "Tu negocio va avanzando. Sigue compartiendo tu QR y mantén tus recompensas claras.";
     default: return "Estamos preparando tus recomendaciones. Cuando tengas más actividad, Comeleal te mostrará el siguiente mejor paso.";
   }
 }
@@ -1234,6 +1305,9 @@ function getNbaFallbackBody(actionCode: string): string {
 function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
   switch (actionCode) {
     case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
+    case "check_ai_draft": return "Revisar borrador de recompensa";
+    case "share_with_customers": return "Compartir mi menú";
+    case "stable": return "Ver reportes";
     case "complete_profile": return "Completar perfil";
     case "add_menu_items": return "Agregar productos";
     case "lower_reward_threshold":
@@ -1249,6 +1323,9 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
 function getNbaCtaHref(actionCode: string): string {
   switch (actionCode) {
     case "complete_profile": return "/vendor/configuracion";
+    case "check_ai_draft": return "/vendor/recompensas";
+    case "share_with_customers": return "#compartir-qr";
+    case "stable": return "/vendor/reportes";
     case "add_menu_items": return "/vendor/menu";
     case "lower_reward_threshold":
     case "configure_rewards":
@@ -1278,7 +1355,10 @@ function AICoachPreviewCard({
 
   const displayTitle = nbaTitle || "Siguiente mejor acción";
   const displayBody = nbaBody || getNbaFallbackBody(actionCode);
-  const ctaLabel = getNbaCtaLabel(actionCode, metrics.atRiskCount);
+  const reachableRisk = metrics.atRiskReachableCount;
+  const ctaLabel = actionCode === "send_winback" && typeof reachableRisk === "number" && reachableRisk > 0
+    ? `Contactar ${reachableRisk} por WhatsApp`
+    : getNbaCtaLabel(actionCode, metrics.atRiskCount);
   const ctaHref = getNbaCtaHref(actionCode);
 
   const parts: string[] = [];
