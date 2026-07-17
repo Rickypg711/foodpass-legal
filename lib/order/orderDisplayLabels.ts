@@ -11,9 +11,22 @@ export type OrderDisplayCopy = {
 export function customerOrderDisplay(
   status: string | undefined,
   paymentStatus: string | undefined,
+  opts: { posReceipt?: boolean } = {},
 ): OrderDisplayCopy {
   const s = (status ?? "").trim();
   const ps = (paymentStatus ?? "pending").trim();
+
+  // POS/counter orders: this page is a digital receipt, not order tracking —
+  // the customer already ordered (and usually paid) in person at the counter.
+  if (opts.posReceipt) {
+    if (s === "cancelled") {
+      return { title: "Pedido cancelado" };
+    }
+    return {
+      title: "¡Gracias por tu compra! 🧾",
+      subtitle: "Aquí queda tu recibo digital — y tus puntos, guardados en tu número.",
+    };
+  }
 
   // Customer-facing es-MX copy: tuteo, short, warm — reads like a person,
   // not a bank statement.

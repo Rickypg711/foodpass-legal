@@ -268,7 +268,9 @@ function OrderStatusPageContent() {
   const isPosOrder = order?.orderSource === "pos";
   const status = mounted ? (order?.status ?? "pending") : "pending";
   const paymentStatus = mounted ? (order?.paymentStatus ?? "pending") : "pending";
-  const orderDisplay = customerOrderDisplay(status, paymentStatus);
+  const orderDisplay = customerOrderDisplay(status, paymentStatus, {
+    posReceipt: isPosOrder,
+  });
 
   useEffect(() => {
     if (!mounted) return;
