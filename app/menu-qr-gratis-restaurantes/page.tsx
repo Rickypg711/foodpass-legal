@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿De verdad es gratis el menú QR?",
-    a: "Sí. El menú digital, el código QR, los pedidos por WhatsApp y el programa de puntos no tienen mensualidad. Comeleal solo cobra 3% en pagos digitales; en efectivo no cobramos nada.",
+    a: "Sí. El menú digital, el código QR, los pedidos en línea y el programa de puntos no tienen mensualidad. Comeleal solo cobra 3% en pagos digitales; en efectivo no cobramos nada.",
   },
   {
     q: "¿Qué necesito para empezar?",
@@ -89,7 +89,7 @@ export default function Page() {
             Menú digital QR <span className="text-[#F28C38]">gratis</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Tu menú digital con fotos y precios, un QR para imprimir y pedidos directos por WhatsApp. <b>Sin mensualidad, sin comisión en efectivo.</b> Listo en 10 minutos.
+            Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Sin mensualidad, sin comisión en efectivo.</b> Listo en 10 minutos.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -112,7 +112,7 @@ export default function Page() {
             Gratis de verdad — no “gratis por 14 días”
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            El menú QR, los pedidos por WhatsApp y el programa de puntos no cuestan mensualidad. Solo pagamos nosotros cuando tú cobras digital (3%); en efectivo, 0%. Compáralo: otras plataformas cobran desde $749 MXN al mes por lo mismo.
+            El menú QR, los pedidos en línea y el programa de puntos no cuestan mensualidad. Solo pagamos nosotros cuando tú cobras digital (3%); en efectivo, 0%. Compáralo: otras plataformas cobran desde $749 MXN al mes por lo mismo.
           </p>
         </div>
       </section>
@@ -196,7 +196,7 @@ export default function Page() {
             ))}
           </ol>
           <p className="mt-5 text-[14px] leading-relaxed text-[#1C2526]/65">
-            Con Canva o un PDF obtienes una imagen bonita — pero no recibe pedidos ni sabe quién es tu cliente. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
+            Con Canva o un PDF obtienes una imagen bonita — pero no recibe pedidos ni sabe quién es tu cliente. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones de reparto que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
           </p>
           <p className="mt-4">
             <Link href="/menu/kdjJsNwriU4AL4528a4d" className="text-[14px] font-semibold text-[#F28C38] underline underline-offset-4">
