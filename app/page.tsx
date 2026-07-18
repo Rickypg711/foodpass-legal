@@ -86,7 +86,7 @@ const BENEFITS = [
 const FAQ_ITEMS = [
   {
     q: "¿Cuánto cuesta?",
-    a: "Empiezas gratis. El plan Free incluye escaneo de clientes, menú digital y panel web. Pro es opcional si quieres funciones avanzadas.",
+    a: "Operar es gratis: menú digital, Caja/POS, pedidos, tus clientes y reportes, con 50 visitas de lealtad al mes. Pro ($299/mes) es la máquina de que regresen: lealtad ilimitada, recuperación automática por WhatsApp y Comeleal AI sin límite.",
   },
   {
     q: "¿Qué es Apple Wallet / Google Wallet y cómo lo usan mis clientes?",
@@ -337,6 +337,7 @@ export default function Home() {
                 { href: "/como-vender-mas-en-mi-restaurante", label: "Cómo vender más" },
                 { href: "/inteligencia-artificial-para-restaurantes", label: "IA para restaurantes" },
                 { href: "/lealtad-restaurantes-chihuahua", label: "Lealtad en Chihuahua" },
+                { href: "/precios", label: "Precios" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="block py-1 text-sm text-white/55 transition-colors hover:text-white">

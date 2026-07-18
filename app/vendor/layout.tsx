@@ -143,6 +143,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [userInitial, setUserInitial] = useState<string>("V");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [menuShared, setMenuShared] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   // Setup pages should render without the sidebar (hooks must come before any return)
   const isSetupFlow = pathname.startsWith("/vendor/setup");
@@ -171,6 +172,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       if (!cancelled) {
         setRestaurantName((rData.name as string | undefined) ?? "");
         setRestaurantLogo(getRestaurantImageUrl(rData));
+        // Plan badge — same canonical fields as configuración/phonePoints.
+        const exp = rData.subscriptionAccessExpiresAt as { toDate?: () => Date } | undefined;
+        const expOk = !exp?.toDate || exp.toDate().getTime() > Date.now();
+        setIsPro((rData.plan === "pro" || rData.subscriptionPlan === "pro") && expOk);
       }
     }
     load().catch(() => {});
@@ -372,7 +377,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 className="flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-black/5"
                 style={{ color: "#1C2526" }}
               >
-                ✦ Mejorar plan
+                {isPro ? "⭐ Tu plan" : "✦ Mejorar plan"}
               </Link>
               <div style={{ height: 1, background: "rgba(28,37,38,0.08)" }} />
               <button
@@ -417,9 +422,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 </p>
                 <span
                   className="inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ background: "rgba(242,140,56,0.18)", color: "#F28C38" }}
+                  style={
+                    isPro
+                      ? { background: "rgba(242,140,56,0.3)", color: "#FFB877" }
+                      : { background: "rgba(242,140,56,0.18)", color: "#F28C38" }
+                  }
                 >
-                  Free
+                  {isPro ? "⭐ Pro" : "Free"}
                 </span>
               </div>
               <span

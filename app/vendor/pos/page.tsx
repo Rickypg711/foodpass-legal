@@ -399,16 +399,17 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, onDone }: { mode: CheckoutMode; total: number; onDone: () => void }) {
+function SuccessOverlay({ mode, total, capReached, onDone }: { mode: CheckoutMode; total: number; capReached?: boolean; onDone: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 2000);
+    // Give the owner time to read the cap warning when it's shown.
+    const t = setTimeout(onDone, capReached ? 5000 : 2000);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, [onDone, capReached]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(28,37,38,0.55)", backdropFilter: "blur(6px)" }}>
       <div
-        className="flex flex-col items-center gap-4 rounded-3xl px-10 py-10 text-center"
+        className="flex max-w-sm flex-col items-center gap-4 rounded-3xl px-10 py-10 text-center"
         style={{ background: "#ffffff", boxShadow: "0 24px 64px rgba(28,37,38,0.2)" }}
       >
         <div
@@ -424,6 +425,20 @@ function SuccessOverlay({ mode, total, onDone }: { mode: CheckoutMode; total: nu
         <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
           {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
         </p>
+        {capReached && (
+          <div
+            className="rounded-2xl px-4 py-3 text-left"
+            style={{ background: "rgba(242,140,56,0.1)", border: "1px solid rgba(242,140,56,0.3)" }}
+          >
+            <p className="text-[13px] font-bold" style={{ color: "#F28C38" }}>
+              ⚠️ Guardamos a este cliente, pero ya no sumó puntos
+            </p>
+            <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+              Tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en
+              Configuración para que ningún cliente se quede sin sus puntos.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -453,7 +468,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; capReached?: boolean } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -601,16 +616,21 @@ export default function PosPage() {
 
       // Phone Points v1: tab closed = payment confirmed → credit if the
       // order carries a customerPhone. Idempotent.
+      let capMsg = "";
       try {
         const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
         if (res.credited) {
           console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+          if (res.capReached === true) {
+            capMsg =
+              "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración.";
+          }
         }
       } catch (e) {
         console.error("[phonePoints] tab-close credit failed", e);
       }
 
-      alert("¡Cuenta pagada y cerrada!");
+      alert("¡Cuenta pagada y cerrada!" + capMsg);
       loadOpenTabs(restaurantId);
     } catch (err) {
       console.error("Error closing tab", err);
@@ -771,6 +791,7 @@ export default function PosPage() {
 
       // Phone Points v1: "cobrar ahora" = confirmed payment → credit loyalty
       // to the phone if the cashier captured it. (Open tabs credit at close.)
+      let capReached = false;
       if (mode === "now" && phoneDigits.length >= 10) {
         try {
           const res = await creditPhonePointsForOrder({
@@ -780,13 +801,14 @@ export default function PosPage() {
           });
           if (res.credited) {
             console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+            capReached = res.capReached === true;
           }
         } catch (e) {
           console.error("[phonePoints] POS credit failed", e);
         }
       }
 
-      setSuccess({ mode, total: subtotal });
+      setSuccess({ mode, total: subtotal, capReached });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -1141,6 +1163,7 @@ export default function PosPage() {
         <SuccessOverlay
           mode={success.mode}
           total={success.total}
+          capReached={success.capReached}
           onDone={() => setSuccess(null)}
         />
       )}

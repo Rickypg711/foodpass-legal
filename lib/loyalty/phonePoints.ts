@@ -10,8 +10,10 @@
 //
 // Every credit burns the restaurant's monthly counter (scanCount — same field
 // the app's scan limit uses) so web loyalty can't tunnel around the 50/mes
-// free tier. At the cap: no credit, no error — loyalty goes quiet (§4:
-// "stop promising, don't break the menu").
+// free tier. At the cap: the customer is STILL saved to the CRM (phone, visit,
+// spend — captured numbers are never thrown away) but earns 0 points, and the
+// result carries capReached so the UI warns the owner (docs/PRICING.md,
+// "cap honesto"). Redemptions are never blocked by the cap.
 //
 // Idempotency: order.loyaltyAwarded flag, checked and set inside the
 // transaction — an order can never credit twice.
@@ -91,7 +93,16 @@ function hasUnlimitedLoyalty(rdata: Record<string, unknown>): boolean {
 }
 
 export type PhoneCreditResult =
-  | { credited: true; phone: string; points: number; firstVisit: boolean }
+  | {
+      credited: true;
+      phone: string;
+      points: number;
+      firstVisit: boolean;
+      /** Monthly free-tier cap hit: customer WAS saved to the CRM but earned 0
+       * points. Surface this to the owner (POS aviso / Panel banner) — never
+       * let the cap fail silently. */
+      capReached?: boolean;
+    }
   | {
       credited: false;
       reason:
@@ -99,7 +110,6 @@ export type PhoneCreditResult =
         | "already_awarded"
         | "no_phone"
         | "not_paid"
-        | "cap_reached"
         | "zero_points";
     };
 
@@ -176,12 +186,13 @@ export async function creditPhonePointsForOrder(params: {
     const welcomeRequested =
       rr != null && String(rr.tierId ?? "") === "first_visit";
 
-    if (points <= 0 && redemptionCost <= 0 && !welcomeRequested) {
-      return {
-        credited: false,
-        reason: capReached ? "cap_reached" : "zero_points",
-      } as const;
+    if (points <= 0 && redemptionCost <= 0 && !welcomeRequested && !capReached) {
+      return { credited: false, reason: "zero_points" } as const;
     }
+    // At the cap we do NOT bail out: the customer must still be saved to the
+    // CRM (phone, visit, spend) — losing captured numbers at the cap was a
+    // bug against the owner. Only the points earn (0) stops; the caller gets
+    // capReached to warn the owner loudly (PRICING.md "cap honesto").
 
     const phoneRef = doc(db, "restaurants", restaurantId, "phoneCustomers", phone);
     const phoneSnap = await tx.get(phoneRef);
@@ -261,6 +272,12 @@ export async function creditPhonePointsForOrder(params: {
       });
     }
 
-    return { credited: true, phone, points, firstVisit } as const;
+    return {
+      credited: true,
+      phone,
+      points,
+      firstVisit,
+      ...(capReached ? { capReached: true } : {}),
+    } as const;
   });
 }

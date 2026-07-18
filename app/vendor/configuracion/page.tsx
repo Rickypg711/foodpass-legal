@@ -370,31 +370,54 @@ export default function ConfiguracionPage() {
               />
             </SectionCard>
 
-            {/* ── Suscripción ── */}
-            <SectionCard label="Plan">
-              <div className="flex items-center justify-between py-1">
-                <div>
+            {/* ── Suscripción (docs/PRICING.md) ── */}
+            <SectionCard label="Tu plan">
+              {plan === "pro" ? (
+                <div className="py-1">
                   <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    {plan === "pro" ? "Plan Pro activo ⭐" : "Plan Gratuito"}
+                    Plan Pro activo ⭐
                   </p>
                   <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    {plan === "pro"
-                      ? "Scans ilimitados y todas las funciones"
-                      : "50 scans/mes · Pro: $299/mes, scans ilimitados"}
+                    Lealtad ilimitada, recuperación por WhatsApp, Comeleal AI y soporte directo
                   </p>
                 </div>
-                {plan === "free" && (
-                  <button
-                    type="button"
-                    onClick={handleActivatePro}
-                    disabled={activatingPro}
-                    className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-bold disabled:opacity-60"
-                    style={{ background: "rgba(217,119,87,0.1)", color: "#F28C38" }}
+              ) : (
+                <div className="py-1">
+                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    Plan Gratis — para operar
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+                    Menú QR, Caja/POS, pedidos, tus clientes y reportes: gratis siempre.
+                    Incluye 50 visitas de lealtad al mes.
+                  </p>
+                  <div
+                    className="mt-3 rounded-xl p-3.5"
+                    style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
                   >
-                    {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
-                  </button>
-                )}
-              </div>
+                    <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
+                      Pro · $299/mes — la máquina de que regresen
+                    </p>
+                    <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+                      <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
+                      <li>✓ Recuperación automática por WhatsApp sin límite</li>
+                      <li>✓ Comeleal AI sin límite</li>
+                      <li>✓ Soporte directo — te contesta una persona</li>
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleActivatePro}
+                      disabled={activatingPro}
+                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                      style={{ background: "#F28C38" }}
+                    >
+                      {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
+                    </button>
+                    <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                      Pago seguro con Mercado Pago · cancela cuando quieras
+                    </p>
+                  </div>
+                </div>
+              )}
             </SectionCard>
 
             {/* ── Soporte ── */}
