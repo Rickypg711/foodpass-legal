@@ -28,6 +28,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: `${SITE_URL}/punto-de-venta-gratis-restaurantes`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/pedidos-en-linea-restaurantes`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/como-vender-mas-en-mi-restaurante`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     { url: `${SITE_URL}/descargar`, changeFrequency: "monthly", priority: 0.5 },
   ];
 
