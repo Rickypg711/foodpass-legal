@@ -28,7 +28,7 @@ const FAQ = [
   },
   {
     q: "¿Cómo me llegan los pedidos?",
-    a: "Directo a tu WhatsApp Business, con el detalle completo del pedido. También los ves en tu panel de Comeleal con su historial.",
+    a: "Llegan al instante a tu panel de Comeleal con notificación sonora en tu teléfono, y el cliente te manda la confirmación por WhatsApp con el detalle completo del pedido. Sin tablets extra, sin comisiones de reparto.",
   },
   {
     q: "¿Esto reemplaza a las apps de reparto?",
@@ -77,7 +77,7 @@ export default function Page() {
             Pedidos por <span className="text-[#F28C38]">WhatsApp</span> — deja de regalar el 30%
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Las apps de reparto te cobran hasta un 30% por pedido. Con Comeleal el pedido llega directo a tu WhatsApp: <b>0% en efectivo, 3% en pago digital.</b> Tú te quedas con tu margen.
+            Las apps de reparto te cobran hasta un 30% por pedido. Con Comeleal los pedidos llegan directo a tu negocio — alerta al instante en tu teléfono y el detalle por WhatsApp: <b>0% en efectivo, 3% en pago digital.</b> Tú te quedas con tu margen.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -119,8 +119,8 @@ export default function Page() {
               },
               {
                 n: "2",
-                t: "El pedido llega a tu WhatsApp",
-                d: "Armado y claro: platillos, cantidades, notas y datos del cliente. Tú confirmas y cobras — al recoger o digital.",
+                t: "El pedido te llega al instante",
+                d: "Suena la alerta en tu teléfono y ves el pedido completo en tu panel; el cliente te lo confirma por WhatsApp con platillos, cantidades y su nombre. Tú cobras al recoger o digital.",
               },
               {
                 n: "3",
