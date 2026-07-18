@@ -258,6 +258,37 @@ export default function VendorDashboard() {
         });
         // Need at least 3 paid orders for a meaningful avg ticket.
         const avgTicket = paidCount >= 3 ? paidTotal / paidCount : null;
+
+        // ── Phone-sale visits (Caja/checkout con número) ─────────────────────
+        // phoneLoyaltyAt is written ONLY by creditPhonePointsForOrder, so every
+        // order carrying it is a real "venta con número". These customers have
+        // no app → they never appear in visitHistory. Counting them here keeps
+        // the chart's promise ("cada venta con número suma aquí") honest, with
+        // zero double-counting vs app scans.
+        const phoneDailyCounts: Record<string, number> = {};
+        let phoneVisitsToday = 0;
+        let phoneVisits30d = 0;
+        let phoneRedemptions30d = 0;
+        const uniquePhones30d = new Set<string>();
+        const sevenDaysAgoMs = sevenDaysAgo.toMillis();
+        const todayStartMs = todayStart.toMillis();
+        monthOrdersSnap?.forEach((d) => {
+          const o = d.data();
+          const ts = o.phoneLoyaltyAt as Timestamp | undefined;
+          if (!ts?.toMillis) return;
+          const ms = ts.toMillis();
+          phoneVisits30d++;
+          let ph = String(o.customerPhone ?? "").replace(/\D/g, "");
+          if (ph.length > 10) ph = ph.slice(-10);
+          if (ph.length === 10) uniquePhones30d.add(ph);
+          if (o.redemptionResult === "applied") phoneRedemptions30d++;
+          if (ms >= todayStartMs) phoneVisitsToday++;
+          if (ms >= sevenDaysAgoMs) {
+            const dt = ts.toDate();
+            const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+            phoneDailyCounts[key] = (phoneDailyCounts[key] ?? 0) + 1;
+          }
+        });
         // Capture rate: % of paid orders with a customer phone — the fuel
         // gauge of the phone-points system (every capture = future winback).
         const captureRate =
@@ -267,7 +298,7 @@ export default function VendorDashboard() {
             ? Math.round(winbackReturned * avgTicket)
             : null;
 
-        // 7-day chart data
+        // 7-day chart data: app scans (visitHistory) + phone sales, per day.
         const dailyCounts: Record<string, number> = {};
         weekSnap.forEach((d) => {
           const ts = d.data().timestamp as Timestamp;
@@ -284,7 +315,7 @@ export default function VendorDashboard() {
           const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
           return {
             label: DAY_LABELS[d.getDay()],
-            count: dailyCounts[key] ?? 0,
+            count: (dailyCounts[key] ?? 0) + (phoneDailyCounts[key] ?? 0),
             isToday: i === 6,
           };
         });
@@ -335,7 +366,8 @@ export default function VendorDashboard() {
           restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
           scanCountTotal: (r.scanCount as number) ?? 0,
-          scansToday,
+          // Visitas hoy = app scans + ventas con número (same rule as the chart).
+          scansToday: scansToday + phoneVisitsToday,
           pointsToday,
           weeklyScans,
           weekTotal,
@@ -352,9 +384,12 @@ export default function VendorDashboard() {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
             atRiskReachableCount: (insMetrics.atRiskReachableCount as number | null | undefined) ?? null,
             atRiskTotalCount: (insMetrics.atRiskTotalCount as number | null | undefined) ?? null,
-            scans30d: (insMetrics.scans30d as number) ?? 0,
-            redemptions30d: (insMetrics.redemptions30d as number) ?? 0,
-            uniqueCustomers30d: (insMetrics.uniqueCustomers30d as number) ?? 0,
+            // App metrics (from the brain) + phone-sale metrics (computed here):
+            // phone customers have no app, so the brain's visitHistory numbers
+            // never include them. Sum = every real visit, no double-counting.
+            scans30d: ((insMetrics.scans30d as number) ?? 0) + phoneVisits30d,
+            redemptions30d: ((insMetrics.redemptions30d as number) ?? 0) + phoneRedemptions30d,
+            uniqueCustomers30d: ((insMetrics.uniqueCustomers30d as number) ?? 0) + uniquePhones30d.size,
             menuItemCount: (insMetrics.menuItemCount as number) ?? 0,
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
@@ -644,7 +679,7 @@ export default function VendorDashboard() {
               <Link href="/vendor/scanner" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
                 style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Escaneos hoy</span>
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Clientes Comeleal hoy</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
                     style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     📷
@@ -838,10 +873,10 @@ export default function VendorDashboard() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                  Scans — últimos 7 días
+                  Clientes Comeleal — últimos 7 días
                 </p>
                 <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-                  {data.weekTotal} visitas esta semana
+                  {data.weekTotal} visitas con app o número esta semana
                 </p>
               </div>
               <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
@@ -855,7 +890,7 @@ export default function VendorDashboard() {
               <div className="flex flex-col items-center py-6 text-center">
                 <span className="text-[26px]">📷</span>
                 <p className="mt-2 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
-                  Aún sin escaneos esta semana
+                  Aún sin clientes Comeleal esta semana
                 </p>
                 <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.38)" }}>
                   Cada venta con número suma aquí — empieza en la Caja.
@@ -1455,7 +1490,7 @@ function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Clientes únicos", value: metrics.uniqueCustomers30d },
-          { label: "Visitas totales", value: metrics.scans30d },
+          { label: "Visitas Comeleal", value: metrics.scans30d },
           { label: "Canjes", value: metrics.redemptions30d },
           { label: "Clientes en riesgo", value: metrics.atRiskCount },
         ].map(({ label, value }) => (

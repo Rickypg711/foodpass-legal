@@ -108,8 +108,9 @@ export default function ReportesPage() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-        const [restaurantSnap, insightsSnap, todayOrdersSnap, todayVisitsSnap, weeklyOrdersSnap, weeklyVisitsSnap] =
+        const [restaurantSnap, insightsSnap, todayOrdersSnap, todayVisitsSnap, weeklyOrdersSnap, weeklyVisitsSnap, monthOrdersSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -136,6 +137,12 @@ export default function ReportesPage() {
               where("timestamp", ">=", Timestamp.fromDate(sevenDaysAgo)),
               orderBy("timestamp", "asc")
             )),
+            // 30d orders → phone-sale loyalty metrics (phone customers have no
+            // app, so they never appear in visitHistory / the brain's numbers).
+            getDocs(query(
+              collection(db, "restaurants", rid, "orders"),
+              where("createdAt", ">=", Timestamp.fromDate(thirtyDaysAgo))
+            )).catch(() => null),
           ]);
 
         const restData = restaurantSnap.data() ?? {};
@@ -149,17 +156,46 @@ export default function ReportesPage() {
           todaySalesCount++;
         });
         const todayAvgTicket = todaySalesCount > 0 ? todayRevenue / todaySalesCount : 0;
-        const todayScans = todayVisitsSnap.size;
 
-        // 30-day lealtad metrics
+        // ── Phone-sale visits (Caja/checkout con número) ─────────────────────
+        // phoneLoyaltyAt is written ONLY by creditPhonePointsForOrder, so every
+        // order carrying it is a real "venta con número" that earned/redeemed
+        // points. App scans live in visitHistory; phone customers don't. Sum =
+        // every loyalty visit, no double-counting.
+        const phoneDailyCounts: Record<string, number> = {};
+        let phoneVisitsToday = 0;
+        let phoneVisits30d = 0;
+        let phoneRedemptions30d = 0;
+        const uniquePhones30d = new Set<string>();
+        monthOrdersSnap?.forEach((d) => {
+          const o = d.data();
+          const ts = o.phoneLoyaltyAt as Timestamp | undefined;
+          if (!ts?.toMillis) return;
+          const ms = ts.toMillis();
+          phoneVisits30d++;
+          let ph = String(o.customerPhone ?? "").replace(/\D/g, "");
+          if (ph.length > 10) ph = ph.slice(-10);
+          if (ph.length === 10) uniquePhones30d.add(ph);
+          if (o.redemptionResult === "applied") phoneRedemptions30d++;
+          if (ms >= todayStart.getTime()) phoneVisitsToday++;
+          if (ms >= sevenDaysAgo.getTime()) {
+            const dt = ts.toDate();
+            const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+            phoneDailyCounts[key] = (phoneDailyCounts[key] ?? 0) + 1;
+          }
+        });
+
+        const todayScans = todayVisitsSnap.size + phoneVisitsToday;
+
+        // 30-day lealtad metrics: brain (app/visitHistory) + phone sales.
         let metrics30d: InsightsMetrics | null = null;
         if (insightsData?.metrics) {
           const m = insightsData.metrics;
           metrics30d = {
             atRiskCount: (m.atRiskCount as number) ?? 0,
-            scans30d: (m.scans30d as number) ?? 0,
-            redemptions30d: (m.redemptions30d as number) ?? 0,
-            uniqueCustomers30d: (m.uniqueCustomers30d as number) ?? 0,
+            scans30d: ((m.scans30d as number) ?? 0) + phoneVisits30d,
+            redemptions30d: ((m.redemptions30d as number) ?? 0) + phoneRedemptions30d,
+            uniqueCustomers30d: ((m.uniqueCustomers30d as number) ?? 0) + uniquePhones30d.size,
             menuItemCount: (m.menuItemCount as number) ?? 0,
             rewardCount: (m.rewardCount as number) ?? 0,
           };
@@ -182,6 +218,13 @@ export default function ReportesPage() {
           const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
           if (dailyStatsMap[key]) {
             dailyStatsMap[key].scans++;
+          }
+        });
+
+        // Add phone-sale visits to the same per-day buckets as app scans.
+        Object.entries(phoneDailyCounts).forEach(([key, count]) => {
+          if (dailyStatsMap[key]) {
+            dailyStatsMap[key].scans += count;
           }
         });
 
@@ -325,9 +368,9 @@ export default function ReportesPage() {
 
           {/* Scans/Visits */}
           <div className="rounded-2xl p-5 bg-white space-y-3" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Escaneos hoy</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clientes Comeleal hoy</p>
             <p className="text-[26px] font-black text-[#1C2526]">{data.todayScans}</p>
-            <p className="text-[11px] text-gray-400">Visitas de fidelidad</p>
+            <p className="text-[11px] text-gray-400">Visitas con app o número</p>
           </div>
 
           {/* Daily Goal Progress */}
@@ -402,8 +445,9 @@ export default function ReportesPage() {
           {/* Visits/Scans chart */}
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <div>
-              <p className="text-[14px] font-bold text-[#1C2526]">Escaneos de la semana</p>
+              <p className="text-[14px] font-bold text-[#1C2526]">Clientes Comeleal — semana</p>
               <p className="text-[22px] font-black text-[#1C2526]">{data.weeklyScansTotal} visitas</p>
+              <p className="text-[11px] text-gray-400">Con app o con número — los que puedes traer de vuelta</p>
             </div>
             
             {/* Custom SVG Bar Chart */}
@@ -470,7 +514,7 @@ export default function ReportesPage() {
             {data.metrics30d ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Escaneos totales</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visitas Comeleal</p>
                   <p className="text-[20px] font-black text-[#1C2526]">{data.metrics30d.scans30d}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
