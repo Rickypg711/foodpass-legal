@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
-  PUBLIC_WHATSAPP_WA_ME_ACTIVATE,
 } from "@/lib/contactEmail";
 
 export const metadata: Metadata = {
@@ -46,19 +46,6 @@ const faqJsonLd = {
   })),
 };
 
-function WhatsAppButton({ label = "💬 Háblanos por WhatsApp" }: { label?: string }) {
-  return (
-    <a
-      href={PUBLIC_WHATSAPP_WA_ME_ACTIVATE}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-[16px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-      style={{ background: "#25D366", boxShadow: "0 6px 24px rgba(37,211,102,0.35)" }}
-    >
-      {label}
-    </a>
-  );
-}
 
 export default function Page() {
   return (
