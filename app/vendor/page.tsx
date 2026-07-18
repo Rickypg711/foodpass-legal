@@ -73,9 +73,12 @@ interface DashboardData {
   ventasHoy: number;
   pedidosCola: number;
   cuentasAbiertas: number;
-  // Win-back proof (reEngagementStats/current, written by Cloud Functions)
+  // Win-back proof — combined: automatic (reEngagementStats, Cloud Functions)
+  // + manual taps (phoneCustomers.lastWinbackAt vs lastVisitAt, closed loop)
   winbackSent: number;
   winbackReturned: number;
+  manualWinbackSent: number;
+  manualWinbackReturned: number;
   expiryRemindersSent: number;
   // Phone customers whose welcome reward expires in ≤2 days (day 5-7 of 7)
   expiringRewards: { name: string; phone: string; daysLeft: number }[];
@@ -151,7 +154,7 @@ export default function VendorDashboard() {
           return Timestamp.fromDate(d);
         })();
 
-        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap, welcomeSnap] =
+        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap, welcomeSnap, winbackTapsSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -186,6 +189,14 @@ export default function VendorDashboard() {
               collection(db, "restaurants", rid, "phoneCustomers"),
               where("firstVisitRewardUnlocked", "==", true),
               limit(25)
+            )).catch(() => null),
+            // Manual win-back taps (30d): lastWinbackAt is written when the
+            // owner taps "Abrir WhatsApp" in Clientes. Returned = the customer
+            // visited again AFTER the tap (lastVisitAt > lastWinbackAt). This
+            // closes the measure loop for the owner's-own-number channel.
+            getDocs(query(
+              collection(db, "restaurants", rid, "phoneCustomers"),
+              where("lastWinbackAt", ">=", thirtyDaysAgo)
             )).catch(() => null),
           ]);
 
@@ -229,9 +240,26 @@ export default function VendorDashboard() {
 
         // Win-back proof: recovered customers × 30d avg paid ticket
         const wb = winbackSnap?.exists() ? winbackSnap.data() ?? {} : {};
-        const winbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
-        const winbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
+        const autoWinbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
+        const autoWinbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
         const expiryRemindersSent = typeof wb.expiryRemindersSent === "number" ? wb.expiryRemindersSent : 0;
+
+        // Manual channel (owner's own WhatsApp, logged via lastWinbackAt):
+        // sent = customers tapped in the last 30d; returned = they visited
+        // again after the tap. One customer counts once per window.
+        let manualWinbackSent = 0;
+        let manualWinbackReturned = 0;
+        winbackTapsSnap?.forEach((d) => {
+          const p = d.data() as Record<string, unknown>;
+          const sentMs = (p.lastWinbackAt as Timestamp | undefined)?.toMillis?.();
+          if (!sentMs) return;
+          manualWinbackSent++;
+          const visitMs = (p.lastVisitAt as Timestamp | undefined)?.toMillis?.();
+          if (visitMs && visitMs > sentMs) manualWinbackReturned++;
+        });
+
+        const winbackSent = autoWinbackSent + manualWinbackSent;
+        const winbackReturned = autoWinbackReturned + manualWinbackReturned;
 
         // Welcome rewards in the day-5-of-7 danger zone (≤2 days left) — the
         // named "remind them by WhatsApp" nudge for phone customers.
@@ -423,6 +451,8 @@ export default function VendorDashboard() {
           expiryRemindersSent,
           expiringRewards,
           winbackReturned,
+          manualWinbackSent,
+          manualWinbackReturned,
           winbackPesos,
           captureRate,
           topProducts,
@@ -821,7 +851,10 @@ export default function VendorDashboard() {
                       )}
                     </p>
                     <p className="mt-0.5 text-[12px]" style={{ color: "rgba(255,255,255,0.55)" }}>
-                      De {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación enviado{data.winbackSent !== 1 ? "s" : ""}
+                      De {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación
+                      {data.manualWinbackSent > 0
+                        ? ` (${data.winbackSent - data.manualWinbackSent} automáticos · ${data.manualWinbackSent} que mandaste tú)`
+                        : ""}
                       {data.winbackPesos !== null && " · estimado con tu ticket promedio de 30 días"}
                     </p>
                   </div>
@@ -834,14 +867,15 @@ export default function VendorDashboard() {
                   </div>
                   <div>
                     <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                      Comeleal trabajó por ti:{" "}
+                      Recuperación en marcha:{" "}
                       {[
-                        data.winbackSent > 0 ? `${data.winbackSent} mensaje${data.winbackSent !== 1 ? "s" : ""} de recuperación` : null,
+                        data.winbackSent - data.manualWinbackSent > 0 ? `${data.winbackSent - data.manualWinbackSent} mensaje${data.winbackSent - data.manualWinbackSent !== 1 ? "s" : ""} automático${data.winbackSent - data.manualWinbackSent !== 1 ? "s" : ""}` : null,
+                        data.manualWinbackSent > 0 ? `${data.manualWinbackSent} por tu WhatsApp` : null,
                         data.expiryRemindersSent > 0 ? `${data.expiryRemindersSent} recordatorio${data.expiryRemindersSent !== 1 ? "s" : ""} de premio` : null,
                       ].filter(Boolean).join(" · ")}
                     </p>
                     <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                      Automático, sin que muevas un dedo. Aquí verás cuántos regresaron — y cuánto dinero representa.
+                      La máquina detecta y escribe; tú solo das el tap. Aquí verás cuántos regresaron — y cuánto dinero representa.
                     </p>
                   </div>
                 </div>
