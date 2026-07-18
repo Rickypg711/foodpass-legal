@@ -6,12 +6,12 @@ import {
 } from "@/lib/contactEmail";
 
 export const metadata: Metadata = {
-  title: "Menú QR gratis para restaurantes — con pedidos por WhatsApp",
-  description: "Crea el menú digital QR de tu restaurante gratis: fotos, precios, pedidos por WhatsApp y programa de puntos incluido. Sin mensualidad. Hecho en Chihuahua.",
+  title: "Menú digital QR gratis para restaurantes — crea el tuyo hoy",
+  description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Sin mensualidad. Hecho en Chihuahua.",
   alternates: { canonical: "/menu-qr-gratis-restaurantes" },
   openGraph: {
-    title: "Menú QR gratis para restaurantes — con pedidos por WhatsApp",
-    description: "Crea el menú digital QR de tu restaurante gratis: fotos, precios, pedidos por WhatsApp y programa de puntos incluido. Sin mensualidad. Hecho en Chihuahua.",
+    title: "Menú digital QR gratis para restaurantes — crea el tuyo hoy",
+    description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Sin mensualidad. Hecho en Chihuahua.",
     locale: "es_MX",
     type: "website",
   },
@@ -33,6 +33,18 @@ const FAQ = [
   {
     q: "¿Puedo actualizar precios y platillos?",
     a: "Sí, cuando quieras desde tu panel — los cambios se ven al instante en el QR que ya imprimiste, sin reimprimir nada.",
+  },
+  {
+    q: "¿Qué es un menú digital y cómo funciona?",
+    a: "Es la versión interactiva de tu carta: tus clientes escanean un código QR con su teléfono y ven tus platillos, fotos y precios al momento, sin descargar apps. Tú lo actualizas al instante desde tu panel.",
+  },
+  {
+    q: "¿Es mejor un menú digital que un menú en PDF?",
+    a: "Un PDF es una foto estática: pesa, se ve mal en el teléfono y no vende. Un menú digital de Comeleal se actualiza al instante, recibe pedidos en línea y junta puntos de lealtad con el número de teléfono de tu cliente.",
+  },
+  {
+    q: "¿Puedo ver un ejemplo de menú digital?",
+    a: "Sí — busca Luzz Pizza en comeleal.com: es un restaurante real de Chihuahua usando su menú digital con fotos, precios, pedidos en línea y puntos. Así se vería el tuyo.",
   }
 ];
 
@@ -74,7 +86,7 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Menú QR <span className="text-[#F28C38]">gratis</span> para tu restaurante
+            Menú digital QR <span className="text-[#F28C38]">gratis</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Tu menú digital con fotos y precios, un QR para imprimir y pedidos directos por WhatsApp. <b>Sin mensualidad, sin comisión en efectivo.</b> Listo en 10 minutos.
@@ -144,7 +156,43 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="px-5 pb-16">
+      <section className="px-5 py-14" style={{ background: "#fff" }}>
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            ¿Qué es un menú digital?
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed text-[#1C2526]/70">
+            Un menú digital es la versión interactiva de la carta de tu restaurante: tus clientes la abren desde su teléfono escaneando un código QR, sin descargar nada. Puedes cambiar precios y platillos al instante, mostrar fotos de tus especialidades y dejar de reimprimir menús cada vez que algo cambia.
+          </p>
+          <h2 className="mt-10 text-2xl font-bold tracking-tight sm:text-3xl">
+            ¿Cómo crear tu propio menú digital gratis?
+          </h2>
+          <ol className="mt-4 space-y-3">
+            {[
+              "Mándanos tu carta por WhatsApp — fotos, platillos y precios. No necesitas diseñar nada.",
+              "Recibe tu página en comeleal.com con tu menú digital listo y tu código QR para imprimir.",
+              "Pégalo en tus mesas: tus clientes escanean, piden en línea y juntan puntos con su número de teléfono.",
+            ].map((step, i) => (
+              <li key={step} className="flex gap-3 rounded-2xl bg-[#FAF7F2] px-5 py-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/10 text-[13px] font-black text-[#F28C38]">
+                  {i + 1}
+                </span>
+                <p className="text-[14px] leading-relaxed text-[#1C2526]/75">{step}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-5 text-[14px] leading-relaxed text-[#1C2526]/65">
+            Con Canva o un PDF obtienes una imagen bonita — pero no recibe pedidos ni sabe quién es tu cliente. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
+          </p>
+          <p className="mt-4">
+            <Link href="/menu/kdjJsNwriU4AL4528a4d" className="text-[14px] font-semibold text-[#F28C38] underline underline-offset-4">
+              Mira un ejemplo real: el menú digital de Luzz Pizza en Chihuahua →
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      <section className="px-5 pb-16 pt-14">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-2xl font-bold tracking-tight">
             Preguntas frecuentes
