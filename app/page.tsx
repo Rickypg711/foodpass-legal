@@ -320,6 +320,32 @@ export default function Home() {
               Herramientas para que tus clientes te encuentren, acumulen puntos y regresen.
             </p>
           </div>
+          {/* SEO cluster links — footer only, homepage design untouched
+              (Ricardo-approved Jul 18). Flows homepage authority to the
+              marketing pages so Google crawls/ranks the cluster. */}
+          <nav aria-label="Para restaurantes">
+            <p className="text-sm font-semibold text-white/70">Para restaurantes</p>
+            <ul className="mt-2 flex flex-col gap-2">
+              {[
+                { href: "/menu-qr-gratis-restaurantes", label: "Menú digital QR gratis" },
+                { href: "/programa-de-lealtad-para-restaurantes", label: "Programa de lealtad" },
+                { href: "/tarjeta-de-lealtad-digital", label: "Tarjeta de lealtad digital" },
+                { href: "/punto-de-venta-gratis-restaurantes", label: "Punto de venta gratis" },
+                { href: "/pedidos-en-linea-restaurantes", label: "Pedidos en línea sin comisiones" },
+                { href: "/pedidos-whatsapp-restaurantes", label: "Pedidos por WhatsApp" },
+                { href: "/clientes-que-regresan", label: "Clientes que regresan" },
+                { href: "/como-vender-mas-en-mi-restaurante", label: "Cómo vender más" },
+                { href: "/inteligencia-artificial-para-restaurantes", label: "IA para restaurantes" },
+                { href: "/lealtad-restaurantes-chihuahua", label: "Lealtad en Chihuahua" },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="block py-1 text-sm text-white/55 transition-colors hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
           <nav aria-label="Legal y soporte">
             <ul className="flex flex-col gap-2 sm:items-end">
               {FOOTER_LINKS.map((link) => (
