@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/siteMetadata";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import { fetchRestaurantMetadata } from "@/lib/server/restaurantMetadata";
 import MenuRestaurantLayoutClient from "./MenuRestaurantLayoutClient";
 
@@ -23,13 +23,18 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${restaurant.name} · Menú`;
-  const description = `Mira el menú de ${restaurant.name}, ordena en línea y junta puntos con cada compra.`;
+  // SEO: the restaurant's own local search result ("{nombre} menú"), not a
+  // generic Comeleal page — every vendor page is a Google/AI-citable surface.
+  const title = `${restaurant.name} — Menú, precios y pedidos por WhatsApp`;
+  const description = restaurant.description
+    ? `${restaurant.description} Mira el menú de ${restaurant.name}, pide por WhatsApp y junta puntos con cada compra.`
+    : `Mira el menú de ${restaurant.name} con fotos y precios, pide por WhatsApp y junta puntos con cada compra.`;
   const image = restaurant.bannerUrl ?? restaurant.logoUrl;
 
   return {
     title,
     description,
+    alternates: { canonical: `/menu/${restaurantId}` },
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
       description,
@@ -43,10 +48,53 @@ export async function generateMetadata({
   };
 }
 
-export default function MenuRestaurantLayout({
+export default async function MenuRestaurantLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ restaurantId: string }>;
 }) {
-  return <MenuRestaurantLayoutClient>{children}</MenuRestaurantLayoutClient>;
+  const { restaurantId } = await params;
+  const restaurant = await fetchRestaurantMetadata(restaurantId);
+
+  // Restaurant JSON-LD so Google and AI engines understand WHO this page is:
+  // a real local restaurant with a menu and WhatsApp ordering.
+  const jsonLd = restaurant
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        name: restaurant.name,
+        url: `${SITE_URL}/menu/${restaurantId}`,
+        ...(restaurant.logoUrl ? { image: restaurant.logoUrl } : {}),
+        ...(restaurant.description ? { description: restaurant.description } : {}),
+        ...(restaurant.address
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: restaurant.address,
+                addressRegion: "Chihuahua",
+                addressCountry: "MX",
+              },
+            }
+          : {}),
+        ...(restaurant.categories.length > 0
+          ? { servesCuisine: restaurant.categories }
+          : {}),
+        hasMenu: `${SITE_URL}/menu/${restaurantId}`,
+        acceptsReservations: false,
+      }
+    : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <MenuRestaurantLayoutClient>{children}</MenuRestaurantLayoutClient>
+    </>
+  );
 }
