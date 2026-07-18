@@ -28,7 +28,7 @@ const FAQ = [
   },
   {
     q: "¿Mis clientes necesitan descargar una app?",
-    a: "No. Escanean el QR, ven tu menú en el navegador y piden por WhatsApp. Sus puntos se juntan con su número de teléfono.",
+    a: "No. Escanean el QR, ven tu menú en el navegador y piden en línea — el pedido te llega a tu WhatsApp. Sus puntos se juntan con su número de teléfono.",
   },
   {
     q: "¿Puedo actualizar precios y platillos?",
