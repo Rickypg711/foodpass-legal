@@ -276,28 +276,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </div>
-          {open && (
-            <button
-              onClick={() => setOpen(false)}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
-              title="Colapsar menú"
-            >
-              <IconChevronLeft />
-            </button>
-          )}
         </div>
-        {!open && (
-          <button
-            onClick={() => setOpen(true)}
-            className="flex h-9 w-full shrink-0 items-center justify-center text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-            title="Expandir menú"
-          >
-            <span style={{ transform: "rotate(180deg)", display: "inline-block" }}>
-              <IconChevronLeft />
-            </span>
-          </button>
-        )}
 
         {/* Restaurant name */}
         {open && restaurantName && (
@@ -475,6 +454,29 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           )}
         </div>
       </aside>
+
+      {/* Sidebar toggle — rides the sidebar's edge at a FIXED height, so it
+          never jumps up/down between open and collapsed; only the arrow flips
+          and the handle slides horizontally with the edge. */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        title={open ? "Colapsar menú" : "Expandir menú"}
+        className="fixed z-40 hidden h-7 w-7 items-center justify-center rounded-full text-white/60 transition-all duration-200 hover:text-white md:flex"
+        style={{
+          top: 46,
+          left: w - 14,
+          background: "#1C2526",
+          border: "1px solid rgba(255,255,255,0.2)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
+        }}
+      >
+        <span
+          className="inline-flex transition-transform duration-200"
+          style={{ transform: open ? "none" : "rotate(180deg)" }}
+        >
+          <IconChevronLeft />
+        </span>
+      </button>
 
       {/* Click-outside backdrop for the user popover */}
       {userMenuOpen && (
