@@ -1,5 +1,10 @@
 /**
- * Web ordering policy: Mercado Pago only; menu blocks add-to-cart when MP unavailable.
+ * Web ordering policy — CURRENT (post menu-first pivot, Jul 2026):
+ * customer web checkout accepts exactly TWO methods, each gated per vendor:
+ *   - mercado_pago  → only when the restaurant is MP-eligible
+ *   - pay_at_pickup → only when the vendor opted in (payAtPickupEnabled)
+ * Ordering UI is available when EITHER gate is open; browse-only otherwise.
+ * (Replaces the obsolete MP-only policy from before pay-at-pickup shipped.)
  * Run: node scripts/validate-web-checkout-policy.mjs
  */
 
@@ -10,128 +15,105 @@ import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-const checkoutSrc = readFileSync(
-  join(root, "app/menu/[restaurantId]/checkout/page.tsx"),
-  "utf8",
-);
-const buildSrc = readFileSync(join(root, "lib/order/buildOrderPayload.ts"), "utf8");
-
 let failed = 0;
 function fail(msg) {
   console.error(msg);
   failed = 1;
 }
 
-if (checkoutSrc.includes("Pagar al recoger")) {
-  fail("checkout page must not show Pagar al recoger");
-}
-if (checkoutSrc.includes("Efectivo o terminal en el local")) {
-  fail("checkout page must not show cash-at-pickup copy");
-}
-if (checkoutSrc.includes("PAYMENT_METHOD_PAY_AT_PICKUP")) {
-  fail("checkout page must not import pay_at_pickup");
-}
-if (!checkoutSrc.includes("Pagar con Mercado Pago")) {
-  fail("checkout submit must use Mercado Pago CTA");
-}
-if (!checkoutSrc.includes("MP_UNAVAILABLE_MESSAGE")) {
-  fail("checkout must use MP_UNAVAILABLE_MESSAGE");
-}
-
-if (buildSrc.includes("PAYMENT_METHOD_PAY_AT_PICKUP")) {
-  fail("buildOrderPayload must not default to pay_at_pickup");
-}
-if (!buildSrc.includes("assertCustomerWebPaymentMethod")) {
-  fail("buildOrderPayload must enforce mercado_pago");
-}
-
+// ── Policy module: the single source of truth for accepted methods ───────────
 const policySrc = readFileSync(
   join(root, "lib/order/customerWebCheckoutPolicy.ts"),
   "utf8",
 );
-if (!policySrc.includes("customer_web_checkout_requires_mercado_pago")) {
-  fail("customerWebCheckoutPolicy must reject non-MP methods");
+if (!policySrc.includes("assertCustomerWebPaymentMethod")) {
+  fail("customerWebCheckoutPolicy must export assertCustomerWebPaymentMethod");
 }
-if (policySrc.includes("WEB_ORDERING_UNAVAILABLE_TITLE")) {
-  fail("remove menu unavailable banner constants from policy");
+if (!policySrc.includes("customer_web_checkout_invalid_payment_method")) {
+  fail("customerWebCheckoutPolicy must reject unknown methods");
 }
-if (policySrc.includes("WEB_ORDERING_ITEM_UNAVAILABLE_HINT")) {
-  fail("remove per-item unavailable hint constant");
+if (!policySrc.includes("PAYMENT_METHOD_MERCADO_PAGO")) {
+  fail("customerWebCheckoutPolicy must accept mercado_pago");
+}
+if (!policySrc.includes("PAYMENT_METHOD_PAY_AT_PICKUP")) {
+  fail("customerWebCheckoutPolicy must accept pay_at_pickup");
+}
+if (!policySrc.includes("restaurantAllowsPayAtPickup")) {
+  fail("customerWebCheckoutPolicy must export the pay-at-pickup vendor gate");
+}
+if (!policySrc.includes("payAtPickupEnabled === true")) {
+  fail("pay-at-pickup must be vendor OPT-IN (payAtPickupEnabled === true, off by default)");
+}
+if (!policySrc.includes("restaurantSupportsWebCheckout")) {
+  fail("customerWebCheckoutPolicy must export the MP eligibility gate");
 }
 
+// ── Order payload: every customer web order goes through the assert ──────────
+const buildSrc = readFileSync(join(root, "lib/order/buildOrderPayload.ts"), "utf8");
+if (!buildSrc.includes("assertCustomerWebPaymentMethod")) {
+  fail("buildOrderPayload must enforce assertCustomerWebPaymentMethod");
+}
+
+// ── Checkout page: offers ONLY the methods the restaurant supports ───────────
+const checkoutSrc = readFileSync(
+  join(root, "app/menu/[restaurantId]/checkout/page.tsx"),
+  "utf8",
+);
+if (!checkoutSrc.includes("restaurantAllowsPayAtPickup")) {
+  fail("checkout must gate Pagar al recoger behind restaurantAllowsPayAtPickup");
+}
+if (!checkoutSrc.includes("payAtPickupAvailable")) {
+  fail("checkout must track payAtPickupAvailable state");
+}
+if (!checkoutSrc.includes("Mercado Pago")) {
+  fail("checkout must keep the Mercado Pago path");
+}
+if (!/mercadoPagoAvailable && !payAtPickupAvailable/.test(checkoutSrc)) {
+  fail("checkout must handle the neither-method-available case");
+}
+
+// ── Ordering availability: EITHER gate opens the ordering UI ─────────────────
+const webOrderingSrc = readFileSync(
+  join(root, "lib/ordering/WebOrderingContext.tsx"),
+  "utf8",
+);
+if (!webOrderingSrc.includes("restaurantSupportsWebCheckout")) {
+  fail("WebOrderingContext must use restaurantSupportsWebCheckout");
+}
+if (!webOrderingSrc.includes("restaurantAllowsPayAtPickup")) {
+  fail("WebOrderingContext must also open ordering for pay-at-pickup vendors");
+}
+
+// ── Menu: browse-only when no method is available ────────────────────────────
 const menuSrc = readFileSync(
   join(root, "app/menu/[restaurantId]/page.tsx"),
   "utf8",
 );
 const menuCardSrc = readFileSync(join(root, "components/menu/MenuItemCard.tsx"), "utf8");
-const menuRewardsCtaSrc = readFileSync(
-  join(root, "components/menu/MenuAppRewardsCta.tsx"),
-  "utf8",
-);
 const cartBarSrc = readFileSync(join(root, "components/cart/CartBar.tsx"), "utf8");
 const cartProviderSrc = readFileSync(join(root, "lib/cart/CartProvider.tsx"), "utf8");
-const webOrderingSrc = readFileSync(
-  join(root, "lib/ordering/WebOrderingContext.tsx"),
-  "utf8",
-);
 
-if (menuSrc.includes("Pagar al recoger")) {
-  fail("menu page must not show Pagar al recoger");
-}
-if (!menuSrc.includes("WebOrderingContext")) {
-  fail("menu must use WebOrderingContext for MP eligibility");
-}
 if (!menuSrc.includes("useWebOrdering")) {
   fail("menu page must use WebOrderingContext");
-}
-if (menuSrc.includes("Pedidos en tienda")) {
-  fail("menu must not show cash/in-store ordering banner");
-}
-if (menuSrc.includes("WEB_ORDERING_UNAVAILABLE")) {
-  fail("menu must not import unavailable checkout banner copy");
-}
-if (!menuSrc.includes("MenuAppRewardsCta")) {
-  fail("menu must include app download/rewards CTA component");
-}
-if (!menuSrc.includes('variant="banner"')) {
-  fail("menu must show app rewards banner when MP unavailable");
-}
-if (!menuRewardsCtaSrc.includes("trackWebMenuDownloadClick")) {
-  fail("MenuAppRewardsCta must wire trackWebMenuDownloadClick");
-}
-if (!cartBarSrc.includes("MenuAppRewardsCta")) {
-  fail("CartBar must include app rewards CTA alongside checkout");
 }
 if (!menuSrc.includes("orderingEnabled")) {
   fail("menu must pass orderingEnabled to MenuItemCard");
 }
 if (!menuCardSrc.includes("orderingEnabled")) {
-  fail("MenuItemCard must support orderingEnabled");
+  fail("MenuItemCard must support orderingEnabled (browse-only mode)");
 }
-if (menuCardSrc.includes("Pedidos disponibles directamente en tienda")) {
-  fail("MenuItemCard must not repeat per-item unavailable text");
-}
-if (menuSrc.includes("Consulta disponibilidad y precios en el restaurante")) {
-  fail("menu must not show long unavailable footer");
-}
-if (/disabled[\s\S]{0,120}Agregar/.test(menuCardSrc)) {
-  fail("MenuItemCard must not show disabled Agregar when ordering unavailable");
-}
-if (!/orderingEnabled \?[\s\S]*Agregar[\s\S]*: null/.test(menuCardSrc)) {
-  fail("MenuItemCard must omit Agregar when ordering unavailable");
+if (!/orderingEnabled \?[\s\S]{0,400}: null/.test(menuCardSrc) && !/!orderingEnabled \? null/.test(menuCardSrc)) {
+  fail("MenuItemCard must omit the Agregar control when ordering unavailable");
 }
 if (!cartBarSrc.includes("webOrderingAvailable")) {
-  fail("CartBar must hide checkout when MP unavailable");
+  fail("CartBar must hide checkout when ordering unavailable");
+}
+if (!cartProviderSrc.includes("webOrderingAvailable")) {
+  fail("CartProvider must gate the cart on webOrderingAvailable");
 }
 if (!cartProviderSrc.includes("cart_add_blocked_mp_unavailable")) {
-  fail("CartProvider must block addItem when MP unavailable");
-}
-if (!cartProviderSrc.includes("cart_cleared_mp_unavailable")) {
-  fail("CartProvider must clear cart when MP unavailable");
-}
-if (!webOrderingSrc.includes("restaurantSupportsWebCheckout")) {
-  fail("WebOrderingContext must use restaurantSupportsWebCheckout");
+  fail("CartProvider must log blocked addItem when ordering unavailable");
 }
 
 if (failed) process.exit(1);
-console.log("OK: web ordering Mercado Pago policy validated (menu + checkout)");
+console.log("OK: web ordering policy validated (MP + vendor-gated pay-at-pickup)");
