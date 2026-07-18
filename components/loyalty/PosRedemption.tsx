@@ -19,6 +19,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import {
   redeemableRewards,
+  timestampToMillis,
   type RewardTierOption,
 } from "@/lib/loyalty/rewardCatalog";
 import { validateRedemptionCode } from "@/lib/loyalty/redeemCode";
@@ -98,6 +99,7 @@ export function PosRedemption({
               restaurantData: rSnap.data() as Record<string, unknown> | undefined,
               points: pts,
               welcomeUnlocked: pc?.firstVisitRewardUnlocked === true,
+              welcomeUnlockedAtMs: timestampToMillis(pc?.createdAt),
             }),
           );
           if (name && onCustomerName) onCustomerName(name);

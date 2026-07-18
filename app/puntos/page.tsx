@@ -24,6 +24,10 @@ import {
 } from "firebase/firestore";
 import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
+import {
+  timestampToMillis,
+  welcomeStillClaimable,
+} from "@/lib/loyalty/rewardCatalog";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
 
@@ -167,7 +171,9 @@ export default function PuntosGlobalPage() {
           restaurantName: (data.restaurantName as string) ?? "Restaurante",
           points: Number(data.points) || 0,
           visits: Number(data.visits) || 0,
-          rewardUnlocked: data.firstVisitRewardUnlocked === true,
+          rewardUnlocked:
+            data.firstVisitRewardUnlocked === true &&
+            welcomeStillClaimable(timestampToMillis(data.createdAt)),
           logoUrl: null,
           unlockedTier: null,
           nextTier: null,

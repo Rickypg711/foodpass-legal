@@ -42,7 +42,7 @@ interface Customer {
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
-const FIRST_VISIT_CLAIM_DAYS = 7;
+import { FIRST_VISIT_CLAIM_DAYS } from "@/lib/loyalty/rewardCatalog";
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 

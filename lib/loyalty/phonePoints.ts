@@ -24,6 +24,10 @@ import {
   Timestamp,
   type Firestore,
 } from "firebase/firestore";
+import {
+  timestampToMillis,
+  welcomeStillClaimable,
+} from "@/lib/loyalty/rewardCatalog";
 
 const DEFAULT_MONTHLY_LIMIT = 50;
 
@@ -185,8 +189,12 @@ export async function creditPhonePointsForOrder(params: {
     const prev = (phoneSnap.data() ?? {}) as Record<string, unknown>;
 
     const balanceAfterEarn = (Number(prev.points) || 0) + points;
+    // Window enforced at apply time too: an expired welcome reward can't be
+    // redeemed even if a stale client still offers it.
     const welcomeApplied =
-      welcomeRequested && prev.firstVisitRewardUnlocked === true;
+      welcomeRequested &&
+      prev.firstVisitRewardUnlocked === true &&
+      welcomeStillClaimable(timestampToMillis(prev.createdAt));
     const redemptionApplied =
       welcomeApplied || (redemptionCost > 0 && balanceAfterEarn >= redemptionCost);
     const finalPoints =

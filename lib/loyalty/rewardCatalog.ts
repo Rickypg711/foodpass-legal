@@ -9,6 +9,29 @@
 
 export const FIRST_VISIT_TIER_ID = "first_visit";
 
+/** Days the welcome reward stays claimable after unlock (same rule as the app). */
+export const FIRST_VISIT_CLAIM_DAYS = 7;
+
+/**
+ * Is the welcome reward still inside its 7-day claim window?
+ * Unknown unlock date fails OPEN (claimable) — never punish missing data.
+ */
+export function welcomeStillClaimable(
+  unlockedAtMs: number | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!unlockedAtMs) return true;
+  return nowMs - unlockedAtMs <= FIRST_VISIT_CLAIM_DAYS * 86400000;
+}
+
+/** Firestore Timestamp | Date | undefined → epoch ms (null when absent). */
+export function timestampToMillis(ts: unknown): number | null {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts.getTime();
+  const maybe = ts as { toMillis?: () => number };
+  return typeof maybe.toMillis === "function" ? maybe.toMillis() : null;
+}
+
 export type RewardTierOption = {
   id: string;
   name: string;
@@ -58,16 +81,19 @@ export function parseFirstVisitReward(raw: unknown): RewardTierOption | null {
  * Everything THIS customer can redeem right now.
  * @param points   current balance (phoneCustomers doc)
  * @param welcomeUnlocked  phoneCustomers.firstVisitRewardUnlocked === true
+ * @param welcomeUnlockedAtMs  when the unlock happened (doc createdAt) — the
+ *   welcome reward is only offered inside its 7-day claim window.
  */
 export function redeemableRewards(params: {
   restaurantData: Record<string, unknown> | undefined;
   points: number;
   welcomeUnlocked: boolean;
+  welcomeUnlockedAtMs?: number | null;
 }): RewardTierOption[] {
-  const { restaurantData, points, welcomeUnlocked } = params;
+  const { restaurantData, points, welcomeUnlocked, welcomeUnlockedAtMs } = params;
   const out: RewardTierOption[] = [];
   const welcome = parseFirstVisitReward(restaurantData?.firstPurchaseReward);
-  if (welcome && welcomeUnlocked) out.push(welcome);
+  if (welcome && welcomeUnlocked && welcomeStillClaimable(welcomeUnlockedAtMs)) out.push(welcome);
   for (const t of parseRewardTiers(restaurantData?.rewardTiers)) {
     if (points >= t.points) out.push(t);
   }
