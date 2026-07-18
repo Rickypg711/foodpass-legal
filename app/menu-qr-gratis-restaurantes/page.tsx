@@ -167,13 +167,27 @@ export default function Page() {
           <h2 className="mt-10 text-2xl font-bold tracking-tight sm:text-3xl">
             ¿Cómo crear tu propio menú digital gratis?
           </h2>
-          <ol className="mt-4 space-y-3">
+          <ol className="mt-4 list-none space-y-3 p-0">
             {[
-              "Mándanos tu carta por WhatsApp — fotos, platillos y precios. No necesitas diseñar nada.",
-              "Recibe tu página en comeleal.com con tu menú digital listo y tu código QR para imprimir.",
-              "Pégalo en tus mesas: tus clientes escanean, piden en línea y juntan puntos con su número de teléfono.",
+              <>
+                <a
+                  href={PUBLIC_WHATSAPP_WA_ME_ACTIVATE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#25D366] underline underline-offset-4"
+                >
+                  Dale clic aquí y mándanos un mensaje por WhatsApp
+                </a>{" "}
+                — te guiamos paso a paso. Solo ten a la mano fotos, platillos y precios: no necesitas diseñar nada.
+              </>,
+              <>
+                En menos de 10 minutos te entregamos tu página en comeleal.com con tu menú digital funcionando y tu código QR listo para imprimir.
+              </>,
+              <>
+                Pégalo en tus mesas: tus clientes escanean, piden en línea y juntan puntos con su número de teléfono.
+              </>,
             ].map((step, i) => (
-              <li key={step} className="flex gap-3 rounded-2xl bg-[#FAF7F2] px-5 py-4">
+              <li key={i} className="flex gap-3 rounded-2xl bg-[#FAF7F2] px-5 py-4">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/10 text-[13px] font-black text-[#F28C38]">
                   {i + 1}
                 </span>
