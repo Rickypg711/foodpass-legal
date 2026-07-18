@@ -258,9 +258,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", minWidth: w }}
         >
-          {/* Brand → vendor Panel (never the marketing site — this is the
-              vendor's workplace; comeleal.com mid-shift is an escape hatch). */}
-          <Link href="/vendor" className="flex shrink-0 items-center gap-2.5">
+          {/* Brand = static identity (so vendors know it's us). Navigation to
+              the Panel lives on the restaurant name below — "my business" is
+              the thing you click to go home, not our logo. */}
+          <div className="flex shrink-0 items-center gap-2.5">
             <Image
               src="/comeleal-app-icon.png"
               alt="Comeleal"
@@ -274,7 +275,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 Comeleal
               </span>
             )}
-          </Link>
+          </div>
           {open && (
             <button
               onClick={() => setOpen(false)}
@@ -305,7 +306,11 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               style={{ color: "rgba(255,255,255,0.28)" }}>
               Restaurante
             </p>
-            <div className="flex items-center gap-2">
+            <Link
+              href="/vendor"
+              title="Ir al Panel"
+              className="-mx-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10"
+            >
               {restaurantLogo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -323,7 +328,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 </span>
               )}
               <p className="truncate text-[13px] font-semibold text-white">{restaurantName}</p>
-            </div>
+            </Link>
             {isLive && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5">
