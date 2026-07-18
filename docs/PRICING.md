@@ -1,4 +1,4 @@
-# Comeleal — Pricing canónico (v1, 18 jul 2026)
+# Comeleal — Pricing canónico (v1.1, 18 jul 2026)
 
 **Esta es la ley de qué es gratis y qué se cobra.** Cualquier feature nuevo se clasifica con esta regla ANTES de construirse. Si un cambio contradice este doc, se discute aquí primero.
 
@@ -57,6 +57,36 @@ El tope es el **trigger** de venta, no el valor de Pro. Reglas:
 2. Caja `/vendor/pos` — aviso al cobrar en tope
 3. Configuración `/vendor/configuracion` — sección Plan con Free vs Pro y botón de pago
 4. Público `/precios` (+ home) — "Gratis para operar. Pro $299 para que la máquina te regrese clientes." Los anuncios de Google aterrizan en páginas coherentes con esto.
+
+## Los 4 canales de mensajes — cuál cuesta y cuál se cobra
+
+La regla operativa: **si sale del teléfono del dueño, es gratis. Si lo manda la máquina por la API de Meta, nos cuesta — y lo que cuesta, se cobra.**
+
+| # | Canal | Cómo funciona | ¿Nos cuesta? | Free / Pro |
+|---|-------|--------------|--------------|------------|
+| 1 | **Botón de Clientes (manual + AI copiloto)** | En `/vendor/clientes` el AI redacta el mensaje; "Abrir WhatsApp" abre un link `wa.me` y el DUEÑO lo manda desde SU WhatsApp personal | **$0** (Meta no cobra; tokens de redacción son centavos) | **Gratis siempre** — nunca limitarlo |
+| 2 | **Winback automático** (`scheduledCustomerWhatsAppReEngagement`) | Cloud Function con horario; manda solo, sin humano, por la **API de WhatsApp Business** (graph.facebook.com) | **Sí** — Meta cobra por conversación business-initiated | Free = probadita (~10 msgs/mes) · Pro = ilimitado. **Candado pendiente de construir** |
+| 3 | **Push notifications** (FCM) | Automáticas a clientes con app (reward unlocked, expiry, at-risk) | ~$0 (FCM) | **Gratis siempre** |
+| 4 | **Campañas masivas** (WhatsApp Operator, construido jun 14, dormido) | El dueño dispara UNA promo a TODOS sus números capturados; la máquina la manda por la API de paga | **Sí** — por mensaje | **Producto aparte, por créditos** (ej. 100 msgs / $99). Activar en after-10-vendors, NO antes |
+
+Comeleal AI (chat del panel): tokens de Gemini cuestan → free = uso ligero, Pro = ilimitado. Candado pendiente.
+
+## Menú completo de monetización (roadmap)
+
+1. **Vivo hoy:** 3% comisión pagos digitales MP · Pro $299/mes (hoy su único candado real es el tope de 50 — ver pendientes).
+2. **Vendible YA sin código — el tiempo de Ricardo:** *Setup premium* (~$999–1,499 una vez): menú cargado con fotos, recompensas configuradas, equipo entrenado en la Caja, página en Google verificada, primera campaña de lealtad andando. El "te dejamos funcionando hoy" gratis sigue siendo el gancho básico; esto es el paquete completo.
+3. **After-10-vendors:** Campañas de WhatsApp por créditos (canal 4 — pipe ya construido, no rebuilddear).
+4. **Cuando haya datos de Search Console (meses):** "Tu página en Google" premium — el play Owner.com: landing propia, SEO local, Google Business, reseñas. Se vende con el reporte de tráfico en la mano ("200 personas te encontraron por Google este mes").
+5. **Nunca se cobra:** menú QR, Caja/POS, pedidos, CRM, reportes, Wallet passes, canal 1 (manual) y canal 3 (push).
+
+## Estado de los candados
+
+- [x] **Tope 50 visitas de lealtad** — vivo (web, cap honesto + avisos, 18 jul).
+- [x] **Comeleal AI chat: free 20 preguntas/mes, Pro ilimitado** — construido 18 jul en `FOODPASS/functions/brain_query_ai.js`. Contador mensual en `restaurants/{rid}/aiUsage/current`; al tope responde upsell amable (nunca error); solo quema cuota en respuestas reales; falla ABIERTO si el check truena. Límite movible por env `AI_QUERY_FREE_MONTHLY_LIMIT`. **Pendiente: deploy de la function.**
+- [ ] **Winback automático (~10 msgs/mes free)** — DIFERIDO a propósito: la API de WhatsApp de Meta NO está configurada aún (sin token el sender no manda nada). El candado se construye el mismo día que se conecte la API — no antes ni después.
+- El AI acotado que corre solo (brain diario, siguiente movimiento, reporte semanal, drafts de recompensas, importador de menú) se queda GRATIS: cuesta lo mismo lo use o no, y es el gancho del producto.
+- "Soporte directo" NO es perk de venta de Pro (débil). Pro se vende con 3 duras: lealtad ilimitada, winback ilimitado, AI ilimitado.
+- Futuro enterprise: winback desde el número PROPIO verificado del restaurante (trámite Meta por vendor — lo que Swirvle cobra $749–1,349/mes). Automatizar WhatsApp personal = ban de Meta, jamás.
 
 ## Don'ts
 
