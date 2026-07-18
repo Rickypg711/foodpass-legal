@@ -43,6 +43,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: `${SITE_URL}/inteligencia-artificial-para-restaurantes`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/tarjeta-de-lealtad-digital`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/programa-de-lealtad-para-restaurantes`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
     { url: `${SITE_URL}/descargar`, changeFrequency: "monthly", priority: 0.5 },
   ];
 
