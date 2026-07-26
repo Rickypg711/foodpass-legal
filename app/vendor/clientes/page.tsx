@@ -601,7 +601,7 @@ export default function ClientesPage() {
       const rdata = restSnap.data() ?? {};
       setRestaurantName((rdata.name as string | undefined) ?? "");
       setDiscountProfiles(parseDiscountProfiles(rdata.discountProfiles));
-      setDiscountsOn(discountsEnabled(rdata));
+      setDiscountsOn(discountsEnabled(rdata, rid));
       await loadCustomers(rid);
     }
     init().catch(() => setLoading(false));

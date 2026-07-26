@@ -113,8 +113,21 @@ export function computeDiscount(
   return { amount };
 }
 
+/** TEMP founder testing: estos restaurantes usan descuentos sin Pro.
+ * Solo Luzz Pizza (cuenta del fundador) para probar el flujo end-to-end.
+ * TODO: quitar antes de vender la feature como Pro-only. */
+const FOUNDER_TEST_RESTAURANT_IDS = ["kdjJsNwriU4AL4528a4d"];
+
+export function isFounderTestRestaurant(restaurantId: string | null | undefined): boolean {
+  return !!restaurantId && FOUNDER_TEST_RESTAURANT_IDS.includes(restaurantId);
+}
+
 /** Pro gate — same semantics as the loyalty unlimited check. */
-export function discountsEnabled(rdata: Record<string, unknown> | undefined): boolean {
+export function discountsEnabled(
+  rdata: Record<string, unknown> | undefined,
+  restaurantId?: string | null,
+): boolean {
+  if (isFounderTestRestaurant(restaurantId)) return true;
   if (!rdata) return false;
   if (rdata.subscriptionPlan !== "pro") return false;
   const status = rdata.subscriptionAccessStatus;

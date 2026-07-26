@@ -9,7 +9,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
-import { parseDiscountProfiles, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
+import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -660,7 +660,7 @@ export default function ConfiguracionPage() {
             {restaurantId && (
               <DiscountProfilesSection
                 restaurantId={restaurantId}
-                isPro={plan === "pro"}
+                isPro={plan === "pro" || isFounderTestRestaurant(restaurantId)}
                 profiles={discountProfiles}
                 onProfilesChange={setDiscountProfiles}
               />

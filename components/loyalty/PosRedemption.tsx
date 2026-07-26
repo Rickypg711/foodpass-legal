@@ -15,7 +15,7 @@
 // live balance re-check — same path as web checkout redemptions.
 
 import { useEffect, useRef, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import {
   redeemableRewards,
@@ -65,6 +65,11 @@ export function PosRedemption({
   const [rewards, setRewards] = useState<RewardTierOption[]>([]);
   const [known, setKnown] = useState(false);
   const [discount, setDiscount] = useState<DiscountProfile | null>(null);
+  /** Perfiles disponibles (Pro) — habilita el quick-assign desde la caja. */
+  const [profiles, setProfiles] = useState<DiscountProfile[]>([]);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignBusy, setAssignBusy] = useState(false);
+  const [assignErr, setAssignErr] = useState(false);
   const [picked, setPicked] = useState<RewardTierOption | null>(null);
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<"idle" | "checking" | "ok" | "bad">(
@@ -80,6 +85,9 @@ export function PosRedemption({
       setPicked(null);
       setKnown(false);
       setDiscount(null);
+      setProfiles([]);
+      setAssignOpen(false);
+      setAssignErr(false);
       onDiscount?.(null);
       onSelect(null);
       return;
@@ -116,14 +124,18 @@ export function PosRedemption({
           if (name && onCustomerName) onCustomerName(name);
           // Special discount (Pro): owner-assigned profile on this number.
           const rdata = rSnap.data() as Record<string, unknown> | undefined;
+          const enabled = !!rdata && discountsEnabled(rdata, restaurantId);
+          const allProfiles = enabled
+            ? parseDiscountProfiles(rdata?.discountProfiles)
+            : [];
+          setProfiles(allProfiles);
+          setAssignOpen(false);
+          setAssignErr(false);
           let prof: DiscountProfile | null = null;
-          if (rdata && discountsEnabled(rdata)) {
+          if (enabled) {
             const pid = pc?.discountProfileId;
             if (typeof pid === "string" && pid) {
-              prof =
-                parseDiscountProfiles(rdata.discountProfiles).find(
-                  (d) => d.id === pid,
-                ) ?? null;
+              prof = allProfiles.find((d) => d.id === pid) ?? null;
             }
           }
           setDiscount(prof);
@@ -185,6 +197,34 @@ export function PosRedemption({
     });
   }
 
+  /** Quick-assign desde la caja (Pro, dueño): guarda el perfil en
+   * phoneCustomers/{phone10} (setDoc merge crea el doc si el número es nuevo —
+   * el motor de puntos hace merge, no pisa nada) y lo aplica a ESTA venta. */
+  async function assignProfile(p: DiscountProfile) {
+    setAssignBusy(true);
+    setAssignErr(false);
+    try {
+      await setDoc(
+        doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
+        {
+          phone: phone10,
+          restaurantId,
+          discountProfileId: p.id,
+          discountProfileName: p.name,
+        },
+        { merge: true },
+      );
+      setDiscount(p);
+      onDiscount?.(p);
+      setAssignOpen(false);
+    } catch (e) {
+      console.error("[posRedemption/assignDiscount]", e);
+      setAssignErr(true);
+    } finally {
+      setAssignBusy(false);
+    }
+  }
+
   if (!active) return null;
 
   return (
@@ -196,6 +236,62 @@ export function PosRedemption({
         <p className="mb-2 text-[12px] font-bold" style={{ color: "#b45309" }}>
           🏷️ Descuento {discount.name} activo — se aplica solo al cobrar
         </p>
+      ) : !loading && profiles.length > 0 ? (
+        <div className="mb-2">
+          {!assignOpen ? (
+            <button
+              type="button"
+              onClick={() => setAssignOpen(true)}
+              className="text-[11px] font-bold underline underline-offset-2"
+              style={{ color: "#b45309" }}
+            >
+              🏷️ ¿Staff o familia? Asignar descuento a este número
+            </button>
+          ) : (
+            <div
+              className="space-y-1.5 rounded-xl p-2.5"
+              style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(154,52,18,0.6)" }}>
+                Asignar descuento (queda guardado para siempre)
+              </p>
+              {profiles.map((dp) => (
+                <button
+                  key={dp.id}
+                  type="button"
+                  disabled={assignBusy}
+                  onClick={() => assignProfile(dp)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition hover:opacity-80 disabled:opacity-60"
+                  style={{ background: "#fff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+                >
+                  <span>🏷️ {dp.name}</span>
+                  <span style={{ opacity: 0.6 }}>
+                    {dp.type === "total"
+                      ? `${dp.totalPct ?? 0}% total`
+                      : `${dp.bebidasPct ?? 0}% beb · ${dp.alimentosPct ?? 0}% alim`}
+                  </span>
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={assignBusy}
+                onClick={() => setAssignOpen(false)}
+                className="w-full rounded-lg px-3 py-1.5 text-[11px] font-semibold"
+                style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+              >
+                Cancelar
+              </button>
+              {assignBusy ? (
+                <p className="text-center text-[10px]" style={{ color: "rgba(28,37,38,0.4)" }}>Guardando…</p>
+              ) : null}
+              {assignErr ? (
+                <p className="text-center text-[10px] font-semibold" style={{ color: "#dc2626" }}>
+                  Error al guardar, intenta de nuevo
+                </p>
+              ) : null}
+            </div>
+          )}
+        </div>
       ) : null}
       {loading ? (
         <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>

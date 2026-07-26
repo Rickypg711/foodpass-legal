@@ -196,8 +196,12 @@ export async function creditPhonePointsForOrder(params: {
 
     const phoneRef = doc(db, "restaurants", restaurantId, "phoneCustomers", phone);
     const phoneSnap = await tx.get(phoneRef);
-    const firstVisit = !phoneSnap.exists();
     const prev = (phoneSnap.data() ?? {}) as Record<string, unknown>;
+    // "Primera visita" = sin compras confirmadas, no solo doc-inexistente:
+    // el quick-assign de descuentos en la caja pre-crea el doc (solo
+    // discountProfileId) antes de la primera compra — eso NO debe robarle
+    // el premio de bienvenida ni el createdAt (ancla de la ventana de 7 días).
+    const firstVisit = !phoneSnap.exists() || !(Number(prev.visits) > 0);
 
     const balanceAfterEarn = (Number(prev.points) || 0) + points;
     // Window enforced at apply time too: an expired welcome reward can't be
