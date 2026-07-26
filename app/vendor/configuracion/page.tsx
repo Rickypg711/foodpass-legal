@@ -9,6 +9,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
+import { parseDiscountProfiles, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -45,6 +46,8 @@ export default function ConfiguracionPage() {
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
    * "setup" and web Mercado Pago pauses. Surface it — never fail silently. */
   const [setupReasons, setSetupReasons] = useState<string[]>([]);
+  /** Descuentos especiales (Pro) — perfiles que el POS aplica por cliente. */
+  const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
 
   // Images state
   const [logoUrl, setLogoUrl] = useState("");
@@ -76,6 +79,7 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
+      setDiscountProfiles(parseDiscountProfiles(data.discountProfiles));
       if (data.isSetupComplete === false) {
         setSetupReasons((data.setupIncompleteReasons as string[]) ?? []);
       }
@@ -652,6 +656,16 @@ export default function ConfiguracionPage() {
               </p>
             </SectionCard>
 
+            {/* ── Descuentos especiales (Pro) ── */}
+            {restaurantId && (
+              <DiscountProfilesSection
+                restaurantId={restaurantId}
+                isPro={plan === "pro"}
+                profiles={discountProfiles}
+                onProfilesChange={setDiscountProfiles}
+              />
+            )}
+
             {/* ── Configuración incompleta → pagos en línea pausados ── */}
             {setupReasons.length > 0 && (() => {
               const pending = stepGroupFromReasons(setupReasons);
@@ -796,6 +810,364 @@ function ManageLink({
     return <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>;
   }
   return <Link href={href}>{inner}</Link>;
+}
+
+// ─── Descuentos especiales (Pro) ──────────────────────────────────────────────
+// Perfiles de descuento (Staff, Family & Friends…) que el dueño crea aquí y
+// asigna por cliente en Clientes. El POS los aplica automáticamente al cobrar.
+// Los puntos y comisiones se calculan SIEMPRE sobre lo realmente pagado
+// (neto) — nadie puede "cultivar" recompensas con descuentos.
+
+function DiscountProfilesSection({
+  restaurantId,
+  isPro,
+  profiles,
+  onProfilesChange,
+}: {
+  restaurantId: string;
+  isPro: boolean;
+  profiles: DiscountProfile[];
+  onProfilesChange: (p: DiscountProfile[]) => void;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [fName, setFName] = useState("");
+  const [fType, setFType] = useState<"per_category" | "total">("total");
+  const [fBebidas, setFBebidas] = useState<number | "">("");
+  const [fAlimentos, setFAlimentos] = useState<number | "">("");
+  const [fTotal, setFTotal] = useState<number | "">("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const clamp = (v: number | "") => Math.min(100, Math.max(0, Number(v || 0)));
+  const highPct =
+    fType === "total"
+      ? clamp(fTotal) > 50
+      : clamp(fBebidas) > 50 || clamp(fAlimentos) > 50;
+
+  function openNew(seed?: {
+    name: string;
+    type: "per_category" | "total";
+    bebidasPct?: number;
+    alimentosPct?: number;
+    totalPct?: number;
+  }) {
+    setEditingId("new");
+    setFName(seed?.name ?? "");
+    setFType(seed?.type ?? "total");
+    setFBebidas(seed?.bebidasPct ?? "");
+    setFAlimentos(seed?.alimentosPct ?? "");
+    setFTotal(seed?.totalPct ?? "");
+    setErr(null);
+  }
+
+  function openEdit(p: DiscountProfile) {
+    setEditingId(p.id);
+    setFName(p.name);
+    setFType(p.type);
+    setFBebidas(p.bebidasPct || "");
+    setFAlimentos(p.alimentosPct || "");
+    setFTotal(p.totalPct || "");
+    setErr(null);
+  }
+
+  async function persist(next: DiscountProfile[]) {
+    const db = getFirebaseDb();
+    await updateDoc(doc(db, "restaurants", restaurantId), {
+      discountProfiles: next,
+      lastUpdated: serverTimestamp(),
+    });
+    onProfilesChange(next);
+  }
+
+  async function handleSaveProfile() {
+    const name = fName.trim();
+    if (!name) { setErr("Ponle un nombre (ej. Staff)."); return; }
+    if (fType === "total" && clamp(fTotal) === 0) {
+      setErr("El porcentaje debe ser mayor a 0."); return;
+    }
+    if (fType === "per_category" && clamp(fBebidas) === 0 && clamp(fAlimentos) === 0) {
+      setErr("Pon al menos un porcentaje mayor a 0."); return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      const id =
+        editingId && editingId !== "new"
+          ? editingId
+          : `dp_${Date.now().toString(36)}${Math.floor(Math.random() * 46656).toString(36)}`;
+      const profile: DiscountProfile =
+        fType === "total"
+          ? { id, name, type: "total", totalPct: clamp(fTotal) }
+          : { id, name, type: "per_category", bebidasPct: clamp(fBebidas), alimentosPct: clamp(fAlimentos) };
+      const next =
+        editingId === "new"
+          ? [...profiles, profile]
+          : profiles.map((p) => (p.id === id ? profile : p));
+      await persist(next);
+      setEditingId(null);
+    } catch (e) {
+      console.error("[discountProfiles/save]", e);
+      setErr("No pudimos guardar. Intenta de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteProfile(id: string) {
+    setBusy(true);
+    setErr(null);
+    try {
+      await persist(profiles.filter((p) => p.id !== id));
+      setConfirmDeleteId(null);
+      if (editingId === id) setEditingId(null);
+    } catch (e) {
+      console.error("[discountProfiles/delete]", e);
+      setErr("No pudimos eliminar. Intenta de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function pctLabel(p: DiscountProfile): string {
+    return p.type === "total"
+      ? `${p.totalPct ?? 0}% en toda la cuenta`
+      : `${p.bebidasPct ?? 0}% bebidas · ${p.alimentosPct ?? 0}% alimentos`;
+  }
+
+  if (!isPro) {
+    return (
+      <SectionCard label="Descuentos especiales 🏷️">
+        <div
+          className="rounded-xl p-3.5"
+          style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
+        >
+          <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
+            ⭐ Incluido en Pro
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.55)" }}>
+            Crea descuentos para tu staff o familia (ej. 50% en bebidas) y asígnalos
+            por cliente. El POS los aplica solo al cobrar, automáticamente.
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard label="Descuentos especiales 🏷️">
+      <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+        Crea perfiles (Staff, Familia…) y asígnalos por cliente en{" "}
+        <Link href="/vendor/clientes" className="font-semibold underline" style={{ color: "#F28C38" }}>
+          Clientes
+        </Link>
+        . El POS los aplica automáticamente al cobrar; los puntos se calculan
+        sobre lo realmente pagado.
+      </p>
+
+      {profiles.length === 0 && editingId === null && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+            Empieza con una plantilla:
+          </p>
+          <button
+            type="button"
+            onClick={() => openNew({ name: "Staff", type: "per_category", bebidasPct: 50, alimentosPct: 30 })}
+            className="w-full rounded-xl px-3.5 py-3 text-left text-[12px] font-semibold transition hover:opacity-80"
+            style={{ background: "#F5F3EF", border: "1px dashed rgba(28,37,38,0.2)", color: "#1C2526" }}
+          >
+            ⚡ Staff — 50% bebidas · 30% alimentos
+          </button>
+          <button
+            type="button"
+            onClick={() => openNew({ name: "Family & Friends", type: "total", totalPct: 15 })}
+            className="w-full rounded-xl px-3.5 py-3 text-left text-[12px] font-semibold transition hover:opacity-80"
+            style={{ background: "#F5F3EF", border: "1px dashed rgba(28,37,38,0.2)", color: "#1C2526" }}
+          >
+            ⚡ Family &amp; Friends — 15% en toda la cuenta
+          </button>
+        </div>
+      )}
+
+      {profiles.map((p) => (
+        <div
+          key={p.id}
+          className="flex items-center gap-3 rounded-xl px-3.5 py-3"
+          style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+        >
+          <span className="text-base">🏷️</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>{p.name}</p>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>{pctLabel(p)}</p>
+          </div>
+          {confirmDeleteId === p.id ? (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => handleDeleteProfile(p.id)}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                style={{ background: "#EF4444" }}
+              >
+                Sí, eliminar
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
+                style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.6)" }}
+              >
+                No
+              </button>
+            </div>
+          ) : (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => openEdit(p)}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(p.id)}
+                aria-label={`Eliminar ${p.name}`}
+                className="rounded-lg px-2 py-1.5 text-[12px]"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)" }}
+              >
+                🗑️
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {err && editingId === null && (
+        <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+      )}
+
+      {editingId !== null ? (
+        <div
+          className="space-y-3 rounded-xl p-3.5"
+          style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(154,52,18,0.6)" }}>
+            {editingId === "new" ? "Nuevo descuento" : "Editar descuento"}
+          </p>
+          <Field label="Nombre">
+            <TextInput value={fName} onChange={(v) => setFName(v)} placeholder="Ej. Staff, Familia" />
+          </Field>
+          <Field label="Tipo de descuento">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFType("total")}
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
+                style={
+                  fType === "total"
+                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
+                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                }
+              >
+                % en toda la cuenta
+              </button>
+              <button
+                type="button"
+                onClick={() => setFType("per_category")}
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
+                style={
+                  fType === "per_category"
+                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
+                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                }
+              >
+                Por categoría
+              </button>
+            </div>
+          </Field>
+          {fType === "total" ? (
+            <PctInput label="Descuento en toda la cuenta" value={fTotal} onChange={setFTotal} />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <PctInput label="🥤 Bebidas" value={fBebidas} onChange={setFBebidas} />
+              <PctInput label="🍽️ Alimentos" value={fAlimentos} onChange={setFAlimentos} />
+            </div>
+          )}
+          {highPct && (
+            <p
+              className="rounded-lg px-3 py-2 text-[11px] font-semibold"
+              style={{ background: "rgba(234,88,12,0.1)", color: "#9A3412" }}
+            >
+              ⚠️ Más de 50% de descuento — asegúrate de que sea intencional.
+            </p>
+          )}
+          {err && (
+            <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleSaveProfile}
+              disabled={busy}
+              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+              style={{ background: "#F28C38" }}
+            >
+              {busy ? "Guardando…" : "Guardar descuento"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEditingId(null); setErr(null); }}
+              disabled={busy}
+              className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
+              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "rgba(28,37,38,0.6)" }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => openNew()}
+          className="w-full rounded-xl px-3.5 py-3 text-[12px] font-bold transition hover:opacity-80"
+          style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
+        >
+          + Nuevo descuento
+        </button>
+      )}
+    </SectionCard>
+  );
+}
+
+function PctInput({
+  label, value, onChange,
+}: {
+  label: string;
+  value: number | "";
+  onChange: (v: number | "") => void;
+}) {
+  return (
+    <Field label={label}>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={5}
+          value={value}
+          placeholder="0"
+          onChange={(e) =>
+            onChange(e.target.value === "" ? "" : Math.min(100, Math.max(0, Number(e.target.value))))
+          }
+          className="w-24 rounded-xl px-3 py-2.5 text-[13px] outline-none"
+          style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+        />
+        <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>%</span>
+      </div>
+    </Field>
+  );
 }
 
 function Spinner() {

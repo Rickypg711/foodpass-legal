@@ -13,10 +13,16 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  deleteField,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import {
+  parseDiscountProfiles,
+  discountsEnabled,
+  type DiscountProfile,
+} from "@/lib/loyalty/discountProfiles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +45,11 @@ interface Customer {
   rewardDaysLeft?: number;
   /** Cancelled unpaid pay-at-pickup orders — repeat offenders flagged. */
   noShowCount?: number;
+  /** Descuentos especiales (Pro): perfil asignado en phoneCustomers/{phone10}. */
+  discountProfileId?: string | null;
+  discountProfileName?: string | null;
+  /** App user whose phone has a phoneCustomers doc — assignable target. */
+  hasPhoneDoc?: boolean;
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
@@ -109,15 +120,54 @@ function CustomerCard({
   restaurantId,
   restaurantName,
   isActuaHoy = false,
+  discountProfiles = [],
+  discountsOn = false,
+  onDiscountChange,
 }: {
   customer: Customer;
   restaurantId: string;
   restaurantName: string;
   isActuaHoy?: boolean;
+  /** Descuentos especiales (Pro): perfiles disponibles para asignar. */
+  discountProfiles?: DiscountProfile[];
+  discountsOn?: boolean;
+  onDiscountChange?: (userId: string, profile: DiscountProfile | null) => void;
 }) {
   const [msgLoading, setMsgLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgError, setMsgError] = useState(false);
+  const [discOpen, setDiscOpen] = useState(false);
+  const [discBusy, setDiscBusy] = useState(false);
+  const [discError, setDiscError] = useState(false);
+
+  /** Descuentos especiales: escribe la asignación en phoneCustomers/{phone10}
+   * — el mismo doc que el POS lee al cobrar (web y app comparten esquema). */
+  const discPhone10 = (customer.phone ?? "").replace(/\D/g, "").slice(-10);
+  const canAssignDiscount =
+    discountsOn &&
+    discountProfiles.length > 0 &&
+    discPhone10.length === 10 &&
+    (customer.isPhoneOnly === true || customer.hasPhoneDoc === true);
+
+  async function assignDiscount(p: DiscountProfile | null) {
+    setDiscBusy(true);
+    setDiscError(false);
+    try {
+      await updateDoc(
+        doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", discPhone10),
+        p
+          ? { discountProfileId: p.id, discountProfileName: p.name }
+          : { discountProfileId: deleteField(), discountProfileName: deleteField() },
+      );
+      onDiscountChange?.(customer.userId, p);
+      setDiscOpen(false);
+    } catch (e) {
+      console.error("[clientes/assignDiscount]", e);
+      setDiscError(true);
+    } finally {
+      setDiscBusy(false);
+    }
+  }
 
   /** Marks the winback tap on the phoneCustomer doc (closes the measure leg
    * of the loop — AI_NATIVE_CLOSED_LOOPS §3.1). Fire-and-forget. */
@@ -236,6 +286,13 @@ function CustomerCard({
                 ⚠️ {customer.noShowCount} no-shows
               </span>
             )}
+            {customer.discountProfileName && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
+                title="Descuento especial — el POS lo aplica al cobrar">
+                🏷️ {customer.discountProfileName}
+              </span>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
             <span>{customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""}</span>
@@ -279,6 +336,88 @@ function CustomerCard({
         )}
       </div>
 
+      {/* ── Descuento especial (Pro, solo dueño) ── */}
+      {canAssignDiscount && (
+        <div className="mt-2">
+          {!discOpen ? (
+            <button
+              type="button"
+              onClick={() => setDiscOpen(true)}
+              className="w-full rounded-xl py-2 text-[11px] font-bold transition hover:opacity-80"
+              style={{
+                background: "rgba(242,140,56,0.08)",
+                border: "1px dashed rgba(242,140,56,0.4)",
+                color: "#F28C38",
+              }}
+            >
+              {customer.discountProfileName
+                ? `🏷️ ${customer.discountProfileName} — cambiar o quitar`
+                : "🏷️ Asignar descuento especial"}
+            </button>
+          ) : (
+            <div
+              className="space-y-1.5 rounded-xl p-2.5"
+              style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+            >
+              {discountProfiles.map((dp) => {
+                const active = customer.discountProfileId === dp.id;
+                const pcts =
+                  dp.type === "total"
+                    ? `${dp.totalPct ?? 0}% en toda la cuenta`
+                    : `${dp.bebidasPct ?? 0}% bebidas · ${dp.alimentosPct ?? 0}% alimentos`;
+                return (
+                  <button
+                    key={dp.id}
+                    type="button"
+                    disabled={discBusy || active}
+                    onClick={() => assignDiscount(dp)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition hover:opacity-80 disabled:opacity-60"
+                    style={
+                      active
+                        ? { background: "#F28C38", color: "#ffffff" }
+                        : { background: "#ffffff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }
+                    }
+                  >
+                    <span>🏷️ {dp.name}</span>
+                    <span style={{ opacity: 0.7 }}>{active ? "✓ asignado" : pcts}</span>
+                  </button>
+                );
+              })}
+              <div className="flex gap-1.5 pt-0.5">
+                {customer.discountProfileId && (
+                  <button
+                    type="button"
+                    disabled={discBusy}
+                    onClick={() => assignDiscount(null)}
+                    className="flex-1 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-60"
+                    style={{ background: "rgba(239,68,68,0.1)", color: "#dc2626" }}
+                  >
+                    Quitar descuento
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={discBusy}
+                  onClick={() => setDiscOpen(false)}
+                  className="flex-1 rounded-lg px-3 py-2 text-[11px] font-semibold"
+                  style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+                >
+                  Cerrar
+                </button>
+              </div>
+              {discBusy && (
+                <p className="text-center text-[10px]" style={{ color: "rgba(28,37,38,0.4)" }}>Guardando…</p>
+              )}
+              {discError && (
+                <p className="text-center text-[10px] font-semibold" style={{ color: "#dc2626" }}>
+                  Error al guardar, intenta de nuevo
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
@@ -295,6 +434,9 @@ export default function ClientesPage() {
   const [winbackReturned, setWinbackReturned] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
   const [search, setSearch] = useState("");
+  /** Descuentos especiales (Pro) — perfiles creados en Configuración. */
+  const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
+  const [discountsOn, setDiscountsOn] = useState(false);
 
   const loadCustomers = useCallback(async (rid: string) => {
     const db = getFirebaseDb();
@@ -366,10 +508,25 @@ export default function ClientesPage() {
           .map((c) => (c.phone ?? "").replace(/\D/g, "").slice(-10))
           .filter((p) => p.length === 10)
       );
+      // phone10 → app customer, so deduped rows still surface their wallet's
+      // discount profile (assignment lives on phoneCustomers/{phone10}).
+      const byPhone = new Map<string, Customer>();
+      result.forEach((c) => {
+        const p10 = (c.phone ?? "").replace(/\D/g, "").slice(-10);
+        if (p10.length === 10) byPhone.set(p10, c);
+      });
       phoneSnap.docs.forEach((d) => {
         const phone10 = d.id;
-        if (appPhones.has(phone10)) return;
         const data = d.data();
+        if (appPhones.has(phone10)) {
+          const appC = byPhone.get(phone10);
+          if (appC) {
+            appC.hasPhoneDoc = true;
+            appC.discountProfileId = (data.discountProfileId as string) ?? null;
+            appC.discountProfileName = (data.discountProfileName as string) ?? null;
+          }
+          return;
+        }
         const lastVisit = (data.lastVisitAt as Timestamp) ?? null;
         const daysSince = lastVisit
           ? Math.floor((now - lastVisit.toMillis()) / 86400000)
@@ -403,6 +560,9 @@ export default function ClientesPage() {
           rewardUnlocked,
           rewardDaysLeft: rewardUnlocked ? rewardDaysLeft : undefined,
           noShowCount: (data.noShowCount as number) ?? 0,
+          discountProfileId: (data.discountProfileId as string) ?? null,
+          discountProfileName: (data.discountProfileName as string) ?? null,
+          hasPhoneDoc: true,
         });
       });
     } catch {
@@ -438,11 +598,29 @@ export default function ClientesPage() {
       setWinbackSent(typeof stats.totalSent === "number" ? stats.totalSent : 0);
       setWinbackReturned(typeof stats.returned === "number" ? stats.returned : 0);
       setRestaurantId(rid);
-      setRestaurantName((restSnap.data()?.name as string | undefined) ?? "");
+      const rdata = restSnap.data() ?? {};
+      setRestaurantName((rdata.name as string | undefined) ?? "");
+      setDiscountProfiles(parseDiscountProfiles(rdata.discountProfiles));
+      setDiscountsOn(discountsEnabled(rdata));
       await loadCustomers(rid);
     }
     init().catch(() => setLoading(false));
   }, [router, loadCustomers]);
+
+  /** Sincroniza la lista tras asignar/quitar un descuento en un card. */
+  function handleDiscountChange(userId: string, profile: DiscountProfile | null) {
+    setCustomers((prev) =>
+      prev.map((c) =>
+        c.userId === userId
+          ? {
+              ...c,
+              discountProfileId: profile?.id ?? null,
+              discountProfileName: profile?.name ?? null,
+            }
+          : c,
+      ),
+    );
+  }
 
   // Derived
   const actuaHoy = customers.filter(
@@ -563,6 +741,9 @@ export default function ClientesPage() {
                       restaurantId={restaurantId!}
                       restaurantName={restaurantName}
                       isActuaHoy
+                      discountProfiles={discountProfiles}
+                      discountsOn={discountsOn}
+                      onDiscountChange={handleDiscountChange}
                     />
                   ))}
                 </div>
@@ -629,6 +810,9 @@ export default function ClientesPage() {
                     customer={c}
                     restaurantId={restaurantId!}
                     restaurantName={restaurantName}
+                    discountProfiles={discountProfiles}
+                    discountsOn={discountsOn}
+                    onDiscountChange={handleDiscountChange}
                   />
                 ))}
               </div>
