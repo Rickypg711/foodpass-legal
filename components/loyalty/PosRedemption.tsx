@@ -23,6 +23,11 @@ import {
   type RewardTierOption,
 } from "@/lib/loyalty/rewardCatalog";
 import { validateRedemptionCode } from "@/lib/loyalty/redeemCode";
+import {
+  parseDiscountProfiles,
+  discountsEnabled,
+  type DiscountProfile,
+} from "@/lib/loyalty/discountProfiles";
 
 export type PosRedemptionSelection = {
   tierId: string;
@@ -42,12 +47,15 @@ export function PosRedemption({
   phoneDigits,
   onSelect,
   onCustomerName,
+  onDiscount,
 }: {
   restaurantId: string;
   phoneDigits: string;
   onSelect: (sel: PosRedemptionSelection | null) => void;
   /** Name on file for this phone — autofill the ticket name. */
   onCustomerName?: (name: string) => void;
+  /** Special discount profile assigned to this number (Pro) — null when none. */
+  onDiscount?: (profile: DiscountProfile | null) => void;
 }) {
   const phone10 = last10(phoneDigits);
   const active = phone10.length === 10;
@@ -56,6 +64,7 @@ export function PosRedemption({
   const [points, setPoints] = useState(0);
   const [rewards, setRewards] = useState<RewardTierOption[]>([]);
   const [known, setKnown] = useState(false);
+  const [discount, setDiscount] = useState<DiscountProfile | null>(null);
   const [picked, setPicked] = useState<RewardTierOption | null>(null);
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<"idle" | "checking" | "ok" | "bad">(
@@ -70,6 +79,8 @@ export function PosRedemption({
       setRewards([]);
       setPicked(null);
       setKnown(false);
+      setDiscount(null);
+      onDiscount?.(null);
       onSelect(null);
       return;
     }
@@ -103,6 +114,20 @@ export function PosRedemption({
             }),
           );
           if (name && onCustomerName) onCustomerName(name);
+          // Special discount (Pro): owner-assigned profile on this number.
+          const rdata = rSnap.data() as Record<string, unknown> | undefined;
+          let prof: DiscountProfile | null = null;
+          if (rdata && discountsEnabled(rdata)) {
+            const pid = pc?.discountProfileId;
+            if (typeof pid === "string" && pid) {
+              prof =
+                parseDiscountProfiles(rdata.discountProfiles).find(
+                  (d) => d.id === pid,
+                ) ?? null;
+            }
+          }
+          setDiscount(prof);
+          onDiscount?.(prof);
         } catch {
           // lookup is best-effort — earning still works without it
         } finally {
@@ -167,6 +192,11 @@ export function PosRedemption({
       className="rounded-2xl p-4"
       style={{ background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)" }}
     >
+      {discount ? (
+        <p className="mb-2 text-[12px] font-bold" style={{ color: "#b45309" }}>
+          🏷️ Descuento {discount.name} activo — se aplica solo al cobrar
+        </p>
+      ) : null}
       {loading ? (
         <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
           Buscando puntos de este número…

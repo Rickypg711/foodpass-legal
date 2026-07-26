@@ -21,6 +21,10 @@ import {
   PosRedemption,
   type PosRedemptionSelection,
 } from "@/components/loyalty/PosRedemption";
+import {
+  computeDiscount,
+  type DiscountProfile,
+} from "@/lib/loyalty/discountProfiles";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -179,10 +183,12 @@ function CheckoutDialog({
   total,
   restaurantId,
   onClose,
+  cartLines,
   onConfirm,
   processing,
 }: {
   total: number;
+  cartLines: { price: number; quantity: number; categoryName?: string }[];
   restaurantId: string;
   onClose: () => void;
   onConfirm: (
@@ -192,6 +198,7 @@ function CheckoutDialog({
     phone: string,
     notes: string,
     redemption: PosRedemptionSelection | null,
+    discount: DiscountProfile | null,
   ) => void;
   processing: boolean;
 }) {
@@ -201,12 +208,19 @@ function CheckoutDialog({
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [redemption, setRedemption] = useState<PosRedemptionSelection | null>(null);
+  const [discountProfile, setDiscountProfile] = useState<DiscountProfile | null>(null);
   const [showNote, setShowNote] = useState(false);
 
   // No cart total = pure reward redemption ("Canjear premio sin venta").
   // There's nothing to charge, so we hide the payment flow and speak "canje",
   // not "cobro".
   const isRedeemOnly = total <= 0;
+
+  // Special discount (Pro): owner-assigned profile detected by phone lookup.
+  // Same computeDiscount the order will use — display and charge can't drift.
+  const discountRes =
+    discountProfile && total > 0 ? computeDiscount(cartLines, discountProfile) : null;
+  const effTotal = Math.max(0, total - (discountRes?.amount ?? 0));
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
@@ -219,7 +233,7 @@ function CheckoutDialog({
         <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
           <div>
             <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>{isRedeemOnly ? "Canjear premio" : "Cobrar"}</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : `Total: ${fmt(total)}`}</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : (discountRes && discountRes.amount > 0 ? `Total: ${fmt(effTotal)} · 🏷️ desc. ${fmt(discountRes.amount)}` : `Total: ${fmt(total)}`)}</p>
           </div>
           <button
             onClick={onClose}
@@ -319,6 +333,7 @@ function CheckoutDialog({
               phoneDigits={phone}
               onSelect={setRedemption}
               onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
+              onDiscount={setDiscountProfile}
             />
             <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
@@ -369,7 +384,7 @@ function CheckoutDialog({
             </p>
           ) : null}
           <button
-            onClick={() => onConfirm(mode, method, name, phone, notes, redemption)}
+            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile)}
             disabled={
               processing ||
               (mode === "tab" && !name.trim()) ||
@@ -386,9 +401,9 @@ function CheckoutDialog({
             ) : mode === "now" ? (
               isRedeemOnly
                 ? (redemption ? "Entregar premio ✓" : "Elige un premio para canjear ↑")
-                : `Cobrar ${fmt(total)}`
+                : `Cobrar ${fmt(effTotal)}`
             ) : (
-              `Abrir cuenta — ${fmt(total)}`
+              `Abrir cuenta — ${fmt(effTotal)}`
             )}
           </button>
         </div>
@@ -721,6 +736,7 @@ export default function PosPage() {
     customerPhone: string,
     notes: string,
     redemption: PosRedemptionSelection | null = null,
+    discount: DiscountProfile | null = null,
   ) {
     if (!restaurantId || !uid) return;
     const phoneDigits = customerPhone.replace(/\D/g, "");
@@ -751,12 +767,29 @@ export default function PosPage() {
         });
       }
 
+      // Special discount (Pro): recomputed here with the same function the
+      // dialog displayed — order total is saved NET so points/commission math
+      // downstream needs no changes and can't be farmed.
+      const discountRes =
+        discount && subtotal > 0
+          ? computeDiscount(
+              cart.map((c) => ({
+                price: c.menuItem.price,
+                quantity: c.quantity,
+                categoryName: c.menuItem.category,
+              })),
+              discount,
+            )
+          : null;
+      const discountAmount = discountRes?.amount ?? 0;
+      const netTotal = Math.max(0, subtotal - discountAmount);
+
       const orderData: Record<string, unknown> = {
         restaurantId,
         restaurantName,
         items,
         subtotal,
-        total: subtotal,
+        total: netTotal,
         orderType: "in_store",
         orderSource: "pos",
         status: "pending",
@@ -778,6 +811,15 @@ export default function PosPage() {
         // Owner audit trail: was the código de canje validated?
         orderData.redemptionVerified = effectiveRedemption.verified;
         orderData.redemptionVia = "pos";
+      }
+
+      if (discountRes && discountAmount > 0 && discount) {
+        orderData.discountApplied = {
+          profileId: discount.id,
+          profileName: discount.name,
+          amount: discountAmount,
+          ...(discountRes.breakdown ? { breakdown: discountRes.breakdown } : {}),
+        };
       }
 
       if (customerName.trim()) orderData.customerName = customerName.trim();
@@ -1151,6 +1193,11 @@ export default function PosPage() {
       {showCheckout && (
         <CheckoutDialog
           total={subtotal}
+          cartLines={cart.map((c) => ({
+            price: c.menuItem.price,
+            quantity: c.quantity,
+            categoryName: c.menuItem.category,
+          }))}
           restaurantId={restaurantId ?? ""}
           onClose={() => setShowCheckout(false)}
           onConfirm={confirmOrder}
