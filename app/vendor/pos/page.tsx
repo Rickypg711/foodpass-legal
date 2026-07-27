@@ -372,7 +372,27 @@ function CheckoutDialog({
         <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
           <div>
             <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>{isRedeemOnly ? "Canjear premio" : "Cobrar"}</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : (discountRes && discountRes.amount > 0 ? `Total: ${fmt(effTotal)} · 🏷️ desc. ${fmt(discountRes.amount)}${tipAmount > 0 ? ` · 💵 propina ${fmt(tipAmount)}` : ""}` : tipAmount > 0 ? `Total: ${fmt(total)} · 💵 propina ${fmt(tipAmount)}` : `Total: ${fmt(total)}`)}</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+              {isRedeemOnly ? (
+                "Sin venta — solo entregar premio"
+              ) : discountRes && discountRes.amount > 0 ? (
+                <>
+                  {/* Original TACHADO junto al neto (mismo patrón que la app):
+                      el cajero ve qué era, cuánto se fue y qué se cobra. */}
+                  Total:{" "}
+                  <span style={{ textDecoration: "line-through", color: "rgba(28,37,38,0.3)" }}>
+                    {fmt(total)}
+                  </span>{" "}
+                  <span className="font-bold">{fmt(effTotal)}</span>
+                  {` · 🏷️ desc. ${fmt(discountRes.amount)}`}
+                  {tipAmount > 0 ? ` · 💵 propina ${fmt(tipAmount)}` : ""}
+                </>
+              ) : tipAmount > 0 ? (
+                `Total: ${fmt(total)} · 💵 propina ${fmt(tipAmount)}`
+              ) : (
+                `Total: ${fmt(total)}`
+              )}
+            </p>
           </div>
           <button
             onClick={onClose}
