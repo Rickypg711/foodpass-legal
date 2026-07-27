@@ -325,6 +325,7 @@ function CheckoutDialog({
     notes: string,
     redemption: PosRedemptionSelection | null,
     discount: DiscountProfile | null,
+    tip: number,
   ) => void;
   processing: boolean;
 }) {
@@ -336,6 +337,11 @@ function CheckoutDialog({
   const [redemption, setRedemption] = useState<PosRedemptionSelection | null>(null);
   const [discountProfile, setDiscountProfile] = useState<DiscountProfile | null>(null);
   const [showNote, setShowNote] = useState(false);
+  /** Propina (pedida por Pecado Escondido): % rápido sobre el total YA con
+   * descuento, o monto libre. NUNCA suma puntos ni comisión — vive en
+   * order.tipAmount, separada de total. */
+  const [tipPct, setTipPct] = useState<number | null>(null);
+  const [tipCustom, setTipCustom] = useState<number | "">("");
 
   // No cart total = pure reward redemption ("Canjear premio sin venta").
   // There's nothing to charge, so we hide the payment flow and speak "canje",
@@ -347,6 +353,13 @@ function CheckoutDialog({
   const discountRes =
     discountProfile && total > 0 ? computeDiscount(cartLines, discountProfile) : null;
   const effTotal = Math.max(0, total - (discountRes?.amount ?? 0));
+  const tipAmount =
+    tipCustom !== "" && Number(tipCustom) > 0
+      ? Math.round(Number(tipCustom) * 100) / 100
+      : tipPct
+        ? Math.round(effTotal * tipPct) / 100
+        : 0;
+  const grandTotal = effTotal + tipAmount;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
@@ -359,7 +372,7 @@ function CheckoutDialog({
         <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
           <div>
             <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>{isRedeemOnly ? "Canjear premio" : "Cobrar"}</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : (discountRes && discountRes.amount > 0 ? `Total: ${fmt(effTotal)} · 🏷️ desc. ${fmt(discountRes.amount)}` : `Total: ${fmt(total)}`)}</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{isRedeemOnly ? "Sin venta — solo entregar premio" : (discountRes && discountRes.amount > 0 ? `Total: ${fmt(effTotal)} · 🏷️ desc. ${fmt(discountRes.amount)}${tipAmount > 0 ? ` · 💵 propina ${fmt(tipAmount)}` : ""}` : tipAmount > 0 ? `Total: ${fmt(total)} · 💵 propina ${fmt(tipAmount)}` : `Total: ${fmt(total)}`)}</p>
           </div>
           <button
             onClick={onClose}
@@ -503,6 +516,55 @@ function CheckoutDialog({
             )}
           </div>
 
+          {/* ── Propina (opcional, solo al cobrar ahora) ── */}
+          {mode === "now" && !isRedeemOnly && (
+            <div>
+              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
+                💵 Propina (opcional)
+              </label>
+              <div className="flex items-center gap-1.5">
+                {[10, 15, 20].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => {
+                      setTipCustom("");
+                      setTipPct((cur) => (cur === pct ? null : pct));
+                    }}
+                    className="flex-1 rounded-xl px-2 py-2.5 text-[13px] font-bold transition-all"
+                    style={
+                      tipPct === pct && tipCustom === ""
+                        ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
+                        : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
+                    }
+                  >
+                    {pct}%
+                  </button>
+                ))}
+                <div className="flex flex-1 items-center gap-1 rounded-xl px-2" style={{ background: "#F5F3EF", border: "1.5px solid rgba(28,37,38,0.1)" }}>
+                  <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={tipCustom}
+                    placeholder="otra"
+                    onChange={(e) => {
+                      setTipPct(null);
+                      setTipCustom(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)));
+                    }}
+                    className="w-full bg-transparent py-2.5 text-[13px] font-bold outline-none"
+                    style={{ color: "#1C2526" }}
+                  />
+                </div>
+              </div>
+              {tipAmount > 0 && (
+                <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                  La propina no suma puntos de lealtad — va aparte, íntegra para el equipo.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Confirm */}
           {redemption ? (
             <p className="text-center text-[12px] font-bold" style={{ color: "#16A34A" }}>
@@ -511,7 +573,7 @@ function CheckoutDialog({
             </p>
           ) : null}
           <button
-            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile)}
+            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile, mode === "now" ? tipAmount : 0)}
             disabled={
               processing ||
               (mode === "tab" && !name.trim()) ||
@@ -528,7 +590,7 @@ function CheckoutDialog({
             ) : mode === "now" ? (
               isRedeemOnly
                 ? (redemption ? "Entregar premio ✓" : "Elige un premio para canjear ↑")
-                : `Cobrar ${fmt(effTotal)}`
+                : `Cobrar ${fmt(grandTotal)}`
             ) : (
               `Abrir cuenta — ${fmt(effTotal)}`
             )}
@@ -778,7 +840,7 @@ export default function PosPage() {
     }
   }
 
-  async function closeOpenTab(orderId: string, method: PaymentMethod) {
+  async function closeOpenTab(orderId: string, method: PaymentMethod, tip = 0) {
     if (!restaurantId) return;
     try {
       const db = getFirebaseDb();
@@ -791,6 +853,8 @@ export default function PosPage() {
         paymentMethod: method,
         completedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        // Propina al cerrar la cuenta — separada de total (no puntos/comisión).
+        ...(tip > 0 ? { tipAmount: Math.round(tip * 100) / 100 } : {}),
       });
 
       // Phone Points v1: tab closed = payment confirmed → credit if the
@@ -901,6 +965,7 @@ export default function PosPage() {
     notes: string,
     redemption: PosRedemptionSelection | null = null,
     discount: DiscountProfile | null = null,
+    tip = 0,
   ) {
     if (!restaurantId || !uid) return;
     const phoneDigits = customerPhone.replace(/\D/g, "");
@@ -964,6 +1029,9 @@ export default function PosPage() {
         createdByUserId: uid,
         // Atribución por empleado (equipo de la caja): quién hizo esta venta.
         ...(currentSeller ? { soldBy: currentSeller } : {}),
+        // Propina: separada de total a propósito — jamás infla puntos ni
+        // comisión (invariante). Íntegra, visible por empleado en Reportes.
+        ...(mode === "now" && tip > 0 ? { tipAmount: Math.round(tip * 100) / 100 } : {}),
       };
 
       if (effectiveRedemption) {
@@ -1511,9 +1579,10 @@ export default function PosPage() {
       {/* ── Close Tab Payment Method Selector ── */}
       {checkoutTabId && (
         <CloseTabDialog
+          tabTotal={Number(activeOpenTabs.find((t) => t.id === checkoutTabId)?.total) || 0}
           onClose={() => setCheckoutTabId(null)}
-          onConfirm={(method) => {
-            closeOpenTab(checkoutTabId, method);
+          onConfirm={(method, tip) => {
+            closeOpenTab(checkoutTabId, method, tip);
             setCheckoutTabId(null);
           }}
         />
@@ -1634,27 +1703,72 @@ function OpenTabsModal({
 }
 
 function CloseTabDialog({
+  tabTotal,
   onClose,
   onConfirm,
 }: {
+  tabTotal: number;
   onClose: () => void;
-  onConfirm: (method: PaymentMethod) => void;
+  onConfirm: (method: PaymentMethod, tip: number) => void;
 }) {
+  const [tipPct, setTipPct] = useState<number | null>(null);
+  const [tipCustom, setTipCustom] = useState<number | "">("");
+  const tip =
+    tipCustom !== "" && Number(tipCustom) > 0
+      ? Math.round(Number(tipCustom) * 100) / 100
+      : tipPct
+        ? Math.round(tabTotal * tipPct) / 100
+        : 0;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4" style={{ boxShadow: "0 10px 25px rgba(28,37,38,0.15)" }} onClick={(e) => e.stopPropagation()}>
         <p className="text-[16px] font-extrabold text-[#1C2526]">Cobrar Cuenta</p>
-        <p className="text-[13px] text-gray-400">Selecciona el método de pago del cliente</p>
+        <p className="text-[13px] text-gray-400">
+          {tip > 0
+            ? `Total ${fmt(tabTotal)} + 💵 propina ${fmt(tip)} = ${fmt(tabTotal + tip)}`
+            : "Selecciona el método de pago del cliente"}
+        </p>
+        <div>
+          <p className="mb-1.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">💵 Propina (opcional)</p>
+          <div className="flex items-center gap-1.5">
+            {[10, 15, 20].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => { setTipCustom(""); setTipPct((c) => (c === pct ? null : pct)); }}
+                className="flex-1 rounded-xl px-2 py-2 text-[13px] font-bold transition-all"
+                style={
+                  tipPct === pct && tipCustom === ""
+                    ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
+                    : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
+                }
+              >
+                {pct}%
+              </button>
+            ))}
+            <div className="flex flex-1 items-center gap-1 rounded-xl px-2" style={{ background: "#F5F3EF", border: "1.5px solid rgba(28,37,38,0.1)" }}>
+              <span className="text-[13px] font-semibold text-gray-400">$</span>
+              <input
+                type="number"
+                min={0}
+                value={tipCustom}
+                placeholder="otra"
+                onChange={(e) => { setTipPct(null); setTipCustom(e.target.value === "" ? "" : Math.max(0, Number(e.target.value))); }}
+                className="w-full bg-transparent py-2 text-left text-[13px] font-bold outline-none text-[#1C2526]"
+              />
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => onConfirm("cash")}
+            onClick={() => onConfirm("cash", tip)}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💵</span>
             <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
           </button>
           <button
-            onClick={() => onConfirm("card")}
+            onClick={() => onConfirm("card", tip)}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💳</span>

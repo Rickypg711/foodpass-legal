@@ -64,6 +64,8 @@ interface ReportsData {
   discounts30d: { total: number; count: number; byProfile: Record<string, number> } | null;
   /** Ventas por empleado (30d, soldBy del equipo de la caja). null = sin datos. */
   staffSales30d: { name: string; count: number; revenue: number }[] | null;
+  /** Propinas (30d) — total y por empleado. null = ninguna. */
+  tips30d: { total: number; byStaff: Record<string, number> } | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -183,6 +185,9 @@ export default function ReportesPage() {
         const discByProfile: Record<string, number> = {};
         // Ventas por empleado — soldBy lo estampa la caja (equipo con PIN).
         const staffMap: Record<string, { count: number; revenue: number }> = {};
+        // Propinas — separadas de total; por empleado cuando hay soldBy.
+        let tipsTotal30d = 0;
+        const tipsByStaff: Record<string, number> = {};
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
           const disc = o.discountApplied as
@@ -201,6 +206,12 @@ export default function ReportesPage() {
             if (!staffMap[sbName]) staffMap[sbName] = { count: 0, revenue: 0 };
             staffMap[sbName].count++;
             staffMap[sbName].revenue += (o.total as number) ?? 0;
+          }
+          const tipAmt = Number(o.tipAmount) || 0;
+          if (tipAmt > 0 && o.paymentStatus === "paid") {
+            tipsTotal30d += tipAmt;
+            const tKey = sbName || "Caja";
+            tipsByStaff[tKey] = (tipsByStaff[tKey] ?? 0) + tipAmt;
           }
           const ts = o.phoneLoyaltyAt as Timestamp | undefined;
           if (!ts?.toMillis) return;
@@ -333,6 +344,7 @@ export default function ReportesPage() {
               .sort((a, b) => b.revenue - a.revenue);
             return rows.length > 0 ? rows : null;
           })(),
+          tips30d: tipsTotal30d > 0 ? { total: tipsTotal30d, byStaff: tipsByStaff } : null,
         });
 
         setLoadState("ready");
@@ -568,6 +580,31 @@ export default function ReportesPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Propinas (30d) — para repartir justo al equipo */}
+          {data.tips30d && (
+            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
+              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
+                💵 Propinas — 30 días
+              </p>
+              <div>
+                <p className="text-[22px] font-black text-[#1C2526]">{fmt(data.tips30d.total)}</p>
+                <p className="text-[11px] text-gray-400">
+                  aparte de tus ventas — no suman puntos ni comisión
+                </p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {Object.entries(data.tips30d.byStaff)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([name, amt]) => (
+                    <div key={name} className="flex justify-between items-center py-2.5">
+                      <span className="text-[13px] font-bold text-[#1C2526]">💵 {name}</span>
+                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt)}</span>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
