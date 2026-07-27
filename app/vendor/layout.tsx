@@ -61,6 +61,16 @@ function IconGear() {
     </svg>
   );
 }
+function IconMore() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  );
+}
+
 function IconHelp() {
   return (
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -158,6 +168,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [menuShared, setMenuShared] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  /** Hoja "Más" de la nav móvil (la sidebar está oculta en teléfono). */
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Setup pages should render without the sidebar (hooks must come before any return)
   const isSetupFlow = pathname.startsWith("/vendor/setup");
@@ -221,6 +233,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     };
   }, [restaurantId]);
 
+  // Nav móvil: cerrar la hoja "Más" al cambiar de página.
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
+
   // Modo Caja: enforcement — cualquier ruta fuera de operación rebota a la
   // caja, incluso tecleada a mano en la URL.
   useEffect(() => {
@@ -234,6 +249,16 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   }
 
   const w = open ? 220 : 60;
+
+  // ── Nav móvil ── mismos filtros que la sidebar: rol del equipo + Modo Caja.
+  const navAllowed = (item: NavDef) =>
+    canAccessVendorPath(vendorRole, item.href) && (!cajaLocked || isPathAllowedInCajaMode(item.href));
+  const allNavs = [...NAV_ITEMS, ...NAV_SECONDARY].filter(navAllowed);
+  const MOBILE_PRIMARY = ["/vendor", "/vendor/pos", "/vendor/pedidos", "/vendor/scanner"];
+  const mobileTabs = MOBILE_PRIMARY
+    .map((h) => allNavs.find((i) => i.href === h))
+    .filter((i): i is NavDef => Boolean(i));
+  const mobileRest = allNavs.filter((i) => !mobileTabs.includes(i));
 
   function isActive(href: string, exact = false) {
     return exact ? pathname === href : pathname.startsWith(href);
@@ -605,10 +630,103 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
       {/* ── Page content ── */}
       <div 
-        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${aiOpen ? "md:pr-[380px]" : ""}`}
+        className={`flex min-h-screen min-w-0 flex-1 flex-col pb-[72px] transition-all duration-300 ease-in-out md:pb-0 ${aiOpen ? "md:pr-[380px]" : ""}`}
       >
         {children}
       </div>
+
+      {/* ── Nav móvil: barra inferior (la sidebar está oculta en teléfono) ── */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t md:hidden"
+        style={{
+          background: "#ffffff",
+          borderColor: "rgba(28,37,38,0.08)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          boxShadow: "0 -2px 12px rgba(28,37,38,0.06)",
+        }}
+      >
+        {mobileTabs.map((item) => {
+          const active = isActive(item.href, item.exact);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold"
+              style={{ color: active ? "#F28C38" : "rgba(28,37,38,0.45)" }}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label === "Caja / POS" ? "Caja" : item.label}</span>
+            </Link>
+          );
+        })}
+        {mobileRest.length > 0 && (
+          <button
+            onClick={() => setMoreOpen(true)}
+            className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold"
+            style={{ color: moreOpen ? "#F28C38" : "rgba(28,37,38,0.45)" }}
+          >
+            <IconMore />
+            <span>Más</span>
+          </button>
+        )}
+      </nav>
+
+      {/* ── Hoja "Más" (nav móvil) ── */}
+      {moreOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-black/40 md:hidden"
+          onClick={() => setMoreOpen(false)}
+        >
+          <div
+            className="w-full rounded-t-2xl bg-white p-3"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full" style={{ background: "rgba(28,37,38,0.15)" }} />
+            {mobileRest.map((item) => {
+              const active = isActive(item.href, item.exact);
+              return item.external ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-medium"
+                  style={{ color: "#1C2526" }}
+                >
+                  <span style={{ color: "rgba(28,37,38,0.5)" }}>{item.icon}</span>
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-medium"
+                  style={{
+                    color: active ? "#F28C38" : "#1C2526",
+                    background: active ? "rgba(242,140,56,0.08)" : undefined,
+                  }}
+                >
+                  <span style={{ color: active ? "#F28C38" : "rgba(28,37,38,0.5)" }}>{item.icon}</span>
+                  {item.label}
+                </Link>
+              );
+            })}
+            {vendorRole === "owner" && !isPro && !cajaLocked && (
+              <Link
+                href="/vendor/plan"
+                onClick={() => setMoreOpen(false)}
+                className="mt-1 flex items-center justify-center gap-2 rounded-xl px-3.5 py-3 text-[13px] font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #F28C38, #D97757)" }}
+              >
+                ⭐ Hazte Pro
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Floating AI ── */}
       <Suspense fallback={null}>
