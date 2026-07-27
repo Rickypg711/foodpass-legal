@@ -1,14 +1,15 @@
 // lib/schedule.ts
 //
-// Horario del negocio — espejo EXACTO de FilterService.isOpenNow del app
-// (FOODPASS/lib/pages/restaurant_search_page/services/filter_service.dart):
+// Horario del negocio — espejo EXACTO del evaluador del app
+// (FOODPASS BusinessHoursUtils.activeWindowAt):
 //   restaurants/{rid}.businessHours[day] =
 //     { isClosed: bool, openingTime: {hour, minute}, closingTime: {hour, minute} }
 //   Claves de día en minúscula O Capitalizadas ("monday" | "Monday") — el app
 //   acepta ambas y aquí también.
-//   Nocturno soportado: 21:00–02:00 abre en la noche y "cierra" de madrugada.
-//   (Igual que el app, la madrugada se evalúa contra el horario del día ACTUAL
-//   — misma regla en ambas plataformas o en ninguna.)
+//   Nocturno soportado con DERRAME DE AYER: 16:00–02:00 sigue abierto a la
+//   1 AM aunque HOY esté cerrado o abra a otra hora — la madrugada se evalúa
+//   primero contra la ventana nocturna del día ANTERIOR (misma regla en
+//   ambas plataformas o en ninguna; el "solo la fila de hoy" era el bug).
 //
 // OJO — son DOS preguntas distintas:
 //   isOpenNow()            "¿está abierto?" — sin datos responde false
@@ -85,22 +86,50 @@ function readDay(hours: Record<string, unknown>, dayIdx: number): DayHours | nul
   };
 }
 
-/** Misma aritmética que _isCurrentlyOpenFromNumbers del app (incl. nocturno). */
-function isWithin(open: TimeHM, close: TimeHM, now: Date): boolean {
+function spansMidnight(d: DayHours): boolean {
+  if (!d.open || !d.close) return false;
+  const o = d.open.hour * 60 + d.open.minute;
+  const c = d.close.hour * 60 + d.close.minute;
+  return c <= o;
+}
+
+/**
+ * LA ventana activa en `now`, o null si está cerrado — espejo de
+ * activeWindowAt del app. Revisa PRIMERO el derrame nocturno de AYER
+ * (a la 1 AM manda el turno de anoche), luego la ventana de HOY (en
+ * nocturno, solo su parte vespertina: la madrugada la cubre el derrame
+ * de mañana).
+ */
+function activeWindowAt(
+  hours: Record<string, unknown>,
+  now: Date,
+): { close: TimeHM } | null {
   const cur = now.getHours() * 60 + now.getMinutes();
-  const o = open.hour * 60 + open.minute;
-  const c = close.hour * 60 + close.minute;
-  if (o < c) return cur >= o && cur < c; // mismo día (9 AM – 5 PM)
-  return cur >= o || cur < c; // nocturno (9 PM – 2 AM)
+
+  // 1) Derrame nocturno de ayer.
+  const y = new Date(now);
+  y.setDate(y.getDate() - 1);
+  const yd = readDay(hours, dayIdxFor(y));
+  if (yd && !yd.isClosed && yd.open && yd.close && spansMidnight(yd)) {
+    const c = yd.close.hour * 60 + yd.close.minute;
+    if (cur < c) return { close: yd.close };
+  }
+
+  // 2) Ventana de hoy.
+  const d = readDay(hours, dayIdxFor(now));
+  if (d && !d.isClosed && d.open && d.close) {
+    const o = d.open.hour * 60 + d.open.minute;
+    const c = d.close.hour * 60 + d.close.minute;
+    if (o < c ? cur >= o && cur < c : cur >= o) return { close: d.close };
+  }
+  return null;
 }
 
 /** ¿Abierto ahorita? Sin datos → false (conservador, como el mapa del app). */
 export function isOpenNow(rdata: Record<string, unknown>, now: Date = new Date()): boolean {
   const hours = parseBusinessHours(rdata);
   if (!hours) return false;
-  const d = readDay(hours, dayIdxFor(now));
-  if (!d || d.isClosed || !d.open || !d.close) return false;
-  return isWithin(d.open, d.close, now);
+  return activeWindowAt(hours, now) !== null;
 }
 
 /**
@@ -135,10 +164,10 @@ export function scheduleStatus(
   if (!hours) return null;
 
   const todayIdx = dayIdxFor(now);
-  if (isOpenNow(rdata, now)) {
-    const d = readDay(hours, todayIdx);
-    const closes = d?.close ? ` · cierra ${fmt12(d.close)}` : "";
-    return { open: true, label: `Abierto${closes}` };
+  const window = activeWindowAt(hours, now);
+  if (window) {
+    // Cierre de la ventana ACTIVA (a la 1 AM: el de anoche, "cierra 2:00 am").
+    return { open: true, label: `Abierto · cierra ${fmt12(window.close)}` };
   }
 
   // Cerrado: buscar la siguiente apertura en los próximos 7 días.
