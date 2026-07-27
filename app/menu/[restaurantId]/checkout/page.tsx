@@ -30,9 +30,8 @@ import {
   restaurantAllowsPayAtPickup,
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
-import { doc, getDoc } from "firebase/firestore";
+import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
 import { isPositivelyClosedNow, scheduleStatus } from "@/lib/schedule";
-import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { formatPrice } from "@/lib/priceFormat";
 
@@ -155,7 +154,7 @@ export default function CheckoutPage() {
     if (!orderingEnabled || !restaurantId) return;
     (async () => {
       try {
-        const snap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId));
+        const snap = await getRestaurantSnapOnce(restaurantId);
         if (snap.exists()) {
           const data = snap.data() as Record<string, unknown>;
           const name =

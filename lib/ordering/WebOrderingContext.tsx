@@ -1,6 +1,5 @@
 "use client";
 
-import { doc, getDoc } from "firebase/firestore";
 import {
   createContext,
   useContext,
@@ -9,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getFirebaseDb } from "@/lib/firebase";
+import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
 import {
   restaurantAllowsPayAtPickup,
   restaurantSupportsWebCheckout,
@@ -45,7 +44,7 @@ export function WebOrderingProvider({
 
     (async () => {
       try {
-        const snap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId));
+        const snap = await getRestaurantSnapOnce(restaurantId);
         if (cancelled) return;
         const data = snap.exists()
           ? (snap.data() as Record<string, unknown>)

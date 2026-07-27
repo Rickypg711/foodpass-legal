@@ -18,11 +18,15 @@ export function CartBar({
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
-  if (!webOrderingReady || !webOrderingAvailable || !cartReady) {
+  // Resuelto y SIN pedidos web → la página muestra su propio dock (app CTA).
+  if (webOrderingReady && !webOrderingAvailable) {
     return null;
   }
 
-  const hasItems = itemCount > 0;
+  // Mientras resuelve, el dock pinta DE UNA VEZ con el upsell de la app
+  // (no depende de nada asíncrono) — solo el botón del carrito espera a
+  // que el carrito hidrate. Antes todo el dock aparecía tarde.
+  const hasItems = webOrderingReady && cartReady && itemCount > 0;
 
   return (
     <div
