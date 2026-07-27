@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { businessDayStart, businessDayStartDaysAgo, businessDayKey } from "@/lib/businessDay";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -115,11 +116,11 @@ export default function ReportesPage() {
 
         const rid = ctx.restaurantId;
 
-        // Timestamps setup
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
-        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+        // JORNADA comercial (corte 4 AM, lib/businessDay.ts) — "hoy" no se
+        // corta a medianoche para locales con turno nocturno.
+        const todayStart = businessDayStart();
+        const sevenDaysAgo = businessDayStartDaysAgo(6);
+        const thirtyDaysAgo = businessDayStartDaysAgo(30);
 
         const [restaurantSnap, insightsSnap, todayOrdersSnap, todayVisitsSnap, weeklyOrdersSnap, weeklyVisitsSnap, monthOrdersSnap] =
           await Promise.all([
@@ -223,9 +224,9 @@ export default function ReportesPage() {
           if (o.redemptionResult === "applied") phoneRedemptions30d++;
           if (ms >= todayStart.getTime()) phoneVisitsToday++;
           if (ms >= sevenDaysAgo.getTime()) {
-            const dt = ts.toDate();
-            const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
-            phoneDailyCounts[key] = (phoneDailyCounts[key] ?? 0) + 1;
+            // Llave de JORNADA: la visita de la 1 AM cuenta en el día de ayer.
+            phoneDailyCounts[businessDayKey(ts.toDate())] =
+              (phoneDailyCounts[businessDayKey(ts.toDate())] ?? 0) + 1;
           }
         });
 
@@ -258,8 +259,8 @@ export default function ReportesPage() {
         weeklyVisitsSnap.forEach((doc) => {
           const ts = doc.data().timestamp as Timestamp;
           if (!ts) return;
-          const dt = ts.toDate();
-          const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+          // Llave de JORNADA (corte 4 AM) — no fecha calendario.
+          const key = businessDayKey(ts.toDate());
           if (dailyStatsMap[key]) {
             dailyStatsMap[key].scans++;
           }
@@ -275,8 +276,9 @@ export default function ReportesPage() {
         weeklyOrdersSnap.forEach((doc) => {
           const ts = doc.data().createdAt as Timestamp;
           if (!ts) return;
-          const dt = ts.toDate();
-          const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+          // Llave de JORNADA (corte 4 AM) — la venta de la 1 AM suma al día
+          // que abrió ayer, no al calendario de hoy.
+          const key = businessDayKey(ts.toDate());
           if (dailyStatsMap[key]) {
             dailyStatsMap[key].sales += (doc.data().total as number) ?? 0;
           }

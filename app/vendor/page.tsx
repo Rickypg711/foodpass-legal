@@ -18,6 +18,7 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
+import { businessDayStart, businessDayStartDaysAgo } from "@/lib/businessDay";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
 
@@ -141,20 +142,11 @@ export default function VendorDashboard() {
 
         const rid = ctx.restaurantId;
 
-        const todayStart = (() => {
-          const d = new Date(); d.setHours(0, 0, 0, 0);
-          return Timestamp.fromDate(d);
-        })();
-
-        const sevenDaysAgo = (() => {
-          const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0);
-          return Timestamp.fromDate(d);
-        })();
-
-        const thirtyDaysAgo = (() => {
-          const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0);
-          return Timestamp.fromDate(d);
-        })();
+        // JORNADA comercial (corte 4 AM, lib/businessDay.ts) — un local que
+        // cierra a las 2 AM sigue en "hoy" a la 1 AM; medianoche NO borra el día.
+        const todayStart = Timestamp.fromDate(businessDayStart());
+        const sevenDaysAgo = Timestamp.fromDate(businessDayStartDaysAgo(6));
+        const thirtyDaysAgo = Timestamp.fromDate(businessDayStartDaysAgo(30));
 
         const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap, welcomeSnap, winbackTapsSnap] =
           await Promise.all([

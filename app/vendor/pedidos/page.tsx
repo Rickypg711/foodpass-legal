@@ -20,6 +20,7 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
+import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { shortOrderCode } from "@/lib/order/formatWhatsappMessage";
 
@@ -312,11 +313,9 @@ export default function PedidosPage() {
 
   // ── Grouping (board columns = tab filters, one source of truth) ─────────────
 
-  const startOfToday = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
-  })();
+  // "Hoy" = JORNADA comercial (corte 4 AM, lib/businessDay.ts) — los pedidos
+  // de la 1 AM siguen siendo del turno en curso, no de un día nuevo.
+  const startOfToday = businessDayStart().getTime();
 
   const groups: Record<OrderTab, Order[]> = {
     pending: orders.filter((o) => o.status === "pending" || o.status === "open_tab"),
