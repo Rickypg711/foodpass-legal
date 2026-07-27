@@ -382,7 +382,7 @@ export default function ConfiguracionPage() {
                     Plan Pro activo ⭐
                   </p>
                   <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    Lealtad ilimitada, recuperación por WhatsApp, Comeleal AI y soporte directo
+                    Lealtad ilimitada, recuperación por WhatsApp, descuentos especiales, Comeleal AI y soporte directo
                   </p>
                 </div>
               ) : (
@@ -405,6 +405,7 @@ export default function ConfiguracionPage() {
                       <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
                       <li>✓ Recuperación automática por WhatsApp sin límite</li>
                       <li>✓ Comeleal AI sin límite</li>
+                      <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
                       <li>✓ Soporte directo — te contesta una persona</li>
                     </ul>
                     <button
@@ -835,6 +836,7 @@ function DiscountProfilesSection({
   const [fBebidas, setFBebidas] = useState<number | "">("");
   const [fAlimentos, setFAlimentos] = useState<number | "">("");
   const [fTotal, setFTotal] = useState<number | "">("");
+  const [fEarnsPoints, setFEarnsPoints] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -851,6 +853,7 @@ function DiscountProfilesSection({
     bebidasPct?: number;
     alimentosPct?: number;
     totalPct?: number;
+    earnsPoints?: boolean;
   }) {
     setEditingId("new");
     setFName(seed?.name ?? "");
@@ -858,6 +861,7 @@ function DiscountProfilesSection({
     setFBebidas(seed?.bebidasPct ?? "");
     setFAlimentos(seed?.alimentosPct ?? "");
     setFTotal(seed?.totalPct ?? "");
+    setFEarnsPoints(seed?.earnsPoints ?? true);
     setErr(null);
   }
 
@@ -868,6 +872,7 @@ function DiscountProfilesSection({
     setFBebidas(p.bebidasPct || "");
     setFAlimentos(p.alimentosPct || "");
     setFTotal(p.totalPct || "");
+    setFEarnsPoints(p.earnsPoints !== false);
     setErr(null);
   }
 
@@ -898,8 +903,8 @@ function DiscountProfilesSection({
           : `dp_${Date.now().toString(36)}${Math.floor(Math.random() * 46656).toString(36)}`;
       const profile: DiscountProfile =
         fType === "total"
-          ? { id, name, type: "total", totalPct: clamp(fTotal) }
-          : { id, name, type: "per_category", bebidasPct: clamp(fBebidas), alimentosPct: clamp(fAlimentos) };
+          ? { id, name, type: "total", totalPct: clamp(fTotal), earnsPoints: fEarnsPoints }
+          : { id, name, type: "per_category", bebidasPct: clamp(fBebidas), alimentosPct: clamp(fAlimentos), earnsPoints: fEarnsPoints };
       const next =
         editingId === "new"
           ? [...profiles, profile]
@@ -930,9 +935,11 @@ function DiscountProfilesSection({
   }
 
   function pctLabel(p: DiscountProfile): string {
-    return p.type === "total"
-      ? `${p.totalPct ?? 0}% en toda la cuenta`
-      : `${p.bebidasPct ?? 0}% bebidas · ${p.alimentosPct ?? 0}% alimentos`;
+    const base =
+      p.type === "total"
+        ? `${p.totalPct ?? 0}% en toda la cuenta`
+        : `${p.bebidasPct ?? 0}% bebidas · ${p.alimentosPct ?? 0}% alimentos`;
+    return p.earnsPoints === false ? `${base} · sin puntos` : base;
   }
 
   if (!isPro) {
@@ -972,7 +979,7 @@ function DiscountProfilesSection({
           </p>
           <button
             type="button"
-            onClick={() => openNew({ name: "Staff", type: "per_category", bebidasPct: 50, alimentosPct: 30 })}
+            onClick={() => openNew({ name: "Staff", type: "per_category", bebidasPct: 50, alimentosPct: 30, earnsPoints: false })}
             className="w-full rounded-xl px-3.5 py-3 text-left text-[12px] font-semibold transition hover:opacity-80"
             style={{ background: "#F5F3EF", border: "1px dashed rgba(28,37,38,0.2)", color: "#1C2526" }}
           >
@@ -1095,6 +1102,39 @@ function DiscountProfilesSection({
               <PctInput label="🍽️ Alimentos" value={fAlimentos} onChange={setFAlimentos} />
             </div>
           )}
+          <Field label="¿Junta puntos de lealtad?">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFEarnsPoints(true)}
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
+                style={
+                  fEarnsPoints
+                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
+                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                }
+              >
+                Sí — sobre lo pagado
+              </button>
+              <button
+                type="button"
+                onClick={() => setFEarnsPoints(false)}
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
+                style={
+                  !fEarnsPoints
+                    ? { background: "#1C2526", color: "#fff", border: "1.5px solid #1C2526" }
+                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                }
+              >
+                No — su beneficio es el descuento
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+              Con &quot;No&quot;, sus compras no acumulan puntos ni premio de
+              bienvenida (y no gastan tus visitas de lealtad del mes). Su visita
+              y gasto sí quedan registrados en Clientes.
+            </p>
+          </Field>
           {highPct && (
             <p
               className="rounded-lg px-3 py-2 text-[11px] font-semibold"

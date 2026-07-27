@@ -1,4 +1,4 @@
-# Comeleal — Pricing canónico (v1.1, 18 jul 2026)
+# Comeleal — Pricing canónico (v1.2, 27 jul 2026)
 
 **Esta es la ley de qué es gratis y qué se cobra.** Cualquier feature nuevo se clasifica con esta regla ANTES de construirse. Si un cambio contradice este doc, se discute aquí primero.
 
@@ -8,6 +8,18 @@
 
 - **Escala (costo marginal ~cero por vendor) → GRATIS.** Software puro: un restaurante más cuesta centavos de Firebase.
 - **No escala (costo real por uso o tiempo humano) → SE COBRA.** Mensajes de WhatsApp (Meta cobra por conversación), tokens de AI (Gemini cobra por uso), y el tiempo de Ricardo (setup presencial, soporte directo).
+
+### La excepción de operador (v1.2 — regla de valor)
+
+Hormozi tiene una segunda regla que manda sobre la primera: **el precio va en lo más cercano al resultado.** Un feature que escala puede ser Pro si cumple LAS TRES:
+
+1. **No se necesita para operar el día 1** (no toca activación: menú, caja, pedidos, CRM siguen intactos en free).
+2. **Es política de dinero del negocio** (controla precios, descuentos, márgenes — cosas de dueño que opera en serio, no de puesto que empieza).
+3. **Lo pidió un vendor real** (demanda comprobada, no imaginada).
+
+Si falla cualquiera de las tres, aplica la regla base: escala → gratis. Esta excepción existe para que el candado de valor no se coma el funnel gratis.
+
+**Casos clasificados con esta excepción:** Descuentos especiales (staff/familia) — lo pidió Pecado Escondido (vendor Pro en trial, 26 jul), es política de precios del dueño, y ningún restaurante lo necesita para arrancar. → **Pro.**
 
 ## Free — "Opera gratis"
 
@@ -30,6 +42,7 @@ Se vende como UNA cosa: *Comeleal te trae clientes de vuelta solito.* Compuesta 
 - **Lealtad ilimitada** (se quita el tope de 50 visitas/mes)
 - **Recuperación automática por WhatsApp ilimitada** (cada mensaje nos cuesta dinero real con Meta → es el ancla honesta del precio)
 - **Comeleal AI sin límite** (análisis de clientes, ventas, tendencias — tokens cuestan)
+- **Descuentos especiales (staff y familia)** — perfiles por porcentaje (por categoría o cuenta total) asignados por número; la caja los aplica sola al cobrar. Puntos SIEMPRE sobre lo pagado (anti-farming) y cada perfil elige si junta puntos (`earnsPoints`). *Escala, pero es Pro por la excepción de operador (arriba).*
 - **Soporte directo** (una persona real — el tiempo de Ricardo no escala)
 
 Cobro: IAP en app stores (ya vivo) + suscripción MP en web (`/api/mercado-pago/subscribe`, ya vivo). Campos canónicos en `restaurants/{id}`: `subscriptionPlan == "pro"` + `subscriptionAccessExpiresAt` (los escriben el webhook MP y el IAP).
@@ -82,16 +95,17 @@ Comeleal AI (chat del panel): tokens de Gemini cuestan → free = uso ligero, Pr
 ## Estado de los candados
 
 - [x] **Tope 50 visitas de lealtad** — vivo (web, cap honesto + avisos, 18 jul).
+- [x] **Descuentos especiales Pro-gated** — vivo en web (27 jul): `discountsEnabled()` exige plan pro activo/trialing. Free ve upsell "⭐ Incluido en Pro" en Configuración + bullet en Tu plan y /precios. TEMP: override de prueba para Luzz (`FOUNDER_TEST_RESTAURANT_IDS`) — quitar antes de vender. Paridad app pendiente (release-blocking).
 - [x] **Comeleal AI chat: free 20 preguntas/mes, Pro ilimitado** — construido 18 jul en `FOODPASS/functions/brain_query_ai.js`. Contador mensual en `restaurants/{rid}/aiUsage/current`; al tope responde upsell amable (nunca error); solo quema cuota en respuestas reales; falla ABIERTO si el check truena. Límite movible por env `AI_QUERY_FREE_MONTHLY_LIMIT`. **Pendiente: deploy de la function.**
 - [ ] **Winback automático (~10 msgs/mes free)** — DIFERIDO a propósito: la API de WhatsApp de Meta NO está configurada aún (sin token el sender no manda nada). El candado se construye el mismo día que se conecte la API — no antes ni después.
 - El AI acotado que corre solo (brain diario, siguiente movimiento, reporte semanal, drafts de recompensas, importador de menú) se queda GRATIS: cuesta lo mismo lo use o no, y es el gancho del producto.
-- "Soporte directo" NO es perk de venta de Pro (débil). Pro se vende con 3 duras: lealtad ilimitada, winback ilimitado, AI ilimitado.
+- "Soporte directo" NO es perk de venta de Pro (débil). Pro se vende con 4 duras: lealtad ilimitada, winback ilimitado, AI ilimitado y descuentos especiales.
 - Futuro enterprise: winback desde el número PROPIO verificado del restaurante (trámite Meta por vendor — lo que Swirvle cobra $749–1,349/mes). Automatizar WhatsApp personal = ban de Meta, jamás.
 
 ## Don'ts
 
 - No inventar límites a cosas que escalan (menú, POS, pedidos, reportes, CRM) — matan la activación y fallan el test.
-- No gate-ear features del lado free "porque son valiosos" — se cobran por costo real, no por valor percibido.
+- No gate-ear features del lado free "porque son valiosos" — se cobran por costo real, no por valor percibido. Única salida: la **excepción de operador** (las 3 condiciones, documentada arriba). Si no cumple las tres, es gratis.
 - No prometer "todo gratis para siempre" en copy nuevo — free = operar; la máquina completa es Pro.
 - No activar presión de venta agresiva mientras haya <10 vendors activos: hoy el cuello es activación, no monetización.
 - Brand: nunca "fideliza clientes" / "programa de recompensas" / SaaS-speak. Es "la máquina de que regresen" / "la tarjetita de sellos, pero digital".

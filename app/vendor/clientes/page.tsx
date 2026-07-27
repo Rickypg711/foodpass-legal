@@ -437,6 +437,8 @@ export default function ClientesPage() {
   /** Descuentos especiales (Pro) — perfiles creados en Configuración. */
   const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
   const [discountsOn, setDiscountsOn] = useState(false);
+  /** Filtro por perfil de descuento — auditoría "¿quién tiene Staff?". */
+  const [discountFilter, setDiscountFilter] = useState<string | null>(null);
 
   const loadCustomers = useCallback(async (rid: string) => {
     const db = getFirebaseDb();
@@ -639,7 +641,7 @@ export default function ClientesPage() {
   const bySegment = activeTab === "todos"
     ? customers
     : customers.filter((c) => c.segment === activeTab);
-  const filtered = !searchText
+  const bySearch = !searchText
     ? bySegment
     : bySegment.filter((c) => {
         const nameHit = c.name.toLowerCase().includes(searchText);
@@ -648,6 +650,9 @@ export default function ClientesPage() {
           (c.phone ?? "").replace(/\D/g, "").includes(searchDigits);
         return nameHit || phoneHit;
       });
+  const filtered = discountFilter
+    ? bySearch.filter((c) => c.discountProfileId === discountFilter)
+    : bySearch;
 
   const counts = {
     todos: customers.length,
@@ -795,11 +800,52 @@ export default function ClientesPage() {
               })}
             </div>
 
+            {/* ── Filtro por descuento (Pro): ¿quién tiene Staff? ── */}
+            {discountsOn && discountProfiles.length > 0 && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {discountProfiles.map((dp) => {
+                  const count = customers.filter((c) => c.discountProfileId === dp.id).length;
+                  const active = discountFilter === dp.id;
+                  return (
+                    <button
+                      key={dp.id}
+                      onClick={() => setDiscountFilter(active ? null : dp.id)}
+                      className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all"
+                      style={{
+                        background: active ? "#F28C38" : "#ffffff",
+                        color: active ? "#ffffff" : "#b45309",
+                        border: active ? "1px solid #F28C38" : "1px solid rgba(242,140,56,0.35)",
+                      }}>
+                      <span>🏷️</span>
+                      <span>{dp.name}</span>
+                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+                        style={{
+                          background: active ? "rgba(255,255,255,0.25)" : "rgba(242,140,56,0.12)",
+                          color: active ? "#ffffff" : "#b45309",
+                        }}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+                {discountFilter && (
+                  <button
+                    onClick={() => setDiscountFilter(null)}
+                    className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+                    style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)", border: "1px solid transparent" }}>
+                    ✕ Quitar filtro
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* ── Customer list ── */}
             {filtered.length === 0 ? (
               <div className="py-10 text-center">
                 <p className="text-[14px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                  No hay clientes en este segmento
+                  {discountFilter
+                    ? "Nadie tiene este descuento asignado todavía"
+                    : "No hay clientes en este segmento"}
                 </p>
               </div>
             ) : (

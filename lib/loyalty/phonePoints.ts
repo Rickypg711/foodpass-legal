@@ -30,6 +30,7 @@ import {
   timestampToMillis,
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
+import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
 
 const DEFAULT_MONTHLY_LIMIT = 50;
 
@@ -203,7 +204,27 @@ export async function creditPhonePointsForOrder(params: {
     // el premio de bienvenida ni el createdAt (ancla de la ventana de 7 días).
     const firstVisit = !phoneSnap.exists() || !(Number(prev.visits) > 0);
 
-    const balanceAfterEarn = (Number(prev.points) || 0) + points;
+    // Descuentos especiales: perfil con earnsPoints=false (p.ej. Staff) no
+    // acumula puntos ni desbloquea el premio de bienvenida — el descuento ES
+    // su beneficio. La visita y el gasto SÍ se registran (CRM del dueño), y
+    // al no ganar puntos tampoco quema el contador mensual.
+    const assignedPid =
+      typeof prev.discountProfileId === "string" ? prev.discountProfileId : "";
+    const noEarn =
+      !!assignedPid &&
+      parseDiscountProfiles(rdata.discountProfiles).find(
+        (p) => p.id === assignedPid,
+      )?.earnsPoints === false;
+    const earnedPoints = noEarn ? 0 : points;
+
+    // Loop de auditoría de descuentos: contadores por cliente (acotados, no
+    // arrays) — alimentan Reportes ("$X dados este mes") y al brain para
+    // detectar abuso ("este número usó Staff 43 veces"). Se escriben en la
+    // MISMA transacción que el crédito de puntos: un solo escritor, cero drift.
+    const da = order.discountApplied as { amount?: unknown } | undefined;
+    const discountAmount = Number(da?.amount) || 0;
+
+    const balanceAfterEarn = (Number(prev.points) || 0) + earnedPoints;
     // Window enforced at apply time too: an expired welcome reward can't be
     // redeemed even if a stale client still offers it.
     const welcomeApplied =
@@ -236,11 +257,19 @@ export async function creditPhonePointsForOrder(params: {
           ? false
           : prev.firstVisitRewardUnlocked === true
             ? true
-            : firstVisit,
+            : firstVisit && !noEarn,
         ...(welcomeApplied
           ? { firstVisitRewardRedeemedAt: serverTimestamp() }
           : {}),
         lastVisitAt: serverTimestamp(),
+        ...(discountAmount > 0
+          ? {
+              discountsGivenTotal:
+                Math.round(((Number(prev.discountsGivenTotal) || 0) + discountAmount) * 100) / 100,
+              discountsGivenCount: (Number(prev.discountsGivenCount) || 0) + 1,
+              lastDiscountAt: serverTimestamp(),
+            }
+          : {}),
         ...(firstVisit ? { createdAt: serverTimestamp() } : {}),
         source: firstVisit ? "web_order" : (prev.source ?? "web_order"),
         ...(redemptionApplied
@@ -261,7 +290,7 @@ export async function creditPhonePointsForOrder(params: {
 
     tx.update(orderRef, {
       loyaltyAwarded: true,
-      phonePointsAwarded: points,
+      phonePointsAwarded: earnedPoints,
       phoneLoyaltyAt: serverTimestamp(),
       ...(redemptionCost > 0 || welcomeRequested
         ? { redemptionResult: redemptionApplied ? "applied" : "insufficient" }
@@ -269,7 +298,7 @@ export async function creditPhonePointsForOrder(params: {
     });
 
     // Counter burns only when something was EARNED.
-    if (points > 0) {
+    if (earnedPoints > 0) {
       tx.update(restaurantRef, {
         scanCount: effectiveCount + 1,
         ...(inSameMonth ? {} : { lastReset: Timestamp.fromDate(now) }),
@@ -279,7 +308,7 @@ export async function creditPhonePointsForOrder(params: {
     return {
       credited: true,
       phone,
-      points,
+      points: earnedPoints,
       firstVisit,
       ...(capReached ? { capReached: true } : {}),
     } as const;

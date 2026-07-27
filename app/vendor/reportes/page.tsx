@@ -59,6 +59,8 @@ interface ReportsData {
   weeklyScansTotal: number;
   // Top products
   topProducts: TopProduct[];
+  /** Descuentos especiales dados (30d) — auditoría del dueño. null = ninguno. */
+  discounts30d: { total: number; count: number; byProfile: Record<string, number> } | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -167,8 +169,23 @@ export default function ReportesPage() {
         let phoneVisits30d = 0;
         let phoneRedemptions30d = 0;
         const uniquePhones30d = new Set<string>();
+        // Descuentos especiales (30d) — se leen del order.discountApplied que
+        // escribe la caja; ninguna colección nueva.
+        let discTotal30d = 0;
+        let discCount30d = 0;
+        const discByProfile: Record<string, number> = {};
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
+          const disc = o.discountApplied as
+            | { amount?: unknown; profileName?: unknown }
+            | undefined;
+          const discAmt = Number(disc?.amount) || 0;
+          if (discAmt > 0 && o.paymentStatus === "paid") {
+            discTotal30d += discAmt;
+            discCount30d++;
+            const pn = String(disc?.profileName ?? "Descuento").trim() || "Descuento";
+            discByProfile[pn] = (discByProfile[pn] ?? 0) + discAmt;
+          }
           const ts = o.phoneLoyaltyAt as Timestamp | undefined;
           if (!ts?.toMillis) return;
           const ms = ts.toMillis();
@@ -255,11 +272,14 @@ export default function ReportesPage() {
         // Top Sold Products aggregation (from weekly orders)
         const productMap: Record<string, { qty: number; revenue: number }> = {};
         weeklyOrdersSnap.forEach((doc) => {
-          const items = doc.data().items as any[] ?? [];
+          const items =
+            (doc.data().items as
+              | { name?: string; quantity?: number; subtotal?: number; price?: number }[]
+              | undefined) ?? [];
           items.forEach((item) => {
-            const name = item.name as string;
-            const quantity = (item.quantity as number) ?? 0;
-            const subtotal = (item.subtotal as number) ?? ((item.price ?? 0) * quantity);
+            const name = item.name;
+            const quantity = item.quantity ?? 0;
+            const subtotal = item.subtotal ?? (item.price ?? 0) * quantity;
             if (!name) return;
             if (!productMap[name]) {
               productMap[name] = { qty: 0, revenue: 0 };
@@ -287,6 +307,10 @@ export default function ReportesPage() {
           weeklyRevenueTotal,
           weeklyScansTotal,
           topProducts,
+          discounts30d:
+            discCount30d > 0
+              ? { total: discTotal30d, count: discCount30d, byProfile: discByProfile }
+              : null,
         });
 
         setLoadState("ready");
@@ -481,6 +505,31 @@ export default function ReportesPage() {
         {/* Lower Grid: Top products and 30d lealtad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
+          {/* Descuentos especiales (30d) — solo si hubo */}
+          {data.discounts30d && (
+            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
+              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
+                🏷️ Descuentos especiales — 30 días
+              </p>
+              <div>
+                <p className="text-[22px] font-black text-[#1C2526]">{fmt(data.discounts30d.total)}</p>
+                <p className="text-[11px] text-gray-400">
+                  dados en {data.discounts30d.count} venta{data.discounts30d.count !== 1 ? "s" : ""} (staff, familia…) — los puntos siempre se calculan sobre lo pagado
+                </p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {Object.entries(data.discounts30d.byProfile)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([name, amt]) => (
+                    <div key={name} className="flex justify-between items-center py-2.5">
+                      <span className="text-[13px] font-bold text-[#1C2526]">🏷️ {name}</span>
+                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt)}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* Top selling items */}
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">Top 5 productos más vendidos (semana)</p>

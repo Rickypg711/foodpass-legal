@@ -266,9 +266,10 @@ export function PosRedemption({
                 >
                   <span>🏷️ {dp.name}</span>
                   <span style={{ opacity: 0.6 }}>
-                    {dp.type === "total"
+                    {(dp.type === "total"
                       ? `${dp.totalPct ?? 0}% total`
-                      : `${dp.bebidasPct ?? 0}% beb · ${dp.alimentosPct ?? 0}% alim`}
+                      : `${dp.bebidasPct ?? 0}% beb · ${dp.alimentosPct ?? 0}% alim`) +
+                      (dp.earnsPoints === false ? " · sin pts" : "")}
                   </span>
                 </button>
               ))}

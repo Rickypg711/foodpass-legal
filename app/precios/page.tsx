@@ -31,6 +31,7 @@ const PRO_FEATURES = [
   "Lealtad ilimitada — ningún cliente se queda sin sus puntos",
   "Recuperación automática por WhatsApp sin límite: si un cliente deja de venir, le llega un mensaje para que regrese",
   "Comeleal AI sin límite: pregúntale por tus ventas, tus VIP y cuándo lanzar promos",
+  "Descuentos especiales para staff y familia — la caja los aplica sola al cobrar",
   "Soporte directo — te contesta una persona, no un bot",
 ];
 

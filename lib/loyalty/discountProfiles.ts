@@ -20,6 +20,9 @@ export type DiscountProfile = {
   alimentosPct?: number;
   /** total */
   totalPct?: number;
+  /** false = no acumula puntos ni desbloquea bienvenida (el descuento ES su
+   * beneficio). Ausente/true = junta puntos normal, calculados sobre lo pagado. */
+  earnsPoints?: boolean;
 };
 
 const BEBIDA_RE =
@@ -52,6 +55,7 @@ export function parseDiscountProfiles(raw: unknown): DiscountProfile[] {
       bebidasPct: clampPct(m.bebidasPct),
       alimentosPct: clampPct(m.alimentosPct),
       totalPct: clampPct(m.totalPct),
+      earnsPoints: m.earnsPoints !== false,
     });
   }
   return out;
