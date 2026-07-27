@@ -365,8 +365,9 @@ function PublicMenuPageWithOrdering() {
     };
   }, [restaurantId]);
 
-  const headerSecondary =
-    webOrderingReady && webOrderingAvailable
+  const headerSecondary = closedNow
+    ? "Menú en línea"
+    : webOrderingReady && webOrderingAvailable
       ? "Ordena en línea · Pago seguro con Mercado Pago"
       : webOrderingReady
         ? "Menú en línea"
@@ -433,10 +434,15 @@ function PublicMenuPageWithOrdering() {
 
       {closedNow && !loading && !error ? (
         <MenuBottomDock>
-          <p className="py-1.5 text-center text-sm font-semibold text-[#1C2526]/75">
-            😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ver el menú y ordenar
-            cuando abra.
+          <p className="mb-2 pt-1 text-center text-sm font-semibold text-[#1C2526]/75">
+            😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ordenar cuando abra.
           </p>
+          <MenuAppRewardsCta
+            restaurantId={restaurantId}
+            restaurantName={restaurantName}
+            variant="banner"
+            firstVisitRewardLabel={firstVisitReward}
+          />
         </MenuBottomDock>
       ) : showMpUnavailableDock ? (
         <MenuBottomDock>
