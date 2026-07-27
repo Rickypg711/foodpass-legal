@@ -99,10 +99,15 @@ export default function ConfiguracionPage() {
         const rows: TeamAccountRow[] = [];
         memSnap.docs.forEach((m) => {
           const d = (m.data() ?? {}) as Record<string, unknown>;
+          const isSelf = m.id === u.uid;
+          const rawName = typeof d.name === "string" && d.name.trim() ? d.name.trim() : "";
+          const rawEmail = typeof d.email === "string" && d.email ? d.email : "";
           rows.push({
             id: m.id,
-            name: typeof d.name === "string" && d.name.trim() ? d.name.trim() : "",
-            email: typeof d.email === "string" ? d.email : "",
+            name:
+              rawName ||
+              (isSelf ? (u.displayName?.trim() || "Tú") : ""),
+            email: rawEmail || (isSelf ? (u.email ?? "") : ""),
             role: d.role === "owner" ? "owner" : d.role === "manager" ? "manager" : "employee",
             status: typeof d.status === "string" ? d.status : "active",
           });
@@ -324,6 +329,87 @@ export default function ConfiguracionPage() {
     }
   }
 
+  // Estas dos tarjetas viven en la columna izquierda en desktop y al FINAL
+  // de la página en móvil (el formulario del negocio va primero en teléfono).
+  const planCard = (
+            <SectionCard label="Tu plan">
+              {plan === "pro" ? (
+                <div className="py-1">
+                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    Plan Pro activo ⭐
+                  </p>
+                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    Lealtad ilimitada, recuperación por WhatsApp, descuentos especiales, Comeleal AI y soporte directo
+                  </p>
+                </div>
+              ) : (
+                <div className="py-1">
+                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    Plan Gratis — para operar
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+                    Menú QR, Caja/POS, pedidos, tus clientes y reportes: gratis siempre.
+                    Incluye 50 visitas de lealtad al mes.
+                  </p>
+                  <div
+                    className="mt-3 rounded-xl p-3.5"
+                    style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
+                  >
+                    <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
+                      Pro · $299/mes — la máquina de que regresen
+                    </p>
+                    <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+                      <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
+                      <li>✓ Recuperación automática por WhatsApp sin límite</li>
+                      <li>✓ Comeleal AI sin límite</li>
+                      <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
+                      <li>✓ Soporte directo — te contesta una persona</li>
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleActivatePro}
+                      disabled={activatingPro}
+                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                      style={{ background: "#F28C38" }}
+                    >
+                      {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
+                    </button>
+                    <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                      Pago seguro con Mercado Pago · cancela cuando quieras
+                    </p>
+                    <Link
+                      href="/vendor/plan"
+                      className="mt-2 block text-center text-[11px] font-semibold underline underline-offset-2"
+                      style={{ color: "#F28C38" }}
+                    >
+                      Ver la comparación completa →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </SectionCard>
+  );
+
+  const soporteCard = (
+            <SectionCard label="Soporte">
+              <ManageLink
+                href="https://apps.apple.com/mx/app/foodpass/id6745301069"
+                emoji="📱"
+                title="App cliente (iOS)"
+                subtitle="Descarga la app para los clientes"
+                external
+              />
+              <ManageLink
+                href={PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP}
+                emoji="💬"
+                title="Ayuda por WhatsApp"
+                subtitle="Te contesta una persona"
+                external
+                last
+              />
+            </SectionCard>
+  );
+
   return (
     <>
       <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
@@ -405,87 +491,16 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Suscripción (docs/PRICING.md) ── */}
-            <SectionCard label="Tu plan">
-              {plan === "pro" ? (
-                <div className="py-1">
-                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    Plan Pro activo ⭐
-                  </p>
-                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    Lealtad ilimitada, recuperación por WhatsApp, descuentos especiales, Comeleal AI y soporte directo
-                  </p>
-                </div>
-              ) : (
-                <div className="py-1">
-                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    Plan Gratis — para operar
-                  </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
-                    Menú QR, Caja/POS, pedidos, tus clientes y reportes: gratis siempre.
-                    Incluye 50 visitas de lealtad al mes.
-                  </p>
-                  <div
-                    className="mt-3 rounded-xl p-3.5"
-                    style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-                  >
-                    <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-                      Pro · $299/mes — la máquina de que regresen
-                    </p>
-                    <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
-                      <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
-                      <li>✓ Recuperación automática por WhatsApp sin límite</li>
-                      <li>✓ Comeleal AI sin límite</li>
-                      <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
-                      <li>✓ Soporte directo — te contesta una persona</li>
-                    </ul>
-                    <button
-                      type="button"
-                      onClick={handleActivatePro}
-                      disabled={activatingPro}
-                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
-                      style={{ background: "#F28C38" }}
-                    >
-                      {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
-                    </button>
-                    <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                      Pago seguro con Mercado Pago · cancela cuando quieras
-                    </p>
-                    <Link
-                      href="/vendor/plan"
-                      className="mt-2 block text-center text-[11px] font-semibold underline underline-offset-2"
-                      style={{ color: "#F28C38" }}
-                    >
-                      Ver la comparación completa →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </SectionCard>
+            <div className="hidden lg:block">{planCard}</div>
 
             {/* ── Soporte ── */}
-            <SectionCard label="Soporte">
-              <ManageLink
-                href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                emoji="📱"
-                title="App cliente (iOS)"
-                subtitle="Descarga la app para los clientes"
-                external
-              />
-              <ManageLink
-                href={PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP}
-                emoji="💬"
-                title="Ayuda por WhatsApp"
-                subtitle="Te contesta una persona"
-                external
-                last
-              />
-            </SectionCard>
+            <div className="hidden lg:block">{soporteCard}</div>
 
-            {/* ── Cerrar sesión ── */}
+            {/* ── Cerrar sesión (desktop: al final de la columna izquierda) ── */}
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
+              className="hidden w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors lg:flex"
               style={{
                 background: "#ffffff",
                 border: "1px solid rgba(28,37,38,0.07)",
@@ -495,7 +510,7 @@ export default function ConfiguracionPage() {
               {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
             </button>
 
-            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
+            <p className="hidden pb-4 text-center text-[10px] lg:block" style={{ color: "rgba(28,37,38,0.25)" }}>
               Comeleal · v{new Date().getFullYear()}
             </p>
 
@@ -762,6 +777,27 @@ export default function ConfiguracionPage() {
               {saved ? "✓ Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
             </button>
 
+          </div>
+
+          {/* ── Móvil: plan, soporte y cerrar sesión al FINAL de la página ── */}
+          <div className="space-y-4 lg:hidden">
+            {planCard}
+            {soporteCard}
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(28,37,38,0.07)",
+                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
+              }}
+            >
+              {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
+            </button>
+            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
+              Comeleal · v{new Date().getFullYear()}
+            </p>
           </div>
           </div>
         )}
