@@ -53,6 +53,8 @@ export default function ConfiguracionPage() {
   const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
   /** Equipo de la caja (PIN roster) — perfiles sin cuenta, estilo Square. */
   const [posStaff, setPosStaff] = useState<PosStaffMember[]>([]);
+  /** Cuentas del equipo (members con acceso propio) — se invitan desde la app. */
+  const [teamAccounts, setTeamAccounts] = useState<TeamAccountRow[]>([]);
 
   // Images state
   const [logoUrl, setLogoUrl] = useState("");
@@ -92,6 +94,22 @@ export default function ConfiguracionPage() {
         const staffSnap = await getDocs(collection(db, "restaurants", rid, "posStaff"));
         setPosStaff(parsePosStaff(staffSnap.docs));
       } catch { /* roster vacío o sin permiso — la sección muestra vacío */ }
+      try {
+        const memSnap = await getDocs(collection(db, "restaurants", rid, "members"));
+        const rows: TeamAccountRow[] = [];
+        memSnap.docs.forEach((m) => {
+          const d = (m.data() ?? {}) as Record<string, unknown>;
+          rows.push({
+            id: m.id,
+            name: typeof d.name === "string" && d.name.trim() ? d.name.trim() : "",
+            email: typeof d.email === "string" ? d.email : "",
+            role: d.role === "owner" ? "owner" : d.role === "manager" ? "manager" : "employee",
+            status: typeof d.status === "string" ? d.status : "active",
+          });
+        });
+        rows.sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : a.name.localeCompare(b.name)));
+        setTeamAccounts(rows);
+      } catch { /* sin permiso de roster → solo se muestra el upsell/nota */ }
       if (data.isSetupComplete === false) {
         setSetupReasons((data.setupIncompleteReasons as string[]) ?? []);
       }
@@ -686,6 +704,8 @@ export default function ConfiguracionPage() {
                 restaurantId={restaurantId}
                 staff={posStaff}
                 onStaffChange={setPosStaff}
+                accounts={teamAccounts}
+                isPro={plan === "pro" || isFounderTestRestaurant(restaurantId)}
               />
             )}
 
@@ -1210,14 +1230,33 @@ function DiscountProfilesSection({
 // Esto NO es login: para acceso con cuenta propia (manager/empleado en su
 // teléfono), se invita desde la app y entran a comeleal.com con su cuenta.
 
+type TeamAccountRow = {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "manager" | "employee";
+  status: string;
+};
+
+const TEAM_ROLE_LABEL: Record<TeamAccountRow["role"], string> = {
+  owner: "Dueño",
+  manager: "Manager",
+  employee: "Empleado",
+};
+
 function PosStaffSection({
   restaurantId,
   staff,
   onStaffChange,
+  accounts,
+  isPro,
 }: {
   restaurantId: string;
   staff: PosStaffMember[];
   onStaffChange: (s: PosStaffMember[]) => void;
+  /** Cuentas del equipo (members) — solo lectura en web; invitaciones desde la app. */
+  accounts: TeamAccountRow[];
+  isPro: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [fName, setFName] = useState("");
@@ -1278,7 +1317,13 @@ function PosStaffSection({
   }
 
   return (
-    <SectionCard label="Equipo de la caja 👥">
+    <SectionCard label="Equipo 👥">
+      <p
+        className="text-[10px] font-bold uppercase tracking-widest"
+        style={{ color: "rgba(28,37,38,0.35)" }}
+      >
+        PINs de la caja · gratis
+      </p>
       <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
         Agrega a tu equipo con un PIN de 4 dígitos. En la caja eligen quién
         cobra con su PIN — cada venta queda registrada a su nombre (sin
@@ -1426,6 +1471,81 @@ function PosStaffSection({
           + Agregar persona
         </button>
       )}
+
+      {/* ── Cuentas con acceso propio (Pro) — espejo del hub Equipo de la app ── */}
+      <div className="mt-1 border-t pt-4" style={{ borderColor: "rgba(28,37,38,0.07)" }}>
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest"
+          style={{ color: "rgba(28,37,38,0.35)" }}
+        >
+          Cuentas con acceso propio · Pro
+        </p>
+        {isPro ? (
+          <>
+            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+              Cada quien entra con su propia cuenta y su rol desde su teléfono o
+              computadora — empleado ve solo la operación; manager también
+              clientes y reportes. Las invitaciones se envían desde la app
+              (Configuración → Equipo).
+            </p>
+            {accounts.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {accounts.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
+                    style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+                  >
+                    <span className="text-base">🔐</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                        {m.name || m.email || m.id.slice(0, 8)}
+                      </p>
+                      {m.email && m.name && (
+                        <p className="truncate text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                          {m.email}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                      style={
+                        m.role === "owner"
+                          ? { background: "rgba(242,140,56,0.15)", color: "#F28C38" }
+                          : m.status === "active"
+                            ? { background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.55)" }
+                            : { background: "rgba(234,88,12,0.1)", color: "#9A3412" }
+                      }
+                    >
+                      {TEAM_ROLE_LABEL[m.role]}
+                      {m.status !== "active" ? " · pendiente" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                Aún no has invitado a nadie — invita a tu equipo desde la app.
+              </p>
+            )}
+          </>
+        ) : (
+          <div
+            className="mt-2 rounded-xl p-3.5"
+            style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
+          >
+            <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
+              ⭐ Incluido en Pro
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.55)" }}>
+              Cuentas con acceso propio para tu equipo: cada quien entra con su
+              cuenta y su rol desde su propio teléfono — empleado ve solo la
+              caja; manager también clientes y reportes. Todo tu equipo,
+              incluido.
+            </p>
+          </div>
+        )}
+      </div>
     </SectionCard>
   );
 }
