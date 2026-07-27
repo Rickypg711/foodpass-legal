@@ -10,6 +10,8 @@ import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
+import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
+import { warmUpsellSuggestion } from "@/lib/upsellSuggestionCache";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
@@ -276,6 +278,22 @@ function PublicMenuPageWithOrdering() {
     return map;
   }, [lines]);
 
+  // Precalienta la sugerencia de upsell (Cloud Function con IA) mientras el
+  // cliente sigue escogiendo — al llegar al checkout ya está resuelta y la
+  // tarjeta pinta al instante. Debounce: una llamada por carrito estable.
+  const upsellIds = useMemo(
+    () => lines.map((l) => l.menuItemId).sort().join(","),
+    [lines],
+  );
+  useEffect(() => {
+    if (!restaurantId || !upsellIds) return;
+    const t = setTimeout(
+      () => warmUpsellSuggestion(restaurantId, upsellIds.split(",")),
+      700,
+    );
+    return () => clearTimeout(t);
+  }, [restaurantId, upsellIds]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
@@ -301,8 +319,9 @@ function PublicMenuPageWithOrdering() {
       setError(null);
       try {
         const db = getFirebaseDb();
-        const rRef = doc(db, "restaurants", restaurantId);
-        const rSnap = await getDoc(rRef);
+        // Cache compartido: el WebOrderingProvider ya pidió este mismo doc —
+        // un solo viaje para los dos (la barra del carrito aparece de una vez).
+        const rSnap = await getRestaurantSnapOnce(restaurantId);
         if (cancelled) return;
         if (!rSnap.exists()) {
           const allSnap = await getDocs(collection(db, "restaurants"));
@@ -434,13 +453,16 @@ function PublicMenuPageWithOrdering() {
 
       {closedNow && !loading && !error ? (
         <MenuBottomDock>
-          <p className="mb-2 pt-1 text-center text-sm font-semibold text-[#1C2526]/75">
+          {/* COMPACTO a propósito: la variante banner hacía el dock tan alto
+              que tapaba el final del menú (el scroll "rebotaba" sin dejar ver
+              los últimos platillos). El upsell queda en una línea. */}
+          <p className="pt-1 text-center text-sm font-semibold text-[#1C2526]/75">
             😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ordenar cuando abra.
           </p>
           <MenuAppRewardsCta
             restaurantId={restaurantId}
             restaurantName={restaurantName}
-            variant="banner"
+            variant="compact"
             firstVisitRewardLabel={firstVisitReward}
           />
         </MenuBottomDock>
@@ -488,8 +510,9 @@ function PublicMenuPageBrowseOnly() {
       setMenuLinkResolved(false);
       try {
         const db = getFirebaseDb();
-        const rRef = doc(db, "restaurants", restaurantId);
-        const rSnap = await getDoc(rRef);
+        // Cache compartido: el WebOrderingProvider ya pidió este mismo doc —
+        // un solo viaje para los dos (la barra del carrito aparece de una vez).
+        const rSnap = await getRestaurantSnapOnce(restaurantId);
         if (cancelled) return;
         if (!rSnap.exists()) {
           const allSnap = await getDocs(collection(db, "restaurants"));

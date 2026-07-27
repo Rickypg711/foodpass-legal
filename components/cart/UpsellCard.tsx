@@ -14,23 +14,11 @@
 // it can never break the checkout flow.
 
 import { useEffect, useRef, useState } from "react";
-import { httpsCallable } from "firebase/functions";
-import { getFirebaseFunctions } from "@/lib/firebase";
 import { useCart } from "@/lib/cart/CartProvider";
-
-type Suggestion = {
-  menuItemId: string;
-  name: string;
-  price: number;
-  priceDelta: number;
-  category: string;
-  type: string;
-  pitchTitle: string;
-  pitchBody: string;
-  bonusPoints?: number;
-  surprise?: boolean;
-  accelerated?: boolean;
-};
+import {
+  fetchUpsellSuggestion,
+  type UpsellSuggestion as Suggestion,
+} from "@/lib/upsellSuggestionCache";
 
 /** Goal-gradient context: the verified customer's balance + next goal, so the
  * bonus line can say "con esto te faltarían solo N pts para tu X GRATIS" —
@@ -80,14 +68,10 @@ export function UpsellCard({
         setSuggestion(null);
         return;
       }
-      try {
-        const fn = httpsCallable(getFirebaseFunctions(), "getUpsellSuggestion");
-        const res = await fn({ restaurantId, cartItemIds: ids });
-        const data = res.data as { suggestion?: Suggestion | null };
-        if (!cancelled) setSuggestion(data?.suggestion ?? null);
-      } catch {
-        if (!cancelled) setSuggestion(null); // never break checkout
-      }
+      // Cache precalentado desde el menú (mientras el cliente escogía) —
+      // en el caso común esto resuelve al instante, sin brinco de layout.
+      const s = await fetchUpsellSuggestion(restaurantId, ids);
+      if (!cancelled) setSuggestion(s);
     }
     run();
     return () => {
