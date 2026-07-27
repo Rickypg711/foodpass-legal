@@ -434,7 +434,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 {userEmail || userName || "Mi cuenta"}
               </p>
               <Link
-                href="/vendor/configuracion"
+                href="/vendor/plan"
                 onClick={() => setUserMenuOpen(false)}
                 className="flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-black/5"
                 style={{ color: "#1C2526" }}
@@ -454,6 +454,21 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 <IconLogOut /> Cerrar sesión
               </button>
             </div>
+          )}
+
+          {!isPro && vendorRole === "owner" && !cajaLocked && (
+            <Link
+              href="/vendor/plan"
+              className="mx-2 mb-2 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[11px] font-bold transition hover:opacity-90"
+              style={{
+                background: "linear-gradient(135deg, rgba(242,140,56,0.22) 0%, rgba(255,154,69,0.12) 100%)",
+                color: "#FF9A45",
+                border: "1px solid rgba(242,140,56,0.35)",
+              }}
+              title="Pro $299/mes — la máquina de que regresen"
+            >
+              ⭐{open ? " Hazte Pro" : ""}
+            </Link>
           )}
 
           {cajaLocked && (

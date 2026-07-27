@@ -450,6 +450,13 @@ export default function ConfiguracionPage() {
                     <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
                       Pago seguro con Mercado Pago · cancela cuando quieras
                     </p>
+                    <Link
+                      href="/vendor/plan"
+                      className="mt-2 block text-center text-[11px] font-semibold underline underline-offset-2"
+                      style={{ color: "#F28C38" }}
+                    >
+                      Ver la comparación completa →
+                    </Link>
                   </div>
                 </div>
               )}
@@ -998,6 +1005,13 @@ function DiscountProfilesSection({
             Crea descuentos para tu staff o familia (ej. 50% en bebidas) y asígnalos
             por cliente. El POS los aplica solo al cobrar, automáticamente.
           </p>
+          <Link
+            href="/vendor/plan"
+            className="mt-2 inline-block text-[11px] font-bold underline underline-offset-2"
+            style={{ color: "#F28C38" }}
+          >
+            Ver el plan Pro →
+          </Link>
         </div>
       </SectionCard>
     );
