@@ -6,7 +6,7 @@ import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 export const metadata: Metadata = {
   title: "Precios — Comeleal para restaurantes",
   description:
-    "Gratis para operar: menú QR, punto de venta, pedidos y tus clientes. Pro $299/mes: la máquina de que tus clientes regresen — lealtad ilimitada, recuperación por WhatsApp y AI.",
+    "Gratis para operar: menú QR, punto de venta, pedidos y tus clientes. Pro $299/mes: para que tus clientes regresen — lealtad ilimitada, recuperación por WhatsApp y AI.",
   alternates: { canonical: "/precios" },
   openGraph: {
     title: "Precios — Comeleal para restaurantes",
@@ -82,7 +82,7 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Opera <span className="text-[#F28C38]">gratis</span>. Paga solo por la máquina de que regresen.
+            Opera <span className="text-[#F28C38]">gratis</span>. Paga solo para que tus clientes regresen.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Tu menú, tu Caja y tus pedidos no cuestan nada — hoy ni nunca. Pro es
@@ -130,7 +130,7 @@ export default function Page() {
             <p className="mt-2 text-4xl font-black text-white">
               $299 <span className="text-[15px] font-semibold text-white/50">MXN/mes</span>
             </p>
-            <p className="mt-1 text-[13px] text-white/55">La máquina de que tus clientes regresen.</p>
+            <p className="mt-1 text-[13px] text-white/55">Para que tus clientes regresen.</p>
             <ul className="mt-6 space-y-2.5">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex gap-2 text-[14px] leading-relaxed text-white/80">

@@ -356,7 +356,7 @@ export default function ConfiguracionPage() {
                     style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
                   >
                     <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-                      Pro · $299/mes — la máquina de que regresen
+                      Pro · $299/mes — para que tus clientes regresen
                     </p>
                     <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
                       <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>

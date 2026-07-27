@@ -181,7 +181,7 @@ export default function PlanPage() {
             </span>
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#F28C38" }}>
-                ⭐ Pro — la máquina de que regresen
+                ⭐ Pro — para que tus clientes regresen
               </p>
               {isPro && (
                 <span

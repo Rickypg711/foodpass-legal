@@ -86,7 +86,7 @@ const BENEFITS = [
 const FAQ_ITEMS = [
   {
     q: "¿Cuánto cuesta?",
-    a: "Operar es gratis: menú digital, Caja/POS, pedidos, tus clientes y reportes, con 50 visitas de lealtad al mes. Pro ($299/mes) es la máquina de que regresen: lealtad ilimitada, recuperación automática por WhatsApp y Comeleal AI sin límite.",
+    a: "Operar es gratis: menú digital, Caja/POS, pedidos, tus clientes y reportes, con 50 visitas de lealtad al mes. Pro ($299/mes) es para que tus clientes regresen: lealtad ilimitada, recuperación automática por WhatsApp y Comeleal AI sin límite.",
   },
   {
     q: "¿Qué es Apple Wallet / Google Wallet y cómo lo usan mis clientes?",

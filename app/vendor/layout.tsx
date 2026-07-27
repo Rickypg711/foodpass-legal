@@ -490,7 +490,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 color: "#FF9A45",
                 border: "1px solid rgba(242,140,56,0.35)",
               }}
-              title="Pro $299/mes — la máquina de que regresen"
+              title="Pro $299/mes — para que tus clientes regresen"
             >
               ⭐{open ? " Hazte Pro" : ""}
             </Link>
