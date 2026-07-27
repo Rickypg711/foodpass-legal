@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext } from "@/lib/vendorContext";
 
 // ─── BarcodeDetector types (not in TS stdlib yet) ─────────────────────────────
 
@@ -79,13 +80,13 @@ export default function VendorScanner() {
 
       try {
         const db = getFirebaseDb();
-        const userSnap = await getDoc(doc(db, "users", u.uid));
-        const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-
-        if (!rid) {
+        // Staff-aware: escanear/canjear es operación de todo rol activo.
+        const ctx = await resolveVendorContext(db, u.uid);
+        if (!ctx) {
           router.push("/activar");
           return;
         }
+        const rid = ctx.restaurantId;
 
         const restSnap = await getDoc(doc(db, "restaurants", rid));
         const restData = restSnap.data();

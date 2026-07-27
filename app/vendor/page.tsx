@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
 
@@ -133,11 +134,12 @@ export default function VendorDashboard() {
 
       try {
         const db = getFirebaseDb();
-        const userSnap = await getDoc(doc(db, "users", u.uid));
-        const userData = userSnap.data();
-        if (!userData?.ownedRestaurantId) { router.push("/activar"); return; }
+        // Staff-aware: panel es de dueño/manager; empleado aterriza en la caja.
+        const ctx = await resolveVendorContext(db, u.uid);
+        if (!ctx) { router.push("/activar"); return; }
+        if (ctx.role === "employee") { router.push(vendorHomeForRole(ctx.role)); return; }
 
-        const rid = userData.ownedRestaurantId as string;
+        const rid = ctx.restaurantId;
 
         const todayStart = (() => {
           const d = new Date(); d.setHours(0, 0, 0, 0);

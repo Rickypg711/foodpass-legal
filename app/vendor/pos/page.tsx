@@ -16,6 +16,8 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
+import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import {
   PosRedemption,
@@ -179,6 +181,126 @@ function CartRow({
 
 // ─── Checkout Dialog ───────────────────────────────────────────────────────────
 
+// ─── ¿Quién cobra? — switcher del equipo de la caja (PIN, estilo Square) ─────
+// El dispositivo queda logueado como el venue; cada persona teclea su PIN de
+// 4 dígitos para "tomar la caja". Cada venta se estampa con soldBy.
+
+function SellerPinDialog({
+  open,
+  roster,
+  current,
+  onClose,
+  onPick,
+}: {
+  open: boolean;
+  roster: PosStaffMember[];
+  current: SoldBy | null;
+  onClose: () => void;
+  onPick: (seller: SoldBy | null) => void;
+}) {
+  const [pin, setPin] = useState("");
+  const [bad, setBad] = useState(false);
+
+  useEffect(() => {
+    if (open) { setPin(""); setBad(false); }
+  }, [open]);
+
+  useEffect(() => {
+    if (pin.length !== 4) return;
+    const m = findStaffByPin(roster, pin);
+    if (m) {
+      onPick({ staffId: m.id, name: m.name });
+    } else {
+      setBad(true);
+      setPin("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(28,37,38,0.5)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-3xl bg-white p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-[16px] font-extrabold" style={{ color: "#1C2526" }}>
+          👤 ¿Quién cobra?
+        </p>
+        <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+          Teclea tu PIN de 4 dígitos — las ventas quedan a tu nombre.
+        </p>
+
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={4}
+          autoFocus
+          value={pin}
+          onChange={(e) => {
+            setPin(e.target.value.replace(/\D/g, ""));
+            if (bad) setBad(false);
+          }}
+          placeholder="••••"
+          className="mt-4 w-full rounded-2xl px-4 py-3.5 text-center font-mono text-[24px] font-black tracking-[0.5em] outline-none"
+          style={{
+            background: "#F5F3EF",
+            border: bad ? "2px solid #EF4444" : "2px solid rgba(28,37,38,0.12)",
+            color: "#1C2526",
+          }}
+        />
+        {bad && (
+          <p className="mt-2 text-center text-[12px] font-semibold" style={{ color: "#dc2626" }}>
+            PIN incorrecto — intenta de nuevo
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {roster.filter((m) => m.active).map((m) => (
+            <span
+              key={m.id}
+              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              style={
+                current?.staffId === m.id
+                  ? { background: "rgba(242,140,56,0.15)", color: "#F28C38" }
+                  : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }
+              }
+            >
+              {current?.staffId === m.id ? "✓ " : ""}{m.name}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          {current && (
+            <button
+              type="button"
+              onClick={() => onPick(null)}
+              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold"
+              style={{ background: "rgba(239,68,68,0.08)", color: "#dc2626" }}
+            >
+              Quitar vendedor
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold"
+            style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CheckoutDialog({
   total,
   restaurantId,
@@ -186,11 +308,14 @@ function CheckoutDialog({
   cartLines,
   onConfirm,
   processing,
+  canAssignDiscount = true,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
   restaurantId: string;
   onClose: () => void;
+  /** Owner-only: asignar descuentos especiales desde la caja. */
+  canAssignDiscount?: boolean;
   onConfirm: (
     mode: CheckoutMode,
     method: PaymentMethod,
@@ -334,6 +459,7 @@ function CheckoutDialog({
               onSelect={setRedemption}
               onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
               onDiscount={setDiscountProfile}
+              canAssignDiscount={canAssignDiscount}
             />
             <div>
               <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
@@ -468,6 +594,11 @@ export default function PosPage() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState("POS");
   const [uid, setUid] = useState<string | null>(null);
+  const [vendorRole, setVendorRole] = useState<VendorRole>("owner");
+  /** Equipo de la caja (PIN roster) — switcher "¿Quién cobra?". */
+  const [posStaff, setPosStaff] = useState<PosStaffMember[]>([]);
+  const [currentSeller, setCurrentSeller] = useState<SoldBy | null>(null);
+  const [sellerDialogOpen, setSellerDialogOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Menu
@@ -501,15 +632,34 @@ export default function PosPage() {
       if (!u || u.isAnonymous) { router.push("/activar"); return; }
 
       const db = getFirebaseDb();
-      const userSnap = await getDoc(doc(db, "users", u.uid));
-      const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      // Staff-aware: dueño, manager y empleado operan la caja (mismo matrix
+      // que el app; las rules ya autorizan associates).
+      const ctx = await resolveVendorContext(db, u.uid);
+      if (!ctx) { router.push("/activar"); return; }
+      const rid = ctx.restaurantId;
+      setVendorRole(ctx.role);
 
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
       setRestaurantName((rData.name as string | undefined) ?? "POS");
       setRestaurantId(rid);
       setUid(u.uid);
+      // Equipo de la caja: roster de PINs (associate-readable). Restaura el
+      // último vendedor elegido en ESTE dispositivo (sessionStorage).
+      try {
+        const staffSnap = await getDocs(collection(db, "restaurants", rid, "posStaff"));
+        const roster = parsePosStaff(staffSnap.docs);
+        setPosStaff(roster);
+        const savedRaw = typeof window !== "undefined"
+          ? window.sessionStorage.getItem(`posSeller:${rid}`)
+          : null;
+        if (savedRaw) {
+          const saved = JSON.parse(savedRaw) as SoldBy;
+          if (roster.some((m) => m.id === saved.staffId && m.active)) {
+            setCurrentSeller(saved);
+          }
+        }
+      } catch { /* sin roster → la caja opera igual que siempre */ }
       setAuthLoading(false);
     }
     init().catch(() => setAuthLoading(false));
@@ -798,6 +948,8 @@ export default function PosPage() {
         isOpenTab: mode === "tab",
         createdAt: serverTimestamp(),
         createdByUserId: uid,
+        // Atribución por empleado (equipo de la caja): quién hizo esta venta.
+        ...(currentSeller ? { soldBy: currentSeller } : {}),
       };
 
       if (effectiveRedemption) {
@@ -899,6 +1051,27 @@ export default function PosPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* ¿Quién cobra? — switcher del equipo (solo si hay roster) */}
+            {posStaff.length > 0 && (
+              <button
+                onClick={() => setSellerDialogOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
+                style={{
+                  background: currentSeller ? "rgba(242,140,56,0.1)" : "rgba(28,37,38,0.07)",
+                  border: currentSeller
+                    ? "1px solid rgba(242,140,56,0.4)"
+                    : "1px solid rgba(28,37,38,0.05)",
+                }}
+              >
+                <span className="text-[14px]">👤</span>
+                <span
+                  className="text-[12px] font-bold hidden sm:inline"
+                  style={{ color: currentSeller ? "#F28C38" : "#1C2526" }}
+                >
+                  {currentSeller ? currentSeller.name : "¿Quién cobra?"}
+                </span>
+              </button>
+            )}
             {/* Cuentas Abiertas button */}
             <button
               onClick={() => {
@@ -1189,6 +1362,24 @@ export default function PosPage() {
         </div>
       )}
 
+      {/* ── ¿Quién cobra? (equipo de la caja) ── */}
+      <SellerPinDialog
+        open={sellerDialogOpen}
+        roster={posStaff}
+        current={currentSeller}
+        onClose={() => setSellerDialogOpen(false)}
+        onPick={(seller) => {
+          setCurrentSeller(seller);
+          setSellerDialogOpen(false);
+          try {
+            if (restaurantId) {
+              if (seller) window.sessionStorage.setItem(`posSeller:${restaurantId}`, JSON.stringify(seller));
+              else window.sessionStorage.removeItem(`posSeller:${restaurantId}`);
+            }
+          } catch { /* storage lleno/privado — el estado en memoria basta */ }
+        }}
+      />
+
       {/* ── Checkout dialog ── */}
       {showCheckout && (
         <CheckoutDialog
@@ -1202,6 +1393,7 @@ export default function PosPage() {
           onClose={() => setShowCheckout(false)}
           onConfirm={confirmOrder}
           processing={processing}
+          canAssignDiscount={vendorRole === "owner"}
         />
       )}
 

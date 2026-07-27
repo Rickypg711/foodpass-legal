@@ -18,6 +18,7 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import {
   parseDiscountProfiles,
   discountsEnabled,
@@ -589,9 +590,13 @@ export default function ClientesPage() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) { router.push("/activar"); return; }
       const db = getFirebaseDb();
-      const userSnap = await getDoc(doc(db, "users", u.uid));
-      const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      // Staff-aware: CRM es de dueño/manager (canViewAnalytics del app);
+      // empleado va a la caja. Asignar descuentos sigue siendo SOLO dueño.
+      const ctx = await resolveVendorContext(db, u.uid);
+      if (!ctx) { router.push("/activar"); return; }
+      if (ctx.role === "employee") { router.push(vendorHomeForRole(ctx.role)); return; }
+      const rid = ctx.restaurantId;
+      const isOwner = ctx.role === "owner";
       const [restSnap, statsSnap] = await Promise.all([
         getDoc(doc(db, "restaurants", rid)),
         getDoc(doc(db, "restaurants", rid, "reEngagementStats", "current")).catch(() => null)
@@ -602,8 +607,10 @@ export default function ClientesPage() {
       setRestaurantId(rid);
       const rdata = restSnap.data() ?? {};
       setRestaurantName((rdata.name as string | undefined) ?? "");
-      setDiscountProfiles(parseDiscountProfiles(rdata.discountProfiles));
-      setDiscountsOn(discountsEnabled(rdata, rid));
+      // Owner-only rule: el manager ve chips de descuento asignados pero no
+      // puede asignar/quitar ni filtrar (profiles vacíos = UI de asignación oculta).
+      setDiscountProfiles(isOwner ? parseDiscountProfiles(rdata.discountProfiles) : []);
+      setDiscountsOn(isOwner && discountsEnabled(rdata, rid));
       await loadCustomers(rid);
     }
     init().catch(() => setLoading(false));

@@ -48,6 +48,7 @@ export function PosRedemption({
   onSelect,
   onCustomerName,
   onDiscount,
+  canAssignDiscount = true,
 }: {
   restaurantId: string;
   phoneDigits: string;
@@ -56,6 +57,9 @@ export function PosRedemption({
   onCustomerName?: (name: string) => void;
   /** Special discount profile assigned to this number (Pro) — null when none. */
   onDiscount?: (profile: DiscountProfile | null) => void;
+  /** Solo el dueño asigna descuentos (regla owner-only); staff ve el banner
+   * del descuento ya asignado pero no el quick-assign. */
+  canAssignDiscount?: boolean;
 }) {
   const phone10 = last10(phoneDigits);
   const active = phone10.length === 10;
@@ -236,7 +240,7 @@ export function PosRedemption({
         <p className="mb-2 text-[12px] font-bold" style={{ color: "#b45309" }}>
           🏷️ Descuento {discount.name} activo — se aplica solo al cobrar
         </p>
-      ) : !loading && profiles.length > 0 ? (
+      ) : !loading && canAssignDiscount && profiles.length > 0 ? (
         <div className="mb-2">
           {!assignOpen ? (
             <button

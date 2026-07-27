@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import FloatingAI from "./_components/FloatingAI";
 
@@ -134,6 +135,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [open, setOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [vendorRole, setVendorRole] = useState<VendorRole>("owner");
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [isLive] = useState(false);
@@ -162,10 +164,12 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       setUserInitial((displayName[0] ?? email[0] ?? "V").toUpperCase());
 
       const db = getFirebaseDb();
-      const userSnap = await getDoc(doc(db, "users", u.uid));
-      const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid || cancelled) return;
-      if (!cancelled) setRestaurantId(rid);
+      // Staff-aware: resuelve venue+rol (dueño o miembro del equipo) y filtra
+      // el sidebar con el mismo matrix del app.
+      const ctx = await resolveVendorContext(db, u.uid);
+      if (!ctx || cancelled) return;
+      const rid = ctx.restaurantId;
+      if (!cancelled) { setRestaurantId(rid); setVendorRole(ctx.role); }
 
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
@@ -346,13 +350,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter((item) => canAccessVendorPath(vendorRole, item.href)).map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
           {open && (
             <div className="my-2" style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />
           )}
-          {NAV_SECONDARY.map((item) => (
+          {NAV_SECONDARY.filter((item) => canAccessVendorPath(vendorRole, item.href)).map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </nav>

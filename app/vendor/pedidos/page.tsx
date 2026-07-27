@@ -19,6 +19,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext } from "@/lib/vendorContext";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { shortOrderCode } from "@/lib/order/formatWhatsappMessage";
 
@@ -107,12 +108,13 @@ export default function PedidosPage() {
       }
 
       const db = getFirebaseDb();
-      const userSnap = await getDoc(doc(db, "users", u.uid));
-      const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) {
+      // Staff-aware: todo rol activo procesa pedidos (canProcessOrders).
+      const ctx = await resolveVendorContext(db, u.uid);
+      if (!ctx) {
         router.push("/activar");
         return;
       }
+      const rid = ctx.restaurantId;
       setRestaurantId(rid);
 
       // Fetch last 48 hours to ensure all active orders are visible

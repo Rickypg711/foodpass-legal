@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc, serverTimestamp, deleteField } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
+import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -48,6 +50,8 @@ export default function ConfiguracionPage() {
   const [setupReasons, setSetupReasons] = useState<string[]>([]);
   /** Descuentos especiales (Pro) — perfiles que el POS aplica por cliente. */
   const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
+  /** Equipo de la caja (PIN roster) — perfiles sin cuenta, estilo Square. */
+  const [posStaff, setPosStaff] = useState<PosStaffMember[]>([]);
 
   // Images state
   const [logoUrl, setLogoUrl] = useState("");
@@ -61,9 +65,12 @@ export default function ConfiguracionPage() {
       if (!u || u.isAnonymous) { router.push("/activar"); return; }
       setUser(u);
       const db = getFirebaseDb();
-      const userSnap = await getDoc(doc(db, "users", u.uid));
-      const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      // Staff-aware: configuración/billing es SOLO del dueño (matrix del app:
+      // manager canManageSettings=false). Staff cae a su home, no a /activar.
+      const ctx = await resolveVendorContext(db, u.uid);
+      if (!ctx) { router.push("/activar"); return; }
+      if (ctx.role !== "owner") { router.push(vendorHomeForRole(ctx.role)); return; }
+      const rid = ctx.restaurantId;
 
       const [rSnap, subSnap] = await Promise.all([
         getDoc(doc(db, "restaurants", rid)),
@@ -80,6 +87,10 @@ export default function ConfiguracionPage() {
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
       setDiscountProfiles(parseDiscountProfiles(data.discountProfiles));
+      try {
+        const staffSnap = await getDocs(collection(db, "restaurants", rid, "posStaff"));
+        setPosStaff(parsePosStaff(staffSnap.docs));
+      } catch { /* roster vacío o sin permiso — la sección muestra vacío */ }
       if (data.isSetupComplete === false) {
         setSetupReasons((data.setupIncompleteReasons as string[]) ?? []);
       }
@@ -667,6 +678,15 @@ export default function ConfiguracionPage() {
               />
             )}
 
+            {/* ── Equipo de la caja (PIN roster) ── */}
+            {restaurantId && (
+              <PosStaffSection
+                restaurantId={restaurantId}
+                staff={posStaff}
+                onStaffChange={setPosStaff}
+              />
+            )}
+
             {/* ── Configuración incompleta → pagos en línea pausados ── */}
             {setupReasons.length > 0 && (() => {
               const pending = stepGroupFromReasons(setupReasons);
@@ -1175,6 +1195,233 @@ function DiscountProfilesSection({
           style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
         >
           + Nuevo descuento
+        </button>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Equipo de la caja (PIN roster, estilo Square) ────────────────────────────
+// Perfiles de staff SIN cuenta: nombre + PIN de 4 dígitos + rol. La caja (web
+// y app) muestra "¿Quién cobra?" y cada venta queda estampada con soldBy —
+// eso alimenta ventas por empleado en Reportes y la auditoría de descuentos.
+// Esto NO es login: para acceso con cuenta propia (manager/empleado en su
+// teléfono), se invita desde la app y entran a comeleal.com con su cuenta.
+
+function PosStaffSection({
+  restaurantId,
+  staff,
+  onStaffChange,
+}: {
+  restaurantId: string;
+  staff: PosStaffMember[];
+  onStaffChange: (s: PosStaffMember[]) => void;
+}) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [fName, setFName] = useState("");
+  const [fPin, setFPin] = useState("");
+  const [fRole, setFRole] = useState<PosStaffRole>("cajero");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showPins, setShowPins] = useState(false);
+
+  async function handleAdd() {
+    const name = fName.trim();
+    const pin = fPin.replace(/\D/g, "");
+    if (!name) { setErr("Ponle nombre (ej. Juan)."); return; }
+    if (pin.length !== 4) { setErr("El PIN debe ser de 4 dígitos."); return; }
+    if (staff.some((m) => m.pin === pin)) { setErr("Ese PIN ya lo usa alguien más."); return; }
+    setBusy(true);
+    setErr(null);
+    try {
+      const db = getFirebaseDb();
+      const ref = await addDoc(collection(db, "restaurants", restaurantId, "posStaff"), {
+        name,
+        pin,
+        role: fRole,
+        active: true,
+        createdAt: serverTimestamp(),
+      });
+      onStaffChange(
+        [...staff, { id: ref.id, name, pin, role: fRole, active: true }].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      );
+      setFName("");
+      setFPin("");
+      setFRole("cajero");
+      setFormOpen(false);
+    } catch (e) {
+      console.error("[posStaff/add]", e);
+      setErr("No pudimos guardar. Intenta de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setBusy(true);
+    setErr(null);
+    try {
+      await deleteDoc(doc(getFirebaseDb(), "restaurants", restaurantId, "posStaff", id));
+      onStaffChange(staff.filter((m) => m.id !== id));
+      setConfirmDeleteId(null);
+    } catch (e) {
+      console.error("[posStaff/delete]", e);
+      setErr("No pudimos eliminar. Intenta de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SectionCard label="Equipo de la caja 👥">
+      <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+        Agrega a tu equipo con un PIN de 4 dígitos. En la caja eligen quién
+        cobra con su PIN — cada venta queda registrada a su nombre (sin
+        necesidad de cuenta ni email).
+      </p>
+
+      {staff.length > 0 && (
+        <div className="space-y-2">
+          {staff.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-3"
+              style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+            >
+              <span className="text-base">👤</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                  {m.name}
+                </p>
+                <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                  {m.role === "gerente" ? "Gerente" : "Cajero"} · PIN{" "}
+                  <span className="font-mono font-bold">{showPins ? m.pin : "••••"}</span>
+                </p>
+              </div>
+              {confirmDeleteId === m.id ? (
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleDelete(m.id)}
+                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                    style={{ background: "#EF4444" }}
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
+                    style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.6)" }}
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(m.id)}
+                  aria-label={`Eliminar ${m.name}`}
+                  className="shrink-0 rounded-lg px-2 py-1.5 text-[12px]"
+                  style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)" }}
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowPins((v) => !v)}
+            className="text-[11px] font-semibold underline underline-offset-2"
+            style={{ color: "rgba(28,37,38,0.45)" }}
+          >
+            {showPins ? "Ocultar PINs" : "Mostrar PINs"}
+          </button>
+        </div>
+      )}
+
+      {err && !formOpen && (
+        <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+      )}
+
+      {formOpen ? (
+        <div
+          className="space-y-3 rounded-xl p-3.5"
+          style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+        >
+          <Field label="Nombre">
+            <TextInput value={fName} onChange={(v) => setFName(v)} placeholder="Ej. Juan" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="PIN (4 dígitos)">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                value={fPin}
+                onChange={(e) => setFPin(e.target.value.replace(/\D/g, ""))}
+                placeholder="0000"
+                className="w-full rounded-xl px-3 py-2.5 text-center font-mono text-[15px] font-bold tracking-[0.3em] outline-none"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+              />
+            </Field>
+            <Field label="Rol">
+              <div className="flex gap-2">
+                {(["cajero", "gerente"] as PosStaffRole[]).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setFRole(r)}
+                    className="flex-1 rounded-xl px-2 py-2.5 text-[12px] font-semibold transition-all"
+                    style={
+                      fRole === r
+                        ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
+                        : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
+                    }
+                  >
+                    {r === "cajero" ? "Cajero" : "Gerente"}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          </div>
+          {err && (
+            <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={busy}
+              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+              style={{ background: "#F28C38" }}
+            >
+              {busy ? "Guardando…" : "Agregar al equipo"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFormOpen(false); setErr(null); }}
+              disabled={busy}
+              className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
+              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "rgba(28,37,38,0.6)" }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => { setFormOpen(true); setErr(null); }}
+          className="w-full rounded-xl px-3.5 py-3 text-[12px] font-bold transition hover:opacity-80"
+          style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
+        >
+          + Agregar persona
         </button>
       )}
     </SectionCard>

@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,8 @@ interface ReportsData {
   topProducts: TopProduct[];
   /** Descuentos especiales dados (30d) — auditoría del dueño. null = ninguno. */
   discounts30d: { total: number; count: number; byProfile: Record<string, number> } | null;
+  /** Ventas por empleado (30d, soldBy del equipo de la caja). null = sin datos. */
+  staffSales30d: { name: string; count: number; revenue: number }[] | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -97,14 +100,18 @@ export default function ReportesPage() {
 
       try {
         const db = getFirebaseDb();
-        const userSnap = await getDoc(doc(db, "users", u.uid));
-        const userData = userSnap.data();
-        if (!userData?.ownedRestaurantId) {
+        // Staff-aware: reportes = analytics (dueño/manager, como en el app).
+        const ctx = await resolveVendorContext(db, u.uid);
+        if (!ctx) {
           router.push("/activar");
           return;
         }
+        if (ctx.role === "employee") {
+          router.push(vendorHomeForRole(ctx.role));
+          return;
+        }
 
-        const rid = userData.ownedRestaurantId as string;
+        const rid = ctx.restaurantId;
 
         // Timestamps setup
         const now = new Date();
@@ -174,6 +181,8 @@ export default function ReportesPage() {
         let discTotal30d = 0;
         let discCount30d = 0;
         const discByProfile: Record<string, number> = {};
+        // Ventas por empleado — soldBy lo estampa la caja (equipo con PIN).
+        const staffMap: Record<string, { count: number; revenue: number }> = {};
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
           const disc = o.discountApplied as
@@ -185,6 +194,13 @@ export default function ReportesPage() {
             discCount30d++;
             const pn = String(disc?.profileName ?? "Descuento").trim() || "Descuento";
             discByProfile[pn] = (discByProfile[pn] ?? 0) + discAmt;
+          }
+          const sb = o.soldBy as { name?: unknown } | undefined;
+          const sbName = typeof sb?.name === "string" ? sb.name.trim() : "";
+          if (sbName && o.paymentStatus === "paid") {
+            if (!staffMap[sbName]) staffMap[sbName] = { count: 0, revenue: 0 };
+            staffMap[sbName].count++;
+            staffMap[sbName].revenue += (o.total as number) ?? 0;
           }
           const ts = o.phoneLoyaltyAt as Timestamp | undefined;
           if (!ts?.toMillis) return;
@@ -311,6 +327,12 @@ export default function ReportesPage() {
             discCount30d > 0
               ? { total: discTotal30d, count: discCount30d, byProfile: discByProfile }
               : null,
+          staffSales30d: (() => {
+            const rows = Object.entries(staffMap)
+              .map(([name, v]) => ({ name, count: v.count, revenue: v.revenue }))
+              .sort((a, b) => b.revenue - a.revenue);
+            return rows.length > 0 ? rows : null;
+          })(),
         });
 
         setLoadState("ready");
@@ -526,6 +548,26 @@ export default function ReportesPage() {
                       <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt)}</span>
                     </div>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ventas por empleado (30d) — solo si la caja usa el equipo con PIN */}
+          {data.staffSales30d && (
+            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
+              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
+                👤 Ventas por empleado — 30 días
+              </p>
+              <div className="divide-y divide-gray-100">
+                {data.staffSales30d.map((r) => (
+                  <div key={r.name} className="flex justify-between items-center py-2.5">
+                    <span className="text-[13px] font-bold text-[#1C2526]">👤 {r.name}</span>
+                    <div className="text-right">
+                      <p className="text-[13px] font-black text-[#1C2526]">{fmt(r.revenue)}</p>
+                      <p className="text-[10px] text-gray-400">{r.count} venta{r.count !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

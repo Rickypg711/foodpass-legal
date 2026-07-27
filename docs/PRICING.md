@@ -21,6 +21,10 @@ Si falla cualquiera de las tres, aplica la regla base: escala → gratis. Esta e
 
 **Casos clasificados con esta excepción:** Descuentos especiales (staff/familia) — lo pidió Pecado Escondido (vendor Pro en trial, 26 jul), es política de precios del dueño, y ningún restaurante lo necesita para arrancar. → **Pro.**
 
+**Equipo / staff (clasificado 27 jul):** *trabajar la caja = gratis; saber qué hace tu equipo cuando no estás = Pro.*
+- **GRATIS:** Equipo de la caja (roster de PINs, switcher "¿Quién cobra?", soldBy en órdenes, tabla básica "Ventas por empleado" en Reportes). Razón: un restaurante CON staff lo necesita para operar el día 1 (falla la condición 1 de la excepción), escala, y cada venta atribuida alimenta el moat de datos. Square también regala los passcodes básicos.
+- **PRO:** (a) Cuentas de staff con login propio (invitar miembros) — ya Pro vía entitlement teamManagementAccess en la app; la web no necesita gate propio porque los members solo se crean por ese flujo. (b) La inteligencia por empleado (AI: anomalías de descuentos, ventas por turno, sugerencias de staffing) — es "la máquina", va con Comeleal AI.
+
 ## Free — "Opera gratis"
 
 Todo lo que necesita un restaurante para OPERAR, sin límite de tiempo y sin tarjeta:
