@@ -18,6 +18,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
+import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import {
   PosRedemption,
@@ -599,6 +600,9 @@ export default function PosPage() {
   const [posStaff, setPosStaff] = useState<PosStaffMember[]>([]);
   const [currentSeller, setCurrentSeller] = useState<SoldBy | null>(null);
   const [sellerDialogOpen, setSellerDialogOpen] = useState(false);
+  /** Modo Caja (kiosk): bloquea el panel a operación; salir pide PIN de gerente. */
+  const [cajaLocked, setCajaLocked] = useState(false);
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Menu
@@ -623,6 +627,15 @@ export default function PosPage() {
   const [showTabsModal, setShowTabsModal] = useState(false);
   const [addingToTab, setAddingToTab] = useState<any | null>(null);
   const [checkoutTabId, setCheckoutTabId] = useState<string | null>(null);
+
+  // Modo Caja: sync con el candado del layout (salir desde la barra lateral).
+  useEffect(() => {
+    function sync() {
+      if (restaurantId) setCajaLocked(isCajaModeLocked(restaurantId));
+    }
+    window.addEventListener("cajaModeChanged", sync);
+    return () => window.removeEventListener("cajaModeChanged", sync);
+  }, [restaurantId]);
 
   // ── Auth & restaurant init ──────────────────────────────────────────────────
 
@@ -660,6 +673,7 @@ export default function PosPage() {
           }
         }
       } catch { /* sin roster → la caja opera igual que siempre */ }
+      setCajaLocked(isCajaModeLocked(rid));
       setAuthLoading(false);
     }
     init().catch(() => setAuthLoading(false));
@@ -1051,6 +1065,26 @@ export default function PosPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Modo Caja — candado kiosk para tablet compartida */}
+            {posStaff.length > 0 && vendorRole !== "employee" && !cajaLocked && (
+              <button
+                onClick={() => setLockDialogOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
+                style={{ background: "rgba(28,37,38,0.07)", border: "1px solid rgba(28,37,38,0.05)" }}
+                title="Modo Caja: bloquea esta pantalla a solo operación"
+              >
+                <span className="text-[14px]">🔓</span>
+              </button>
+            )}
+            {cajaLocked && (
+              <span
+                className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[12px] font-bold"
+                style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
+                title="Modo Caja activo — salir desde la barra lateral (PIN de gerente)"
+              >
+                🔒
+              </span>
+            )}
             {/* ¿Quién cobra? — switcher del equipo (solo si hay roster) */}
             {posStaff.length > 0 && (
               <button
@@ -1357,6 +1391,58 @@ export default function PosPage() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Activar Modo Caja ── */}
+      {lockDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(28,37,38,0.5)" }}
+          onClick={() => setLockDialogOpen(false)}
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+            <p className="text-[16px] font-extrabold" style={{ color: "#1C2526" }}>
+              🔒 Activar Modo Caja
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "rgba(28,37,38,0.5)" }}>
+              Esta pantalla queda bloqueada a <b>Caja, Pedidos y Escanear</b> —
+              ideal para la tablet del mostrador. Para salir se necesita el PIN
+              de un <b>Gerente</b> de tu equipo.
+            </p>
+            {!posStaff.some((m) => m.active && m.role === "gerente") && (
+              <p
+                className="mt-2 rounded-lg px-3 py-2 text-[11px] font-semibold"
+                style={{ background: "rgba(234,88,12,0.1)", color: "#9A3412" }}
+              >
+                ⚠️ No tienes ningún Gerente en el equipo — cualquiera podría
+                salir del modo. Agrega uno en Configuración (puede ser tu
+                propio PIN).
+              </p>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (restaurantId) setCajaModeLocked(restaurantId, true);
+                  setCajaLocked(true);
+                  setLockDialogOpen(false);
+                }}
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white"
+                style={{ background: "#F28C38" }}
+              >
+                Activar
+              </button>
+              <button
+                type="button"
+                onClick={() => setLockDialogOpen(false)}
+                className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
+                style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

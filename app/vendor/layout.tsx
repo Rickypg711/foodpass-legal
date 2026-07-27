@@ -9,6 +9,9 @@ import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
+import { isCajaModeLocked, isPathAllowedInCajaMode, setCajaModeLocked } from "@/lib/cajaMode";
+import { parsePosStaff, findStaffByPin, type PosStaffMember } from "@/lib/posStaff";
+import { collection, getDocs } from "firebase/firestore";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import FloatingAI from "./_components/FloatingAI";
 
@@ -136,6 +139,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [aiOpen, setAiOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [vendorRole, setVendorRole] = useState<VendorRole>("owner");
+  /** Modo Caja (kiosk lock): tablet compartida bloqueada a operación. */
+  const [cajaLocked, setCajaLocked] = useState(false);
+  const [cajaRoster, setCajaRoster] = useState<PosStaffMember[]>([]);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [isLive] = useState(false);
@@ -169,7 +176,16 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       const ctx = await resolveVendorContext(db, u.uid);
       if (!ctx || cancelled) return;
       const rid = ctx.restaurantId;
-      if (!cancelled) { setRestaurantId(rid); setVendorRole(ctx.role); }
+      if (!cancelled) {
+        setRestaurantId(rid);
+        setVendorRole(ctx.role);
+        setCajaLocked(isCajaModeLocked(rid));
+      }
+      // Roster para el candado del Modo Caja (PIN de gerente para salir).
+      try {
+        const staffSnap = await getDocs(collection(db, "restaurants", rid, "posStaff"));
+        if (!cancelled) setCajaRoster(parsePosStaff(staffSnap.docs));
+      } catch { /* fail-open: sin roster el modo caja permite salir */ }
 
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
@@ -186,6 +202,27 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetupFlow]);
+
+  // Modo Caja: sync entre pestañas/páginas (la caja lo activa con un evento).
+  useEffect(() => {
+    function sync() {
+      if (restaurantId) setCajaLocked(isCajaModeLocked(restaurantId));
+    }
+    window.addEventListener("cajaModeChanged", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("cajaModeChanged", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, [restaurantId]);
+
+  // Modo Caja: enforcement — cualquier ruta fuera de operación rebota a la
+  // caja, incluso tecleada a mano en la URL.
+  useEffect(() => {
+    if (cajaLocked && !isPathAllowedInCajaMode(pathname)) {
+      router.replace("/vendor/pos");
+    }
+  }, [cajaLocked, pathname, router]);
 
   if (isSetupFlow) {
     return <>{children}</>;
@@ -350,13 +387,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-          {NAV_ITEMS.filter((item) => canAccessVendorPath(vendorRole, item.href)).map((item) => (
+          {NAV_ITEMS.filter((item) => canAccessVendorPath(vendorRole, item.href) && (!cajaLocked || isPathAllowedInCajaMode(item.href))).map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
           {open && (
             <div className="my-2" style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />
           )}
-          {NAV_SECONDARY.filter((item) => canAccessVendorPath(vendorRole, item.href)).map((item) => (
+          {NAV_SECONDARY.filter((item) => canAccessVendorPath(vendorRole, item.href) && (!cajaLocked || isPathAllowedInCajaMode(item.href))).map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </nav>
@@ -396,6 +433,17 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 <IconLogOut /> Cerrar sesión
               </button>
             </div>
+          )}
+
+          {cajaLocked && (
+            <button
+              onClick={() => setExitDialogOpen(true)}
+              className="mx-2 mb-2 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[11px] font-bold transition hover:opacity-80"
+              style={{ background: "rgba(242,140,56,0.15)", color: "#F28C38", border: "1px solid rgba(242,140,56,0.3)" }}
+              title="Modo Caja activo — salir requiere PIN de gerente"
+            >
+              🔒{open ? " Modo Caja — salir" : ""}
+            </button>
           )}
 
           {open ? (
@@ -468,6 +516,19 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         </div>
       </aside>
 
+      {/* ── Salir de Modo Caja (PIN de gerente; fail-open sin gerentes) ── */}
+      {exitDialogOpen && (
+        <ExitCajaModeDialog
+          roster={cajaRoster}
+          onClose={() => setExitDialogOpen(false)}
+          onUnlock={() => {
+            if (restaurantId) setCajaModeLocked(restaurantId, false);
+            setCajaLocked(false);
+            setExitDialogOpen(false);
+          }}
+        />
+      )}
+
       {/* Sidebar toggle — rides the sidebar's edge at a FIXED height, so it
           never jumps up/down between open and collapsed; only the arrow flips
           and the handle slides horizontally with the edge. */}
@@ -517,6 +578,107 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       <Suspense fallback={null}>
         <FloatingAI restaurantId={restaurantId} open={aiOpen} setOpen={setAiOpen} />
       </Suspense>
+    </div>
+  );
+}
+
+// ─── Salir de Modo Caja ───────────────────────────────────────────────────────
+// PIN de un Gerente del equipo desbloquea. FAIL-OPEN: sin gerentes en el
+// roster (o roster ilegible) se permite salir directo — nunca dejamos al
+// dueño fuera de su propio panel.
+
+function ExitCajaModeDialog({
+  roster,
+  onClose,
+  onUnlock,
+}: {
+  roster: PosStaffMember[];
+  onClose: () => void;
+  onUnlock: () => void;
+}) {
+  const [pin, setPin] = useState("");
+  const [bad, setBad] = useState(false);
+  const gerentes = roster.filter((m) => m.active && m.role === "gerente");
+  const failOpen = gerentes.length === 0;
+
+  function tryUnlock(value: string) {
+    const digits = value.replace(/\D/g, "");
+    setPin(digits);
+    if (bad) setBad(false);
+    if (digits.length !== 4) return;
+    const m = findStaffByPin(gerentes, digits);
+    if (m) onUnlock();
+    else {
+      setBad(true);
+      setPin("");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: "rgba(28,37,38,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-3xl bg-white p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-[16px] font-extrabold" style={{ color: "#1C2526" }}>
+          🔒 Salir de Modo Caja
+        </p>
+        {failOpen ? (
+          <>
+            <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+              No hay gerentes en tu equipo de la caja, así que puedes salir
+              directo. Tip: agrega un Gerente en Configuración para que salir
+              requiera su PIN.
+            </p>
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="mt-4 w-full rounded-xl px-3 py-3 text-[13px] font-bold text-white"
+              style={{ background: "#F28C38" }}
+            >
+              Salir de Modo Caja
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+              Teclea el PIN de un <b>Gerente</b> para desbloquear el panel completo.
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              autoFocus
+              value={pin}
+              onChange={(e) => tryUnlock(e.target.value)}
+              placeholder="••••"
+              className="mt-4 w-full rounded-2xl px-4 py-3.5 text-center font-mono text-[24px] font-black tracking-[0.5em] outline-none"
+              style={{
+                background: "#F5F3EF",
+                border: bad ? "2px solid #EF4444" : "2px solid rgba(28,37,38,0.12)",
+                color: "#1C2526",
+              }}
+            />
+            {bad && (
+              <p className="mt-2 text-center text-[12px] font-semibold" style={{ color: "#dc2626" }}>
+                PIN incorrecto o no es de gerente
+              </p>
+            )}
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-semibold"
+          style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+        >
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }
