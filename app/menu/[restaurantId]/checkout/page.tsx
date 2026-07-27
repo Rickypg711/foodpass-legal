@@ -31,6 +31,7 @@ import {
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
 import { doc, getDoc } from "firebase/firestore";
+import { isPositivelyClosedNow, scheduleStatus } from "@/lib/schedule";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { formatPrice } from "@/lib/priceFormat";
@@ -113,6 +114,9 @@ export default function CheckoutPage() {
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
+  /** Cerrado según horario configurado (lib/schedule) — bloquea el envío. */
+  const [closedNow, setClosedNow] = useState(false);
+  const [closedLabel, setClosedLabel] = useState<string | null>(null);
   const [payMethod, setPayMethod] = useState<OrderPaymentMethod | null>(null);
   /** True once the restaurant MP check resolved — prevents the "MP no disponible"
    * warning from flashing while the check is still in flight. */
@@ -159,6 +163,8 @@ export default function CheckoutPage() {
           setRestaurantName(name);
           setRestaurantImageUrl(getRestaurantImageUrl(data));
           setEarnPolicy(earnPolicyFromRestaurant(data));
+          setClosedNow(isPositivelyClosedNow(data));
+          setClosedLabel(scheduleStatus(data)?.label ?? null);
           const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
           const papOk = restaurantAllowsPayAtPickup(data);
           setMercadoPagoAvailable(mpOk);
@@ -248,6 +254,14 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (closedNow) {
+      setError(
+        closedLabel
+          ? `El restaurante está cerrado — ${closedLabel.toLowerCase()}.`
+          : "El restaurante está cerrado por ahora.",
+      );
+      return;
+    }
     const name = customerName.trim();
     if (name.length < 2) {
       setError("Ingresa tu nombre (mínimo 2 caracteres).");
@@ -718,9 +732,18 @@ export default function CheckoutPage() {
               {error}
             </p>
           ) : null}
+          {closedNow ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="text-sm text-red-800">
+                😴 El restaurante está cerrado por ahora
+                {closedLabel ? ` — ${closedLabel.toLowerCase()}` : ""}. Tu carrito se
+                queda guardado para cuando abra.
+              </p>
+            </div>
+          ) : null}
           <button
             type="submit"
-            disabled={submitting || (!mercadoPagoAvailable && !payAtPickupAvailable)}
+            disabled={submitting || closedNow || (!mercadoPagoAvailable && !payAtPickupAvailable)}
             className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
           >
             {submitting

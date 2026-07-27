@@ -13,6 +13,11 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import {
+  isPositivelyClosedNow,
+  scheduleStatus,
+  type ScheduleStatus,
+} from "@/lib/schedule";
 
 type MenuRow = {
   id: string;
@@ -90,11 +95,17 @@ function MenuRestaurantHeader({
   restaurantName,
   logoUrl,
   secondarySubtitle,
+  schedule,
+  address,
 }: {
   loading: boolean;
   restaurantName: string;
   logoUrl: string | null;
   secondarySubtitle?: string | null;
+  /** Horario de hoy ("Abierto · cierra 8:00 pm" / "Cerrado · abre mañana…"). */
+  schedule?: ScheduleStatus | null;
+  /** Dirección del negocio — con link directo a Google Maps. */
+  address?: string | null;
 }) {
   return (
     <header className="relative overflow-hidden bg-[#141414] shadow-md">
@@ -127,9 +138,33 @@ function MenuRestaurantHeader({
             </h1>
             {!loading && restaurantName ? (
               <div className="mt-2 space-y-1.5">
-                <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
-                  🔥 Recompensas en Comeleal
-                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
+                    🔥 Recompensas en Comeleal
+                  </p>
+                  {schedule ? (
+                    <p
+                      className={
+                        "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-semibold " +
+                        (schedule.open
+                          ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+                          : "border-red-400/40 bg-red-400/15 text-red-300")
+                      }
+                    >
+                      {schedule.open ? "🟢" : "🔴"} {schedule.label}
+                    </p>
+                  ) : null}
+                </div>
+                {address ? (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex max-w-full items-center gap-1 text-xs leading-snug text-white/55 underline-offset-2 hover:text-white/80 hover:underline"
+                  >
+                    📍 <span className="truncate">{address}</span>
+                  </a>
+                ) : null}
                 {secondarySubtitle ? (
                   <p className="text-xs leading-snug text-white/55">{secondarySubtitle}</p>
                 ) : null}
@@ -247,6 +282,10 @@ function PublicMenuPageWithOrdering() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  /** true SOLO si el horario configurado dice cerrado (lib/schedule). */
+  const [closedNow, setClosedNow] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -286,6 +325,11 @@ function PublicMenuPageWithOrdering() {
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setSchedule(scheduleStatus(rData));
+        setAddress(
+          typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
+        );
+        setClosedNow(isPositivelyClosedNow(rData));
 
         const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
         if (cancelled) return;
@@ -332,7 +376,8 @@ function PublicMenuPageWithOrdering() {
     webOrderingReady && !webOrderingAvailable && !loading && !error;
 
   const categoryGroups = groupMenuByCategory(items);
-  const orderingEnabled = webOrderingReady && webOrderingAvailable;
+  // Cerrado (positivo) = el menú se VE, pero no se puede ordenar.
+  const orderingEnabled = webOrderingReady && webOrderingAvailable && !closedNow;
 
   return (
     <div className={MENU_PAGE_BG}>
@@ -341,6 +386,8 @@ function PublicMenuPageWithOrdering() {
         restaurantName={restaurantName}
         logoUrl={logoUrl}
         secondarySubtitle={headerSecondary}
+        schedule={schedule}
+        address={address}
       />
 
       <main
@@ -376,13 +423,22 @@ function PublicMenuPageWithOrdering() {
         )}
       </main>
 
-      <CartBar
-        restaurantId={restaurantId}
-        restaurantName={restaurantName}
-        firstVisitRewardLabel={firstVisitReward}
-      />
+      {!closedNow && (
+        <CartBar
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          firstVisitRewardLabel={firstVisitReward}
+        />
+      )}
 
-      {showMpUnavailableDock ? (
+      {closedNow && !loading && !error ? (
+        <MenuBottomDock>
+          <p className="py-1.5 text-center text-sm font-semibold text-[#1C2526]/75">
+            😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ver el menú y ordenar
+            cuando abra.
+          </p>
+        </MenuBottomDock>
+      ) : showMpUnavailableDock ? (
         <MenuBottomDock>
           <MenuAppRewardsCta
             restaurantId={restaurantId}
@@ -407,6 +463,8 @@ function PublicMenuPageBrowseOnly() {
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [items, setItems] = useState<MenuRow[]>([]);
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
+  const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -449,6 +507,10 @@ function PublicMenuPageBrowseOnly() {
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setSchedule(scheduleStatus(rData));
+        setAddress(
+          typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
+        );
 
         try {
           await getDoc(doc(db, "restaurants", restaurantId, "settings", "menu_link"));
@@ -501,6 +563,8 @@ function PublicMenuPageBrowseOnly() {
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
+        schedule={schedule}
+        address={address}
       />
 
       <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">

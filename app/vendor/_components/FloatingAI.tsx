@@ -334,7 +334,7 @@ export default function FloatingAI({
       {/* Floating trigger button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-[49] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-[88px] right-4 z-[29] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 md:bottom-6 md:right-6 md:z-[49]"
         style={{
           background: open ? "#1C2526" : "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)",
           boxShadow: open
