@@ -100,7 +100,7 @@ export default function PlanPage() {
 
   return (
     <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
-      <div className="mb-8 max-w-2xl">
+      <div className="mx-auto mb-8 max-w-2xl text-center">
         <p
           className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
           style={{ background: "rgba(242,140,56,0.1)", color: "#F28C38" }}
@@ -137,7 +137,7 @@ export default function PlanPage() {
           </svg>
         </div>
       ) : (
-        <div className="grid max-w-4xl grid-cols-1 items-start gap-4 md:grid-cols-2">
+        <div className="mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 md:grid-cols-2">
           {/* ── Gratis ── */}
           <div
             className="rounded-3xl p-6"
@@ -236,7 +236,7 @@ export default function PlanPage() {
         <>
           {/* ── Franja de confianza ── */}
           <div
-            className="mt-6 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-2 rounded-2xl px-6 py-4"
+            className="mx-auto mt-6 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-2 rounded-2xl px-6 py-4"
             style={{ background: "rgba(28,37,38,0.03)", border: "1px solid rgba(28,37,38,0.06)" }}
           >
             {[
@@ -252,8 +252,8 @@ export default function PlanPage() {
           </div>
 
           {/* ── Mini FAQ ── */}
-          <div className="mt-8 max-w-4xl">
-            <p className="mb-3 text-[14px] font-extrabold" style={{ color: "#1C2526" }}>
+          <div className="mx-auto mt-8 max-w-4xl">
+            <p className="mb-3 text-center text-[14px] font-extrabold" style={{ color: "#1C2526" }}>
               Preguntas rápidas
             </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
