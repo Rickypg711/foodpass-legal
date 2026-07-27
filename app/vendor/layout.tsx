@@ -10,6 +10,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
 import { isCajaModeLocked, isPathAllowedInCajaMode, setCajaModeLocked } from "@/lib/cajaMode";
+import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { parsePosStaff, findStaffByPin, type PosStaffMember } from "@/lib/posStaff";
 import { collection, getDocs } from "firebase/firestore";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
@@ -113,6 +114,8 @@ interface NavDef {
   label: string;
   icon: React.ReactNode;
   exact?: boolean;
+  /** Abre en pestaña nueva (ej. Ayuda → WhatsApp soporte). */
+  external?: boolean;
 }
 
 const NAV_ITEMS: NavDef[] = [
@@ -127,7 +130,9 @@ const NAV_ITEMS: NavDef[] = [
 
 const NAV_SECONDARY: NavDef[] = [
   { href: "/vendor/configuracion", label: "Configuración", icon: <IconGear /> },
-  { href: "/para-restaurantes", label: "Ayuda", icon: <IconHelp /> },
+  // Ayuda = soporte real por WhatsApp ("te contesta una persona") — el viejo
+  // /para-restaurantes hoy solo redirige al home (bug reportado 27 jul).
+  { href: PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP, label: "Ayuda", icon: <IconHelp />, external: true },
 ];
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -255,8 +260,24 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     }
   }
 
-  function NavLink({ href, label, icon, exact }: NavDef) {
+  function NavLink({ href, label, icon, exact, external }: NavDef) {
     const active = isActive(href, exact);
+
+    if (external) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center gap-3 rounded-xl px-2.5 py-[9px] text-[13px] font-medium transition-colors"
+          title={!open ? label : undefined}
+          style={{ color: "rgba(255,255,255,0.52)" }}
+        >
+          <span className="shrink-0">{icon}</span>
+          {open && <span className="whitespace-nowrap">{label}</span>}
+        </a>
+      );
+    }
 
     if (href === "/vendor/brain") {
       return (

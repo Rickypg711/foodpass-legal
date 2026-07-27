@@ -12,6 +12,7 @@ import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
+import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -446,10 +447,11 @@ export default function ConfiguracionPage() {
                 external
               />
               <ManageLink
-                href="/para-restaurantes"
-                emoji="❓"
-                title="Centro de ayuda"
-                subtitle="Documentación y tutoriales"
+                href={PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP}
+                emoji="💬"
+                title="Ayuda por WhatsApp"
+                subtitle="Te contesta una persona"
+                external
                 last
               />
             </SectionCard>
