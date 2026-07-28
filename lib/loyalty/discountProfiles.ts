@@ -126,14 +126,61 @@ export function isFounderTestRestaurant(restaurantId: string | null | undefined)
   return !!restaurantId && FOUNDER_TEST_RESTAURANT_IDS.includes(restaurantId);
 }
 
-/** Pro gate — same semantics as the loyalty unlimited check. */
+/** Lee `subscriptionAccessExpiresAt` en cualquiera de sus formas (Timestamp de
+ * Firestore, Date, epoch ms, ISO string) y devuelve epoch ms, o null si falta
+ * o no se puede interpretar. */
+function accessExpiresAtMs(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v instanceof Date) {
+    const ms = v.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof v === "string") {
+    const ms = Date.parse(v);
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof v === "object") {
+    const o = v as {
+      toMillis?: () => number;
+      toDate?: () => Date;
+      seconds?: number;
+      _seconds?: number;
+    };
+    if (typeof o.toMillis === "function") {
+      const ms = o.toMillis();
+      return Number.isFinite(ms) ? ms : null;
+    }
+    if (typeof o.toDate === "function") {
+      const ms = o.toDate().getTime();
+      return Number.isFinite(ms) ? ms : null;
+    }
+    const secs = typeof o.seconds === "number" ? o.seconds : o._seconds;
+    if (typeof secs === "number" && Number.isFinite(secs)) return secs * 1000;
+  }
+  return null;
+}
+
+/** Pro gate — MISMA semántica canónica que subscription_tier_service.dart y que
+ * `canonicalPro` en app/vendor/plan/page.tsx: el status por sí solo NO basta,
+ * el acceso tiene que seguir vigente.
+ *
+ * Bug corregido el 28 jul 2026: antes sólo miraba `subscriptionAccessStatus`,
+ * así que un status pegado en "active" con `subscriptionAccessExpiresAt` vencido
+ * daba Pro gratis para siempre (caso real: restaurants/5XMZ7lSRhLTH7ppKR8FQ,
+ * "active" con expiración 15-may-2026).
+ *
+ * Fail-closed a propósito: sin fecha de expiración → false. */
 export function discountsEnabled(
   rdata: Record<string, unknown> | undefined,
   restaurantId?: string | null,
+  now: number = Date.now(),
 ): boolean {
   if (isFounderTestRestaurant(restaurantId)) return true;
   if (!rdata) return false;
   if (rdata.subscriptionPlan !== "pro") return false;
   const status = rdata.subscriptionAccessStatus;
-  return status === "active" || status === "trialing";
+  if (status !== "active" && status !== "trialing") return false;
+  const expiresMs = accessExpiresAtMs(rdata.subscriptionAccessExpiresAt);
+  return expiresMs != null && expiresMs > now;
 }
