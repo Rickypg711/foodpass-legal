@@ -68,6 +68,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));
+  // La página del restaurante (/r/{id}) — la "home" del negocio para
+  // búsquedas locales tipo "{nombre} horario" / "{nombre} chihuahua".
+  const landingEntries: MetadataRoute.Sitemap = restaurantIds.map((id) => ({
+    url: `${SITE_URL}/r/${id}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
 
-  return [...staticEntries, ...menuEntries];
+  return [...staticEntries, ...menuEntries, ...landingEntries];
 }

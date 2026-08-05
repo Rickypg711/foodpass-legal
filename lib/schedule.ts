@@ -150,6 +150,38 @@ function fmt12(t: TimeHM): string {
   return `${h12}:${mm} ${ampm}`;
 }
 
+export type WeeklyScheduleRow = {
+  /** "lunes" … "domingo" */
+  day: string;
+  /** "9:00 am – 8:00 pm" o "Cerrado" */
+  hours: string;
+  /** true para la fila del día de HOY (para resaltarla en la UI). */
+  isToday: boolean;
+};
+
+/**
+ * Horario semanal para la página pública del restaurante (landing).
+ * null cuando no hay businessHours configurado — la sección no se muestra
+ * (misma regla de oro: sin datos no inventamos ni bloqueamos nada).
+ */
+export function weeklySchedule(
+  rdata: Record<string, unknown>,
+  now: Date = new Date(),
+): WeeklyScheduleRow[] | null {
+  const hours = parseBusinessHours(rdata);
+  if (!hours) return null;
+  const todayIdx = dayIdxFor(now);
+  return DAY_LABELS_ES.map((label, idx) => {
+    const d = readDay(hours, idx);
+    const openRow = d && !d.isClosed && d.open && d.close;
+    return {
+      day: label,
+      hours: openRow ? `${fmt12(d.open!)} – ${fmt12(d.close!)}` : "Cerrado",
+      isToday: idx === todayIdx,
+    };
+  });
+}
+
 /**
  * Estado para mostrarle al cliente:
  *   { open: true,  label: "Abierto · cierra 8:00 pm" }

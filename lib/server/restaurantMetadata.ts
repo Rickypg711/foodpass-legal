@@ -18,6 +18,8 @@ export type RestaurantMetadata = {
   address: string | null;
   description: string | null;
   categories: string[];
+  /** Teléfono del negocio (campo `phone`) — para JSON-LD telephone. */
+  phone: string | null;
 };
 
 /** Flattens Firestore REST `fields` (stringValue only — all we need). */
@@ -59,6 +61,10 @@ export async function fetchRestaurantMetadata(
         ? (data.description as string).trim()
         : null;
     const categories = extractStringArray(rawFields, "categories");
+    const phone =
+      typeof data.phone === "string" && (data.phone as string).trim()
+        ? (data.phone as string).trim()
+        : null;
     return {
       name,
       logoUrl: getRestaurantImageUrl(data),
@@ -66,6 +72,7 @@ export async function fetchRestaurantMetadata(
       address,
       description,
       categories,
+      phone,
     };
   } catch {
     return null;

@@ -8,6 +8,9 @@ export const WEB_MENU_EVENTS = {
   view: "web_menu_view",
   openAppClick: "web_menu_open_app_click",
   downloadClick: "web_menu_download_click",
+  landingView: "web_landing_view",
+  landingMenuClick: "web_landing_menu_click",
+  landingWhatsappClick: "web_landing_whatsapp_click",
 } as const;
 
 type ViewParams = {
@@ -112,6 +115,45 @@ export function trackWebMenuDownloadClick(p: ClickParams): void {
   if (typeof window === "undefined") return;
   try {
     void logEventSafe(WEB_MENU_EVENTS.downloadClick, {
+      restaurantId: p.restaurantId,
+      restaurantName: p.restaurantName,
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/** Vista de la página pública del restaurante (/r/{id} — landing). */
+export function trackWebLandingView(p: ClickParams): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(WEB_MENU_EVENTS.landingView, {
+      restaurantId: p.restaurantId,
+      restaurantName: p.restaurantName,
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/** Click en "Ver menú" desde la landing — el funnel landing → menú. */
+export function trackWebLandingMenuClick(p: ClickParams): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(WEB_MENU_EVENTS.landingMenuClick, {
+      restaurantId: p.restaurantId,
+      restaurantName: p.restaurantName,
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/** Click en el botón de WhatsApp de la landing. */
+export function trackWebLandingWhatsappClick(p: ClickParams): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(WEB_MENU_EVENTS.landingWhatsappClick, {
       restaurantId: p.restaurantId,
       restaurantName: p.restaurantName,
     });
