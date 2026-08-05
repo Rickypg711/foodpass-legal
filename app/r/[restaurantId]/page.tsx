@@ -413,13 +413,14 @@ export default function RestaurantLandingPage() {
                     <li
                       key={row.day}
                       className={
-                        "flex items-center justify-between rounded-lg px-2 py-1 text-sm capitalize " +
+                        "flex items-center justify-between rounded-lg px-2 py-1 text-sm " +
                         (row.isToday
                           ? "bg-[#F28C38]/10 font-semibold text-[#1C2526]"
                           : "text-[#1C2526]/70")
                       }
                     >
-                      <span>
+                      {/* capitalize SOLO en el día — sobre toda la fila convertía "8:00 am" en "8:00 Am" */}
+                      <span className="capitalize">
                         {row.day}
                         {row.isToday ? " · hoy" : ""}
                       </span>
