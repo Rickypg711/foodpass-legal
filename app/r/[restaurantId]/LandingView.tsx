@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
+import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import {
   trackWebLandingMenuClick,
   trackWebLandingView,
@@ -31,6 +32,8 @@ import {
   type ScheduleStatus,
 } from "@/lib/schedule";
 import { buildFaq, buildSeoParagraph } from "@/lib/landingContent";
+import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
+import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 
 export type LandingMenuPhoto = {
   name: string;
@@ -56,6 +59,9 @@ type LandingRestaurant = {
   whatsapp: string | null;
   categories: string[];
   firstVisitReward: string | null;
+  /** Historia del restaurante (campo opcional `story` — patrón "Our Story"
+   *  de Owner/Metro Pizza). Null cuando el dueño no la ha escrito. */
+  story: string | null;
 };
 
 function str(v: unknown): string | null {
@@ -86,6 +92,7 @@ function mapRestaurant(data: Record<string, unknown>): LandingRestaurant {
     whatsapp: str(data.whatsapp),
     categories,
     firstVisitReward,
+    story: str(data.story),
   };
 }
 
@@ -283,7 +290,7 @@ export default function LandingView({
 
   // FAQ + párrafo SEO con los MISMOS datos que el schema del layout.
   const faq = useMemo(() => {
-    if (!restaurant) return [];
+    if (!restaurant || !rdata) return [];
     return buildFaq({
       name: restaurant.name,
       categories: restaurant.categories,
@@ -291,8 +298,12 @@ export default function LandingView({
       hoursText: weekly ? weekly.map((r) => `${r.day} ${r.hours}`).join(" · ") : null,
       topItems: menuPhotos.slice(0, 3).map((p) => p.name),
       firstVisitReward: restaurant.firstVisitReward,
+      earnRule: earnRuleLine(earnPolicyFromRestaurant(rdata)),
+      rewardExamples: parseRewardTiers(rdata.rewardTiers)
+        .slice(0, 3)
+        .map((t) => `${t.name} (${t.points} ⭐)`),
     });
-  }, [restaurant, weekly, menuPhotos]);
+  }, [restaurant, rdata, weekly, menuPhotos]);
   const seoParagraph = restaurant
     ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address)
     : null;
@@ -503,6 +514,29 @@ export default function LandingView({
               </SectionCard>
             ) : null}
 
+            {/* ---- PREMIOS FANTASMA (robo #1 de la APP de Owner/Metro
+                 Pizza): la escalera completa de premios visible SIN sesión,
+                 en gris con candado y su costo en ⭐ — deseo antes que
+                 fricción. Sale en el HTML del SSR → los motores de IA citan
+                 los premios concretos. ---- */}
+            {rdata && hasRewardLadder(rdata) ? (
+              <SectionCard title="Premios por regresar ⭐">
+                <RewardLadder
+                  restaurantData={rdata}
+                  menuItems={menuPhotos.map((p) => ({
+                    name: p.name,
+                    imageUrl: p.imageUrl,
+                  }))}
+                />
+                <Link
+                  href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+                  className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                >
+                  ¿Ya has comprado aquí? Ver mis puntos →
+                </Link>
+              </SectionCard>
+            ) : null}
+
             {/* ---- HORARIO ---- */}
             {weekly ? (
               <SectionCard title="Horario">
@@ -546,6 +580,17 @@ export default function LandingView({
                 >
                   Abrir en Google Maps →
                 </a>
+              </SectionCard>
+            ) : null}
+
+            {/* ---- NUESTRA HISTORIA (patrón "Our Story" de Metro Pizza:
+                 storytelling real = retención emocional; solo si el dueño
+                 escribió el campo opcional `story`). ---- */}
+            {restaurant.story ? (
+              <SectionCard title="Nuestra historia">
+                <p className="whitespace-pre-line text-sm leading-relaxed text-[#1C2526]/80">
+                  {restaurant.story}
+                </p>
               </SectionCard>
             ) : null}
 

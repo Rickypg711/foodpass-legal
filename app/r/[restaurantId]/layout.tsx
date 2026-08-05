@@ -8,6 +8,8 @@ import {
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
 import { buildFaq, buildLandingTitle } from "@/lib/landingContent";
+import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
+import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 
 // /r/{id} — la PÁGINA del restaurante (mini-sitio público): hero, horario,
 // ubicación, WhatsApp y el menú a un tap. Es el link para la bio de
@@ -218,6 +220,12 @@ export default async function RestaurantLandingLayout({
       hoursText,
       topItems: topSource.slice(0, 3).map((i) => i.name),
       firstVisitReward,
+      // MISMOS args que LandingView (la página y el schema jamás se
+      // contradicen): regla de puntos + premios concretos de la escalera.
+      earnRule: earnRuleLine(earnPolicyFromRestaurant(data)),
+      rewardExamples: parseRewardTiers(data.rewardTiers)
+        .slice(0, 3)
+        .map((t) => `${t.name} (${t.points} ⭐)`),
     });
     if (faq.length > 0) {
       faqJsonLd = {

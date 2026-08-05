@@ -11,6 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
+import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 
 export default function PuntosPage() {
   const params = useParams();
@@ -20,6 +21,8 @@ export default function PuntosPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
+  /** Doc del restaurante — alimenta la escalera de premios fantasma. */
+  const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -29,6 +32,7 @@ export default function PuntosPage() {
         const n = (data?.name as string | undefined)?.trim();
         if (n) setRestaurantName(n);
         setLogoUrl(getRestaurantImageUrl(data));
+        if (data) setRdata(data);
       })
       .catch(() => {});
   }, [restaurantId]);
@@ -90,6 +94,17 @@ export default function PuntosPage() {
             >
               Continuar
             </button>
+            {/* Premios fantasma ANTES de pedir el número (patrón Owner:
+                enseñar la comida gratis que te espera = la razón para
+                verificar, no un premio por haberlo hecho). */}
+            {rdata && hasRewardLadder(rdata) ? (
+              <div className="mt-5 border-t border-[#1C2526]/8 pt-4 text-left">
+                <p className="mb-3 text-sm font-bold text-[#1C2526]">
+                  Lo que te puedes ganar aquí 👀
+                </p>
+                <RewardLadder restaurantData={rdata} />
+              </div>
+            ) : null}
           </div>
         ) : (
           <>

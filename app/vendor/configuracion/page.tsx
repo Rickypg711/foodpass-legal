@@ -42,6 +42,9 @@ export default function ConfiguracionPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
+   * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
+  const [story, setStory] = useState("");
   /** Slug público (comeleal.com/r/{slug}) — se auto-reclama al guardar. */
   const [slug, setSlug] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
@@ -88,6 +91,7 @@ export default function ConfiguracionPage() {
       setName((data.name as string) ?? "");
       setAddress((data.address as string) ?? "");
       setPhone((data.phone as string) ?? "");
+      setStory((data.story as string) ?? "");
       setSlug(slugFromRestaurantData(data));
       setCategories((data.categories as string[]) ?? []);
       const goal = data.dailyRevenueGoal as number | undefined;
@@ -301,6 +305,7 @@ export default function ConfiguracionPage() {
         name: name.trim(),
         address: address.trim(),
         phone: phone.trim(),
+        story: story.trim(),
         categories,
         payAtPickupEnabled: payAtPickup,
         lastUpdated: serverTimestamp(),
@@ -557,6 +562,26 @@ export default function ConfiguracionPage() {
               </Field>
               <Field label="Teléfono">
                 <TextInput value={phone} onChange={(v) => { setPhone(v); setSaved(false); }} placeholder="614 123 4567" type="tel" />
+              </Field>
+              <Field label="Tu historia (opcional)">
+                <textarea
+                  value={story}
+                  onChange={(e) => { setStory(e.target.value); setSaved(false); }}
+                  placeholder="¿Cómo empezó tu restaurante? Los negocios con historia venden más — sale en tu página pública."
+                  rows={4}
+                  maxLength={1200}
+                  className="w-full resize-y rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
+                  style={{
+                    background: "#F5F3EF",
+                    border: "1px solid rgba(28,37,38,0.12)",
+                    color: "#1C2526",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                />
+                <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                  Se muestra como &quot;Nuestra historia&quot; en tu página comeleal.com/r/…
+                </p>
               </Field>
             </SectionCard>
 

@@ -31,27 +31,18 @@ import {
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
 import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
+import {
+  earnPolicyFromRestaurant,
+  type EarnPolicy,
+} from "@/lib/loyalty/earnPolicy";
+
+// La política de earn vive ahora en lib/loyalty/earnPolicy.ts (módulo puro,
+// usable server-side para SEO). Re-export para no romper a los importadores
+// existentes (checkout / order page).
+export { earnPolicyFromRestaurant };
+export type { EarnPolicy };
 
 const DEFAULT_MONTHLY_LIMIT = 50;
-
-export type EarnPolicy = { base: number; step: number };
-
-/** Same fallbacks as the app's LoyaltyEarnPolicyConfig (mirrors order page). */
-export function earnPolicyFromRestaurant(
-  d: Record<string, unknown>,
-): EarnPolicy {
-  const nested = d.loyaltyEarnPolicy;
-  if (nested && typeof nested === "object") {
-    const m = nested as Record<string, unknown>;
-    const base = Number(m.basePointsPerPurchase);
-    const step = Number(m.spendStepAmount);
-    if (Number.isFinite(base) && base >= 1 && Number.isFinite(step) && step >= 1) {
-      return { base: Math.floor(base), step: Math.floor(step) };
-    }
-  }
-  const cc = typeof d.currencyCode === "string" ? d.currencyCode.trim().toUpperCase() : "MXN";
-  return { base: 1, step: cc === "USD" ? 2 : 30 };
-}
 
 type OrderItemLike = {
   isUpsell?: boolean;

@@ -82,8 +82,21 @@ export function buildFaq(args: {
   topItems: string[];
   /** Regalo de primera visita (firstPurchaseReward) o null. */
   firstVisitReward: string | null;
+  /** Regla de puntos en una línea (earnRuleLine) — opcional. */
+  earnRule?: string | null;
+  /** Premios concretos de la escalera, ej. "Pizza personal (300 ⭐)". */
+  rewardExamples?: string[];
 }): FaqEntry[] {
-  const { name, categories, address, hoursText, topItems, firstVisitReward } = args;
+  const {
+    name,
+    categories,
+    address,
+    hoursText,
+    topItems,
+    firstVisitReward,
+    earnRule = null,
+    rewardExamples = [],
+  } = args;
   const out: FaqEntry[] = [];
 
   if (categories.length > 0 || topItems.length > 0) {
@@ -117,10 +130,18 @@ export function buildFaq(args: {
     });
   }
 
+  // Respuesta con los premios CONCRETOS (robo del teardown de la app Owner:
+  // el premio con nombre y costo en ⭐ convierte más que "recompensas" a
+  // secas — y a los motores de IA les da la respuesta citable exacta).
   out.push({
     q: `¿${name} tiene recompensas?`,
     a:
-      `Sí — ${name} usa Comeleal: juntas puntos con cada compra y los canjeas por platillos gratis.` +
+      `Sí — ${name} usa Comeleal: juntas puntos con cada compra` +
+      (earnRule ? ` (${earnRule})` : "") +
+      ` y los canjeas por platillos gratis.` +
+      (rewardExamples.length > 0
+        ? ` Premios: ${rewardExamples.slice(0, 3).join(", ")}.`
+        : "") +
       (firstVisitReward
         ? ` Además, tu primera compra desbloquea ${firstVisitReward} gratis para tu siguiente visita.`
         : ""),

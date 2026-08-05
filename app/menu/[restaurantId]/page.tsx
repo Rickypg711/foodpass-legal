@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
+import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackWebMenuView } from "@/lib/analytics";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -253,6 +254,39 @@ function MenuCategoryList({
   );
 }
 
+/** Premios fantasma al final del menú (robo de la app de Owner): la escalera
+ *  completa en gris con candado — el comensal ve la comida gratis que se
+ *  pierde justo donde ya está viendo comida. */
+function MenuRewardsLadderSection({
+  restaurantId,
+  rdata,
+  items,
+}: {
+  restaurantId: string;
+  rdata: Record<string, unknown>;
+  items: MenuRow[];
+}) {
+  if (!hasRewardLadder(rdata)) return null;
+  return (
+    <section className="mt-10" aria-label="Premios por regresar">
+      <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#1C2526]">
+        <span className="h-5 w-1 rounded-full bg-[#F28C38]" aria-hidden />
+        Premios por regresar ⭐
+      </h2>
+      <RewardLadder
+        restaurantData={rdata}
+        menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+      />
+      <a
+        href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+        className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+      >
+        ¿Ya has comprado aquí? Ver mis puntos →
+      </a>
+    </section>
+  );
+}
+
 function MenuBottomDock({ children }: { children: ReactNode }) {
   return (
     <div
@@ -302,6 +336,8 @@ function PublicMenuPageWithOrdering() {
   const [items, setItems] = useState<MenuRow[]>([]);
   const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  /** Doc completo del restaurante (para la escalera de premios fantasma). */
+  const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
   /** true SOLO si el horario configurado dice cerrado (lib/schedule). */
   const [closedNow, setClosedNow] = useState(false);
 
@@ -354,6 +390,7 @@ function PublicMenuPageWithOrdering() {
         setAddress(
           typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
         );
+        setRdata(rData);
         setClosedNow(isPositivelyClosedNow(rData));
 
         const menuSnap = await getDocs(collection(db, "restaurants", restaurantId, "menu"));
@@ -447,6 +484,14 @@ function PublicMenuPageWithOrdering() {
             onDecrementItem={(item) => decrementLine(item.id)}
           />
         )}
+
+        {!loading && !error && rdata ? (
+          <MenuRewardsLadderSection
+            restaurantId={restaurantId}
+            rdata={rdata}
+            items={items}
+          />
+        ) : null}
       </main>
 
       {!closedNow && (
@@ -499,6 +544,8 @@ function PublicMenuPageBrowseOnly() {
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  /** Doc completo del restaurante (para la escalera de premios fantasma). */
+  const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -552,6 +599,7 @@ function PublicMenuPageBrowseOnly() {
         setAddress(
           typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
         );
+        setRdata(rData);
 
         try {
           await getDoc(doc(db, "restaurants", restaurantId, "settings", "menu_link"));
@@ -621,6 +669,14 @@ function PublicMenuPageBrowseOnly() {
             onAddItem={() => {}}
           />
         )}
+
+        {!loading && !error && rdata ? (
+          <MenuRewardsLadderSection
+            restaurantId={restaurantId}
+            rdata={rdata}
+            items={items}
+          />
+        ) : null}
       </main>
 
       <MenuBottomDock>
