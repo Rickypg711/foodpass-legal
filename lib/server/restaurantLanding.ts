@@ -9,6 +9,8 @@
 // el árbol completo de Firestore REST (mapValue/arrayValue/números/bools) para
 // poder leer businessHours, firstPurchaseReward y el menú.
 
+import { slugFromRestaurantData } from "@/lib/slug";
+
 const PROJECT_ID = "foodpass-18b33";
 const API_KEY = "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk"; // public web config (misma que lib/firebase.ts)
 const BASE =
@@ -145,6 +147,82 @@ export async function fetchRestaurantMenuFull(
   } catch {
     return [];
   }
+}
+
+/** Busca un restaurante por su campo `slug` (exacto, ya en minúsculas). */
+export async function findRestaurantBySlug(
+  slug: string,
+): Promise<{ id: string; data: Record<string, unknown> } | null> {
+  try {
+    const res = await fetch(`${BASE}:runQuery?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "restaurants" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "slug" },
+              op: "EQUAL",
+              value: { stringValue: slug },
+            },
+          },
+          limit: 1,
+        },
+      }),
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as {
+      document?: { name?: string; fields?: Record<string, Record<string, unknown>> };
+    }[];
+    const doc = rows.find((r) => r.document)?.document;
+    const id = doc?.name?.split("/").pop();
+    if (!doc || !id) return null;
+    return { id, data: decodeFields(doc.fields) };
+  } catch {
+    return null;
+  }
+}
+
+export type ResolvedRestaurant = {
+  /** ID real de Firestore (para /menu, analytics, fallback client). */
+  id: string;
+  data: Record<string, unknown>;
+  /** Slug usable del doc, o null. */
+  slug: string | null;
+  /** Cómo llegó el visitante: por id o por slug. */
+  matchedBy: "id" | "slug";
+};
+
+/**
+ * Resuelve el handle de /r/{handle}: primero como ID (los QR impresos son
+ * eternos), luego como slug. El canónico es el slug cuando existe — page.tsx
+ * redirige id→slug con esto.
+ */
+export async function resolveRestaurantHandle(
+  handle: string,
+): Promise<ResolvedRestaurant | "error" | null> {
+  const byId = await fetchRestaurantDocFull(handle);
+  if (byId.status === "ok") {
+    return {
+      id: handle,
+      data: byId.data,
+      slug: slugFromRestaurantData(byId.data),
+      matchedBy: "id",
+    };
+  }
+  if (byId.status === "error") return "error";
+  const bySlug = await findRestaurantBySlug(handle.toLowerCase());
+  if (bySlug) {
+    return {
+      id: bySlug.id,
+      data: bySlug.data,
+      slug: slugFromRestaurantData(bySlug.data),
+      matchedBy: "slug",
+    };
+  }
+  return null;
 }
 
 /**

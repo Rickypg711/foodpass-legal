@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import {
-  fetchRestaurantDocFull,
   fetchRestaurantMenuFull,
+  resolveRestaurantHandle,
   type LandingMenuItem,
 } from "@/lib/server/restaurantLanding";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
@@ -21,13 +21,20 @@ function str(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-async function getRestaurantData(restaurantId: string) {
-  const result = await fetchRestaurantDocFull(restaurantId);
-  if (result.status !== "ok") return null;
-  const data = result.data;
-  const name = str(data.name);
+async function getRestaurantData(handle: string) {
+  // El handle puede ser ID o slug — mismo resolver que page.tsx (fetch
+  // deduplicado por URL dentro del request).
+  const resolved = await resolveRestaurantHandle(handle);
+  if (resolved === "error" || resolved === null) return null;
+  const name = str(resolved.data.name);
   if (!name) return null;
-  return { data, name };
+  return {
+    data: resolved.data,
+    name,
+    id: resolved.id,
+    /** Handle canónico para URLs públicas: slug bonito si existe, si no el id. */
+    canonicalHandle: resolved.slug ?? resolved.id,
+  };
 }
 
 export async function generateMetadata({
@@ -66,7 +73,7 @@ export async function generateMetadata({
   return {
     title,
     description: metaDescription,
-    alternates: { canonical: `/r/${restaurantId}` },
+    alternates: { canonical: `/r/${restaurant.canonicalHandle}` },
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
       description: metaDescription,
@@ -118,9 +125,10 @@ export default async function RestaurantLandingLayout({
   children: React.ReactNode;
   params: Promise<{ restaurantId: string }>;
 }) {
-  const { restaurantId } = await params;
-  const restaurant = await getRestaurantData(restaurantId);
-  const menu = restaurant ? await fetchRestaurantMenuFull(restaurantId) : [];
+  const { restaurantId: handle } = await params;
+  const restaurant = await getRestaurantData(handle);
+  // /menu SIEMPRE con el ID real (los links internos del menú usan id).
+  const menu = restaurant ? await fetchRestaurantMenuFull(restaurant.id) : [];
 
   // JSON-LD Restaurant completo: horario estructurado, teléfono, menú con
   // precios, rango de precios — Google puede pintar "abierto ahora" y los
@@ -149,7 +157,7 @@ export default async function RestaurantLandingLayout({
       "@context": "https://schema.org",
       "@type": "Restaurant",
       name,
-      url: `${SITE_URL}/r/${restaurantId}`,
+      url: `${SITE_URL}/r/${restaurant.canonicalHandle}`,
       ...(images.length > 0 ? { image: images } : {}),
       ...(description ? { description } : {}),
       ...(phone ? { telephone: phone } : {}),
@@ -179,7 +187,7 @@ export default async function RestaurantLandingLayout({
             priceRange: `MX$${Math.min(...prices)}–MX$${Math.max(...prices)}`,
           }
         : {}),
-      hasMenu: buildMenuJsonLd(restaurantId, menu),
+      hasMenu: buildMenuJsonLd(restaurant.id, menu),
       acceptsReservations: false,
     };
 

@@ -9,9 +9,9 @@
 
 import { redirect } from "next/navigation";
 import {
-  fetchRestaurantDocFull,
   fetchRestaurantMenuFull,
   findRestaurantIdCaseInsensitive,
+  resolveRestaurantHandle,
 } from "@/lib/server/restaurantLanding";
 import LandingView, { type LandingInitialData } from "./LandingView";
 
@@ -20,25 +20,39 @@ export default async function RestaurantLandingPage({
 }: {
   params: Promise<{ restaurantId: string }>;
 }) {
-  const { restaurantId } = await params;
+  // El handle puede ser el ID de Firestore (QRs impresos, eternos) o el slug
+  // bonito (comeleal.com/r/luzz-pizza). Canónico = slug cuando existe.
+  const { restaurantId: handle } = await params;
 
-  const docResult = await fetchRestaurantDocFull(restaurantId);
+  const resolved = await resolveRestaurantHandle(handle);
 
-  if (docResult.status === "not_found") {
-    // Rescate server-side de ids reescritos en minúsculas (FB/IG).
-    const realId = await findRestaurantIdCaseInsensitive(restaurantId);
-    if (realId && realId !== restaurantId) {
+  if (resolved === null) {
+    // Ni id ni slug → rescate de ids reescritos en minúsculas (FB/IG).
+    const realId = await findRestaurantIdCaseInsensitive(handle);
+    if (realId && realId !== handle) {
       redirect(`/r/${realId}`);
     }
     // De plano no existe → la vista client muestra "No encontramos…".
-    return <LandingView restaurantId={restaurantId} initial={null} />;
+    return <LandingView restaurantId={handle} initial={null} />;
   }
 
-  if (docResult.status === "error") {
+  if (resolved === "error") {
     // Falla de red server-side → respaldo client (mismo camino que /menu).
-    return <LandingView restaurantId={restaurantId} initial={null} />;
+    return <LandingView restaurantId={handle} initial={null} />;
   }
 
+  // Canónico: si llegó por ID y el restaurante YA tiene slug → redirige a la
+  // URL bonita (los dos funcionan; Google y los shares consolidan en una).
+  if (resolved.matchedBy === "id" && resolved.slug && resolved.slug !== handle) {
+    redirect(`/r/${resolved.slug}`);
+  }
+  // Slug con mayúsculas raras → normaliza.
+  if (resolved.matchedBy === "slug" && resolved.slug && handle !== resolved.slug) {
+    redirect(`/r/${resolved.slug}`);
+  }
+
+  const restaurantId = resolved.id;
+  const docResult = { data: resolved.data };
   const menu = await fetchRestaurantMenuFull(restaurantId);
 
   // Patrón Metro Pizza: si hay datos de ventas (orderCount, contador futuro),

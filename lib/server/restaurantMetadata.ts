@@ -95,6 +95,55 @@ function extractStringArray(
 }
 
 /**
+ * Ids + slugs de restaurantes activos para el sitemap. El slug (si existe)
+ * es la URL canónica de /r/; failures return [] so the sitemap always
+ * renders its static entries.
+ */
+export async function fetchActiveRestaurantHandles(
+  max = 150,
+): Promise<{ id: string; slug: string | null }[]> {
+  try {
+    const url =
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}` +
+      `/databases/(default)/documents:runQuery?key=${API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "restaurants" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "status" },
+              op: "EQUAL",
+              value: { stringValue: "active" },
+            },
+          },
+          limit: max,
+        },
+      }),
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const rows = (await res.json()) as {
+      document?: { name?: string; fields?: Record<string, { stringValue?: string }> };
+    }[];
+    const out: { id: string; slug: string | null }[] = [];
+    for (const r of rows) {
+      const id = r.document?.name?.split("/").pop();
+      if (!id) continue;
+      const rawSlug = r.document?.fields?.slug?.stringValue?.trim().toLowerCase();
+      const slug =
+        rawSlug && /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(rawSlug) ? rawSlug : null;
+      out.push({ id, slug });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Public restaurant ids for the sitemap (active restaurants only). Firestore
  * REST runQuery on the public-read collection; failures return [] so the
  * sitemap always renders its static entries.

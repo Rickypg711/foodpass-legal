@@ -208,9 +208,12 @@ export default function LandingView({
         if (!rSnap.exists()) {
           // Mismo rescate que /menu: ids con mayúsculas/minúsculas distintas.
           const allSnap = await getDocs(collection(db, "restaurants"));
-          const match = allSnap.docs.find(
-            (d) => d.id.toLowerCase() === restaurantId.toLowerCase(),
-          );
+          const wanted = restaurantId.toLowerCase();
+          const match = allSnap.docs.find((d) => {
+            if (d.id.toLowerCase() === wanted) return true;
+            const s = (d.data() as Record<string, unknown>).slug;
+            return typeof s === "string" && s.trim().toLowerCase() === wanted;
+          });
           if (match) {
             window.location.replace(`/r/${match.id}`);
             return;

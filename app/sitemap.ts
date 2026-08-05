@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/siteMetadata";
-import { fetchActiveRestaurantIds } from "@/lib/server/restaurantMetadata";
+import { fetchActiveRestaurantHandles } from "@/lib/server/restaurantMetadata";
 
 // Marketing surfaces + every active restaurant's public menu page (the
 // Owner.com play: each vendor page is a local-search result). Restaurant
@@ -62,16 +62,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/descargar`, changeFrequency: "monthly", priority: 0.5 },
   ];
 
-  const restaurantIds = await fetchActiveRestaurantIds();
-  const menuEntries: MetadataRoute.Sitemap = restaurantIds.map((id) => ({
-    url: `${SITE_URL}/menu/${id}`,
+  const restaurants = await fetchActiveRestaurantHandles();
+  const menuEntries: MetadataRoute.Sitemap = restaurants.map((r) => ({
+    url: `${SITE_URL}/menu/${r.id}`,
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));
-  // La página del restaurante (/r/{id}) — la "home" del negocio para
-  // búsquedas locales tipo "{nombre} horario" / "{nombre} chihuahua".
-  const landingEntries: MetadataRoute.Sitemap = restaurantIds.map((id) => ({
-    url: `${SITE_URL}/r/${id}`,
+  // La página del restaurante — la "home" del negocio para búsquedas locales.
+  // Canónico: el slug bonito cuando existe (/r/luzz-pizza), si no el id.
+  const landingEntries: MetadataRoute.Sitemap = restaurants.map((r) => ({
+    url: `${SITE_URL}/r/${r.slug ?? r.id}`,
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));

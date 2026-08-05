@@ -325,7 +325,13 @@ function PublicMenuPageWithOrdering() {
         if (cancelled) return;
         if (!rSnap.exists()) {
           const allSnap = await getDocs(collection(db, "restaurants"));
-          const match = allSnap.docs.find((d) => d.id.toLowerCase() === restaurantId.toLowerCase());
+          const wanted = restaurantId.toLowerCase();
+          // id case-insensitive O slug bonito (comeleal.com/menu/luzz-pizza)
+          const match = allSnap.docs.find((d) => {
+            if (d.id.toLowerCase() === wanted) return true;
+            const s = (d.data() as Record<string, unknown>).slug;
+            return typeof s === "string" && s.trim().toLowerCase() === wanted;
+          });
           if (match) {
             window.location.replace(`/menu/${match.id}`);
             return;
@@ -516,7 +522,13 @@ function PublicMenuPageBrowseOnly() {
         if (cancelled) return;
         if (!rSnap.exists()) {
           const allSnap = await getDocs(collection(db, "restaurants"));
-          const match = allSnap.docs.find((d) => d.id.toLowerCase() === restaurantId.toLowerCase());
+          const wanted = restaurantId.toLowerCase();
+          // id case-insensitive O slug bonito (comeleal.com/menu/luzz-pizza)
+          const match = allSnap.docs.find((d) => {
+            if (d.id.toLowerCase() === wanted) return true;
+            const s = (d.data() as Record<string, unknown>).slug;
+            return typeof s === "string" && s.trim().toLowerCase() === wanted;
+          });
           if (match) {
             window.location.replace(`/menu/${match.id}`);
             return;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDocs, addDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDocs, addDoc, deleteDoc, query, where, limit } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
@@ -13,6 +13,7 @@ import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
+import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
 import type { User } from "firebase/auth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -41,6 +42,8 @@ export default function ConfiguracionPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  /** Slug público (comeleal.com/r/{slug}) — se auto-reclama al guardar. */
+  const [slug, setSlug] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [dailyRevenueGoal, setDailyRevenueGoal] = useState<number | "">("");
   /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
@@ -85,6 +88,7 @@ export default function ConfiguracionPage() {
       setName((data.name as string) ?? "");
       setAddress((data.address as string) ?? "");
       setPhone((data.phone as string) ?? "");
+      setSlug(slugFromRestaurantData(data));
       setCategories((data.categories as string[]) ?? []);
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
@@ -306,7 +310,31 @@ export default function ConfiguracionPage() {
       } else {
         update.dailyRevenueGoal = 0;
       }
+
+      // Auto-reclamo del slug bonito (comeleal.com/r/luzz-pizza) la primera
+      // vez que se guarda. Best-effort: si algo falla, el guardado normal
+      // sigue — el link con ID funciona siempre. El slug NO cambia en
+      // renombres (los links compartidos jamás se rompen).
+      let claimedSlug: string | null = null;
+      if (!slug) {
+        try {
+          const base = slugify(name.trim());
+          if (isUsableSlug(base)) {
+            for (let i = 0; i < 8 && !claimedSlug; i++) {
+              const candidate = i === 0 ? base : `${base.slice(0, 37)}-${i + 1}`;
+              const taken = await getDocs(
+                query(collection(db, "restaurants"), where("slug", "==", candidate), limit(1)),
+              );
+              const other = taken.docs.find((d) => d.id !== restaurantId);
+              if (!other) claimedSlug = candidate;
+            }
+            if (claimedSlug) update.slug = claimedSlug;
+          }
+        } catch { /* sin slug esta vez — reintenta en el próximo guardado */ }
+      }
+
       await updateDoc(doc(db, "restaurants", restaurantId), update);
+      if (claimedSlug) setSlug(claimedSlug);
       const readiness = await persistReadiness(restaurantId);
       setSetupReasons(readiness && !readiness.isComplete ? readiness.reasons : []);
       setSaved(true);
@@ -533,7 +561,7 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Tu página en internet ── */}
-            {restaurantId ? <PublicLinksCard restaurantId={restaurantId} /> : null}
+            {restaurantId ? <PublicLinksCard restaurantId={restaurantId} slug={slug} /> : null}
 
             {/* ── Imágenes del restaurante ── */}
             <SectionCard label="Imágenes del negocio">
@@ -818,15 +846,28 @@ export default function ConfiguracionPage() {
  * donde se entera de que existe (bio de Instagram + sitio web en Google Maps
  * = el loop de SEO local trabajando para él y para Comeleal).
  */
-function PublicLinksCard({ restaurantId }: { restaurantId: string }) {
+function PublicLinksCard({
+  restaurantId,
+  slug,
+}: {
+  restaurantId: string;
+  slug: string | null;
+}) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const links = [
     {
       key: "landing",
       label: "🏠 Tu página",
-      url: `https://comeleal.com/r/${restaurantId}`,
-      hint: "Tu mini-sitio: menú, horario, ubicación y WhatsApp.",
+      // Con slug: el link corto bonito (comeleal.com/luzz-pizza — ideal para
+      // bio y statuses). Sin slug: el de ID (guarda la configuración una vez
+      // y se activa solo).
+      url: slug
+        ? `https://comeleal.com/${slug}`
+        : `https://comeleal.com/r/${restaurantId}`,
+      hint: slug
+        ? "Tu mini-sitio: menú, horario, ubicación y WhatsApp."
+        : "Tu mini-sitio. Guarda la configuración para activar tu link corto con el nombre de tu negocio.",
     },
     {
       key: "menu",
