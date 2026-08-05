@@ -377,19 +377,22 @@ export default function LandingView({
 
         {!loading && !error && restaurant && (
           <>
-            {/* ---- ACCIONES ---- */}
+            {/* ---- ACCIONES ----
+                 CTA sticky (patrón Metro Pizza: el botón de ordenar NUNCA
+                 sale de pantalla). position:sticky, cero JS. OJO: debe ser
+                 hijo DIRECTO de <main> — sticky solo vive dentro de los
+                 límites de su padre; anidado en el div de acciones dejaba de
+                 pegarse dos renglones después. */}
+            <div className="sticky top-3 z-30">
+              <Link
+                href={menuHref}
+                onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
+                className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-white shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
+              >
+                🍽 Ver menú y ordenar
+              </Link>
+            </div>
             <div className="space-y-2.5">
-              {/* Sticky (patrón Metro Pizza: el CTA de ordenar NUNCA sale de
-                  pantalla). position:sticky — cero JS, funciona con SSR. */}
-              <div className="sticky top-3 z-30">
-                <Link
-                  href={menuHref}
-                  onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                  className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-white shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
-                >
-                  🍽 Ver menú y ordenar
-                </Link>
-              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {whatsappHref ? (
                   <a
