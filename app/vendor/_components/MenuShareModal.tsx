@@ -17,6 +17,7 @@
 //   descarga la tarjeta + copia el link con feedback visible.
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
@@ -191,11 +192,15 @@ export default function MenuShareModal({
           }}
         >
           {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // next/image = URL same-origin (/_next/image) → se ve en el modal
+            // Y entra al PNG de la tarjeta sin CORS. priority: cargado antes
+            // de que alguien alcance a tocar Compartir/Imprimir.
+            <Image
               src={logoUrl}
               alt=""
-              crossOrigin="anonymous"
+              width={56}
+              height={56}
+              priority
               className="h-14 w-14 rounded-full object-cover"
             />
           ) : (
