@@ -150,6 +150,35 @@ function fmt12(t: TimeHM): string {
   return `${h12}:${mm} ${ampm}`;
 }
 
+/** Día en formato schema.org ("Monday"…) + horas "HH:MM" de 24h. */
+export type WeeklyHoursRaw = { day: string; opens: string; closes: string };
+
+/**
+ * Horario semanal CRUDO para datos estructurados (JSON-LD
+ * openingHoursSpecification): solo días abiertos, horas en 24h. Ventanas
+ * nocturnas se emiten tal cual (opens 16:00 / closes 02:00 — schema.org lo
+ * interpreta como "cruza medianoche"). null sin businessHours.
+ */
+export function weeklyHoursRaw(
+  rdata: Record<string, unknown>,
+): WeeklyHoursRaw[] | null {
+  const hours = parseBusinessHours(rdata);
+  if (!hours) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const out: WeeklyHoursRaw[] = [];
+  for (let idx = 0; idx < DAY_KEYS.length; idx++) {
+    const d = readDay(hours, idx);
+    if (!d || d.isClosed || !d.open || !d.close) continue;
+    const key = DAY_KEYS[idx];
+    out.push({
+      day: key[0].toUpperCase() + key.slice(1),
+      opens: `${pad(d.open.hour)}:${pad(d.open.minute)}`,
+      closes: `${pad(d.close.hour)}:${pad(d.close.minute)}`,
+    });
+  }
+  return out;
+}
+
 export type WeeklyScheduleRow = {
   /** "lunes" … "domingo" */
   day: string;

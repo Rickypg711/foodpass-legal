@@ -532,6 +532,9 @@ export default function ConfiguracionPage() {
               </Field>
             </SectionCard>
 
+            {/* ── Tu página en internet ── */}
+            {restaurantId ? <PublicLinksCard restaurantId={restaurantId} /> : null}
+
             {/* ── Imágenes del restaurante ── */}
             <SectionCard label="Imágenes del negocio">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -808,6 +811,96 @@ export default function ConfiguracionPage() {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+/**
+ * Tu página en internet — los dos links públicos del negocio con copiar de un
+ * tap. La landing /r/{id} solo genera tráfico si el dueño la USA: aquí es
+ * donde se entera de que existe (bio de Instagram + sitio web en Google Maps
+ * = el loop de SEO local trabajando para él y para Comeleal).
+ */
+function PublicLinksCard({ restaurantId }: { restaurantId: string }) {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const links = [
+    {
+      key: "landing",
+      label: "🏠 Tu página",
+      url: `https://comeleal.com/r/${restaurantId}`,
+      hint: "Tu mini-sitio: menú, horario, ubicación y WhatsApp.",
+    },
+    {
+      key: "menu",
+      label: "🍽 Tu menú",
+      url: `https://comeleal.com/menu/${restaurantId}`,
+      hint: "El link de tu QR de mesa — directo al menú.",
+    },
+  ];
+
+  async function copyLink(key: string, url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      /* clipboard bloqueado — el link queda visible para copiar a mano */
+    }
+  }
+
+  return (
+    <SectionCard label="Tu página en internet">
+      <div className="space-y-3">
+        {links.map((l) => (
+          <div
+            key={l.key}
+            className="rounded-xl px-3.5 py-3"
+            style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0">
+                <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                  {l.label}
+                </span>
+                <span className="mt-0.5 block truncate font-mono text-[11px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+                  {l.url.replace("https://", "")}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5">
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors"
+                  style={{ border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526", background: "#ffffff" }}
+                >
+                  Ver
+                </a>
+                <button
+                  type="button"
+                  onClick={() => copyLink(l.key, l.url)}
+                  className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-white transition-colors"
+                  style={{ background: copied === l.key ? "#22C55E" : "#F28C38" }}
+                >
+                  {copied === l.key ? "✓ Copiado" : "Copiar"}
+                </button>
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+              {l.hint}
+            </p>
+          </div>
+        ))}
+        <p
+          className="rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed"
+          style={{ background: "#FFF3E8", border: "1px solid rgba(242,140,56,0.25)", color: "rgba(28,37,38,0.65)" }}
+        >
+          💡 <strong>Pon tu página en la bio de Instagram y como sitio web en tu
+          perfil de Google Maps.</strong> Así te encuentran en Google, ven tu menú
+          y te piden por WhatsApp — sin pagarle a nadie más.
+        </p>
+      </div>
+    </SectionCard>
+  );
+}
 
 function SectionCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
