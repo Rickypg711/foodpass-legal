@@ -49,6 +49,48 @@ type DayHours = {
 
 export type ScheduleStatus = { open: boolean; label: string };
 
+/**
+ * Cierre manual "por hoy": restaurants/{id}.manualCloseUntil. Cerrado
+ * mientras now < manualCloseUntil — auto-expira al corte del día (lo escribe
+ * el app del dueño con corte 4 AM). Acepta Timestamp del SDK (toDate),
+ * {seconds}, REST {timestampValue}, Date, epoch ms e ISO string.
+ */
+function manualCloseUntilOf(rdata: Record<string, unknown>): Date | null {
+  const raw = rdata["manualCloseUntil"];
+  if (!raw) return null;
+  if (raw instanceof Date) return raw;
+  if (typeof raw === "number") return new Date(raw);
+  if (typeof raw === "string") {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof raw === "object") {
+    const o = raw as { toDate?: () => Date; timestampValue?: unknown; seconds?: unknown };
+    if (typeof o.toDate === "function") {
+      try {
+        return o.toDate();
+      } catch {
+        return null;
+      }
+    }
+    if (typeof o.timestampValue === "string") {
+      const d = new Date(o.timestampValue);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    if (typeof o.seconds === "number") return new Date(o.seconds * 1000);
+  }
+  return null;
+}
+
+/** ¿El dueño cerró manualmente y sigue vigente? Gana al horario en TODO. */
+export function manuallyClosedNow(
+  rdata: Record<string, unknown>,
+  now: Date = new Date(),
+): boolean {
+  const until = manualCloseUntilOf(rdata);
+  return until !== null && now < until;
+}
+
 /** businessHours del doc del restaurante, o null si no está configurado. */
 export function parseBusinessHours(
   rdata: Record<string, unknown>,
@@ -127,19 +169,23 @@ function activeWindowAt(
 
 /** ¿Abierto ahorita? Sin datos → false (conservador, como el mapa del app). */
 export function isOpenNow(rdata: Record<string, unknown>, now: Date = new Date()): boolean {
+  if (manuallyClosedNow(rdata, now)) return false;
   const hours = parseBusinessHours(rdata);
   if (!hours) return false;
   return activeWindowAt(hours, now) !== null;
 }
 
 /**
- * ¿Bloquear pedidos? true SOLO cuando hay horario configurado Y dice cerrado.
- * Sin businessHours → false: nunca bloqueamos ventas por datos faltantes.
+ * ¿Bloquear pedidos? true cuando el dueño cerró MANUALMENTE (dato explícito,
+ * bloquea aun sin horario) o cuando hay horario configurado Y dice cerrado.
+ * Sin businessHours ni cierre manual → false: nunca bloqueamos ventas por
+ * datos faltantes.
  */
 export function isPositivelyClosedNow(
   rdata: Record<string, unknown>,
   now: Date = new Date(),
 ): boolean {
+  if (manuallyClosedNow(rdata, now)) return true;
   return parseBusinessHours(rdata) !== null && !isOpenNow(rdata, now);
 }
 
@@ -221,6 +267,11 @@ export function scheduleStatus(
   rdata: Record<string, unknown>,
   now: Date = new Date(),
 ): ScheduleStatus | null {
+  // Cierre manual: gana al horario y se muestra aun sin businessHours —
+  // acción explícita del dueño, no dato faltante (paridad con el app).
+  if (manuallyClosedNow(rdata, now)) {
+    return { open: false, label: "Cerrado por hoy" };
+  }
   const hours = parseBusinessHours(rdata);
   if (!hours) return null;
 

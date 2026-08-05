@@ -20,6 +20,7 @@ import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
+import ManualCloseToggle from "./_components/ManualCloseToggle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -520,13 +521,7 @@ export default function VendorDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {isLive && (
-              <span className="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold text-green-700"
-                style={{ background: "#D1FAE5" }}>
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-                En vivo
-              </span>
-            )}
+            <ManualCloseToggle restaurantId={data.restaurantId} />
             <Link href="/vendor/scanner"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
               style={{ background: "#F28C38" }}>
@@ -552,6 +547,7 @@ export default function VendorDashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <ManualCloseToggle restaurantId={data.restaurantId} />
             {isLive && (
               <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5"
                 style={{ borderColor: "#BBF7D0", background: "#F0FDF4" }}>
