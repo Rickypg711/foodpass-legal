@@ -21,6 +21,7 @@ import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import { completedStepCount } from "@/lib/vendorReadiness";
 import ManualCloseToggle from "./_components/ManualCloseToggle";
+import MenuShareModal from "./_components/MenuShareModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1048,69 +1049,13 @@ export default function VendorDashboard() {
 // ─── QR Card ──────────────────────────────────────────────────────────────────
 
 function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const qrUrl = `https://comeleal.com/menu/${restaurantId}`;
-  // NOTE: chart.googleapis.com QR API was shut down by Google — use qrserver.com instead.
-  const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=${encodeURIComponent(qrUrl)}`;
-
-  function handlePrint() {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
-      <!DOCTYPE html><html><head>
-        <title>QR — ${restaurantName}</title>
-        <style>
-          *{margin:0;padding:0;box-sizing:border-box}
-          body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-            display:flex;flex-direction:column;align-items:center;justify-content:center;
-            min-height:100vh;padding:40px;background:#fff}
-          .logo{font-size:14px;font-weight:700;letter-spacing:.08em;color:#F28C38;
-            margin-bottom:28px;text-transform:uppercase}
-          img{width:260px;height:260px}
-          h1{margin-top:24px;font-size:22px;font-weight:800;color:#141413;text-align:center}
-          p{margin-top:8px;font-size:13px;color:#141413;opacity:.5;text-align:center;
-            max-width:220px;line-height:1.5}
-          .cta{margin-top:20px;font-size:15px;font-weight:700;color:#F28C38;text-align:center}
-        </style>
-      </head><body>
-        <span class="logo">Comeleal</span>
-        <img src="${qrImgSrc}" alt="QR" />
-        <h1>${restaurantName}</h1>
-        <p>Escanea para ganar puntos y recompensas</p>
-        <p>Descarga la app Comeleal y únete al programa de lealtad</p>
-        <script>window.onload=()=>{window.print()}<\/script>
-      </body></html>
-    `);
-    win.document.close();
-  }
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(qrUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard blocked — the URL is still visible for manual copy */
-    }
-  }
-
-  async function handleShare() {
-    const shareData = {
-      title: restaurantName,
-      text: `Mira el menú de ${restaurantName} y gana puntos 🍽️`,
-      url: qrUrl,
-    };
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share(shareData); // native share sheet (WhatsApp, etc.)
-      } else {
-        await handleCopy(); // desktop / no share API → copy the link instead
-      }
-    } catch {
-      /* user dismissed the share sheet — no-op */
-    }
-  }
+  // Entrada al modal ÚNICO de compartir (MenuShareModal — tarjeta de marca,
+  // QR local, link bonito, imprimir). Antes: acordeón con QR de un servicio
+  // externo (api.qrserver.com), link de ID feo y un segundo botón "Compartir
+  // menú" duplicando el de la sidebar. En móvil esta fila es LA entrada
+  // (la sidebar está oculta).
+  const [shareOpen, setShareOpen] = useState(false);
+  void restaurantName; // el modal lee nombre/logo/slug frescos del doc
 
   return (
     <div className="mb-5 rounded-2xl"
@@ -1119,9 +1064,8 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
         border: "1px solid rgba(28,37,38,0.07)",
         boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
       }}>
-      {/* Header row — always visible */}
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => setShareOpen(true)}
         className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-[#faf9f5] rounded-2xl"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
@@ -1131,59 +1075,20 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
         <div className="flex-1 text-left">
           <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Tu QR de menú</p>
           <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
-            Los clientes lo escanean para ver tu menú y encontrarte en la app
+            Compártelo o imprímelo — tus clientes escanean y ordenan
           </p>
         </div>
-        <span className="text-[13px] transition-transform duration-200"
-          style={{
-            color: "rgba(28,37,38,0.3)",
-            display: "inline-block",
-            transform: expanded ? "rotate(180deg)" : "none",
-          }}>
-          ▾
-        </span>
+        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
       </button>
-
-      {/* Expanded QR */}
-      {expanded && (
-        <div className="flex flex-col items-center gap-4 px-5 pb-5">
-          <div className="mx-auto flex h-44 w-44 items-center justify-center rounded-xl bg-white p-2 shadow-sm ring-1 ring-[#141413]/8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrImgSrc} alt="QR de tu restaurante" className="h-full w-full" />
-          </div>
-          <p className="text-[10px] font-mono text-[#141413]/30 break-all text-center">
-            comeleal.com/menu/{restaurantId}
-          </p>
-          {/* Primary: one-tap share to WhatsApp / anywhere */}
-          <button
-            onClick={handleShare}
-            className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition-all hover:opacity-90"
-            style={{ background: "#F28C38" }}
-          >
-            📤 Compartir menú
-          </button>
-          {/* Secondary: copy link + print, side by side */}
-          <div className="flex w-full gap-2">
-            <button
-              onClick={handleCopy}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
-              style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
-            >
-              {copied ? "✅ Copiado" : "🔗 Copiar enlace"}
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all hover:bg-[#F28C38]/10"
-              style={{ borderColor: "rgba(217,119,87,0.3)", color: "#F28C38", background: "rgba(217,119,87,0.05)" }}
-            >
-              🖨️ Imprimir
-            </button>
-          </div>
-        </div>
-      )}
+      <MenuShareModal
+        restaurantId={restaurantId}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </div>
   );
 }
+
 
 // ─── Setup Banner ─────────────────────────────────────────────────────────────
 

@@ -15,6 +15,7 @@ import { parsePosStaff, findStaffByPin, type PosStaffMember } from "@/lib/posSta
 import { collection, getDocs } from "firebase/firestore";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import FloatingAI from "./_components/FloatingAI";
+import MenuShareModal from "./_components/MenuShareModal";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -166,7 +167,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState<string>("V");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [menuShared, setMenuShared] = useState(false);
+  /** Modal de compartir (tarjeta de marca) — LA experiencia única de compartir. */
+  const [shareOpen, setShareOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   /** Hoja "Más" de la nav móvil (la sidebar está oculta en teléfono). */
   const [moreOpen, setMoreOpen] = useState(false);
@@ -264,26 +266,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
-  async function handleShareMenu() {
-    if (!restaurantId) return;
-    const url = `https://comeleal.com/menu/${restaurantId}`;
-    const shareData = {
-      title: restaurantName || "Comeleal",
-      text: `Mira el menú de ${restaurantName || "nuestro restaurante"} y gana puntos 🍽️`,
-      url,
-    };
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share(shareData); // native share sheet (WhatsApp, etc.)
-      } else {
-        await navigator.clipboard.writeText(url); // desktop fallback → copy
-        setMenuShared(true);
-        setTimeout(() => setMenuShared(false), 2000);
-      }
-    } catch {
-      /* user dismissed the share sheet — no-op */
-    }
-  }
+  // Compartir menú abre el modal de tarjeta de marca (MenuShareModal) — el
+  // share plano de link se quedó corto: sin QR, sin preview, sin feedback.
 
   function NavLink({ href, label, icon, exact, external }: NavDef) {
     const active = isActive(href, exact);
@@ -416,17 +400,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         {restaurantId && (
           <div className="shrink-0 px-2 pt-3">
             <button
-              onClick={handleShareMenu}
+              onClick={() => setShareOpen(true)}
               title={!open ? "Compartir menú" : undefined}
               className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-[10px] text-[13px] font-bold text-white transition-all hover:opacity-90"
               style={{ background: "#F28C38", justifyContent: open ? "flex-start" : "center" }}
             >
               <span className="shrink-0"><IconShare /></span>
-              {open && (
-                <span className="whitespace-nowrap">
-                  {menuShared ? "Enlace copiado ✅" : "Compartir menú"}
-                </span>
-              )}
+              {open && <span className="whitespace-nowrap">Compartir menú</span>}
             </button>
           </div>
         )}
@@ -732,6 +712,15 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       <Suspense fallback={null}>
         <FloatingAI restaurantId={restaurantId} open={aiOpen} setOpen={setAiOpen} />
       </Suspense>
+
+      {/* ── Compartir menú: tarjeta de marca (paridad con el app) ── */}
+      {restaurantId && (
+        <MenuShareModal
+          restaurantId={restaurantId}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   );
 }
