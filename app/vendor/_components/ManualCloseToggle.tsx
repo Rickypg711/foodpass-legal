@@ -10,7 +10,12 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot, updateDoc, Timestamp, deleteField } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
-import { scheduleStatus, manuallyClosedNow, type ScheduleStatus } from "@/lib/schedule";
+import {
+  scheduleStatus,
+  manuallyClosedNow,
+  manuallyOpenNow,
+  type ScheduleStatus,
+} from "@/lib/schedule";
 import { businessDayStart } from "@/lib/businessDay";
 
 export default function ManualCloseToggle({ restaurantId }: { restaurantId: string }) {
@@ -28,22 +33,38 @@ export default function ManualCloseToggle({ restaurantId }: { restaurantId: stri
 
   if (!rdata) return null;
   const status: ScheduleStatus | null = scheduleStatus(rdata);
-  if (!status) return null; // sin horario ni cierre manual: nada que mostrar
-  const manuallyClosed = manuallyClosedNow(rdata);
+  if (!status) return null; // sin horario ni overrides: nada que mostrar
+  // SIEMPRE ofrecemos lo contrario del estado EFECTIVO: abierto → cerrar;
+  // cerrado (por horario O manual) → abrir. Con override activo, además
+  // "Usar mi horario normal". Nunca ofrecemos "cerrar" a quien ya está
+  // cerrado — eso no tenía sentido.
+  const effectivelyOpen = status.open;
+  const hasOverride = manuallyClosedNow(rdata) || manuallyOpenNow(rdata);
 
-  async function toggle() {
+  async function write(action: "close" | "open" | "schedule") {
     if (busy) return;
     setBusy(true);
     try {
       const db = getFirebaseDb();
       const ref = doc(db, "restaurants", restaurantId);
-      if (manuallyClosed) {
-        await updateDoc(ref, { manualCloseUntil: deleteField() });
+      // Próximo corte del día comercial (4 AM): a la 1 AM afecta lo que
+      // queda del turno de anoche, no 23 horas de mañana.
+      const until = new Date(businessDayStart().getTime() + 24 * 60 * 60 * 1000);
+      if (action === "close") {
+        await updateDoc(ref, {
+          manualCloseUntil: Timestamp.fromDate(until),
+          manualOpenUntil: deleteField(),
+        });
+      } else if (action === "open") {
+        await updateDoc(ref, {
+          manualOpenUntil: Timestamp.fromDate(until),
+          manualCloseUntil: deleteField(),
+        });
       } else {
-        // Próximo corte del día comercial (4 AM): cerrar a la 1 AM cierra lo
-        // que queda del turno de anoche, no 23 horas de mañana.
-        const until = new Date(businessDayStart().getTime() + 24 * 60 * 60 * 1000);
-        await updateDoc(ref, { manualCloseUntil: Timestamp.fromDate(until) });
+        await updateDoc(ref, {
+          manualCloseUntil: deleteField(),
+          manualOpenUntil: deleteField(),
+        });
       }
       setConfirming(false);
     } catch (e) {
@@ -79,19 +100,30 @@ export default function ManualCloseToggle({ restaurantId }: { restaurantId: stri
           style={{ borderColor: "rgba(28,37,38,0.1)" }}
         >
           <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.7)" }}>
-            {manuallyClosed
-              ? "Tu horario normal vuelve a mandar de inmediato."
-              : "Tus clientes verán “Cerrado por hoy” y no podrán ordenar. Mañana se reabre solo con tu horario normal."}
+            {effectivelyOpen
+              ? "Tus clientes verán “Cerrado por hoy” y no podrán ordenar. Mañana se reabre solo con tu horario normal."
+              : "Abres fuera de tu horario. Tus clientes podrán ordenar ya; al corte del día (4 AM) vuelve tu horario normal."}
           </p>
           <button
             type="button"
-            onClick={toggle}
+            onClick={() => write(effectivelyOpen ? "close" : "open")}
             disabled={busy}
             className="mt-2 w-full rounded-lg px-3 py-2 text-[13px] font-bold text-white disabled:opacity-60"
-            style={{ background: manuallyClosed ? "#F28C38" : "#C62828" }}
+            style={{ background: effectivelyOpen ? "#C62828" : "#F28C38" }}
           >
-            {busy ? "…" : manuallyClosed ? "Reabrir ahora" : "Cerrar por hoy"}
+            {busy ? "…" : effectivelyOpen ? "Cerrar por hoy" : "Abrir ahora"}
           </button>
+          {hasOverride && (
+            <button
+              type="button"
+              onClick={() => write("schedule")}
+              disabled={busy}
+              className="mt-1.5 w-full rounded-lg px-3 py-1.5 text-[12px] font-bold disabled:opacity-60"
+              style={{ color: "#F28C38" }}
+            >
+              Usar mi horario normal
+            </button>
+          )}
         </div>
       )}
     </div>

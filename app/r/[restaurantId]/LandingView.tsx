@@ -187,6 +187,28 @@ export default function LandingView({
     setTodayIdx((new Date().getDay() + 6) % 7);
   }, [rdata]);
 
+  // Refresh vivo del doc aunque el server SÍ entregó datos: el SSR se cachea
+  // (revalidate 300) y el chip abierto/cerrado no puede mentir 5 minutos —
+  // p. ej. el dueño acaba de tocar "Cerrar por hoy" (manualCloseUntil). El
+  // contenido SSR queda para SEO/primer paint; esto solo corrige lo vivo.
+  useEffect(() => {
+    if (initial === null || !restaurantId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getRestaurantSnapOnce(restaurantId);
+        if (!cancelled && snap.exists()) {
+          setRdata(snap.data() as Record<string, unknown>);
+        }
+      } catch {
+        // sin red o sin permiso: nos quedamos con el SSR (mejor que nada)
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initial, restaurantId]);
+
   // Respaldo client-side cuando el server no entregó datos.
   useEffect(() => {
     if (initial !== null) return;
