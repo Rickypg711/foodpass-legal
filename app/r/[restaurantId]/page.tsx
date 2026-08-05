@@ -40,12 +40,22 @@ export default async function RestaurantLandingPage({
   }
 
   const menu = await fetchRestaurantMenuFull(restaurantId);
+
+  // Patrón Metro Pizza: si hay datos de ventas (orderCount, contador futuro),
+  // el carrusel se vuelve "Los más pedidos" — la prueba social vende sola.
+  // Sin datos: orden por nombre y título neutro "Del menú".
+  const withPhoto = menu.filter((i) => i.imageUrl);
+  const hasSales = withPhoto.some((i) => i.orderCount > 0);
+  const sorted = hasSales
+    ? [...withPhoto].sort((a, b) => b.orderCount - a.orderCount)
+    : withPhoto;
+
   const initial: LandingInitialData = {
     raw: docResult.data,
-    menuPhotos: menu
-      .filter((i) => i.imageUrl)
+    menuPhotos: sorted
       .slice(0, 6)
       .map((i) => ({ name: i.name, price: i.price, imageUrl: i.imageUrl as string })),
+    menuPhotosArePopular: hasSales,
   };
 
   return <LandingView restaurantId={restaurantId} initial={initial} />;

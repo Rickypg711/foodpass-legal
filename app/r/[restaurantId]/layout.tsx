@@ -6,7 +6,8 @@ import {
   type LandingMenuItem,
 } from "@/lib/server/restaurantLanding";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
-import { weeklyHoursRaw } from "@/lib/schedule";
+import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
+import { buildFaq, buildLandingTitle } from "@/lib/landingContent";
 
 // /r/{id} — la PÁGINA del restaurante (mini-sitio público): hero, horario,
 // ubicación, WhatsApp y el menú a un tap. Es el link para la bio de
@@ -48,10 +49,15 @@ export async function generateMetadata({
 
   const { data, name } = restaurant;
   const description = str(data.description);
+  const metaCategories = Array.isArray(data.categories)
+    ? (data.categories as unknown[])
+        .map((c) => (typeof c === "string" ? c.trim() : ""))
+        .filter(Boolean)
+    : [];
 
-  // SEO local: la búsqueda "{nombre} chihuahua" / "{nombre} horario" debe
-  // caer aquí — la página del negocio, no un resultado genérico de Comeleal.
-  const title = `${name} — Menú, horario y ubicación`;
+  // SEO local estilo Owner: la FRASE DE BÚSQUEDA en el title —
+  // "{Nombre} | {Categoría} en {Ciudad} — menú, pedidos y horario".
+  const title = buildLandingTitle(name, metaCategories, str(data.address));
   const metaDescription = description
     ? `${description} Mira el menú de ${name}, checa el horario, pide por WhatsApp y junta puntos con cada compra.`
     : `Mira el menú de ${name} con fotos y precios, checa el horario y la ubicación, y pide por WhatsApp.`;
@@ -120,6 +126,9 @@ export default async function RestaurantLandingLayout({
   // precios, rango de precios — Google puede pintar "abierto ahora" y los
   // motores de IA responden con datos DEL negocio citando esta página.
   let jsonLd: Record<string, unknown> | null = null;
+  // FAQPage (patrón Owner/metropizza): las mismas preguntas que pinta la
+  // página, en schema — comida favorita de Google y los motores de IA.
+  let faqJsonLd: Record<string, unknown> | null = null;
   if (restaurant) {
     const { data, name } = restaurant;
     const address = str(data.address);
@@ -173,6 +182,46 @@ export default async function RestaurantLandingLayout({
       hasMenu: buildMenuJsonLd(restaurantId, menu),
       acceptsReservations: false,
     };
+
+    // FAQ con los MISMOS datos que renderiza LandingView (schema y página
+    // nunca deben contradecirse).
+    const weeklyRows = weeklySchedule(data);
+    const hoursText = weeklyRows
+      ? weeklyRows.map((r) => `${r.day} ${r.hours}`).join(" · ")
+      : null;
+    const fpr = data.firstPurchaseReward;
+    let firstVisitReward: string | null = null;
+    if (fpr && typeof fpr === "object") {
+      const m = fpr as Record<string, unknown>;
+      if (m.enabled === true) {
+        firstVisitReward = str(m.menuItemName) ?? str(m.description);
+      }
+    }
+    // Mismos "favoritos" que pinta LandingView: con foto, y por ventas
+    // (orderCount) cuando existen datos.
+    const withPhoto = menu.filter((i) => i.imageUrl);
+    const topSource = withPhoto.some((i) => i.orderCount > 0)
+      ? [...withPhoto].sort((a, b) => b.orderCount - a.orderCount)
+      : withPhoto;
+    const faq = buildFaq({
+      name,
+      categories,
+      address,
+      hoursText,
+      topItems: topSource.slice(0, 3).map((i) => i.name),
+      firstVisitReward,
+    });
+    if (faq.length > 0) {
+      faqJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      };
+    }
   }
 
   return (
@@ -181,6 +230,12 @@ export default async function RestaurantLandingLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
       {children}

@@ -83,6 +83,9 @@ export type LandingMenuItem = {
   price: number;
   category: string;
   imageUrl: string | null;
+  /** Ventas acumuladas (campo opcional `orderCount`, lo llenará un contador
+   *  futuro). 0 cuando no existe — el sort "Los más pedidos" cae a nombre. */
+  orderCount: number;
 };
 
 /** Menú disponible del restaurante (server-side, para SSR + JSON-LD Menu). */
@@ -131,6 +134,7 @@ export async function fetchRestaurantMenuFull(
           typeof data.imageUrl === "string" && data.imageUrl.trim()
             ? data.imageUrl.trim()
             : null,
+        orderCount: typeof data.orderCount === "number" ? data.orderCount : 0,
       });
     }
     items.sort((a, b) => {

@@ -30,6 +30,7 @@ import {
   weeklySchedule,
   type ScheduleStatus,
 } from "@/lib/schedule";
+import { buildFaq, buildSeoParagraph } from "@/lib/landingContent";
 
 export type LandingMenuPhoto = {
   name: string;
@@ -41,6 +42,8 @@ export type LandingInitialData = {
   /** Doc del restaurante ya decodificado a JS plano (server-side). */
   raw: Record<string, unknown>;
   menuPhotos: LandingMenuPhoto[];
+  /** true cuando menuPhotos viene ordenado por ventas reales (orderCount). */
+  menuPhotosArePopular: boolean;
 };
 
 type LandingRestaurant = {
@@ -86,11 +89,12 @@ function mapRestaurant(data: Record<string, unknown>): LandingRestaurant {
   };
 }
 
-/** Hasta 6 platillos CON foto para el carrusel "Del menú" (camino client). */
+/** Hasta 6 platillos CON foto para el carrusel (camino client de respaldo).
+ *  Con datos de ventas (orderCount) → "Los más pedidos"; sin datos → nombre. */
 function mapMenuPhotos(
   docs: { data: Record<string, unknown> }[],
-): LandingMenuPhoto[] {
-  const out: LandingMenuPhoto[] = [];
+): { photos: LandingMenuPhoto[]; popular: boolean } {
+  const out: (LandingMenuPhoto & { orderCount: number })[] = [];
   for (const d of docs) {
     const available =
       typeof d.data.isAvailable === "boolean" ? d.data.isAvailable : true;
@@ -104,10 +108,21 @@ function mapMenuPhotos(
         : typeof priceRaw === "string"
           ? parseFloat(priceRaw)
           : NaN;
-    out.push({ name, price: Number.isFinite(price) ? price : 0, imageUrl });
+    out.push({
+      name,
+      price: Number.isFinite(price) ? price : 0,
+      imageUrl,
+      orderCount: typeof d.data.orderCount === "number" ? d.data.orderCount : 0,
+    });
   }
-  out.sort((a, b) => a.name.localeCompare(b.name, "es"));
-  return out.slice(0, 6);
+  const popular = out.some((i) => i.orderCount > 0);
+  out.sort((a, b) =>
+    popular ? b.orderCount - a.orderCount : a.name.localeCompare(b.name, "es"),
+  );
+  return {
+    photos: out.slice(0, 6).map(({ name, price, imageUrl }) => ({ name, price, imageUrl })),
+    popular,
+  };
 }
 
 function ScheduleChip({ schedule }: { schedule: ScheduleStatus }) {
@@ -155,6 +170,9 @@ export default function LandingView({
   );
   const [menuPhotos, setMenuPhotos] = useState<LandingMenuPhoto[]>(
     initial?.menuPhotos ?? [],
+  );
+  const [menuPhotosArePopular, setMenuPhotosArePopular] = useState(
+    initial?.menuPhotosArePopular ?? false,
   );
   const [loading, setLoading] = useState(initial === null);
   const [error, setError] = useState<string | null>(null);
@@ -209,13 +227,13 @@ export default function LandingView({
             collection(db, "restaurants", restaurantId, "menu"),
           );
           if (!cancelled) {
-            setMenuPhotos(
-              mapMenuPhotos(
-                menuSnap.docs.map((d) => ({
-                  data: d.data() as Record<string, unknown>,
-                })),
-              ),
+            const { photos, popular } = mapMenuPhotos(
+              menuSnap.docs.map((d) => ({
+                data: d.data() as Record<string, unknown>,
+              })),
             );
+            setMenuPhotos(photos);
+            setMenuPhotosArePopular(popular);
           }
         } catch {
           /* opcional */
@@ -237,6 +255,22 @@ export default function LandingView({
   const weekly = useMemo(() => (rdata ? weeklySchedule(rdata) : null), [rdata]);
 
   const name = restaurant?.name ?? "";
+
+  // FAQ + párrafo SEO con los MISMOS datos que el schema del layout.
+  const faq = useMemo(() => {
+    if (!restaurant) return [];
+    return buildFaq({
+      name: restaurant.name,
+      categories: restaurant.categories,
+      address: restaurant.address,
+      hoursText: weekly ? weekly.map((r) => `${r.day} ${r.hours}`).join(" · ") : null,
+      topItems: menuPhotos.slice(0, 3).map((p) => p.name),
+      firstVisitReward: restaurant.firstVisitReward,
+    });
+  }, [restaurant, weekly, menuPhotos]);
+  const seoParagraph = restaurant
+    ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address)
+    : null;
 
   // Vista registrada una vez que hay datos (server o client).
   useEffect(() => {
@@ -345,13 +379,17 @@ export default function LandingView({
           <>
             {/* ---- ACCIONES ---- */}
             <div className="space-y-2.5">
-              <Link
-                href={menuHref}
-                onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#d67428]"
-              >
-                🍽 Ver menú y ordenar
-              </Link>
+              {/* Sticky (patrón Metro Pizza: el CTA de ordenar NUNCA sale de
+                  pantalla). position:sticky — cero JS, funciona con SSR. */}
+              <div className="sticky top-3 z-30">
+                <Link
+                  href={menuHref}
+                  onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
+                  className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-white shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
+                >
+                  🍽 Ver menú y ordenar
+                </Link>
+              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {whatsappHref ? (
                   <a
@@ -397,9 +435,9 @@ export default function LandingView({
               </p>
             ) : null}
 
-            {/* ---- DEL MENÚ (fotos) ---- */}
+            {/* ---- DEL MENÚ (fotos) — "Los más pedidos" con datos de ventas ---- */}
             {menuPhotos.length > 0 ? (
-              <SectionCard title="Del menú">
+              <SectionCard title={menuPhotosArePopular ? "Los más pedidos 🔥" : "Del menú"}>
                 <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
                   {menuPhotos.map((item, i) => (
                     <Link
@@ -480,6 +518,47 @@ export default function LandingView({
                 >
                   Abrir en Google Maps →
                 </a>
+              </SectionCard>
+            ) : null}
+
+            {/* ---- BLOQUE SEO (patrón Metro "Las Vegas Pizza Delivery"):
+                 párrafo con las palabras que la gente busca + el pitch de
+                 ordenar directo. Texto plano, indexable, sin estorbar. ---- */}
+            {seoParagraph ? (
+              <p className="px-1 text-[13px] leading-relaxed text-[#1C2526]/55">
+                {seoParagraph}{" "}
+                <Link
+                  href={menuHref}
+                  onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
+                  className="font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                >
+                  Ordenar ahora →
+                </Link>
+              </p>
+            ) : null}
+
+            {/* ---- PREGUNTAS FRECUENTES (FAQPage schema en el layout con las
+                 MISMAS respuestas — <details> nativo: funciona sin JS) ---- */}
+            {faq.length > 0 ? (
+              <SectionCard title="Preguntas frecuentes">
+                <div className="space-y-1">
+                  {faq.map((f) => (
+                    <details
+                      key={f.q}
+                      className="group rounded-xl px-3 py-2 open:bg-[#FAF7F2]"
+                    >
+                      <summary className="cursor-pointer list-none text-sm font-semibold text-[#1C2526] marker:content-none">
+                        <span className="mr-1.5 inline-block text-[#F28C38] transition-transform group-open:rotate-90">
+                          ›
+                        </span>
+                        {f.q}
+                      </summary>
+                      <p className="mt-1.5 pl-4 text-sm leading-relaxed text-[#1C2526]/75">
+                        {f.a}
+                      </p>
+                    </details>
+                  ))}
+                </div>
               </SectionCard>
             ) : null}
 
