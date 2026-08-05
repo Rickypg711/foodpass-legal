@@ -20,6 +20,7 @@ import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
 import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
+import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 import {
   PosRedemption,
   type PosRedemptionSelection,
@@ -623,12 +624,15 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, capReached, onDone }: { mode: CheckoutMode; total: number; capReached?: boolean; onDone: () => void }) {
+function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone }: { mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string; onDone: () => void }) {
   useEffect(() => {
-    // Give the owner time to read the cap warning when it's shown.
+    // With a captured phone there's a receipt to send — the cashier decides
+    // when to close (no timer racing their tap). Otherwise, auto-dismiss;
+    // give the owner time to read the cap warning when it's shown.
+    if (receiptUrl) return;
     const t = setTimeout(onDone, capReached ? 5000 : 2000);
     return () => clearTimeout(t);
-  }, [onDone, capReached]);
+  }, [onDone, capReached, receiptUrl]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(28,37,38,0.55)", backdropFilter: "blur(6px)" }}>
@@ -661,6 +665,29 @@ function SuccessOverlay({ mode, total, capReached, onDone }: { mode: CheckoutMod
               Tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en
               Configuración para que ningún cliente se quede sin sus puntos.
             </p>
+          </div>
+        )}
+        {receiptUrl && (
+          <div className="flex w-full flex-col gap-2">
+            <button
+              onClick={() => {
+                // wa.me directo al número capturado, recibo ya escrito
+                // (puntos ganados + premio canjeado EN el mensaje).
+                window.open(receiptUrl, "_blank", "noopener,noreferrer");
+                onDone();
+              }}
+              className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
+              style={{ background: "#25D366" }}
+            >
+              🧾 Enviar recibo por WhatsApp
+            </button>
+            <button
+              onClick={onDone}
+              className="w-full rounded-2xl py-3 text-[14px] font-bold"
+              style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+            >
+              Listo
+            </button>
           </div>
         )}
       </div>
@@ -700,7 +727,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; capReached?: boolean } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1088,6 +1115,8 @@ export default function PosPage() {
       // Phone Points v1: "cobrar ahora" = confirmed payment → credit loyalty
       // to the phone if the cashier captured it. (Open tabs credit at close.)
       let capReached = false;
+      let pointsAwarded = 0;
+      let redemptionWasApplied = false;
       if (mode === "now" && phoneDigits.length >= 10) {
         try {
           const res = await creditPhonePointsForOrder({
@@ -1098,13 +1127,41 @@ export default function PosPage() {
           if (res.credited) {
             console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
             capReached = res.capReached === true;
+            pointsAwarded = res.points;
+            redemptionWasApplied = res.redemptionApplied === true;
           }
         } catch (e) {
           console.error("[phonePoints] POS credit failed", e);
         }
       }
 
-      setSuccess({ mode, total: subtotal, capReached });
+      // Recibo por WhatsApp: con teléfono capturado, la pantalla de éxito
+      // ofrece abrir wa.me DIRECTO al número del cliente con el recibo ya
+      // escrito (mismo mensaje que Pedidos — lib/receiptWhatsapp.ts).
+      const receiptUrl =
+        mode === "now" && phoneDigits.length >= 10
+          ? receiptWhatsappUrl({
+              restaurantId,
+              restaurantName,
+              orderId: orderRef.id,
+              customerPhone: phoneDigits,
+              customerName: customerName.trim() || null,
+              items: items.map((i) => ({
+                name: String(i.name ?? ""),
+                quantity: Number(i.quantity) || 1,
+                price: Number(i.price) || 0,
+              })),
+              total: netTotal,
+              redemptionName:
+                redemptionWasApplied && effectiveRedemption
+                  ? effectiveRedemption.name
+                  : null,
+              pointsAwarded,
+              origin: window.location.origin,
+            })
+          : undefined;
+
+      setSuccess({ mode, total: subtotal, capReached, receiptUrl });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -1577,6 +1634,7 @@ export default function PosPage() {
           mode={success.mode}
           total={success.total}
           capReached={success.capReached}
+          receiptUrl={success.receiptUrl}
           onDone={() => setSuccess(null)}
         />
       )}

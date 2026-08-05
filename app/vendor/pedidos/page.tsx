@@ -22,7 +22,7 @@ import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
 import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
-import { shortOrderCode } from "@/lib/order/formatWhatsappMessage";
+import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -272,40 +272,34 @@ export default function PedidosPage() {
   };
 
   /** Vendor-sent WhatsApp receipt (vendor's own WhatsApp, human tap — §4).
-   * Also how POS walk-ins get their receipt/points link into their chat. */
+   * Also how POS walk-ins get their receipt/points link into their chat.
+   * Message lives in lib/receiptWhatsapp.ts — shared with the Caja post-cobro
+   * button so both send the IDENTICAL receipt. */
   const sendReceiptWhatsapp = (order: Order) => {
     if (!order.customerPhone || !restaurantId) return;
-    const items = order.items
-      .map((i) => `${i.quantity}x ${i.name} — ${fmt(i.price * i.quantity)}`)
-      .join("\n");
-    const url = `${window.location.origin}/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(order.id)}`;
-    const text = [
-      `¡Gracias por tu compra en *${order.restaurantName || "nuestro local"}*!`,
-      "",
-      `Recibo *#${shortOrderCode(order.id)}*`,
-      ...(order.customerName ? [`Nombre: ${order.customerName}`] : []),
-      "",
-      items,
-      "",
-      `*Total: ${fmt(order.total)}*`,
-      // Dynamic loyalty lines — present only after the credit transaction ran
-      // (send-receipt usually happens post-cobro). Hooked: the reward news
-      // arrives IN the message, not just behind the link.
-      ...(order.redemptionResult === "applied" && order.redemptionRequest
-        ? [`🎁 Premio canjeado: ${order.redemptionRequest.name} — GRATIS`]
-        : []),
-      ...((Number(order.phonePointsAwarded) || 0) > 0
-        ? ["", `⭐ Ganaste *+${Number(order.phonePointsAwarded)} puntos* con esta compra`]
-        : []),
-      "",
-      `Tu recibo y tus puntos: ${url}`,
-    ].join("\n");
-    const phone =
-      order.customerPhone.length === 10
-        ? `52${order.customerPhone}`
-        : order.customerPhone;
     window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(text)}`,
+      receiptWhatsappUrl({
+        restaurantId,
+        restaurantName: order.restaurantName,
+        orderId: order.id,
+        customerPhone: order.customerPhone,
+        customerName: order.customerName || null,
+        items: order.items.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+        total: order.total,
+        // Loyalty lines — present only after the credit transaction ran
+        // (send-receipt usually happens post-cobro). Hooked: the reward news
+        // arrives IN the message, not just behind the link.
+        redemptionName:
+          order.redemptionResult === "applied" && order.redemptionRequest
+            ? order.redemptionRequest.name
+            : null,
+        pointsAwarded: Number(order.phonePointsAwarded) || 0,
+        origin: window.location.origin,
+      }),
       "_blank",
       "noopener,noreferrer",
     );

@@ -103,6 +103,11 @@ export type PhoneCreditResult =
        * points. Surface this to the owner (POS aviso / Panel banner) — never
        * let the cap fail silently. */
       capReached?: boolean;
+      /** The order's redemptionRequest passed the live balance re-check and
+       * was executed (order.redemptionResult === "applied"). Lets the POS
+       * receipt say "🎁 Premio canjeado" truthfully without re-reading the
+       * order doc. */
+      redemptionApplied?: boolean;
     }
   | {
       credited: false;
@@ -311,6 +316,7 @@ export async function creditPhonePointsForOrder(params: {
       points: earnedPoints,
       firstVisit,
       ...(capReached ? { capReached: true } : {}),
+      ...(redemptionApplied ? { redemptionApplied: true } : {}),
     } as const;
   });
 }
