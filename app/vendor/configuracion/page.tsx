@@ -872,8 +872,12 @@ function PublicLinksCard({
     {
       key: "menu",
       label: "🍽 Tu menú",
-      url: `https://comeleal.com/menu/${restaurantId}`,
-      hint: "El link de tu QR de mesa — directo al menú.",
+      // Con slug: link corto para compartir. El QR impreso trae el de ID y
+      // sigue llegando al mismo menú — /menu/{id} es eterno.
+      url: slug
+        ? `https://comeleal.com/menu/${slug}`
+        : `https://comeleal.com/menu/${restaurantId}`,
+      hint: "Directo al menú — el mismo destino de tu QR de mesa.",
     },
   ];
 
