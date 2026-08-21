@@ -49,6 +49,10 @@ const FAQ = [
     a: "Porque lo que incluye nos cuesta de verdad: cada mensaje de WhatsApp que mandamos para recuperar a un cliente tuyo se paga, y el AI también. Cobramos por lo que cuesta, no por candados artificiales.",
   },
   {
+    q: "¿Cómo funciona la prueba de 14 días?",
+    a: "Le das un botón desde tu panel y ya: Pro completo por 14 días, sin tarjeta y sin dejar datos de pago. Al día 15, si no lo activas, no te cobramos nada — regresas solo al plan gratis con tu menú, tu Caja, tus clientes y todo tu historial intactos. Es una prueba por restaurante.",
+  },
+  {
     q: "¿Puedo cancelar cuando quiera?",
     a: "Sí, desde tu panel, sin plazos forzosos ni penalizaciones. Si cancelas, regresas al plan gratis y tu menú, tu Caja y tus clientes siguen ahí.",
   },
@@ -131,6 +135,9 @@ export default function Page() {
               $299 <span className="text-[15px] font-semibold text-white/50">MXN/mes</span>
             </p>
             <p className="mt-1 text-[13px] text-white/55">Para que tus clientes regresen.</p>
+            <p className="mt-3 inline-block rounded-full bg-[#F28C38]/15 px-3 py-1 text-[12px] font-bold text-[#F28C38]">
+              14 días gratis · sin tarjeta
+            </p>
             <ul className="mt-6 space-y-2.5">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex gap-2 text-[14px] leading-relaxed text-white/80">
@@ -142,10 +149,10 @@ export default function Page() {
               href="/activar"
               className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-[#F28C38] px-6 py-3.5 text-[15px] font-bold text-white transition-all hover:opacity-90"
             >
-              Empieza gratis y actívalo cuando quieras →
+              Prueba Pro 14 días gratis →
             </Link>
             <p className="mt-2 text-center text-[11px] text-white/40">
-              Se activa desde tu panel · Mercado Pago · cancela cuando quieras
+              Sin tarjeta · al terminar regresas solo al plan gratis, sin perder nada
             </p>
           </div>
         </div>

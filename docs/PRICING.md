@@ -1,4 +1,4 @@
-# Comeleal — Pricing canónico (v1.2, 27 jul 2026)
+# Comeleal — Pricing canónico (v1.3, 6 ago 2026)
 
 **Esta es la ley de qué es gratis y qué se cobra.** Cualquier feature nuevo se clasifica con esta regla ANTES de construirse. Si un cambio contradice este doc, se discute aquí primero.
 
@@ -50,6 +50,41 @@ Se vende como UNA cosa: *Comeleal te trae clientes de vuelta solito.* Compuesta 
 - **Soporte directo** (una persona real — el tiempo de Ricardo no escala)
 
 Cobro: IAP en app stores (ya vivo) + suscripción MP en web (`/api/mercado-pago/subscribe`, ya vivo). Campos canónicos en `restaurants/{id}`: `subscriptionPlan == "pro"` + `subscriptionAccessExpiresAt` (los escriben el webhook MP y el IAP).
+
+## La prueba de Pro — 14 días, sin tarjeta, una por restaurante (v1.3, 6 ago 2026)
+
+**Por qué existe.** El plan gratis es el gancho de entrada y no se toca. La prueba tiene otro trabajo: que el dueño **pruebe la máquina** (lealtad ilimitada, win-back, AI) y sienta el tope de 50 cuando se le acaba. Sin probarla, el tope es una abstracción; después de probarla, es una pérdida.
+
+**Términos.** 14 días · Pro completo · sin tarjeta ni datos de pago · **una sola vez por restaurante, para siempre** · al terminar cae solo al plan gratis con menú, Caja, clientes e historial intactos. No hay cobro sorpresa porque nunca hubo tarjeta.
+
+**Por qué "sin tarjeta" no es un detalle.** Es el estándar del mercado mexicano de POS (Maspedidos vende exactamente eso: 14 días, sin tarjeta, alta en 2 minutos). Pedir tarjeta para una prueba mata la conversión del restaurantero que apenas está viendo.
+
+**Diferencia contra el trial de un POS típico:** cuando a ellos se les vence, el negocio se queda sin sistema. Cuando a nosotros se nos vence, el negocio sigue operando gratis. Eso se comunica siempre, es el argumento.
+
+### Cómo está construido (la ley técnica)
+
+- **Se otorga SÓLO desde el servidor:** callable `startProTrial` (FOODPASS/functions/subscription_trial.js). El reloj es del servidor; jamás se acepta una fecha del cliente.
+- **El candado anti-repetición es `restaurants/{rid}/private/trial`**, un doc que las reglas niegan a todo cliente (`allow write: if false`). Tiene que ser así: los campos `subscription*` del doc del restaurante SÍ son client-writable, porque el flujo de compra IAP de la app los escribe. Sin el ledger, cualquiera se renovaría 14 días infinitas veces desde la consola del navegador.
+- **Anti doble dip:** al otorgar se escribe `subscriptionTrialEndsAt`, que es justo el campo que la app consulta en `SubscriptionTiersPage.showIntroTrialProMarketing` para dejar de ofrecer la prueba de la tienda. Así nadie junta 14 días nuestros + 14 de Google/Apple.
+- **Vence sola.** Todos los gates comparan contra `subscriptionAccessExpiresAt` **en cada lectura**, así que el acceso muere al segundo 14×24h aunque nada corra. El barrido diario (`subscription_access_sweeper`) sólo deja el status honesto para reportes — es higiene, no el candado. Importa saberlo porque hoy está DORMANT.
+
+### La regla única de "¿tiene Pro?" (auditoría 6 ago 2026)
+
+Había **cuatro** checks de Pro distintos y no coincidían. El de la AI del servidor (`brain_query_ai.isProRestaurant`) era **fail-open**: ignoraba el status y, sin fecha de expiración, devolvía `true` — AI ilimitada de por vida. Con una prueba de 14 días eso era fatal: al vencerse, el dueño perdía descuentos y lealtad pero conservaba la feature más cara para siempre.
+
+Ahora hay **una sola regla, replicada en los tres runtimes y con tests espejo**:
+
+| Runtime | Archivo | Test |
+|---|---|---|
+| Servidor | `FOODPASS/functions/subscription_entitlement.js` | `subscription_entitlement.test.js` |
+| Web | `foodpass-legal/lib/subscription/entitlement.ts` | `scripts/validate-subscription-entitlement.mjs` |
+| App | `lib/loyalty/discount_profiles.dart`, `lib/subscription/services/subscription_tier_service.dart` | `test/loyalty/discount_profiles_test.dart` |
+
+**Semántica (fail-closed):** `subscriptionPlan == "pro"` **Y** status ∈ {active, trialing} **Y** `subscriptionAccessExpiresAt > ahora`. Sin fecha → NO es Pro.
+
+**Única excepción:** doc legado con el viejo `plan: "pro"` y CERO campos canónicos (nunca pasó por el backfill) → se le respeta el acceso. En cuanto exista cualquier campo canónico, el canónico manda y manda estricto. El hueco se cierra solo conforme avanza el backfill, sin cortarle el servicio a nadie.
+
+**Don't:** escribir un check de Pro nuevo. Se importa `entitlementOf` / `isProActive`. Si un gate necesita algo distinto, se discute aquí antes.
 
 ## Comisión 3% — se queda como está
 

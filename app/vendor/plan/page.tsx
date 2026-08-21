@@ -9,7 +9,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
+import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
+import { entitlementOf, type Entitlement } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
@@ -34,7 +36,9 @@ const PRO_INCLUDES = [
 export default function PlanPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [isPro, setIsPro] = useState(false);
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [startingTrial, setStartingTrial] = useState(false);
+  const [trialJustStarted, setTrialJustStarted] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [activating, setActivating] = useState(false);
@@ -55,18 +59,10 @@ export default function PlanPage() {
 
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data() ?? {};
-      // Detección canónica (SIN founder-test: aquí se muestra el plan REAL).
-      const accessStatus = data.subscriptionAccessStatus as string | undefined;
-      const expiresAtRaw = data.subscriptionAccessExpiresAt as
-        | { toMillis?: () => number }
-        | undefined;
-      const expiresMs = expiresAtRaw?.toMillis?.() ?? null;
-      const canonicalPro =
-        data.subscriptionPlan === "pro" &&
-        (accessStatus === "active" || accessStatus === "trialing") &&
-        expiresMs != null &&
-        expiresMs > Date.now();
-      setIsPro(canonicalPro || data.plan === "pro");
+      // Plan REAL (sin founder-test): delegado a la regla única compartida con
+      // el servidor y la app — lib/subscription/entitlement.ts. El legado
+      // `plan: "pro"` sin campos canónicos lo respeta ahí adentro.
+      setEnt(entitlementOf(data));
       setLoading(false);
     }
     init().catch(() => setLoading(false));
@@ -97,6 +93,51 @@ export default function PlanPage() {
       setActivating(false);
     }
   }
+
+  /** Prueba de Pro: 14 días, sin tarjeta, UNA por restaurante.
+   *  El otorgamiento es 100% del servidor (callable startProTrial): el reloj,
+   *  el candado anti-repetición y la escritura de los campos canónicos. Aquí
+   *  sólo se pide y se refleja. */
+  async function handleStartTrial() {
+    if (!restaurantId || startingTrial) return;
+    setStartingTrial(true);
+    setError(null);
+    try {
+      const fn = httpsCallable<
+        { restaurantId: string; source: string },
+        { ok: boolean; days: number; endsAtMs: number }
+      >(getFirebaseFunctions(), "startProTrial");
+      const res = await fn({ restaurantId, source: "web" });
+      const endsAtMs = res.data?.endsAtMs ?? null;
+      if (!res.data?.ok || !endsAtMs) throw new Error("trial_failed");
+      // Reflejar el estado nuevo sin releer: el servidor ya escribió lo mismo.
+      setEnt(
+        entitlementOf({
+          subscriptionPlan: "pro",
+          subscriptionAccessStatus: "trialing",
+          subscriptionAccessExpiresAt: endsAtMs,
+          subscriptionTrialEndsAt: endsAtMs,
+        }),
+      );
+      setTrialJustStarted(true);
+    } catch (e) {
+      const code = (e as { message?: string })?.message ?? "";
+      setError(
+        code.includes("already_used")
+          ? "Este restaurante ya usó su prueba de Pro. Puedes activarlo cuando quieras."
+          : code.includes("already_pro")
+            ? "Ya tienes Pro activo."
+            : "No pudimos iniciar tu prueba. Intenta de nuevo en un momento.",
+      );
+    } finally {
+      setStartingTrial(false);
+    }
+  }
+
+  const isPro = ent?.isPro ?? false;
+  const isTrialing = ent?.isTrialing ?? false;
+  const trialDaysLeft = ent?.trialDaysLeft ?? 0;
+  const canStartTrial = ent?.canStartTrial ?? false;
 
   return (
     <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
@@ -188,7 +229,9 @@ export default function PlanPage() {
                   className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
                   style={{ background: "rgba(242,140,56,0.15)", color: "#F28C38" }}
                 >
-                  Activo
+                  {isTrialing
+                    ? `Prueba · ${trialDaysLeft} ${trialDaysLeft === 1 ? "día" : "días"}`
+                    : "Activo"}
                 </span>
               )}
             </div>
@@ -203,11 +246,65 @@ export default function PlanPage() {
                 </li>
               ))}
             </ul>
-            {isPro ? (
+            {isTrialing ? (
+              /* ── En prueba: el trabajo es que no se le corte ── */
+              <>
+                <p
+                  className="mt-5 rounded-2xl px-3 py-2.5 text-[12px] font-semibold"
+                  style={{ background: "rgba(242,140,56,0.1)", color: "#B45309" }}
+                >
+                  {trialJustStarted ? "🎉 Listo, ya tienes Pro. " : ""}
+                  Te {trialDaysLeft === 1 ? "queda" : "quedan"}{" "}
+                  <strong>
+                    {trialDaysLeft} {trialDaysLeft === 1 ? "día" : "días"}
+                  </strong>{" "}
+                  de prueba. Al terminar no se rompe nada: regresas al plan
+                  gratis con todos tus clientes y tu historial intactos.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleActivatePro}
+                  disabled={activating}
+                  className="mt-3 w-full rounded-2xl px-4 py-3.5 text-[14px] font-extrabold text-white transition hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" }}
+                >
+                  {activating ? "Abriendo pago…" : "Quédate con Pro — $299/mes →"}
+                </button>
+                <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                  Pago seguro con Mercado Pago · sin plazos forzosos · cancela cuando quieras
+                </p>
+              </>
+            ) : isPro ? (
               <p className="mt-5 text-[12px] font-semibold" style={{ color: "#16A34A" }}>
                 ✓ Plan Pro activo — gracias por confiar en la máquina.
               </p>
+            ) : canStartTrial ? (
+              /* ── Nunca ha probado: la prueba es el CTA principal ── */
+              <>
+                <button
+                  type="button"
+                  onClick={handleStartTrial}
+                  disabled={startingTrial}
+                  className="mt-5 w-full rounded-2xl px-4 py-3.5 text-[14px] font-extrabold text-white transition hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" }}
+                >
+                  {startingTrial ? "Activando…" : "Probar Pro 14 días gratis →"}
+                </button>
+                <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                  Sin tarjeta · sin plazos · al terminar regresas solo al plan gratis
+                </p>
+                <button
+                  type="button"
+                  onClick={handleActivatePro}
+                  disabled={activating}
+                  className="mt-3 w-full text-[12px] font-semibold underline underline-offset-4 transition hover:opacity-70 disabled:opacity-50"
+                  style={{ color: "rgba(28,37,38,0.45)" }}
+                >
+                  {activating ? "Abriendo pago…" : "o activar Pro ahora — $299/mes"}
+                </button>
+              </>
             ) : (
+              /* ── Ya usó su prueba: sólo queda pagar ── */
               <>
                 <button
                   type="button"

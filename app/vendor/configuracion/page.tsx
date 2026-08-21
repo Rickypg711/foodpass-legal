@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDo
 import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
+import { entitlementOf } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
@@ -132,23 +133,14 @@ export default function ConfiguracionPage() {
       setLogoUrl(logo);
       setCoverUrl(cover);
 
-      // Detect plan — canonical fields first (what the app IAP + MP webhook write),
-      // then legacy subscription doc / top-level field.
-      const accessStatus = data.subscriptionAccessStatus as string | undefined;
-      const expiresAtRaw = data.subscriptionAccessExpiresAt as
-        | { toMillis?: () => number }
-        | undefined;
-      const expiresMs = expiresAtRaw?.toMillis?.() ?? null;
-      const canonicalPro =
-        data.subscriptionPlan === "pro" &&
-        (accessStatus === "active" || accessStatus === "trialing") &&
-        expiresMs != null &&
-        expiresMs > Date.now();
+      // Plan — la REGLA ÚNICA (lib/subscription/entitlement.ts), la misma que
+      // usan el servidor, la app y /vendor/plan. El legado `plan: "pro"` sin
+      // campos canónicos lo respeta adentro (grandfathered); aquí sólo queda
+      // encima el doc viejo de subscriptions, que entitlementOf no conoce.
       const subData = subSnap?.data();
       const isPro =
-        canonicalPro ||
-        (subData?.status === "active" && subData?.plan === "pro") ||
-        data.plan === "pro";
+        entitlementOf(data).isPro ||
+        (subData?.status === "active" && subData?.plan === "pro");
       setPlan(isPro ? "pro" : "free");
 
       setLoading(false);
