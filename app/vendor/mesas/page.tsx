@@ -19,7 +19,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
-import { tableMenuUrl } from "@/lib/order/tableSession";
+import {
+  tableMenuUrl,
+  normalizeTableNumber,
+  TABLE_MAX_LENGTH,
+} from "@/lib/order/tableSession";
 import { SITE_URL } from "@/lib/siteMetadata";
 
 const INK = "#1C2526";
@@ -59,10 +63,36 @@ export default function MesasPage() {
     init().catch(() => setLoading(false));
   }, [router]);
 
-  const mesas = useMemo(
-    () => Array.from({ length: count }, (_, i) => String(i + 1)),
-    [count],
-  );
+  /** Nombres personalizados, uno por linea. Vacio = numeros 1..count.
+   *  Existe porque en la vida real las mesas se llaman "Barra", "Terraza 2"
+   *  o "T3", no siempre 1,2,3 — y el backend ya lo soporta
+   *  (normalizeTableNumber acepta letras). Antes el tip prometia nombres y
+   *  la pantalla solo daba numeros. */
+  const [customNames, setCustomNames] = useState("");
+  const usingCustomNames = customNames.trim().length > 0;
+
+  const mesas = useMemo(() => {
+    if (!usingCustomNames) {
+      return Array.from({ length: count }, (_, i) => String(i + 1));
+    }
+    const seen = new Set<string>();
+    const parsed: string[] = [];
+    for (const raw of customNames.split(/[\n,]/)) {
+      // MISMA normalizacion que el QR y el checkout: lo que se imprime es
+      // exactamente lo que va a llegar en tableNumber. Cero sorpresas.
+      const name = normalizeTableNumber(raw);
+      if (!name || seen.has(name.toLowerCase())) continue;
+      seen.add(name.toLowerCase());
+      parsed.push(name);
+      if (parsed.length >= MAX_MESAS) break;
+    }
+    return parsed;
+  }, [count, customNames, usingCustomNames]);
+
+  /** "Mesa 5" cuando es numero; "Barra" tal cual cuando trae letras.
+   *  "Mesa Barra" se lee mal. */
+  const mesaLabel = (mesa: string) =>
+    /^[0-9]+$/.test(mesa) ? `Mesa ${mesa}` : mesa;
 
   if (loading) {
     return (
@@ -152,13 +182,37 @@ export default function MesasPage() {
             </div>
           </label>
 
+          <label className="mt-5 block">
+            <span className="text-[14px] font-bold" style={{ color: INK }}>
+              ¿O tienen nombre? <span style={{ color: "rgba(28,37,38,0.4)" }}>(opcional)</span>
+            </span>
+            <span className="mt-1 block text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+              Escribe uno por línea: Barra, Terraza 1, T3… Si lo dejas vacío usamos números.
+            </span>
+            <textarea
+              value={customNames}
+              onChange={(e) => setCustomNames(e.target.value)}
+              rows={4}
+              placeholder={"Barra\nTerraza 1\nTerraza 2\nT3"}
+              className="mt-2 w-full rounded-xl border px-3 py-2 text-[14px] outline-none"
+              style={{ borderColor: "rgba(28,37,38,0.15)", color: INK }}
+            />
+            {usingCustomNames && (
+              <span className="mt-1 block text-[12px]" style={{ color: ORANGE }}>
+                {mesas.length === 0
+                  ? "Escribe al menos un nombre válido."
+                  : `${mesas.length} ${mesas.length === 1 ? "mesa" : "mesas"} con nombre. Máx ${TABLE_MAX_LENGTH} caracteres cada una; se ignoran repetidas.`}
+              </span>
+            )}
+          </label>
+
           <button
             type="button"
             onClick={() => window.print()}
             className="mt-5 w-full rounded-2xl px-4 py-3.5 text-[14px] font-extrabold text-white transition hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #FF9A45 100%)` }}
           >
-            🖨️ Imprimir los {count} {count === 1 ? "QR" : "QRs"} →
+            🖨️ Imprimir los {mesas.length} {mesas.length === 1 ? "QR" : "QRs"} →
           </button>
           <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
             Salen 2 por hoja. Recorta por la línea punteada.
@@ -170,10 +224,9 @@ export default function MesasPage() {
           style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
         >
           <p className="text-[13px] leading-relaxed" style={{ color: "rgba(28,37,38,0.75)" }}>
-            <b>Tip:</b> también puedes usar nombres en vez de números (Barra,
-            Terraza 1). El QR de cada mesa es simplemente tu menú con{" "}
-            <span className="font-mono text-[12px]">?mesa=</span> al final, así
-            que puedes armar el que quieras a mano.
+            <b>Tip:</b> si tus mesas tienen nombre (Barra, Terraza 1, T3),
+            escríbelos arriba uno por línea y los QR salen con ese nombre. El
+            pedido te llega diciendo exactamente esa mesa.
           </p>
           <Link
             href="/vendor/pedidos"
@@ -197,7 +250,7 @@ export default function MesasPage() {
               {restaurantName}
             </p>
             <p className="mt-1 text-[26px] font-black leading-none" style={{ color: INK }}>
-              Mesa {mesa}
+              {mesaLabel(mesa)}
             </p>
             <div className="mt-3 rounded-xl bg-white p-2" style={{ border: "1px solid rgba(28,37,38,0.08)" }}>
               {/* SITE_URL y NO window.location.origin: estos QR se imprimen y
