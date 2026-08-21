@@ -140,6 +140,9 @@ const NAV_ITEMS: NavDef[] = [
 ];
 
 const NAV_SECONDARY: NavDef[] = [
+  // Mesas = imprimir el QR de cada mesa (pedido desde la mesa). Va en el
+  // secundario porque se usa UNA vez al montar el negocio, no a diario.
+  { href: "/vendor/mesas", label: "Mesas / QR", icon: <IconQr /> },
   { href: "/vendor/configuracion", label: "Configuración", icon: <IconGear /> },
   // Ayuda = soporte real por WhatsApp ("te contesta una persona") — el viejo
   // /para-restaurantes hoy solo redirige al home (bug reportado 27 jul).

@@ -12,6 +12,7 @@ import { ensureAnonymousUser } from "@/lib/auth";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
+import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
@@ -105,6 +106,9 @@ export default function CheckoutPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  /** Mesa del QR (?mesa=). Vacío = pedido para recoger, como siempre. */
+  const [tableNumber, setTableNumber] = useState("");
+  const [diners, setDiners] = useState("");
   const [redemption, setRedemption] = useState<OrderRedemptionRequest | null>(null);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({ base: 1, step: 30 });
   const [loyalty, setLoyalty] = useState<{ points: number; tiers: { id: string; name: string; points: number }[] } | null>(null);
@@ -123,6 +127,12 @@ export default function CheckoutPage() {
   const mpSandboxUi =
     isMpWebDebugClient() || process.env.NEXT_PUBLIC_MERCADO_PAGO_SANDBOX === "true";
   const [submitting, setSubmitting] = useState(false);
+
+  // La mesa viaja en sessionStorage desde que abrió el QR (?mesa=5).
+  useEffect(() => {
+    if (!restaurantId) return;
+    setTableNumber(resolveTableFromLocation(restaurantId));
+  }, [restaurantId]);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLogged, setCheckoutLogged] = useState(false);
   /** Set as soon as order is created — keeps checkout UI when cart is cleared later. */
@@ -308,6 +318,8 @@ export default function CheckoutPage() {
           restaurantImageUrl,
           paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
           redemptionRequest: redemption,
+          tableNumber,
+          diners: diners ? Number.parseInt(diners, 10) : null,
         });
         mpWebDebugClient("order_create_success", {
           restaurantId,
@@ -372,6 +384,8 @@ export default function CheckoutPage() {
         restaurantImageUrl,
         paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
         redemptionRequest: redemption,
+        tableNumber,
+        diners: diners ? Number.parseInt(diners, 10) : null,
       });
 
       mpWebDebugClient("order_create_success", {
@@ -569,6 +583,42 @@ export default function CheckoutPage() {
             redemption block and personalizes the upsell (goal-gradient).
             Screen order: identity → tus premios → upsell → forma de pago → CTA. */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* ── Comiendo aquí: llegó por el QR de su mesa ── */}
+          {tableNumber ? (
+            <div
+              className="rounded-2xl p-4"
+              style={{
+                background: "rgba(242,140,56,0.08)",
+                border: "1px solid rgba(242,140,56,0.35)",
+              }}
+            >
+              <p className="text-[15px] font-bold text-[#1C2526]">
+                🍽️ Estás ordenando para la mesa{" "}
+                <span className="text-[#F28C38]">{tableNumber}</span>
+              </p>
+              <p className="mt-1 text-xs text-[#1C2526]/60">
+                Tu pedido llega directo a la cocina y te lo llevamos a tu mesa.
+                No tienes que formarte.
+              </p>
+              <label className="mt-3 block">
+                <span className="text-sm font-semibold">
+                  ¿Cuántas personas son?{" "}
+                  <span className="font-normal text-[#1C2526]/45">(opcional)</span>
+                </span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={50}
+                  value={diners}
+                  onChange={(e) => setDiners(e.target.value)}
+                  placeholder="Ej. 4"
+                  className="mt-1.5 w-28 rounded-xl border border-[#1C2526]/15 bg-white px-3 py-2 text-[15px] outline-none focus:border-[#F28C38]"
+                />
+              </label>
+            </div>
+          ) : null}
+
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <label className="block">
               <span className="text-sm font-semibold">

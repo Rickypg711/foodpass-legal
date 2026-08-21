@@ -60,7 +60,11 @@ interface Order {
   isOpenTab?: boolean;
   paymentMethod: string;
   paymentStatus: "paid" | "pending";
-  orderType: "pickup" | "delivery" | "in_store";
+  orderType: "pickup" | "delivery" | "in_store" | "dine_in";
+  /** Mesa cuando el comensal pidió desde el QR de su mesa (orderType dine_in). */
+  tableNumber?: string;
+  /** Personas en la mesa (opcional, lo pone el comensal). */
+  diners?: number;
   orderSource: "pos" | "app" | "web" | string;
   notes?: string;
   createdAt: Timestamp;
@@ -423,10 +427,21 @@ export default function PedidosPage() {
                           <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#F28C38]/10 text-[#F28C38]">
                             {order.orderType === "in_store"
                               ? "Caja"
+                              : order.orderType === "dine_in"
+                              ? "En mesa"
                               : order.orderType === "pickup"
                               ? "Para llevar"
                               : "Delivery"}
                           </span>
+                          {/* La mesa es lo ÚNICO que le dice al mesero a dónde
+                              llevar el plato — va en verde y grande, no como un
+                              chip más. */}
+                          {order.tableNumber ? (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-[#16A34A] text-white">
+                              🍽️ Mesa {order.tableNumber}
+                              {order.diners ? ` · ${order.diners}p` : ""}
+                            </span>
+                          ) : null}
                           {order.isOpenTab && (
                             <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600">
                               Cuenta Abierta

@@ -3,6 +3,16 @@
 export const ORDER_SOURCE_CUSTOMER_WEB = "customer_web" as const;
 export const ORDER_SOURCE_CUSTOMER_APP = "customer_app" as const;
 
+/** Modo de servicio. `dine_in` = el comensal pidió desde el QR de su mesa.
+ *  El POS del vendor ya usaba "in_store" para su propia venta de mostrador;
+ *  eso NO se toca — esto es el pedido que hace el comensal desde la mesa. */
+export const ORDER_TYPE_PICKUP = "pickup" as const;
+export const ORDER_TYPE_DINE_IN = "dine_in" as const;
+
+export type CustomerOrderType =
+  | typeof ORDER_TYPE_PICKUP
+  | typeof ORDER_TYPE_DINE_IN;
+
 export const PAYMENT_METHOD_PAY_AT_PICKUP = "pay_at_pickup" as const;
 export const PAYMENT_METHOD_MERCADO_PAGO = "mercado_pago" as const;
 
@@ -42,7 +52,12 @@ export type CustomerOrderPayload = {
   paymentStatus: "pending";
   status: string;
   mercadoPagoPreferenceId?: string;
-  orderType: "pickup";
+  orderType: CustomerOrderType;
+  /** Mesa del comensal cuando `orderType === "dine_in"` (viene del QR ?mesa=).
+   *  String y no número a propósito: en la vida real hay "Barra" y "Terraza 2". */
+  tableNumber?: string;
+  /** Cuántas personas hay en la mesa. Opcional — el comensal puede no decirlo. */
+  diners?: number;
   orderSource: typeof ORDER_SOURCE_CUSTOMER_WEB;
   customerName: string;
   /** Customer WhatsApp/phone, digits only (e.g. "6141234567"). Required at

@@ -3,12 +3,15 @@ import type { CartLine } from "@/lib/cart/types";
 import { resolveInitialOrderStatus } from "@/lib/order/orderLifecycle";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
+  ORDER_TYPE_DINE_IN,
+  ORDER_TYPE_PICKUP,
   PAYMENT_METHOD_MERCADO_PAGO,
   type CustomerOrderPayload,
   type OrderPaymentMethod,
   type OrderRedemptionRequest,
 } from "@/lib/types/order";
 import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
+import { normalizeDiners, normalizeTableNumber } from "@/lib/order/tableSession";
 
 export type BuildOrderInput = {
   restaurantId: string;
@@ -22,6 +25,10 @@ export type BuildOrderInput = {
   restaurantImageUrl?: string | null;
   paymentMethod?: OrderPaymentMethod;
   redemptionRequest?: OrderRedemptionRequest | null;
+  /** Mesa del QR (?mesa=). Si viene, la orden es dine_in en vez de pickup. */
+  tableNumber?: string | null;
+  /** Cuántas personas en la mesa. Solo aplica en dine_in. */
+  diners?: number | null;
 };
 
 /**
@@ -58,6 +65,12 @@ export function buildCustomerWebOrderPayload(
     paymentMethod,
   });
 
+  // La mesa manda el modo de servicio: con mesa es dine_in, sin mesa es pickup.
+  // El pickupPin se sigue generando SIEMPRE — en dine_in sirve de folio corto
+  // para que el mesero cante el pedido sin leer un id de Firestore.
+  const tableNumber = normalizeTableNumber(input.tableNumber ?? "");
+  const orderType = tableNumber ? ORDER_TYPE_DINE_IN : ORDER_TYPE_PICKUP;
+
   const payload: CustomerOrderPayload = {
     restaurantId: input.restaurantId,
     customerId: input.customerId,
@@ -66,7 +79,7 @@ export function buildCustomerWebOrderPayload(
     paymentMethod,
     paymentStatus: "pending",
     status,
-    orderType: "pickup",
+    orderType,
     orderSource: ORDER_SOURCE_CUSTOMER_WEB,
     customerName: input.customerName.trim(),
     pickupPin: input.pickupPin,
@@ -76,6 +89,12 @@ export function buildCustomerWebOrderPayload(
     loyaltyAwarded: false,
     createdAt: serverTimestamp(),
   };
+
+  if (tableNumber) {
+    payload.tableNumber = tableNumber;
+    const diners = normalizeDiners(input.diners ?? null);
+    if (diners != null) payload.diners = diners;
+  }
 
   const name = input.restaurantName.trim();
   if (name) {

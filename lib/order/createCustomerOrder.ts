@@ -26,6 +26,10 @@ export async function createCustomerWebOrder(params: {
   restaurantImageUrl?: string | null;
   paymentMethod?: OrderPaymentMethod;
   redemptionRequest?: import("@/lib/types/order").OrderRedemptionRequest | null;
+  /** Mesa del QR (?mesa=). Si viene, la orden se marca dine_in. */
+  tableNumber?: string | null;
+  /** Personas en la mesa. Solo dine_in. */
+  diners?: number | null;
 }): Promise<CreateOrderResult> {
   const user = await ensureAnonymousUser();
   const pickupPin = generatePickupPin();
@@ -41,6 +45,8 @@ export async function createCustomerWebOrder(params: {
     restaurantName: params.restaurantName,
     restaurantImageUrl: params.restaurantImageUrl,
     paymentMethod: params.paymentMethod,
+    tableNumber: params.tableNumber,
+    diners: params.diners,
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {

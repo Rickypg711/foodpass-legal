@@ -14,6 +14,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
 import { warmUpsellSuggestion } from "@/lib/upsellSuggestionCache";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
+import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import {
@@ -340,6 +341,18 @@ function PublicMenuPageWithOrdering() {
   const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
   /** true SOLO si el horario configurado dice cerrado (lib/schedule). */
   const [closedNow, setClosedNow] = useState(false);
+  /** Mesa del QR (?mesa=5). Vacío = menú normal para llevar/recoger. */
+  const [tableNumber, setTableNumber] = useState("");
+
+  // ESTE es el punto donde la mesa se captura. El QR de la mesa aterriza aquí
+  // con ?mesa=5; de aquí en adelante el comensal navega y el parámetro se
+  // pierde de la URL, así que se persiste en sessionStorage y el checkout lo
+  // recoge de ahí. Si esto no corre, el pedido sale como "para recoger" y la
+  // cocina no sabe a qué mesa llevarlo.
+  useEffect(() => {
+    if (!restaurantId) return;
+    setTableNumber(resolveTableFromLocation(restaurantId));
+  }, [restaurantId]);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -452,6 +465,30 @@ function PublicMenuPageWithOrdering() {
         schedule={schedule}
         address={address}
       />
+
+      {/* Llegó por el QR de su mesa: se le dice de una, para que sepa que el
+          pedido va a su mesa y no tiene que ir por él. */}
+      {tableNumber ? (
+        <div
+          className="px-4 pt-3 sm:px-6"
+          role="status"
+        >
+          <div
+            className="mx-auto flex max-w-3xl items-center gap-2 rounded-2xl px-4 py-2.5 lg:max-w-4xl"
+            style={{
+              background: "rgba(242,140,56,0.1)",
+              border: "1px solid rgba(242,140,56,0.3)",
+            }}
+          >
+            <span className="text-[18px]">🍽️</span>
+            <p className="text-[13px] font-semibold text-[#1C2526]">
+              Estás en la mesa{" "}
+              <span className="text-[#F28C38]">{tableNumber}</span> — pide desde
+              aquí y te lo llevamos.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <main
         className={
