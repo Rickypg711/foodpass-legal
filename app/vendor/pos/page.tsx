@@ -327,6 +327,7 @@ function CheckoutDialog({
     redemption: PosRedemptionSelection | null,
     discount: DiscountProfile | null,
     tip: number,
+    tipMethod: PaymentMethod,
   ) => void;
   processing: boolean;
 }) {
@@ -343,6 +344,10 @@ function CheckoutDialog({
    * order.tipAmount, separada de total. */
   const [tipPct, setTipPct] = useState<number | null>(null);
   const [tipCustom, setTipCustom] = useState<number | "">("");
+  /** Cash o tarjeta para la PROPINA — puede diferir del pago de la cuenta
+   * (pedido por Pecado Escondido: "a veces pagan en tarjeta y dejan la propina
+   * en cash"). null = todavia no lo tocan, sigue al metodo de pago. */
+  const [tipMethod, setTipMethod] = useState<PaymentMethod | null>(null);
 
   // No cart total = pure reward redemption ("Canjear premio sin venta").
   // There's nothing to charge, so we hide the payment flow and speak "canje",
@@ -361,6 +366,8 @@ function CheckoutDialog({
         ? Math.round(effTotal * tipPct) / 100
         : 0;
   const grandTotal = effTotal + tipAmount;
+  /** Por defecto la propina sigue al pago; un toque la separa. */
+  const effTipMethod: PaymentMethod = tipMethod ?? method;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
@@ -579,9 +586,39 @@ function CheckoutDialog({
                 </div>
               </div>
               {tipAmount > 0 && (
-                <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                  La propina no suma puntos de lealtad — va aparte, íntegra para el equipo.
-                </p>
+                <>
+                  <div className="mt-2.5">
+                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
+                      ¿Cómo dejó la propina?
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      {([
+                        { key: "cash", emoji: "💵", label: "Efectivo" },
+                        { key: "card", emoji: "💳", label: "Tarjeta" },
+                      ] as { key: PaymentMethod; emoji: string; label: string }[]).map((t) => (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => setTipMethod(t.key)}
+                          className="flex-1 rounded-xl px-2 py-2.5 text-[13px] font-bold transition-all"
+                          style={
+                            effTipMethod === t.key
+                              ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
+                              : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
+                          }
+                        >
+                          {t.emoji} {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    La propina no suma puntos de lealtad — va aparte, íntegra para el equipo.
+                    {effTipMethod === "cash"
+                      ? " En efectivo el mesero ya la tiene en la mano."
+                      : " En tarjeta se la debes al cierre del turno."}
+                  </p>
+                </>
               )}
             </div>
           )}
@@ -594,7 +631,7 @@ function CheckoutDialog({
             </p>
           ) : null}
           <button
-            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile, mode === "now" ? tipAmount : 0)}
+            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile, mode === "now" ? tipAmount : 0, effTipMethod)}
             disabled={
               processing ||
               (mode === "tab" && !name.trim()) ||
@@ -887,7 +924,12 @@ export default function PosPage() {
     }
   }
 
-  async function closeOpenTab(orderId: string, method: PaymentMethod, tip = 0) {
+  async function closeOpenTab(
+    orderId: string,
+    method: PaymentMethod,
+    tip = 0,
+    tipMethod: PaymentMethod = "cash",
+  ) {
     if (!restaurantId) return;
     try {
       const db = getFirebaseDb();
@@ -901,7 +943,9 @@ export default function PosPage() {
         completedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         // Propina al cerrar la cuenta — separada de total (no puntos/comisión).
-        ...(tip > 0 ? { tipAmount: Math.round(tip * 100) / 100 } : {}),
+        ...(tip > 0
+          ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }
+          : {}),
       });
 
       // Phone Points v1: tab closed = payment confirmed → credit if the
@@ -1013,6 +1057,7 @@ export default function PosPage() {
     redemption: PosRedemptionSelection | null = null,
     discount: DiscountProfile | null = null,
     tip = 0,
+    tipMethod: PaymentMethod = "cash",
   ) {
     if (!restaurantId || !uid) return;
     const phoneDigits = customerPhone.replace(/\D/g, "");
@@ -1078,7 +1123,14 @@ export default function PosPage() {
         ...(currentSeller ? { soldBy: currentSeller } : {}),
         // Propina: separada de total a propósito — jamás infla puntos ni
         // comisión (invariante). Íntegra, visible por empleado en Reportes.
-        ...(mode === "now" && tip > 0 ? { tipAmount: Math.round(tip * 100) / 100 } : {}),
+        ...(mode === "now" && tip > 0
+          ? {
+              tipAmount: Math.round(tip * 100) / 100,
+              // Efectivo = el mesero ya la trae; tarjeta = el dueño se la debe.
+              // Puede diferir de paymentMethod a proposito.
+              tipMethod,
+            }
+          : {}),
       };
 
       if (effectiveRedemption) {
@@ -1659,8 +1711,8 @@ export default function PosPage() {
         <CloseTabDialog
           tabTotal={Number(activeOpenTabs.find((t) => t.id === checkoutTabId)?.total) || 0}
           onClose={() => setCheckoutTabId(null)}
-          onConfirm={(method, tip) => {
-            closeOpenTab(checkoutTabId, method, tip);
+          onConfirm={(method, tip, tipMethod) => {
+            closeOpenTab(checkoutTabId, method, tip, tipMethod);
             setCheckoutTabId(null);
           }}
         />
@@ -1787,10 +1839,12 @@ function CloseTabDialog({
 }: {
   tabTotal: number;
   onClose: () => void;
-  onConfirm: (method: PaymentMethod, tip: number) => void;
+  onConfirm: (method: PaymentMethod, tip: number, tipMethod: PaymentMethod) => void;
 }) {
   const [tipPct, setTipPct] = useState<number | null>(null);
   const [tipCustom, setTipCustom] = useState<number | "">("");
+  /** null = sigue al metodo con el que cierran la cuenta. */
+  const [tipMethod, setTipMethod] = useState<PaymentMethod | null>(null);
   const tip =
     tipCustom !== "" && Number(tipCustom) > 0
       ? Math.round(Number(tipCustom) * 100) / 100
@@ -1836,17 +1890,51 @@ function CloseTabDialog({
               />
             </div>
           </div>
+          {tip > 0 && (
+            <>
+              <p className="mb-1.5 mt-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                ¿Cómo dejó la propina?
+              </p>
+              <div className="flex items-center gap-1.5">
+                {([
+                  { key: "cash", emoji: "💵", label: "Efectivo" },
+                  { key: "card", emoji: "💳", label: "Tarjeta" },
+                ] as { key: PaymentMethod; emoji: string; label: string }[]).map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTipMethod(t.key)}
+                    className="flex-1 rounded-xl px-2 py-2 text-[13px] font-bold transition-all"
+                    style={
+                      tipMethod === t.key
+                        ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
+                        : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
+                    }
+                  >
+                    {t.emoji} {t.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-left text-[11px] text-gray-400">
+                {tipMethod === null
+                  ? "Si no eliges, se guarda igual que el pago de la cuenta."
+                  : tipMethod === "cash"
+                    ? "En efectivo el mesero ya la tiene en la mano."
+                    : "En tarjeta se la debes al cierre del turno."}
+              </p>
+            </>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => onConfirm("cash", tip)}
+            onClick={() => onConfirm("cash", tip, tipMethod ?? "cash")}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💵</span>
             <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
           </button>
           <button
-            onClick={() => onConfirm("card", tip)}
+            onClick={() => onConfirm("card", tip, tipMethod ?? "card")}
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💳</span>

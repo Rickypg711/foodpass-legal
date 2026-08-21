@@ -66,7 +66,13 @@ interface ReportsData {
   /** Ventas por empleado (30d, soldBy del equipo de la caja). null = sin datos. */
   staffSales30d: { name: string; count: number; revenue: number }[] | null;
   /** Propinas (30d) — total y por empleado. null = ninguna. */
-  tips30d: { total: number; byStaff: Record<string, number> } | null;
+  tips30d: {
+    total: number;
+    /** Efectivo: el mesero ya la tiene. Tarjeta: el dueno se la debe al cierre. */
+    cash: number;
+    card: number;
+    byStaff: Record<string, { total: number; cash: number; card: number }>;
+  } | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -188,7 +194,9 @@ export default function ReportesPage() {
         const staffMap: Record<string, { count: number; revenue: number }> = {};
         // Propinas — separadas de total; por empleado cuando hay soldBy.
         let tipsTotal30d = 0;
-        const tipsByStaff: Record<string, number> = {};
+        let tipsCash30d = 0;
+        let tipsCard30d = 0;
+        const tipsByStaff: Record<string, { total: number; cash: number; card: number }> = {};
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
           const disc = o.discountApplied as
@@ -211,8 +219,22 @@ export default function ReportesPage() {
           const tipAmt = Number(o.tipAmount) || 0;
           if (tipAmt > 0 && o.paymentStatus === "paid") {
             tipsTotal30d += tipAmt;
+            // tipMethod se escribe desde ago 2026; las ordenes viejas no lo
+            // traen -> caen al metodo de pago de la cuenta, que era el supuesto.
+            const tMethod =
+              o.tipMethod === "card" || o.tipMethod === "cash"
+                ? o.tipMethod
+                : o.paymentMethod === "card"
+                  ? "card"
+                  : "cash";
+            if (tMethod === "card") tipsCard30d += tipAmt;
+            else tipsCash30d += tipAmt;
             const tKey = sbName || "Caja";
-            tipsByStaff[tKey] = (tipsByStaff[tKey] ?? 0) + tipAmt;
+            const bucket =
+              tipsByStaff[tKey] ?? (tipsByStaff[tKey] = { total: 0, cash: 0, card: 0 });
+            bucket.total += tipAmt;
+            if (tMethod === "card") bucket.card += tipAmt;
+            else bucket.cash += tipAmt;
           }
           const ts = o.phoneLoyaltyAt as Timestamp | undefined;
           if (!ts?.toMillis) return;
@@ -346,7 +368,15 @@ export default function ReportesPage() {
               .sort((a, b) => b.revenue - a.revenue);
             return rows.length > 0 ? rows : null;
           })(),
-          tips30d: tipsTotal30d > 0 ? { total: tipsTotal30d, byStaff: tipsByStaff } : null,
+          tips30d:
+            tipsTotal30d > 0
+              ? {
+                  total: tipsTotal30d,
+                  cash: tipsCash30d,
+                  card: tipsCard30d,
+                  byStaff: tipsByStaff,
+                }
+              : null,
         });
 
         setLoadState("ready");
@@ -598,13 +628,34 @@ export default function ReportesPage() {
                   aparte de tus ventas — no suman puntos ni comisión
                 </p>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
+                  <p className="text-[11px] font-bold text-gray-400">💵 Efectivo</p>
+                  <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.cash)}</p>
+                  <p className="text-[10px] text-gray-400">ya la tienen</p>
+                </div>
+                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
+                  <p className="text-[11px] font-bold text-gray-400">💳 Tarjeta</p>
+                  <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.card)}</p>
+                  <p className="text-[10px] font-bold" style={{ color: "#F28C38" }}>
+                    se la debes
+                  </p>
+                </div>
+              </div>
               <div className="divide-y divide-gray-100">
                 {Object.entries(data.tips30d.byStaff)
-                  .sort((a, b) => b[1] - a[1])
+                  .sort((a, b) => b[1].total - a[1].total)
                   .map(([name, amt]) => (
                     <div key={name} className="flex justify-between items-center py-2.5">
-                      <span className="text-[13px] font-bold text-[#1C2526]">💵 {name}</span>
-                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt)}</span>
+                      <div>
+                        <span className="text-[13px] font-bold text-[#1C2526]">💵 {name}</span>
+                        {amt.card > 0 && (
+                          <span className="ml-2 text-[11px]" style={{ color: "#F28C38" }}>
+                            le debes {fmt(amt.card)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt.total)}</span>
                     </div>
                   ))}
               </div>
