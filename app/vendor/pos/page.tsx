@@ -14,6 +14,7 @@ import {
   runTransaction,
   updateDoc,
   deleteField,
+  setDoc,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
@@ -1783,6 +1784,7 @@ export default function PosPage() {
           // resuelve desde aquí (precios originales), nunca desde tabTotal,
           // que puede venir ya descontado.
           tabItems={activeOpenTabs.find((t) => t.id === checkoutTabId)?.items}
+          canAssignDiscount={vendorRole === "owner"}
           onClose={() => setCheckoutTabId(null)}
           onConfirm={(method, tip, tipMethod, phone, recalc) => {
             closeOpenTab(checkoutTabId, method, tip, tipMethod, phone, recalc);
@@ -1909,6 +1911,7 @@ function CloseTabDialog({
   tabTotal,
   restaurantId,
   tabItems,
+  canAssignDiscount = false,
   onClose,
   onConfirm,
 }: {
@@ -1916,6 +1919,9 @@ function CloseTabDialog({
   restaurantId: string;
   /** Items acumulados de la cuenta (crudo de Firestore). */
   tabItems?: unknown;
+  /** Owner-only: asignar descuentos especiales desde el cierre de cuenta.
+   *  Un cajero con PIN no debe poder auto-descontarse. */
+  canAssignDiscount?: boolean;
   onClose: () => void;
   onConfirm: (
     method: PaymentMethod,
@@ -1938,6 +1944,12 @@ function CloseTabDialog({
   /** 🏷️ Descuento recalculado al cerrar. null = sin perfil, el total no se mueve. */
   const [recalc, setRecalc] = useState<TabDiscountRecalc | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
+  // Quick-assign (DUENO): numero sin descuento + perfiles creados -> marcarlo
+  // como Staff/Familia aqui mismo. Espejo del flujo del carrito y de la app.
+  const [profiles, setProfiles] = useState<DiscountProfile[]>([]);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignBusy, setAssignBusy] = useState(false);
+  const [assignErr, setAssignErr] = useState(false);
 
   // El descuento se resuelve AQUÍ y no al abrir la cuenta: al abrir, el cliente
   // apenas está pidiendo y nadie teclea su teléfono. Este es el único momento
@@ -1946,6 +1958,9 @@ function CloseTabDialog({
   useEffect(() => {
     if (phoneDigits.length !== 10 || !restaurantId) {
       setRecalc(null);
+      setProfiles([]);
+      setAssignOpen(false);
+      setAssignErr(false);
       return;
     }
     let cancelled = false;
@@ -1962,20 +1977,24 @@ function CloseTabDialog({
           const pc = pcSnap.data() as Record<string, unknown> | undefined;
           const rdata = rSnap.data() as Record<string, unknown> | undefined;
           let profile: DiscountProfile | null = null;
+          let all: DiscountProfile[] = [];
           if (rdata && discountsEnabled(rdata, restaurantId)) {
+            all = parseDiscountProfiles(rdata.discountProfiles);
             const pid = pc?.discountProfileId;
             if (typeof pid === "string" && pid) {
-              profile =
-                parseDiscountProfiles(rdata.discountProfiles).find(
-                  (d) => d.id === pid,
-                ) ?? null;
+              profile = all.find((d) => d.id === pid) ?? null;
             }
           }
           const r = recalcTabDiscount({
             lines: tabLinesFromItems(tabItems),
             profile,
           });
-          if (!cancelled) setRecalc(r.hasDiscount ? r : null);
+          if (!cancelled) {
+            setRecalc(r.hasDiscount ? r : null);
+            setProfiles(all);
+            setAssignOpen(false);
+            setAssignErr(false);
+          }
         } catch {
           // el cobro nunca se bloquea por el lookup
         } finally {
@@ -1989,6 +2008,43 @@ function CloseTabDialog({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneDigits, restaurantId]);
+
+  /** Quick-assign desde el cierre (DUENO): guarda el perfil en
+   * phoneCustomers/{phone10} (setDoc merge crea el doc si el numero es nuevo)
+   * y RECALCULA de inmediato sobre TODOS los items de la cuenta — el cajero ve
+   * el badge sin reteclear el numero. Reemplaza, nunca apila: el recalculo
+   * parte siempre de las lineas originales. */
+  async function assignProfile(p: DiscountProfile) {
+    if (phoneDigits.length !== 10 || !restaurantId) return;
+    setAssignBusy(true);
+    setAssignErr(false);
+    try {
+      await setDoc(
+        doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phoneDigits),
+        {
+          phone: phoneDigits,
+          restaurantId,
+          discountProfileId: p.id,
+          discountProfileName: p.name,
+        },
+        { merge: true },
+      );
+      const r = recalcTabDiscount({
+        lines: tabLinesFromItems(tabItems),
+        profile: p,
+      });
+      setRecalc(r.hasDiscount ? r : null);
+      setAssignOpen(false);
+      // El total acaba de cambiar: la propina se re-elige sobre el neto.
+      setTipPct(null);
+      setTipCustom("");
+    } catch (e) {
+      console.error("[closeTab/assignDiscount]", e);
+      setAssignErr(true);
+    } finally {
+      setAssignBusy(false);
+    }
+  }
 
   /** Lo que se cobra: el neto si hay descuento, si no el total de la cuenta. */
   const netTotal = recalc?.net ?? tabTotal;
@@ -2053,6 +2109,76 @@ function CloseTabDialog({
               {fmt(recalc.net)} (−{fmt(recalc.discount)})
             </p>
           )}
+          {/* 🏷️ Quick-assign (DUENO): numero sin descuento + perfiles creados
+              -> marcarlo como Staff/Familia sin salir del cobro. Mismo gate,
+              mismo copy que el carrito y que la app. */}
+          {phoneDigits.length === 10 &&
+          !recalc &&
+          !lookingUp &&
+          canAssignDiscount &&
+          profiles.length > 0 ? (
+            <div className="mt-1.5">
+              {!assignOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setAssignOpen(true)}
+                  className="text-[11px] font-bold underline underline-offset-2"
+                  style={{ color: "#b45309" }}
+                >
+                  🏷️ ¿Staff o familia? Asignar descuento a este número
+                </button>
+              ) : (
+                <div
+                  className="space-y-1.5 rounded-xl p-2.5"
+                  style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+                >
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: "rgba(154,52,18,0.6)" }}
+                  >
+                    Asignar descuento (queda guardado para siempre)
+                  </p>
+                  {profiles.map((dp) => (
+                    <button
+                      key={dp.id}
+                      type="button"
+                      disabled={assignBusy}
+                      onClick={() => assignProfile(dp)}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition hover:opacity-80 disabled:opacity-60"
+                      style={{ background: "#fff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+                    >
+                      <span>🏷️ {dp.name}</span>
+                      <span style={{ opacity: 0.6 }}>
+                        {(dp.type === "total"
+                          ? `${dp.totalPct ?? 0}% total`
+                          : `${dp.bebidasPct ?? 0}% beb · ${dp.alimentosPct ?? 0}% alim`) +
+                          (dp.earnsPoints === false ? " · sin pts" : "")}
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={assignBusy}
+                    onClick={() => setAssignOpen(false)}
+                    className="w-full rounded-lg px-3 py-1.5 text-[11px] font-semibold"
+                    style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+                  >
+                    Cancelar
+                  </button>
+                  {assignBusy ? (
+                    <p className="text-center text-[10px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                      Guardando…
+                    </p>
+                  ) : null}
+                  {assignErr ? (
+                    <p className="text-center text-[10px] font-semibold" style={{ color: "#b91c1c" }}>
+                      No se pudo asignar. Intenta de nuevo.
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ) : null}
           <p
             className="mt-1 text-[11px]"
             style={{ color: phoneDigits.length === 10 ? "#16A34A" : "rgba(28,37,38,0.5)" }}

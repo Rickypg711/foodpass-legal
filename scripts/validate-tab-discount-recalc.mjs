@@ -190,6 +190,43 @@ const familia = {
   check("tabLines no-array", tabLinesFromItems(undefined).length, 0);
 }
 
+// ── quick-assign al cerrar: REEMPLAZA, no apila ──────────────────────────────
+// Espejo del grupo homonimo del .dart. El dueno teclea el numero, ve que no
+// trae descuento, y le asigna un perfil ahi mismo. El recalculo corre sobre los
+// items ORIGINALES, asi que asignar dos veces (o cambiar de perfil) no acumula.
+{
+  const cuenta = [
+    { menuItemId: "p", price: 200, quantity: 1, categoryName: "Pizzas" },
+    { menuItemId: "c", price: 100, quantity: 1, categoryName: "Cervezas" },
+  ];
+
+  const antes = recalcTabDiscount({ lines: cuenta });
+  check("assign: antes sin descuento", antes.hasDiscount, false);
+  check("assign: antes net", antes.net, 300);
+
+  const conStaff = recalcTabDiscount({ lines: cuenta, profile: staff });
+  check("assign: staff gross", conStaff.gross, 300);
+  check("assign: staff discount", conStaff.discount, 200); // 200x50% + 100x100%
+  check("assign: staff net", conStaff.net, 100);
+  check("assign: profileId registrado", conStaff.discountApplied.profileId, "staff");
+  check("assign: profileName registrado", conStaff.discountApplied.profileName, "Staff");
+
+  const conFamilia = recalcTabDiscount({ lines: cuenta, profile: familia });
+  check("assign: cambiar de perfil da el de AHORA", conFamilia.discount, 45);
+  check("assign: cambiar de perfil net", conFamilia.net, 255);
+  // Si se apilara sobre el neto de Staff daria 85; si sumara descuentos, 245.
+  check("assign: NO apila sobre el neto anterior", conFamilia.net === 85, false);
+  check("assign: NO suma descuentos", conFamilia.discount === 245, false);
+
+  const otraVez = recalcTabDiscount({ lines: cuenta, profile: staff });
+  check("assign: dos veces el mismo perfil es idempotente", otraVez.net, conStaff.net);
+  check(
+    "assign: idempotente en amount",
+    otraVez.discountApplied.amount,
+    conStaff.discountApplied.amount,
+  );
+}
+
 if (failed) {
   console.error("\n❌ validate-tab-discount-recalc: FALLÓ");
   process.exit(1);
