@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/siteMetadata";
 import { fetchActiveRestaurantHandles } from "@/lib/server/restaurantMetadata";
+import { VERTICALES } from "@/lib/marketing/verticals";
 
 // Marketing surfaces + every active restaurant's public menu page (the
 // Owner.com play: each vendor page is a local-search result). Restaurant
@@ -60,7 +61,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     { url: `${SITE_URL}/precios`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/descargar`, changeFrequency: "monthly", priority: 0.5 },
+    // Cluster por VERTICAL (el play de Maspedidos que nos faltaba): el hub más
+    // una página por tipo de negocio. Se generan solas desde lib/marketing/verticals.ts,
+    // así que agregar una vertical nueva NO requiere tocar este archivo.
+    {
+      url: `${SITE_URL}/software-para-restaurantes`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    { url: `${SITE_URL}/hardware`, changeFrequency: "monthly", priority: 0.6 },
   ];
+
+  const verticalEntries: MetadataRoute.Sitemap = VERTICALES.map((v) => ({
+    url: `${SITE_URL}/software-para-restaurantes/${v.slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+  }));
 
   const restaurants = await fetchActiveRestaurantHandles();
   const menuEntries: MetadataRoute.Sitemap = restaurants.map((r) => ({
@@ -76,5 +92,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...menuEntries, ...landingEntries];
+  return [...staticEntries, ...verticalEntries, ...menuEntries, ...landingEntries];
 }
