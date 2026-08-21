@@ -13,6 +13,7 @@ import {
   getDoc,
   runTransaction,
   updateDoc,
+  deleteField,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
@@ -27,8 +28,15 @@ import {
 } from "@/components/loyalty/PosRedemption";
 import {
   computeDiscount,
+  discountsEnabled,
+  parseDiscountProfiles,
   type DiscountProfile,
 } from "@/lib/loyalty/discountProfiles";
+import {
+  recalcTabDiscount,
+  tabLinesFromItems,
+  type TabDiscountRecalc,
+} from "@/lib/loyalty/tabDiscountRecalc";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -883,7 +891,20 @@ export default function PosPage() {
     try {
       const db = getFirebaseDb();
       const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
-      
+
+      // Perfiles del restaurante: se leen ANTES de la transacción para poder
+      // recalcular el descuento de la cuenta con el perfil que ya traía.
+      let tabProfiles: DiscountProfile[] = [];
+      try {
+        const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
+        const rdata = rSnap.data() as Record<string, unknown> | undefined;
+        if (rdata && discountsEnabled(rdata, restaurantId)) {
+          tabProfiles = parseDiscountProfiles(rdata.discountProfiles);
+        }
+      } catch {
+        // best-effort: agregar items nunca se bloquea por el lookup
+      }
+
       await runTransaction(db, async (transaction) => {
         const orderDoc = await transaction.get(orderRef);
         if (!orderDoc.exists()) {
@@ -899,15 +920,38 @@ export default function PosPage() {
           price: c.menuItem.price,
           quantity: c.quantity,
           subtotal: c.menuItem.price * c.quantity,
+          ...(c.menuItem.category ? { categoryName: c.menuItem.category } : {}),
         }));
-        
+
         const combinedItems = [...existingItems, ...newItems];
-        const newSubtotal = combinedItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-        
+
+        // 5.1.4 — El descuento se RECALCULA sobre TODOS los items acumulados,
+        // partiendo de los precios originales. Antes esto escribía
+        // `total: newSubtotal` (el bruto) y BORRABA el descuento que la cuenta
+        // ya traía: una pizza de $100 con 15% pasaba de cobrar $85 a cobrar
+        // $150 en cuanto pedían una cerveza de $50 (lo correcto son $127.50),
+        // y `discountApplied` se quedaba en el doc mintiendo.
+        // Recalcular desde `items` y no desde `total` es lo que impide el
+        // error opuesto: aplicar el porcentaje encima de un total ya descontado.
+        const prevProfileId =
+          (data.discountApplied as Record<string, unknown> | undefined)
+            ?.profileId;
+        const profile =
+          typeof prevProfileId === "string" && prevProfileId
+            ? tabProfiles.find((p) => p.id === prevProfileId) ?? null
+            : null;
+        const recalc = recalcTabDiscount({
+          lines: tabLinesFromItems(combinedItems),
+          profile,
+        });
+
         transaction.update(orderRef, {
           items: combinedItems,
-          subtotal: newSubtotal,
-          total: newSubtotal,
+          subtotal: recalc.gross,
+          total: recalc.net,
+          ...(recalc.discountApplied
+            ? { discountApplied: recalc.discountApplied }
+            : { discountApplied: deleteField() }),
           updatedAt: serverTimestamp(),
         });
       });
@@ -929,6 +973,12 @@ export default function PosPage() {
     method: PaymentMethod,
     tip = 0,
     tipMethod: PaymentMethod = "cash",
+    customerPhone = "",
+    // 🏷️ Descuento resuelto AL CERRAR (5.1.4). Lo calcula CloseTabDialog sobre
+    // TODOS los items de la cuenta, se lo enseña al cajero, y ese MISMO número
+    // es el que se cobra. Llega ya calculado a propósito: lo mostrado, lo
+    // cobrado y lo registrado tienen que ser el mismo peso.
+    recalc: TabDiscountRecalc | null = null,
   ) {
     if (!restaurantId) return;
     try {
@@ -945,6 +995,21 @@ export default function PosPage() {
         // Propina al cerrar la cuenta — separada de total (no puntos/comisión).
         ...(tip > 0
           ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }
+          : {}),
+        // El telefono se escribe ANTES de creditPhonePointsForOrder, que lee
+        // customerPhone del doc de la orden. Sin esta linea, una cuenta abierta
+        // sin telefono jamas acredita puntos ni entra al CRM.
+        ...(customerPhone.length === 10 ? { customerPhone } : {}),
+        // El descuento REEMPLAZA lo que hubiera: el cierre es la única fuente
+        // de verdad y nunca se suma sobre un descuento anterior. El total neto
+        // se escribe ANTES de acreditar puntos, así que los puntos salen sobre
+        // lo pagado (regla anti-farming).
+        ...(recalc && recalc.hasDiscount && recalc.discountApplied
+          ? {
+              total: recalc.net,
+              subtotal: recalc.gross,
+              discountApplied: recalc.discountApplied,
+            }
           : {}),
       });
 
@@ -1073,6 +1138,9 @@ export default function PosPage() {
         price: c.menuItem.price,
         quantity: c.quantity,
         subtotal: c.menuItem.price * c.quantity,
+        // Snapshot de la categoría: sin esto el recálculo del descuento al
+        // cerrar no puede distinguir bebidas de alimentos (per_category).
+        ...(c.menuItem.category ? { categoryName: c.menuItem.category } : {}),
       }));
 
       // Redeemed reward rides the ticket as a $0 line (kitchen sees it, the
@@ -1710,9 +1778,14 @@ export default function PosPage() {
       {checkoutTabId && (
         <CloseTabDialog
           tabTotal={Number(activeOpenTabs.find((t) => t.id === checkoutTabId)?.total) || 0}
+          restaurantId={restaurantId ?? ""}
+          // TODOS los items acumulados: la base del recálculo. El descuento se
+          // resuelve desde aquí (precios originales), nunca desde tabTotal,
+          // que puede venir ya descontado.
+          tabItems={activeOpenTabs.find((t) => t.id === checkoutTabId)?.items}
           onClose={() => setCheckoutTabId(null)}
-          onConfirm={(method, tip, tipMethod) => {
-            closeOpenTab(checkoutTabId, method, tip, tipMethod);
+          onConfirm={(method, tip, tipMethod, phone, recalc) => {
+            closeOpenTab(checkoutTabId, method, tip, tipMethod, phone, recalc);
             setCheckoutTabId(null);
           }}
         />
@@ -1834,32 +1907,161 @@ function OpenTabsModal({
 
 function CloseTabDialog({
   tabTotal,
+  restaurantId,
+  tabItems,
   onClose,
   onConfirm,
 }: {
   tabTotal: number;
+  restaurantId: string;
+  /** Items acumulados de la cuenta (crudo de Firestore). */
+  tabItems?: unknown;
   onClose: () => void;
-  onConfirm: (method: PaymentMethod, tip: number, tipMethod: PaymentMethod) => void;
+  onConfirm: (
+    method: PaymentMethod,
+    tip: number,
+    tipMethod: PaymentMethod,
+    phone: string,
+    recalc: TabDiscountRecalc | null,
+  ) => void;
 }) {
   const [tipPct, setTipPct] = useState<number | null>(null);
   const [tipCustom, setTipCustom] = useState<number | "">("");
   /** null = sigue al metodo con el que cierran la cuenta. */
   const [tipMethod, setTipMethod] = useState<PaymentMethod | null>(null);
+  /** 📱 Telefono capturado AL CERRAR. Es el UNICO momento del flujo de cuentas
+   *  donde se puede pedir: al abrir la orden el cliente apenas esta pidiendo y
+   *  no hay ticket que mandar. Sin esto un restaurante que trabaja por cuentas
+   *  jamas captura un numero (Pecado Escondido: 184 ventas -> 1 telefono). */
+  const [phone, setPhone] = useState("");
+  const phoneDigits = phone.replace(/\D/g, "").slice(-10);
+  /** 🏷️ Descuento recalculado al cerrar. null = sin perfil, el total no se mueve. */
+  const [recalc, setRecalc] = useState<TabDiscountRecalc | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  // El descuento se resuelve AQUÍ y no al abrir la cuenta: al abrir, el cliente
+  // apenas está pidiendo y nadie teclea su teléfono. Este es el único momento
+  // del flujo en que se puede aplicar — y ya con todo lo consumido enfrente.
+  // Best-effort: si el lookup falla, el cobro sigue a precio normal.
+  useEffect(() => {
+    if (phoneDigits.length !== 10 || !restaurantId) {
+      setRecalc(null);
+      return;
+    }
+    let cancelled = false;
+    setLookingUp(true);
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          const db = getFirebaseDb();
+          const [pcSnap, rSnap] = await Promise.all([
+            getDoc(doc(db, "restaurants", restaurantId, "phoneCustomers", phoneDigits)),
+            getDoc(doc(db, "restaurants", restaurantId)),
+          ]);
+          if (cancelled) return;
+          const pc = pcSnap.data() as Record<string, unknown> | undefined;
+          const rdata = rSnap.data() as Record<string, unknown> | undefined;
+          let profile: DiscountProfile | null = null;
+          if (rdata && discountsEnabled(rdata, restaurantId)) {
+            const pid = pc?.discountProfileId;
+            if (typeof pid === "string" && pid) {
+              profile =
+                parseDiscountProfiles(rdata.discountProfiles).find(
+                  (d) => d.id === pid,
+                ) ?? null;
+            }
+          }
+          const r = recalcTabDiscount({
+            lines: tabLinesFromItems(tabItems),
+            profile,
+          });
+          if (!cancelled) setRecalc(r.hasDiscount ? r : null);
+        } catch {
+          // el cobro nunca se bloquea por el lookup
+        } finally {
+          if (!cancelled) setLookingUp(false);
+        }
+      })();
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneDigits, restaurantId]);
+
+  /** Lo que se cobra: el neto si hay descuento, si no el total de la cuenta. */
+  const netTotal = recalc?.net ?? tabTotal;
   const tip =
     tipCustom !== "" && Number(tipCustom) > 0
       ? Math.round(Number(tipCustom) * 100) / 100
       : tipPct
-        ? Math.round(tabTotal * tipPct) / 100
+        ? Math.round(netTotal * tipPct) / 100
         : 0;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4" style={{ boxShadow: "0 10px 25px rgba(28,37,38,0.15)" }} onClick={(e) => e.stopPropagation()}>
         <p className="text-[16px] font-extrabold text-[#1C2526]">Cobrar Cuenta</p>
         <p className="text-[13px] text-gray-400">
-          {tip > 0
-            ? `Total ${fmt(tabTotal)} + 💵 propina ${fmt(tip)} = ${fmt(tabTotal + tip)}`
-            : "Selecciona el método de pago del cliente"}
+          {recalc ? (
+            <>
+              <span className="line-through opacity-50">{fmt(recalc.gross)}</span>{" "}
+              <span className="font-extrabold text-[#1C2526]">{fmt(netTotal)}</span>
+              {tip > 0 ? ` + 💵 propina ${fmt(tip)} = ${fmt(netTotal + tip)}` : ""}
+            </>
+          ) : tip > 0 ? (
+            `Total ${fmt(netTotal)} + 💵 propina ${fmt(tip)} = ${fmt(netTotal + tip)}`
+          ) : (
+            "Selecciona el método de pago del cliente"
+          )}
         </p>
+        {/* 📱 Telefono PRIMERO: se pide por el TICKET (servicio que el cliente
+            quiere), no por los puntos (favor que le pedimos). Los puntos se
+            mencionan de pilon. */}
+        <div
+          className="rounded-2xl p-3 text-left"
+          style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
+        >
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+            📱 ¿Le mandamos su ticket por WhatsApp?
+          </p>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={phone}
+            autoFocus
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Su ticket y sus puntos — 614 123 4567"
+            className="w-full rounded-xl border px-3 py-2.5 text-[13px] outline-none"
+            style={{ borderColor: "rgba(28,37,38,0.15)", color: "#1C2526" }}
+          />
+          {lookingUp && (
+            <p className="mt-1 text-[11px] text-gray-400">Buscando su descuento…</p>
+          )}
+          {/* 🏷️ El descuento, ENSEÑADO antes de cobrar: el cajero ve qué era y
+              qué se va a cobrar. Sin esto el mesero no sabe que aplicó. */}
+          {recalc && (
+            <p
+              className="mt-1.5 rounded-xl px-3 py-2 text-[12px] font-extrabold"
+              style={{
+                background: "rgba(22,163,74,0.10)",
+                border: "1px solid rgba(22,163,74,0.35)",
+                color: "#15803D",
+              }}
+            >
+              🏷️ {recalc.profile?.name ?? "Descuento"}: {fmt(recalc.gross)} →{" "}
+              {fmt(recalc.net)} (−{fmt(recalc.discount)})
+            </p>
+          )}
+          <p
+            className="mt-1 text-[11px]"
+            style={{ color: phoneDigits.length === 10 ? "#16A34A" : "rgba(28,37,38,0.5)" }}
+          >
+            {phoneDigits.length === 10
+              ? "✅ Le llega su ticket y junta sus puntos."
+              : "Opcional. Con su número le mandas el ticket y junta puntos solo. ⭐"}
+          </p>
+        </div>
         <div>
           <p className="mb-1.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">💵 Propina (opcional)</p>
           <div className="flex items-center gap-1.5">
@@ -1927,14 +2129,30 @@ function CloseTabDialog({
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => onConfirm("cash", tip, tipMethod ?? "cash")}
+            onClick={() =>
+              onConfirm(
+                "cash",
+                tip,
+                tipMethod ?? "cash",
+                phoneDigits.length === 10 ? phoneDigits : "",
+                recalc,
+              )
+            }
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💵</span>
             <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
           </button>
           <button
-            onClick={() => onConfirm("card", tip, tipMethod ?? "card")}
+            onClick={() =>
+              onConfirm(
+                "card",
+                tip,
+                tipMethod ?? "card",
+                phoneDigits.length === 10 ? phoneDigits : "",
+                recalc,
+              )
+            }
             className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
           >
             <span className="text-2xl mb-1">💳</span>
