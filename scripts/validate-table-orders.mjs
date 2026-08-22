@@ -14,6 +14,7 @@
 import { readFileSync } from "node:fs";
 import {
   normalizeTableNumber,
+  tableLabel,
   normalizeDiners,
   tableMenuUrl,
   TABLE_MAX_LENGTH,
@@ -102,6 +103,16 @@ checkSource("tipo dine_in declarado", types, 'ORDER_TYPE_DINE_IN = "dine_in"');
 checkSource("orderType ya no es literal pickup", types, "orderType: CustomerOrderType");
 checkSource("tableNumber opcional en el tipo", types, "tableNumber?: string");
 checkSource("diners opcional en el tipo", types, "diners?: number");
+
+// ── tableLabel — una sola regla para la hoja de QR y para Pedidos ────────────
+// Espejo de FOODPASS test/order/table_session_test.dart. Pedidos hardcodeaba
+// "Mesa {n}", asi que una mesa llamada "Barra" salia como "Mesa Barra".
+check("numero lleva prefijo", tableLabel("5"), "Mesa 5");
+check("numero de dos digitos", tableLabel("12"), "Mesa 12");
+check("Barra a secas", tableLabel("Barra"), "Barra");
+check("Terraza 1 a secas", tableLabel("Terraza 1"), "Terraza 1");
+check("T3 a secas", tableLabel("T3"), "T3");
+check("A-1 a secas", tableLabel("A-1"), "A-1");
 
 if (failed) {
   console.error("validate-table-orders: FAILED");

@@ -111,6 +111,14 @@ export function resolveTableFromLocation(
   return readStoredTable(restaurantId);
 }
 
+/**
+ * "Mesa 5" cuando es numero; "Barra" tal cual cuando trae letras.
+ * "Mesa Barra" se lee mal. Lo usan la hoja de QR y Pedidos — una sola regla.
+ */
+export function tableLabel(mesa: string): string {
+  return /^[0-9]+$/.test(mesa) ? `Mesa ${mesa}` : mesa;
+}
+
 /** El link que va en el QR impreso de cada mesa. */
 export function tableMenuUrl(
   origin: string,

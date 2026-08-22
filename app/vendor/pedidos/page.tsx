@@ -18,6 +18,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { tableLabel } from "@/lib/order/tableSession";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
 import { businessDayStart } from "@/lib/businessDay";
@@ -438,7 +439,11 @@ export default function PedidosPage() {
                               chip más. */}
                           {order.tableNumber ? (
                             <span className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-[#16A34A] text-white">
-                              🍽️ Mesa {order.tableNumber}
+                              {/* tableLabel: "Mesa 5" cuando es numero, pero
+                                  "Barra" a secas cuando trae letras. Antes
+                                  decia "Mesa Barra", que se lee mal — y la
+                                  hoja de QR ya usaba esta misma regla. */}
+                              🍽️ {tableLabel(order.tableNumber)}
                               {order.diners ? ` · ${order.diners}p` : ""}
                             </span>
                           ) : null}

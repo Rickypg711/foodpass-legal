@@ -22,6 +22,7 @@ import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import {
   tableMenuUrl,
   normalizeTableNumber,
+  tableLabel,
   TABLE_MAX_LENGTH,
 } from "@/lib/order/tableSession";
 import { SITE_URL } from "@/lib/siteMetadata";
@@ -89,10 +90,6 @@ export default function MesasPage() {
     return parsed;
   }, [count, customNames, usingCustomNames]);
 
-  /** "Mesa 5" cuando es numero; "Barra" tal cual cuando trae letras.
-   *  "Mesa Barra" se lee mal. */
-  const mesaLabel = (mesa: string) =>
-    /^[0-9]+$/.test(mesa) ? `Mesa ${mesa}` : mesa;
 
   if (loading) {
     return (
@@ -250,7 +247,7 @@ export default function MesasPage() {
               {restaurantName}
             </p>
             <p className="mt-1 text-[26px] font-black leading-none" style={{ color: INK }}>
-              {mesaLabel(mesa)}
+              {tableLabel(mesa)}
             </p>
             <div className="mt-3 rounded-xl bg-white p-2" style={{ border: "1px solid rgba(28,37,38,0.08)" }}>
               {/* SITE_URL y NO window.location.origin: estos QR se imprimen y
