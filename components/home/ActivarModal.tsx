@@ -17,7 +17,7 @@ import {
   waitForAuthReady,
   getFirebaseAuth,
 } from "@/lib/auth";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -58,20 +58,37 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   const [category, setCategory] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
 
-  async function handleEmailSignIn(e: React.FormEvent) {
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setStage("signing");
     try {
       const auth = getFirebaseAuth();
-      const cred = await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
+      const email = emailInput.trim();
+      const cred =
+        authMode === "signup"
+          ? await createUserWithEmailAndPassword(auth, email, passwordInput)
+          : await signInWithEmailAndPassword(auth, email, passwordInput);
       setUser(cred.user);
       const snap = await getDoc(doc(getFirebaseDb(), "users", cred.user.uid));
       setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
     } catch (err: unknown) {
       console.error(err);
-      setError("Correo o contraseña incorrectos.");
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "auth/email-already-in-use") {
+        setAuthMode("signin");
+        setError("Ese correo ya tiene cuenta. Escribe tu contraseña para entrar.");
+      } else if (code === "auth/weak-password") {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+      } else if (code === "auth/invalid-email") {
+        setError("Ese correo no se ve bien. Revísalo.");
+      } else if (authMode === "signup") {
+        setError("No pudimos crear tu cuenta. Intenta de nuevo.");
+      } else {
+        setError("Correo o contraseña incorrectos. Si es tu primera vez, crea tu cuenta abajo.");
+      }
       setStage("idle");
     }
   }
@@ -287,7 +304,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             <div className="h-px flex-1 bg-[#141413]/10" />
           </div>
 
-          <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2.5 text-left">
+          <form onSubmit={handleEmailSubmit} className="flex flex-col gap-2.5 text-left">
             <input
               type="email"
               placeholder="Correo electrónico"
@@ -299,7 +316,8 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             />
             <input
               type="password"
-              placeholder="Contraseña"
+              placeholder={authMode === "signup" ? "Contraseña (mínimo 6 caracteres)" : "Contraseña"}
+              minLength={6}
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
               required
@@ -311,9 +329,21 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
               disabled={stage === "signing"}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
             >
-              {stage === "signing" ? <Spinner className="text-white" /> : "Iniciar sesión →"}
+              {stage === "signing"
+                ? <Spinner className="text-white" />
+                : authMode === "signup" ? "Crear mi cuenta →" : "Iniciar sesión →"}
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={() => { setAuthMode(authMode === "signup" ? "signin" : "signup"); setError(null); }}
+            className="mt-3 text-xs font-semibold text-[#141413]/50 underline underline-offset-2 transition-colors hover:text-[#F28C38]"
+          >
+            {authMode === "signup"
+              ? "¿Ya tienes cuenta? Inicia sesión"
+              : "¿Primera vez? Crea tu cuenta"}
+          </button>
 
           <p className="mt-4 text-[11px] text-[#141413]/35">
             Al continuar aceptas los{" "}
