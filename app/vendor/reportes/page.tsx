@@ -68,7 +68,7 @@ interface ReportsData {
   /** Propinas (30d) — total y por empleado. null = ninguna. */
   tips30d: {
     total: number;
-    /** Efectivo: el mesero ya la tiene. Tarjeta: el dueno se la debe al cierre. */
+    /** Efectivo: el mesero ya la tiene. Tarjeta: la cobro el dueno y aun no llega al mesero. */
     cash: number;
     card: number;
     byStaff: Record<string, { total: number; cash: number; card: number }>;
@@ -637,9 +637,8 @@ export default function ReportesPage() {
                 <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
                   <p className="text-[11px] font-bold text-gray-400">💳 Tarjeta</p>
                   <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.card)}</p>
-                  <p className="text-[10px] font-bold" style={{ color: "#F28C38" }}>
-                    se la debes
-                  </p>
+                  {/* Sin nota: cuando le paga al equipo lo decide el dueno
+                      (diario, semanal, quincenal). El copy no lo inventa. */}
                 </div>
               </div>
               <div className="divide-y divide-gray-100">
@@ -651,7 +650,7 @@ export default function ReportesPage() {
                         <span className="text-[13px] font-bold text-[#1C2526]">💵 {name}</span>
                         {amt.card > 0 && (
                           <span className="ml-2 text-[11px]" style={{ color: "#F28C38" }}>
-                            le debes {fmt(amt.card)}
+                            💳 {fmt(amt.card)}
                           </span>
                         )}
                       </div>

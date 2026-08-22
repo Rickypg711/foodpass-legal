@@ -623,9 +623,14 @@ function CheckoutDialog({
                   </div>
                   <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
                     La propina no suma puntos de lealtad — va aparte, íntegra para el equipo.
+                    {/* Solo se dice algo del EFECTIVO, que es el dato accionable
+                        ("no se la vuelvas a pagar"). De la tarjeta no se dice
+                        nada a proposito: cuando el dueno le paga a su equipo es
+                        decision suya — diario, semanal o quincenal — y el copy
+                        no tiene por que inventarlo. */}
                     {effTipMethod === "cash"
                       ? " En efectivo el mesero ya la tiene en la mano."
-                      : " En tarjeta se la debes al cierre del turno."}
+                      : ""}
                   </p>
                 </>
               )}
@@ -2248,7 +2253,7 @@ function CloseTabDialog({
                   ? "Si no eliges, se guarda igual que el pago de la cuenta."
                   : tipMethod === "cash"
                     ? "En efectivo el mesero ya la tiene en la mano."
-                    : "En tarjeta se la debes al cierre del turno."}
+                    : ""}
               </p>
             </>
           )}
