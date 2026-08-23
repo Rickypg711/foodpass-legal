@@ -120,6 +120,14 @@ function IconShare() {
   );
 }
 
+function IconExternal() {
+  return (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  );
+}
+
 interface NavDef {
   href: string;
   label: string;
@@ -364,29 +372,43 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               style={{ color: "rgba(255,255,255,0.28)" }}>
               Restaurante
             </p>
-            <Link
-              href="/vendor"
-              title="Ir al Panel"
-              className="-mx-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10"
-            >
-              {restaurantLogo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={restaurantLogo}
-                  alt=""
-                  className="h-7 w-7 shrink-0 rounded-full object-cover"
-                  style={{ border: "1px solid rgba(255,255,255,0.15)" }}
-                />
-              ) : (
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
-                  style={{ background: "rgba(242,140,56,0.35)" }}
+            <div className="-mx-1.5 flex items-center gap-1">
+              <Link
+                href="/vendor"
+                title="Ir al Panel"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C38]"
+              >
+                {restaurantLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={restaurantLogo}
+                    alt=""
+                    className="h-7 w-7 shrink-0 rounded-full object-cover"
+                    style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+                  />
+                ) : (
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
+                    style={{ background: "rgba(242,140,56,0.35)" }}
+                  >
+                    {(restaurantName[0] ?? "R").toUpperCase()}
+                  </span>
+                )}
+                <p className="truncate text-[13px] font-semibold text-white">{restaurantName}</p>
+              </Link>
+              {restaurantId && (
+                <a
+                  href={`/menu/${restaurantId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ver mi menú como lo ven tus clientes"
+                  aria-label="Ver mi menú como lo ven tus clientes (se abre en una pestaña nueva)"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/55 transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C38]"
                 >
-                  {(restaurantName[0] ?? "R").toUpperCase()}
-                </span>
+                  <IconExternal />
+                </a>
               )}
-              <p className="truncate text-[13px] font-semibold text-white">{restaurantName}</p>
-            </Link>
+            </div>
             {isLive && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5">
