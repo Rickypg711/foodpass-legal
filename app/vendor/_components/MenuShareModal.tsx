@@ -71,10 +71,24 @@ export default function MenuShareModal({
 
   if (!open) return null;
 
+  // Dos trabajos distintos, dos ligas distintas.
+  //
+  // LA TARJETA es un objeto fisico: vive en el mostrador o en la mesa. Quien la
+  // usa YA esta ahi, asi que va derecho a la carta para ordenar con los menos
+  // toques posibles. El QR codifica el ID —que nunca cambia— para que una
+  // tarjeta impresa hoy siga sirviendo aunque el restaurante se renombre; el
+  // texto impreso usa el slug porque es el que un humano puede teclear. Si el
+  // slug cambiara se rompe el texto, no el QR: el camino principal sobrevive.
   const qrUrl = `https://comeleal.com/menu/${restaurantId}`;
-  const prettyUrl = `https://comeleal.com/menu/${slug ?? restaurantId}`;
-  const prettyText = prettyUrl.replace(/^https?:\/\/(www\.)?/, "");
-  const shareText = `Mira el menú de ${name || "nuestro restaurante"}, pide en línea y junta puntos 🍽️ ${prettyUrl}`;
+  const cardUrl = `https://comeleal.com/menu/${slug ?? restaurantId}`;
+  const cardText = cardUrl.replace(/^https?:\/\/(www\.)?/, "");
+
+  // LA LIGA QUE MANDAS va a la portada (/r), no a la carta. Quien la recibe por
+  // WhatsApp o la abre desde una bio TODAVIA NO LLEGA: necesita saber donde
+  // estas, si abriste y como llamarte. La portada trae todo eso y su boton
+  // principal es "Ver menu y ordenar", asi que no pierde el menu, gana el resto.
+  const shareUrl = `https://comeleal.com/r/${slug ?? restaurantId}`;
+  const shareText = `Mira el menú de ${name || "nuestro restaurante"}, pide en línea y junta puntos 🍽️ ${shareUrl}`;
 
   async function cardPngFile(): Promise<File | null> {
     if (!cardRef.current) return null;
@@ -106,7 +120,7 @@ export default function MenuShareModal({
         return;
       }
       if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: name || "Comeleal", text: shareText, url: prettyUrl });
+        await navigator.share({ title: name || "Comeleal", text: shareText, url: shareUrl });
         return;
       }
       // Desktop sin Web Share: la tarjeta se descarga y el link queda copiado.
@@ -117,7 +131,7 @@ export default function MenuShareModal({
         a.click();
         URL.revokeObjectURL(a.href);
       }
-      await navigator.clipboard.writeText(prettyUrl);
+      await navigator.clipboard.writeText(shareUrl);
       flash(file ? "Tarjeta descargada y link copiado ✅" : "Link copiado ✅");
     } catch {
       // share sheet cerrado por el usuario — no-op
@@ -128,7 +142,7 @@ export default function MenuShareModal({
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(prettyUrl);
+      await navigator.clipboard.writeText(shareUrl);
       flash("Link copiado ✅");
     } catch {
       // clipboard bloqueado — el link queda visible para copiar a mano
@@ -228,19 +242,29 @@ export default function MenuShareModal({
             Cada compra suma puntos — canjéalos por platillos gratis
           </p>
           <p className="mt-2 text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.45)" }}>
-            {prettyText}
+            {cardText}
           </p>
         </div>
 
-        {/* Fila silenciosa de link: tocar copia. */}
+        {/* Fila de link: tocar copia. Lleva su propia linea de contexto porque
+            NO es la misma liga que imprime la tarjeta, y sin decirlo eso se
+            lee como un error. Dice lo que recibe el que la abre. */}
+        {/* 0.65, no 0.45: a 11px el token muteado de la tarjeta da 2.74:1 y el
+            piso es 4.5:1. La jerarquia la carga el tamaño —la liga de abajo va
+            a 13px y es lo accionable—, no el gris. Un gris clarito "elegante"
+            aqui solo lo vuelve ilegible. */}
+        <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
+          La liga que mandas lleva tu menú, tu teléfono y tu ubicación
+        </p>
         <button
           type="button"
           onClick={handleCopy}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold"
+          aria-label={`Copiar mi liga: ${shareUrl}`}
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold"
           style={{ color: "rgba(28,37,38,0.65)" }}
         >
-          <span className="truncate">{prettyText}</span>
-          <span style={{ color: ORANGE }}>⧉</span>
+          <span className="truncate">{shareUrl.replace(/^https?:\/\/(www\.)?/, "")}</span>
+          <span style={{ color: ORANGE }} aria-hidden>⧉</span>
         </button>
 
         <button
