@@ -102,8 +102,8 @@ export function UpsellCard({
       goalGap = 0;
       goalPct = 100;
       goalLine = goal.topTierName
-        ? `🏆 Ya tienes tu ${goal.topTierName} GRATIS desbloqueado — canjéalo arriba en este pedido`
-        : "🏆 Ya tienes premios desbloqueados — canjea uno arriba en este pedido";
+        ? `🏆 Tu ${goal.topTierName} va gratis — cámbialo arriba en este pedido`
+        : "🏆 Ya tienes premios listos — cambia uno arriba en este pedido";
     } else if (goal && goal.nextTierPoints > 0) {
       const estimateEarn = (total: number) =>
         goal.earnBase + Math.floor(total / Math.max(1, goal.earnStep));
@@ -203,8 +203,8 @@ export function UpsellCard({
           return (
             <p className="mt-2 text-xs font-bold" style={{ color: "#16A34A" }}>
               {goal.topTierName
-                ? `🏆 Ya tienes tu ${goal.topTierName} GRATIS desbloqueado — canjéalo arriba`
-                : "🏆 Ya tienes premios desbloqueados — canjea uno arriba"}
+                ? `🏆 Tu ${goal.topTierName} va gratis — cámbialo arriba`
+                : "🏆 Ya tienes premios listos — cambia uno arriba"}
             </p>
           );
         }

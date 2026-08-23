@@ -195,7 +195,7 @@ export function PhonePointsCard({
             <p className="mt-1 text-xs text-[#1C2526]/60">
               {balance.visits} visita{balance.visits !== 1 ? "s" : ""}
               {balance.firstVisitRewardUnlocked
-                ? " · 🎁 Tienes un premio de bienvenida desbloqueado — pregunta en el local"
+                ? " · 🎁 Tienes tu premio de bienvenida — pídelo al pagar"
                 : ""}
             </p>
             {(() => {

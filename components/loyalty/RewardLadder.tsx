@@ -119,8 +119,8 @@ function TierRow({
         <p className="text-xs text-[#1C2526]/55">
           {tier.isFirstVisit
             ? reached
-              ? "Desbloqueado — reclámalo en tu siguiente visita"
-              : "Gratis: tu 1ª compra lo desbloquea, lo reclamas en la siguiente"
+              ? "Ya es tuyo. Pídelo en tu siguiente visita"
+              : "Gratis con tu primera compra, para tu siguiente visita"
             : reached
               ? "Pídelo al pagar en el local"
               : ghost

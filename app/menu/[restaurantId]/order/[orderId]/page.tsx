@@ -617,7 +617,7 @@ function OrderStatusPageContent() {
                       Se guardan solitos en tu número cuando pagues — sin apps,
                       sin tarjetitas.
                       {firstVisitReward
-                        ? ` Y desbloqueas: ${firstVisitReward} GRATIS en tu próxima visita 🎁`
+                        ? ` Y tu ${firstVisitReward} va gratis en tu próxima visita 🎁`
                         : ""}
                     </p>
                   </>
