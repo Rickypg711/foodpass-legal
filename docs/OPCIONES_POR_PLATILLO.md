@@ -226,3 +226,57 @@ simulador y ojos encima.
    poder vender ese platillo.
 3. Si el menú tiene un "adicional" capturado como platillo suelto (el patrón
    FLAMING HOT), conviértelo en grupo y apaga el platillo con `isAvailable`.
+
+## Lo que enseñó Spicy & Sweet (23 ago 2026)
+
+Segundo restaurante con opciones, y el primero donde la elección **es** el producto
+("haz tu combinación", 23 salsas de barra libre). Tres cosas que no estaban aquí:
+
+### 6. El nombre del grupo es un SUSTANTIVO, nunca un imperativo
+El CTA de `ItemOptionsSheet` se arma como `` `Elige ${g.name.toLowerCase()}` ``. Un grupo
+llamado "Escoge tus 8 salsas" produce el botón **"Elige escoge tus 8 salsas"**.
+
+| Nombre del grupo | Encabezado | Botón |
+|---|---|---|
+| ❌ `Escoge tus 8 salsas` | Escoge tus 8 salsas | Elige escoge tus 8 salsas |
+| ❌ `¿Boneless o alitas?` | ¿Boneless o alitas? | Elige ¿boneless o alitas? |
+| ✅ `Tus 8 salsas` | Tus 8 salsas | Elige tus 8 salsas |
+| ✅ `Boneless o alitas` | Boneless o alitas | Elige boneless o alitas |
+
+El nombre se pinta en DOS lugares con gramática distinta. Escríbelo para los dos.
+
+### 7. "Incluye N" se modela `min: 1, max: N` — nunca `min: N`
+El combo #7 incluye 8 salsas. `min: 8` obliga a dar **8 taps antes de poder agregar al
+carrito**: la hoja deshabilita "Agregar" mientras falten. Con `min: 1, max: 8` la cocina
+siempre recibe salsa (regla 2), el que quiere las 8 las toma, y nadie se atora.
+La hoja ya pinta "Hasta 8" sola, así que el cliente sabe cuántas le tocan.
+
+### 8. El parser NO cacha "Con 1 salsa a escoger."
+Los encabezados reconocidos piden el verbo **al principio y dos puntos**
+(`elige|escoge|selecciona … :`). El menú de Spicy & Sweet dice `"Con 1 salsa a escoger."`
+— verbo al final, sin dos puntos. Cero grupos parseados de 16 platillos que sí los
+necesitaban.
+
+**No agregues ese patrón al parser a la ligera.** "Con 1 salsa a escoger" describe lo que
+el platillo INCLUYE; sin la lista de salsas al lado (vive en otra caja del flyer, la
+"BARRA DE SALSAS") el parser no tiene de dónde sacar las opciones. Aquí los 16 platillos
+se escribieron a mano contra el flyer, como Sushin-Gón. **Cuando la lista de opciones vive
+en otra parte del menú, es trabajo humano — el parser solo puede con lo que está en la
+descripción del platillo.**
+
+### Estado de datos de Spicy & Sweet (`ToC7qqk1VODAR9tiG6JK`), 23-ago-2026
+16 platillos con `optionGroups` escritos con el Admin SDK:
+- **`boneless-o-alitas`** (obligatorio, 1 de 2) en combos #1–#6, los 5 por kilo y el
+  infantil de 150 g. **#7 MIX FAMILY NO lo lleva** — ese trae boneless *y* alitas, no hay
+  qué escoger.
+- **`salsas`** (obligatorio, `min 1` / `max` = las que incluye) con las **23** de la barra,
+  todas a $0, en los 7 combos, los 5 por kilo y los 4 del infantil.
+- Buffet: **sin grupo**, la barra de salsas es libre.
+- Costillas: **sin grupo**. Dicen "2 guarniciones" pero el flyer nunca dice cuáles —
+  inventarlas rompería la regla 1. Falta preguntarle al dueño.
+- Los nombres de las salsas van con la ortografía del flyer ("Lousiana", "Pikin Limon").
+  No se corrige el menú del cliente.
+
+Verificado en vivo: #3 JUST US → elegir Boneless + 2 salsas → el botón pasa de
+"Elige boneless o alitas" a **"Agregar — $380"**. El carrito no se bloquea y el precio no
+se mueve.
