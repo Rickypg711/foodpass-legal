@@ -167,3 +167,95 @@ cerrados sueltos que tenía que sumar de cabeza.
 **Cuenta dividida de verdad** (cada quien paga lo suyo desde su teléfono) sigue
 sin construirse **a propósito**: hoy ya funciona por accidente y mejor, porque
 cada quien deja su propio teléfono y son 5 clientes en la base en vez de 1.
+
+---
+
+## 📋 EL PENDIENTE — juntar a los amigos en UNA cuenta
+
+> **Estado: NO construido.** Esto es el diseño, no una descripción de algo que
+> ya exista. Escrito el 23-ago-2026 para no volver a partir de cero.
+
+### El problema en una frase
+
+4 amigos en la mesa 5 abren **4 cuentas** (todas llamadas "Mesa 5", juntas en la
+lista de la Caja). Deberían ser **1 cuenta con 4 personas adentro**.
+
+### La trampa que hay que NO caer
+
+El impulso obvio es *"que el segundo pedido se meta adentro del primero"*. Está
+mal por dos razones:
+
+1. **Las reglas no lo permiten, y con razón.** Un comensal solo puede leer y
+   escribir **su propio** pedido (`firestore.rules` → `resource.data.customerId
+   == request.auth.uid`). Ni siquiera puede *ver* la cuenta del otro para
+   sumarse. Aflojar eso deja que cualquier sesión anónima le escriba pedidos a
+   la cuenta de un desconocido.
+2. **La cocina quiere las rondas separadas.** Si el segundo pedido desaparece
+   dentro del primero, la comanda nueva se pierde: la cocina ya vio ese ticket.
+   Fusionar documentos rompe el flujo de cocina para arreglar el de cobro.
+
+### El diseño: agrupar, no fusionar
+
+Un campo nuevo, **`tabId`**, en los pedidos de mesa.
+
+- **Para la cocina, nada cambia:** cada pedido sigue siendo su propio ticket. Las
+  rondas llegan como rondas. Eso ya está bien y no se toca.
+- **Para el cobro, es una sola cuenta:** la Caja agrupa por `tabId` y enseña
+  **una fila**: *"Mesa 5 · 4 personas · $840"*.
+
+El primer pedido de la mesa en la jornada **crea** el `tabId` (el suyo propio).
+Los siguientes **se cuelgan** del mismo.
+
+### La única pieza que de veras necesita servidor
+
+Una callable chiquita:
+
+```
+resolveTableTab({ restaurantId, tableNumber }) -> { tabId }
+```
+
+Busca la cuenta abierta más vieja de esa mesa **en la jornada actual** y
+devuelve su `tabId`; si no hay, devuelve el nuevo. El cliente luego escribe ese
+`tabId` **en su propio pedido**, que las reglas sí permiten.
+
+**Por qué tiene que ser servidor:** el comensal no puede leer los pedidos de los
+demás, así que no puede encontrar la cuenta por su cuenta. Fíjate que la función
+**no escribe nada de nadie más** — solo lee y responde un id. Es la superficie
+más chica posible.
+
+**Ojo con la jornada:** "hoy" es la jornada de negocio con corte a las **4 AM**
+(`resolveBusinessDayCutoffHour`, ya existe y tiene tests), no la medianoche. Una
+mesa de las 11 PM y otra de la 1 AM son la misma noche.
+
+### El cierre (esto NO necesita función)
+
+El dueño **sí** puede escribir todos los pedidos de su restaurante. El cierre es
+una transacción del lado de la Caja sobre los N pedidos con ese `tabId`:
+una propina, un descuento, un total.
+
+### 🎁 Y aquí está el remate — lo que los grandes NO hacen
+
+**Cada comensal dejó SU PROPIO teléfono al ordenar.**
+
+Un POS normal cierra la mesa 5 y captura **un** cliente: el que pagó. Los otros 3
+son fantasmas. Comeleal ya tiene los 4 números, cada uno amarrado a lo que ESA
+persona pidió y pagó.
+
+Entonces al cerrar la cuenta, los puntos **se acreditan a los 4 teléfonos**, cada
+quien por su consumo. Una mesa de 4 = **4 clientes en la base**, no 1. Para un
+producto de lealtad eso multiplica por 4 la materia prima de puntos, winback y
+CRM — y es la razón de fondo por la que este flujo vale la pena, más allá de que
+el mesero deje de sumar tickets de cabeza.
+
+Es lo mismo que ya hace [[checkout_redemption]] en un pedido individual, pero por
+persona dentro de una mesa.
+
+### Definición de "listo"
+
+- [ ] Callable `resolveTableTab` desplegada, con corte de jornada 4 AM
+- [ ] `buildOrderPayload.ts` y `pos_service.dart::createOrder` escriben `tabId`
+      (los dos, o `validate-table-orders.mjs` truena)
+- [ ] La Caja agrupa por `tabId`: una fila por mesa, con cuántas personas
+- [ ] El cierre cobra los N pedidos en una transacción
+- [ ] Los puntos se acreditan a **cada** teléfono por su propio consumo
+- [ ] Paridad app ↔ web, verificada en las dos
