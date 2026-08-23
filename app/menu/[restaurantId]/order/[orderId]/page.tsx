@@ -45,6 +45,10 @@ type OrderDoc = {
     subtotal?: number;
     isUpsell?: boolean;
     upsellBonusPoints?: number;
+    /** Lo que el cliente eligio: salsa, aderezo, extras con costo. */
+    selectedModifiers?: { modifierName: string; selectedOptions: string[] }[];
+    /** Nota libre por platillo ("sin cebolla"). */
+    notes?: string;
   }>;
   restaurantName?: string;
 };
@@ -310,6 +314,21 @@ function OrderStatusPageContent() {
         price: 0,
         quantity: typeof it.quantity === "number" ? it.quantity : 1,
         subtotal: typeof it.subtotal === "number" ? it.subtotal : 0,
+        // De vuelta a la forma del carrito para que el mensaje las pinte.
+        // Sin esto el WhatsApp —que es como el restaurante se entera del
+        // pedido— llegaba SIN la salsa, justo lo que veniamos a arreglar.
+        selectedOptions: it.selectedModifiers?.length
+          ? it.selectedModifiers.map((m) => ({
+              groupId: m.modifierName,
+              groupName: m.modifierName,
+              options: m.selectedOptions.map((name) => ({
+                id: name,
+                name,
+                priceDelta: 0,
+              })),
+            }))
+          : undefined,
+        notes: it.notes,
       }))
     : [];
 
@@ -501,11 +520,23 @@ function OrderStatusPageContent() {
             {order?.items?.length ? (
               <ul className="rounded-xl bg-white p-4 text-sm">
                 {order.items.map((it, i) => (
-                  <li key={i} className="flex justify-between py-1">
-                    <span>
+                  <li key={i} className="flex justify-between gap-3 py-1">
+                    <span className="min-w-0">
                       {it.quantity}x {it.name}
+                      {/* Sin esto el cliente lee "1x KAMARONZA $89" sobre un
+                          platillo de $74 y no sabe de donde salieron los $15. */}
+                      {it.selectedModifiers?.length ? (
+                        <span className="block text-xs text-[#F28C38]">
+                          {it.selectedModifiers
+                            .map((m) => `${m.modifierName}: ${m.selectedOptions.join(", ")}`)
+                            .join(" · ")}
+                        </span>
+                      ) : null}
+                      {it.notes?.trim() ? (
+                        <span className="block text-xs text-[#1C2526]/55">{it.notes.trim()}</span>
+                      ) : null}
                     </span>
-                    <span>{formatPrice(it.subtotal ?? 0)}</span>
+                    <span className="shrink-0">{formatPrice(it.subtotal ?? 0)}</span>
                   </li>
                 ))}
               </ul>

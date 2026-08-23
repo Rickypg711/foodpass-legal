@@ -115,6 +115,29 @@ Lo que se hizo el 22 ago 2026, **a mano en Firestore**:
 
 Resultado verificado en el navegador: KAMARONZA $74 → con FLAMING HOT $89.
 
+## Pedido real, probado de punta a punta (23 ago 2026)
+
+Pedido `hcmbTFfV1GvsbcoT0EXG` (#0T0EXG) en Sushin-Gón, **pago al recoger** para
+no tocar Mercado Pago. KAMARONZA con FLAMING HOT $89 + ALITAS 7 con Mango
+Habanero/Ranch y nota "sin apio" $95 = $184. En Firestore quedaron los
+`selectedModifiers` y el `notes` con la forma exacta que `/vendor/pedidos`
+renderiza. Es un pedido de prueba: se puede borrar.
+
+Dos huecos que solo aparecieron haciendo el pedido de verdad:
+
+- **El recibo del cliente** (`order/[orderId]`) pintaba `1x KAMARONZA $89` y
+  nada más. Sobre un platillo de carta de $74. El cliente no tenía de dónde
+  saber que los $15 eran el FLAMING HOT que él eligió.
+- **El WhatsApp del botón "Confirmar por WhatsApp"** salía SIN las opciones.
+  `cartLinesForWa` reconstruye `CartLine[]` desde `order.items` y no traía
+  `selectedOptions` ni `notes`, así que `formatWhatsappOrderMessage` no tenía
+  qué pintar. Ese mensaje es **como el restaurante se entera del pedido**: el
+  bug que esta función venía a matar sobrevivía en el único botón que el
+  cliente sí aprieta.
+
+Los dos arreglados. Si tocas `cartLinesForWa`, acuérdate de que lo que no
+copies ahí desaparece del mensaje sin que nada truene.
+
 ## Cómo montar esto en un restaurante nuevo
 
 1. Corre el parser contra su menú **antes** de prometer nada. Un barrido de los
