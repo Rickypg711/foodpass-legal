@@ -112,7 +112,15 @@ function HorarioSetupPageInner() {
       });
       await persistReadiness(restaurantId);
       setSaved(true);
-      setTimeout(() => router.push(isWizard ? "/vendor/setup/menu?wizard=1" : "/vendor/setup"), 800);
+      // Fuera del asistente de alta, esta pantalla se abre desde
+      // Configuración → Horarios. Mandar al dueño a "Configuración inicial —
+      // Activa tu restaurante" después de un simple cambio de horario le dice
+      // que su cuenta está a medio terminar cuando no lo está. Regresa de
+      // donde vino.
+      setTimeout(
+        () => router.push(isWizard ? "/vendor/setup/menu?wizard=1" : "/vendor/configuracion"),
+        800,
+      );
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
