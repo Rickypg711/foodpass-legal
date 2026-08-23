@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
-import { completedStepCount, stepGroupFromReasons } from "@/lib/vendorReadiness";
+import { stepGroupFromReasons } from "@/lib/vendorReadiness";
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
@@ -68,8 +68,13 @@ export default function SetupPage() {
   if (loading) return <LoadingScreen />;
 
   const pending = stepGroupFromReasons(reasons);
-  const done = completedStepCount(reasons);
   const total = 3; // hours, menu, rewards (business captured at signup)
+  // OJO: `completedStepCount` cuenta sobre 4 grupos (incluye `business`, que
+  // aquí no se pinta porque se captura al registrarse). Usarlo contra
+  // total=3 pintaba "3 de 3 · 100%" con un paso todavía sin palomita —
+  // que es justo como se vio cuando `business_hours` quedó pendiente.
+  // Se cuenta solo lo que esta pantalla realmente muestra.
+  const done = STEPS.filter((s) => !pending[s.key]).length;
   const donePct = Math.round((done / total) * 100);
 
   return (
