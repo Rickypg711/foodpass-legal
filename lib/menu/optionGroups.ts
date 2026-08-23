@@ -101,11 +101,19 @@ export function parseOptionGroupsFromDescription(
     if (options.length < 2) continue;
 
     const conPrecio = options.some((o) => o.delta > 0);
-    // Un grupo con sobreprecio es OPCIONAL (son extras). Uno de elección
-    // sin costo es OBLIGATORIO (la cocina necesita saber qué salsa).
-    const obligatorio = esEleccion && !conPrecio;
-
     let name = esEleccion ? rawName : conPrecio ? "Extras" : rawName;
+    // Un grupo con sobreprecio es OPCIONAL (son extras: "Camarón +$25" no se
+    // le puede exigir a nadie). Uno de elección sin costo es OBLIGATORIO (la
+    // cocina necesita saber qué salsa).
+    //
+    // EXCEPCIÓN — el TAMAÑO. Es la única elección que es obligatoria Y cuesta:
+    // una pizza sin tamaño no es un pedido. Sin esta línea, "Elige tu tamaño:
+    // Personal, Grande +$90" quedaba opcional y se podía mandar a la cocina
+    // una pizza sin decir de cuál. Luzz Pizza tiene 4 pizzas capturadas como
+    // 8 platillos justo porque no había forma de expresar esto.
+    const esTamano = /^(tama[nñ]o|talla|porci[oó]n|size)s?$/i.test(name.trim());
+    const obligatorio = esEleccion && (!conPrecio || esTamano);
+
     name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     const gid = slug(name) || `grupo-${groups.length + 1}`;
     if (groups.some((g) => g.id === gid)) continue;

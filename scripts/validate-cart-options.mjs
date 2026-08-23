@@ -208,4 +208,20 @@ check(
 check("el grupo se sigue renderizando con key={g.id}", editorSrc.includes("key={g.id}"), true);
 
 if (failed) process.exit(1);
+// ── El TAMANO es la unica eleccion obligatoria QUE CUESTA ──────────────────
+// Una pizza sin tamano no es un pedido. Sin esto, "Elige tu tamano: Personal,
+// Grande +$90" quedaba opcional. Espejo del test de Dart.
+{
+  const g = parseOptionGroupsFromDescription("Elige tu tamano: Personal, Grande +$90.");
+  check("tamano: sale un grupo", g.length, 1);
+  check("tamano: es OBLIGATORIO aunque cueste", g[0]?.required, true);
+  check("tamano: min 1", g[0]?.min, 1);
+  check("tamano: el delta se lee", g[0]?.options.at(-1)?.priceDelta, 90);
+}
+// ...y la excepcion NO vuelve obligatorio todo lo que cuesta.
+{
+  const g = parseOptionGroupsFromDescription("Elige tus extras: Queso +$20, Tocino +$25.");
+  check("un extra con precio sigue siendo OPCIONAL", g[0]?.required, false);
+}
+
 console.log("validate-cart-options: OK");
