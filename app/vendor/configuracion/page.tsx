@@ -8,7 +8,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { entitlementOf } from "@/lib/subscription/entitlement";
-import { waitForAuthReady } from "@/lib/auth";
+import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
@@ -36,6 +36,26 @@ export default function ConfiguracionPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetEnviado, setResetEnviado] = useState(false);
+
+  /// Solo las cuentas creadas con correo+contraseña la tienen. Una de Google
+  /// o Apple no, y ofrecérsela sería ofrecer cambiar algo que no existe.
+  const tienePassword = (user?.providerData ?? []).some(
+    (p) => p.providerId === "password",
+  );
+
+  async function handleCambiarPassword() {
+    const correo = user?.email?.trim();
+    if (!correo) return;
+    try {
+      const { sendPasswordResetEmail } = await import("firebase/auth");
+      await sendPasswordResetEmail(getFirebaseAuth(), correo);
+    } catch {
+      // Se confirma igual: no se le dice a nadie si un correo existe o no.
+    }
+    setResetEnviado(true);
+  }
+
   const [signingOut, setSigningOut] = useState(false);
   const [activatingPro, setActivatingPro] = useState(false);
 
@@ -485,6 +505,38 @@ export default function ConfiguracionPage() {
                 {plan === "pro" ? "⭐ Pro" : "Free"}
               </span>
             </div>
+
+            {/* Cambiar contraseña — NO existía en el panel, y el dueño vive
+                AQUÍ: aquí está su Caja, sus pedidos y sus reportes. Sin esto
+                tenía que bajarse la app solo para cambiarla.
+                Se manda liga por correo en vez de pedir la actual: quien la
+                quiere cambiar suele ser justo quien no la recuerda, y pedirle
+                la vieja lo deja trabado. Solo se ofrece a cuentas que DE VERDAD
+                tienen contraseña — una de Google no la tiene. */}
+            {tienePassword && (
+              <button
+                type="button"
+                onClick={handleCambiarPassword}
+                disabled={resetEnviado}
+                className="flex w-full items-center gap-3 rounded-2xl px-5 py-3.5 text-left transition-colors hover:bg-[#faf9f5] disabled:cursor-default"
+                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
+              >
+                <span className="text-[16px]">🔒</span>
+                <span className="flex-1">
+                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    {resetEnviado ? "Correo enviado" : "Cambiar mi contraseña"}
+                  </span>
+                  <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                    {resetEnviado
+                      ? "Revisa tu correo y sigue la liga."
+                      : "Te mandamos una liga a tu correo."}
+                  </span>
+                </span>
+                {!resetEnviado && (
+                  <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
+                )}
+              </button>
+            )}
 
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">
