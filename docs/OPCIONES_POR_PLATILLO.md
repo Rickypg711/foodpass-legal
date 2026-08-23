@@ -138,6 +138,25 @@ Dos huecos que solo aparecieron haciendo el pedido de verdad:
 Los dos arreglados. Si tocas `cartLinesForWa`, acuérdate de que lo que no
 copies ahí desaparece del mensaje sin que nada truene.
 
+## El ciclo completo, ejercitado (23 ago 2026)
+
+Ya se probó **cada eslabón contra datos reales**, no solo por código:
+
+| Eslabón | Cómo se probó |
+|---|---|
+| Parser → menú | 329 platillos / 27 restaurantes, 0 falsos positivos |
+| Cliente elige y paga de más | BOLA DE ARROZ $95 + "Res + Camarón" = $130 |
+| Dos variantes no se pisan | ALITAS Búfalo/Ranch y ALITAS BBQ/César, líneas separadas |
+| Pedido → Firestore | `hcmbTFfV1GvsbcoT0EXG`, con `selectedModifiers` y `notes` |
+| Panel del dueño | `/vendor/pedidos` pinta *Estilo: FLAMING HOT* y la nota en el #0T0EXG |
+| Recibo del cliente | Pinta las opciones bajo cada platillo |
+| WhatsApp al restaurante | Lleva salsa, aderezo y nota con "↳" |
+| **Editor → Firestore** | BOLA DE ARROZ guardado desde el panel: `optionGroups` escrito con los 4 extras y sus precios |
+| Guardado → menú | El menú lee lo guardado y sigue cobrando $130 |
+
+Lo único que **NUNCA se ha corrido** es un cobro real de Mercado Pago. Los
+montos están verificados, pero el cargo de verdad sigue pendiente de un humano.
+
 ## Cómo montar esto en un restaurante nuevo
 
 1. Corre el parser contra su menú **antes** de prometer nada. Un barrido de los
