@@ -431,7 +431,16 @@ export default function VendorDashboard() {
           recentScans,
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
-          nbaActionCode: (ins?.actionCode as string) ?? "unknown",
+          // El consejo lo calcula restaurant_brain y se guarda en Firestore; solo
+          // se recalcula en el refresco DIARIO o al aplicar un borrador de
+          // recompensas — nunca al terminar el setup. O sea que un dueño que
+          // acaba de completar su perfil sigue leyendo "Completa tu perfil"
+          // hasta 24 horas, y el panel parece roto justo el dia que se dio de
+          // alta. Aqui manda el doc VIVO del restaurante, que si esta al dia.
+          nbaActionCode: resolveNbaActionCode(
+              (ins?.actionCode as string) ?? "unknown",
+              (r.isSetupComplete as boolean) ?? true,
+          ),
           nbaTitle: (ins?.title_es as string) ?? "Siguiente mejor acción",
           nbaBody: (ins?.body_es as string) ?? "",
           nbaMetrics: {
@@ -1334,6 +1343,26 @@ function Atajo({
 }
 
 // ─── NextBestActionCard ───────────────────────────────────────────────────────
+
+/** Acciones que solo tienen sentido si el setup REALMENTE sigue incompleto. */
+const SETUP_BLOCKING_NBA = new Set([
+  "complete_profile",
+  "add_menu_items",
+  "configure_rewards",
+]);
+
+/**
+ * Descarta el consejo del cerebro cuando ya quedo viejo.
+ *
+ * No adivina nada: si el cerebro pide terminar el setup y el doc vivo dice que
+ * ya esta completo, el cerebro se quedo atras. Para un restaurante recien
+ * configurado el siguiente paso de verdad siempre es el mismo — su primera
+ * visita con puntos sale de la Caja.
+ */
+function resolveNbaActionCode(brainActionCode: string, isSetupComplete: boolean): string {
+  if (isSetupComplete && SETUP_BLOCKING_NBA.has(brainActionCode)) return "get_first_scan";
+  return brainActionCode;
+}
 
 function getNbaFallbackBody(actionCode: string): string {
   switch (actionCode) {

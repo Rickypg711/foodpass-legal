@@ -64,6 +64,26 @@
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
 
+        // ¿El connect empezó en el PANEL WEB? El `state` lo dice.
+        // Mercado Pago devuelve a UNA sola redirect_uri registrada, asi que esta
+        // pagina la comparten la app y la web. Se decide aqui, sin tocar la
+        // configuracion de Mercado Pago y sin romper el deep link de la app.
+        function startedOnWeb(rawState) {
+            if (!rawState) return false;
+            try {
+                var padded = rawState.padEnd(Math.ceil(rawState.length / 4) * 4, '=');
+                var json = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+                return JSON.parse(json).p === 'web';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        if (startedOnWeb(state)) {
+            // El intercambio del codigo lo hace el servidor; aqui solo se pasa.
+            window.location.replace('/api/mercado-pago/oauth/callback' + window.location.search);
+        } else {
+
         // Construir el deep link
         let deepLink = 'foodpass://mercado-pago-callback';
         const params = [];
@@ -110,6 +130,7 @@
                 document.body.removeChild(iframe);
             }, 1000);
         }, 500);
+        }
     </script>
 </body>
 </html>

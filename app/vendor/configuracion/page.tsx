@@ -1,5 +1,7 @@
 "use client";
 
+import { MercadoPagoConnectCard } from "@/components/vendor/MercadoPagoConnectCard";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,6 +75,8 @@ export default function ConfiguracionPage() {
   /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
    * y paga en el local; el pedido llega a Pedidos y se cobra ahí. */
   const [payAtPickup, setPayAtPickup] = useState(false);
+  const [mpConnected, setMpConnected] = useState(false);
+  const [mpEmail, setMpEmail] = useState<string | null>(null);
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
    * "setup" and web Mercado Pago pauses. Surface it — never fail silently. */
   const [setupReasons, setSetupReasons] = useState<string[]>([]);
@@ -118,6 +122,8 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
+      setMpConnected(data.mercadoPagoConnected === true);
+      setMpEmail(typeof data.mercadoPagoEmail === "string" ? data.mercadoPagoEmail : null);
       setDiscountProfiles(parseDiscountProfiles(data.discountProfiles));
       try {
         const staffSnap = await getDocs(collection(db, "restaurants", rid, "posStaff"));
@@ -809,6 +815,17 @@ export default function ConfiguracionPage() {
                 recibir pedidos en línea.
               </p>
             </SectionCard>
+
+            {/* Conectar Mercado Pago — va pegado a "Pedidos en línea" porque es
+                justo donde el dueño lo busca despues de leer el parrafo de
+                arriba, que hasta hoy prometia algo que no se podia hacer aqui. */}
+            {restaurantId && (
+              <MercadoPagoConnectCard
+                restaurantId={restaurantId}
+                connected={mpConnected}
+                accountEmail={mpEmail}
+              />
+            )}
 
             {/* ── Descuentos especiales (Pro) ── */}
             {restaurantId && (
