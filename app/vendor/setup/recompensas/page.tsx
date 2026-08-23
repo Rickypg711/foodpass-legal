@@ -22,6 +22,8 @@ import { persistReadiness } from "@/lib/vendorReadiness";
 // must match hardFailRatio/bumpStartRatio in FOODPASS functions/reward_recommendation_core.js
 const HARD_FAIL_RATIO = 0.20;
 const BUMP_START_RATIO = 0.15;
+// Piso del rango sano. Abajo de esto el premio es tan chico que no engancha.
+const HEALTHY_MIN_RATIO = 0.10;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +107,11 @@ function RecompensasSetupPageInner() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // El error de guardado se limpia en cuanto el usuario edita algo.
+  // Antes se quedaba pegado hasta el siguiente guardado exitoso y
+  // hacia ver como si ajustar los puntos no sirviera de nada.
+  useEffect(() => { setError(null); }, [currentTiers, currentFPR]);
 
   useEffect(() => {
     async function init() {
@@ -370,18 +377,47 @@ function RecompensasSetupPageInner() {
     }
 
     const ratio = item.price / (tier.pointsRequired * spendStepAmount);
+
+    const pct = Math.round(ratio * 100);
+    const maxPct = Math.round(BUMP_START_RATIO * 100);
+    const minPct = Math.round(HEALTHY_MIN_RATIO * 100);
+    // Rango de puntos que deja el premio dentro del rango sano.
+    // Menos puntos = regalas mas; mas puntos = regalas menos.
+    const pocosPuntos = Math.ceil(item.price / (BUMP_START_RATIO * spendStepAmount));
+    const muchosPuntos = Math.ceil(item.price / (HEALTHY_MIN_RATIO * spendStepAmount));
+    const rango =
+      `Ponlo entre ${pocosPuntos} y ${muchosPuntos} puntos ` +
+      `(≈ $${Math.round(pocosPuntos * spendStepAmount).toLocaleString("es-MX")} a ` +
+      `$${Math.round(muchosPuntos * spendStepAmount).toLocaleString("es-MX")} de consumo).`;
+
     if (ratio > HARD_FAIL_RATIO + 1e-12) {
       return {
         type: "error" as const,
-        message: "Esta recompensa regalaría demasiado margen. Ajusta las visitas requeridas o elige un platillo de menor costo.",
-      };
-    } else if (ratio > BUMP_START_RATIO + 1e-12) {
-      return {
-        type: "warning" as const,
-        message: "⚠️ Esta recompensa regala más del 15% de margen estimado. Te sugerimos subir los puntos requeridos o elegir un platillo de menor costo.",
+        message:
+          `A ${tier.pointsRequired} puntos, "${item.name}" ($${item.price}) regala el ${pct}% ` +
+          `de lo que gasta tu cliente. Lo sano está entre ${minPct}% y ${maxPct}%. ${rango}`,
       };
     }
-    return null;
+    if (ratio > BUMP_START_RATIO + 1e-12) {
+      return {
+        type: "warning" as const,
+        message:
+          `⚠️ A ${tier.pointsRequired} puntos, "${item.name}" regala el ${pct}% de lo que gasta ` +
+          `tu cliente — un poco arriba del rango sano (${minPct}%–${maxPct}%). ${rango}`,
+      };
+    }
+    if (ratio < HEALTHY_MIN_RATIO - 1e-12) {
+      return {
+        type: "info" as const,
+        message:
+          `Este premio regala solo el ${pct}% de lo que gasta tu cliente. Está por debajo del ` +
+          `rango sano (${minPct}%–${maxPct}%) y puede costarle engancharse. ${rango}`,
+      };
+    }
+    return {
+      type: "ok" as const,
+      message: `✓ Regala el ${pct}% de lo que gasta tu cliente — dentro del rango sano (${minPct}%–${maxPct}%).`,
+    };
   };
 
   async function handleSave() {
@@ -487,6 +523,11 @@ function RecompensasSetupPageInner() {
           <h2 className="text-lg font-bold text-[#141413]">Programa de lealtad</h2>
           <p className="mt-1 text-sm text-[#141413]/50">
             La IA diseña recompensas personalizadas según tu menú y tipo de restaurante.
+          </p>
+          <p className="mt-2 rounded-xl bg-[#F28C38]/8 px-3 py-2 text-xs text-[#141413]/70">
+            💡 Tus clientes ganan <strong>1 punto por visita</strong> más{" "}
+            <strong>1 punto por cada ${spendStepAmount}</strong> de consumo. Así que{" "}
+            <strong>{spendStepAmount * 10} pesos de consumo ≈ 10 puntos</strong>.
           </p>
         </div>
 
@@ -632,7 +673,7 @@ function RecompensasSetupPageInner() {
                 <input
                   type="number"
                   min={0}
-                  step={100}
+                  step={1}
                   value={tier.pointsRequired}
                   onChange={(e) => {
                     const updated = [...currentTiers];
@@ -641,6 +682,11 @@ function RecompensasSetupPageInner() {
                   }}
                   className="w-24 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                 />
+                {tier.pointsRequired > 0 && (
+                  <span className="text-[11px] text-[#141413]/40">
+                    ≈ ${(tier.pointsRequired * spendStepAmount).toLocaleString("es-MX")} de consumo
+                  </span>
+                )}
               </div>
               {tier.hasMenuItem && (
                 <>
@@ -697,7 +743,13 @@ function RecompensasSetupPageInner() {
                     return (
                       <p
                         className={`text-xs mt-1.5 font-medium ${
-                          validation.type === "error" ? "text-red-500" : "text-amber-600"
+                          validation.type === "error"
+                            ? "text-red-500"
+                            : validation.type === "warning"
+                            ? "text-amber-600"
+                            : validation.type === "ok"
+                            ? "text-emerald-600"
+                            : "text-[#141413]/45"
                         }`}
                       >
                         {validation.message}

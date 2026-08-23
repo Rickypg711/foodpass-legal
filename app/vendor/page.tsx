@@ -1033,6 +1033,7 @@ export default function VendorDashboard() {
             <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
             <Atajo href="/vendor?ai=1" emoji="🧠" label="Comeleal AI" />
             <Atajo href="/vendor/reportes" emoji="📊" label="Reportes" />
+            <Atajo href={`/menu/${data.restaurantId}`} emoji="👀" label="Mi menú" external />
             <Atajo href="/vendor/configuracion" emoji="⚙️" label="Config" />
             <Atajo
               href="https://apps.apple.com/mx/app/foodpass/id6745301069"
@@ -1080,6 +1081,52 @@ function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restau
         </div>
         <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
       </button>
+
+      {/* Ver el menú como lo ve el cliente. Antes solo se llegaba desde
+          Configuración — el dueño no tenia forma de abrir su propia pagina
+          publica desde el panel. */}
+      <a
+        href={`/menu/${restaurantId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex w-full items-center gap-3 border-t px-5 py-3 transition-colors hover:bg-[#faf9f5]"
+        style={{ borderColor: "rgba(28,37,38,0.07)" }}
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
+          style={{ background: "rgba(28,37,38,0.05)" }}>
+          👀
+        </div>
+        <div className="flex-1 text-left">
+          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Ver mi menú</p>
+          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
+            Ábrelo como lo ve tu cliente al escanear
+          </p>
+        </div>
+        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>↗</span>
+      </a>
+
+      {/* Pagina publica /r/ — la que sale en Google. Acepta el ID y redirige
+          sola al slug bonito en cuanto el restaurante tiene uno. */}
+      <a
+        href={`/r/${restaurantId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex w-full items-center gap-3 border-t px-5 py-3 transition-colors hover:bg-[#faf9f5] rounded-b-2xl"
+        style={{ borderColor: "rgba(28,37,38,0.07)" }}
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
+          style={{ background: "rgba(28,37,38,0.05)" }}>
+          🌎
+        </div>
+        <div className="flex-1 text-left">
+          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Ver mi página</p>
+          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
+            La que encuentran en Google
+          </p>
+        </div>
+        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>↗</span>
+      </a>
+
       <MenuShareModal
         restaurantId={restaurantId}
         open={shareOpen}
