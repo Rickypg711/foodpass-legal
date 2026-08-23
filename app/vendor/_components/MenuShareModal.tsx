@@ -25,6 +25,13 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
 const ORANGE = "#F28C38";
+// Naranja profundo SOLO para texto dentro de la tarjeta imprimible. El
+// #F28C38 sobre el crema de la tarjeta da 2.29:1 y el piso es 4.5:1 — en
+// pantalla se salva porque el pixel emite luz, pero la tarjeta vive impresa en
+// un mostrador, donde el papel solo refleja la que haya. Este da 5.23:1 y
+// sigue siendo el mismo naranja, mas profundo: no cambia de familia de color.
+// NO usar en pantalla: ahi manda ORANGE, que es la identidad.
+const ORANGE_PRINT = "#A84E0A";
 const CREAM = "#FAF7F2";
 const INK = "#1C2526";
 
@@ -238,10 +245,10 @@ export default function MenuShareModal({
           <p className="mt-2.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.75)" }}>
             Escanea para ver el menú
           </p>
-          <p className="mt-1 text-[12px] font-bold" style={{ color: ORANGE }}>
+          <p className="mt-1 text-[12px] font-bold" style={{ color: ORANGE_PRINT }}>
             Cada compra suma puntos — canjéalos por platillos gratis
           </p>
-          <p className="mt-2 text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.45)" }}>
+          <p className="mt-2 text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.65)" }}>
             {cardText}
           </p>
         </div>
