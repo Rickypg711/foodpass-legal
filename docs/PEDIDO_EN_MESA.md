@@ -259,3 +259,81 @@ persona dentro de una mesa.
 - [ ] El cierre cobra los N pedidos en una transacción
 - [ ] Los puntos se acreditan a **cada** teléfono por su propio consumo
 - [ ] Paridad app ↔ web, verificada en las dos
+
+---
+
+## 🏛️ Cómo lo hacen los grandes (y qué copiar, qué no)
+
+> Referencia escrita el 23-ago-2026. **Nada de esta sección está construido.**
+> Sirve para no volver a derivar el modelo desde cero cuando toque la Etapa 2.
+
+Toast, Square for Restaurants, Lightspeed, Sunday y Bbot llegaron **al mismo
+modelo de tres capas**, y ninguna de las tres es "el pedido":
+
+| Capa | Qué es | Quién la ve |
+|---|---|---|
+| **Party / sesión de mesa** | quiénes están sentados, cuándo abre y cierra | nadie, es interna |
+| **Check (la cuenta)** | el objeto de **dinero**: total, cuánto se pagó, versión | mesero y quien paga |
+| **Rounds / comandas** | lo que se manda a cocina, ronda por ronda | la cocina |
+
+**La lección principal: la cuenta es un documento propio, no "el primer pedido de
+la mesa".** Los pedidos cuelgan de ella, nunca al revés.
+
+### El truco de verdad: no se divide la cuenta, se divide el PAGO
+
+El instinto es partir la cuenta en 4 cuentas. Los grandes **no** hacen eso. La
+cuenta sigue siendo **una**, y encima caen **pagos parciales**:
+
+```
+Cuenta mesa 5:  total $840  ·  pagado $210  ·  falta $630
+  └─ pago de Ana  $210 ✅
+```
+
+La cuenta **se cierra sola cuando el saldo llega a cero**. No importa si pagaron
+1, 4 o 7 personas, ni si uno pagó por dos. Eso resuelve gratis los casos que en
+el modelo "4 cuentas separadas" son un infierno:
+
+- **Alguien se va temprano** → paga lo suyo, la mesa sigue abierta
+- **"Yo invito la mitad"** → un pago de $420, sin acomodar platillos
+- **La botana compartida** → se reparte entre los que faltan por pagar
+- **Propina** → va por pago, no por cuenta (cada quien la suya)
+
+### Los tres detalles que separan lo que funciona de lo que se rompe
+
+1. **Bloquear la cuenta cuando cae el primer pago.** Si Ana ya pagó $210 y luego
+   alguien pide otra ronda, el total cambió **después** de que ella pagó. O se
+   congela la cuenta, o se vuelve a cotizar. Sin esto hay descuadres de dinero
+   reales.
+2. **Llave de idempotencia por pago.** Doble tap = un solo cargo. No opcional.
+3. **Versión en la cuenta (concurrencia optimista).** Dos personas pagando al
+   mismo tiempo desde su teléfono es el caso **normal**, no el raro. Sin
+   versión, los dos leen "falta $630" y pagan de más.
+
+### Qué NO copiar
+
+**Sunday vale casi solo por integrarse con el POS ajeno** — su moat entero es
+leer la cuenta de un Toast o un Lightspeed. **Comeleal ES el POS.** Ese problema
+no existe aquí; se salta completo.
+
+### 🎁 Dónde Comeleal ya va adelante
+
+> Toast cierra la mesa 5 y conoce **al que pagó**. Los otros 3 son fantasmas.
+> Comeleal ya tiene **los 4 teléfonos**, cada uno amarrado a lo que ESA persona
+> pidió.
+
+No es una feature, es una diferencia de categoría. Un POS captura clientes como
+**efecto secundario** de cobrar. Aquí se capturan **porque la lealtad es el
+producto**, y la identidad es el punto de entrada, no un opcional al final.
+
+### Orden recomendado — dos etapas, no una
+
+- **Etapa 1 — `tabId`** (diseñada arriba, en "EL PENDIENTE"): una fila por mesa
+  en la Caja, el mesero deja de sumar tickets, puntos a los N teléfonos. Barato,
+  sin colección nueva, **sin tocar dinero**.
+- **Etapa 2 — la cuenta como documento con saldo y pagos parciales**: el modelo
+  de los grandes completo. Aquí es donde cada quien paga desde su teléfono.
+
+**La Etapa 2 toca dinero de verdad** (concurrencia, idempotencia, descuadres).
+No construirla hasta que un cliente real la pida — hoy ni Sushin-Gón ni Luzz la
+necesitan. Está en la lista `DO-NOT-BUILD` de `FOODPASS/docs/PENDIENTES.md` a
+propósito.
