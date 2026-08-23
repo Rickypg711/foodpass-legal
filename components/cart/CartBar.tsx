@@ -47,10 +47,18 @@ export function CartBar({
             </span>
           </Link>
         ) : null}
+        {/* SIEMPRE compacto, con o sin carrito.
+            Antes, con el carrito vacío salía la versión rica — un bloque de
+            ~140px fijo abajo, que se come casi el 20% de la pantalla de un
+            teléfono MIENTRAS la persona está leyendo el menú, y que nunca se
+            va. Es el mismo problema que ya se había arreglado en el dock de
+            "cerrado" y que aquí se quedó suelto.
+            La versión rica ahora vive en el FLUJO de la página, arriba: ahí
+            empuja en vez de tapar, se lee al entrar, y se va con el scroll. */}
         <MenuAppRewardsCta
           restaurantId={restaurantId}
           restaurantName={restaurantName}
-          variant={hasItems ? "compact" : "prominent"}
+          variant="compact"
           firstVisitRewardLabel={firstVisitRewardLabel}
         />
       </div>

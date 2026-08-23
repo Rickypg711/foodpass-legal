@@ -52,6 +52,9 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   const [stage, setStage] = useState<Stage>("idle");
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /// `true` cuando el fallo fue de credenciales: ahi si hay algo que ofrecer.
+  const [showReset, setShowReset] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -63,6 +66,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setShowReset(false);
     setStage("signing");
     try {
       const auth = getFirebaseAuth();
@@ -87,10 +91,29 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       } else if (authMode === "signup") {
         setError("No pudimos crear tu cuenta. Intenta de nuevo.");
       } else {
-        setError("Correo o contraseña incorrectos. Si es tu primera vez, crea tu cuenta abajo.");
+        setError("Correo o contraseña incorrectos.");
+        // No se afirma CUAL de las dos fallo: Firebase no lo dice (proteccion
+        // contra enumeracion de correos) y adivinarlo seria inventarle al
+        // usuario. Se ofrecen las dos salidas y que el escoja.
+        setShowReset(true);
       }
       setStage("idle");
     }
+  }
+
+  async function handleReset() {
+    const correo = emailInput.trim();
+    if (!correo) return;
+    try {
+      const { sendPasswordResetEmail } = await import("firebase/auth");
+      await sendPasswordResetEmail(getFirebaseAuth(), correo);
+    } catch {
+      // Se ignora a proposito: ver abajo.
+    }
+    // Se confirma SIEMPRE, exista o no la cuenta. Decir "ese correo no
+    // existe" le regalaria a cualquiera una forma de averiguar quien tiene
+    // cuenta — la misma razon por la que Firebase ya no lo dice.
+    setResetSent(true);
   }
 
   // If already signed in skip straight to form / existing
@@ -281,9 +304,29 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
           </div>
 
           {error && (
-            <p className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </p>
+            <div className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <p>{error}</p>
+              {/* Decir "contraseña incorrecta" sin dar forma de cambiarla es
+                  un callejón sin salida: reintentar con la misma contraseña
+                  va a fallar igual, para siempre. */}
+              {showReset && (
+                <p className="mt-2">
+                  {resetSent ? (
+                    <span className="font-semibold text-[#1C2526]">
+                      Te mandamos un correo para cambiarla.
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="font-semibold text-[#F28C38] underline underline-offset-2"
+                    >
+                      ¿Olvidaste tu contraseña? Te mandamos un correo
+                    </button>
+                  )}
+                </p>
+              )}
+            </div>
           )}
 
           <div className="mt-6 flex flex-col gap-3">

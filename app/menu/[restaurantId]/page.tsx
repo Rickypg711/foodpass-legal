@@ -518,6 +518,22 @@ function PublicMenuPageWithOrdering() {
           <MenuStatusMessage>No hay platillos disponibles</MenuStatusMessage>
         )}
 
+        {/* El premio de bienvenida, en el FLUJO y no pegado abajo.
+            Aquí empuja el contenido en vez de taparlo, se lee al entrar —
+            que es cuando todavía puede cambiar lo que pides — y se va con el
+            scroll. Una barra fija es para ACCIONES; esto es información, y la
+            información se lee una vez. */}
+        {!loading && !error && items.length > 0 && (
+          <div className="mb-5">
+            <MenuAppRewardsCta
+              restaurantId={restaurantId}
+              restaurantName={restaurantName}
+              variant="banner"
+              firstVisitRewardLabel={firstVisitReward}
+            />
+          </div>
+        )}
+
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
