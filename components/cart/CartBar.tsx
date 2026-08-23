@@ -28,25 +28,34 @@ export function CartBar({
   // que el carrito hidrate. Antes todo el dock aparecía tarde.
   const hasItems = webOrderingReady && cartReady && itemCount > 0;
 
+  // CON EL CARRITO VACÍO, esta barra NO existe.
+  //
+  // Su único contenido entonces era repetir el premio que el bloque de arriba
+  // acaba de decir — el mismo mensaje dos veces en una pantalla, y una franja
+  // fija comiéndose el menú justo cuando la persona lo está leyendo.
+  //
+  // Aparece cuando tiene un trabajo: ya hay algo en el carrito. Ahí el premio
+  // deja de ser un dato repetido y se vuelve un empujón mientras arma el
+  // pedido, junto al botón de pagar.
+  if (!hasItems) return null;
+
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto w-full max-w-3xl lg:max-w-4xl space-y-2">
-        {hasItems ? (
-          <Link
-            href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
-            className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
-          >
-            <span className="text-sm font-semibold">
-              {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
-            </span>
-            <span className="text-sm font-bold tabular-nums">
-              Ver carrito · {formatPrice(subtotal)}
-            </span>
-          </Link>
-        ) : null}
+        <Link
+          href={`/menu/${encodeURIComponent(restaurantId)}/checkout`}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
+        >
+          <span className="text-sm font-semibold">
+            {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
+          </span>
+          <span className="text-sm font-bold tabular-nums">
+            Ver carrito · {formatPrice(subtotal)}
+          </span>
+        </Link>
         {/* SIEMPRE compacto, con o sin carrito.
             Antes, con el carrito vacío salía la versión rica — un bloque de
             ~140px fijo abajo, que se come casi el 20% de la pantalla de un

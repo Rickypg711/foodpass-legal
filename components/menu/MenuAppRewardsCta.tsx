@@ -26,7 +26,7 @@ type MenuAppRewardsCtaProps = {
  * comodidad opcional. Esta página es del RESTAURANTE, no de Comeleal: poner
  * "Descargar Comeleal" como botón principal contradice lo que se le vende al
  * dueño (esto es tuyo, no un marketplace) y además miente — los puntos se
- * acumulan con el teléfono en la caja, sin instalar nada. La app baja a link.
+ * acumulan con el teléfono al pagar, sin instalar nada. La app baja a link.
  */
 export function MenuAppRewardsCta({
   restaurantId,
@@ -72,8 +72,13 @@ export function MenuAppRewardsCta({
   const eyebrow = reward ? "Regalo de bienvenida" : "Recompensas";
   const title = reward ?? "Junta puntos en cada compra";
   const explain = reward
-    ? "Es tuyo en tu siguiente visita. Solo da tu teléfono en la caja."
-    : "Cámbialos por comida gratis. Solo da tu teléfono en la caja.";
+    // "al pagar" y no "en la caja": esta página tiene pedidos EN LÍNEA. Quien
+    // la lee puede estar pidiendo para recoger, a domicilio o desde una mesa
+    // con el QR — en ninguno de esos casos hay una caja enfrente. Y en un
+    // pedido web el teléfono se pide en el checkout, no en un mostrador.
+    // "Al pagar" es cierto en los CUATRO caminos.
+    ? "Es tuyo en tu siguiente visita. Solo da tu teléfono al pagar."
+    : "Cámbialos por comida gratis. Solo da tu teléfono al pagar.";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[#F28C38]/18 bg-gradient-to-br from-[#FFF8F2] to-white shadow-[0_1px_3px_rgba(28,37,38,0.05)]">
