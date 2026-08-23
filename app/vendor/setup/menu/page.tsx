@@ -7,7 +7,7 @@
 // El menú del cliente y la caja ya filtran isAvailable — "Agotado" aquí
 // saca el platillo de venta al instante en web y app por igual.
 
-import { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { WizardStepper } from "@/components/vendor/WizardStepper";
@@ -55,6 +55,25 @@ interface DraftItem {
   price: number;
   category: string;
   selected: boolean;
+}
+
+/**
+ * "Estos dos renglones son el mismo platillo en dos tamaños."
+ *
+ * Lo propone la IA al leer la foto (`functions/menu_size_grouping_ai.js`) y lo
+ * confirma el dueño. NUNCA se aplica solo: juntar mal le borra un platillo.
+ * Los precios vienen de lo que se leyó de la foto, no del modelo.
+ */
+interface SizeSuggestion {
+  dishName: string;
+  groupName: string;
+  basePrice: number;
+  options: {
+    sourceName: string;
+    sizeLabel: string;
+    price: number;
+    priceDelta: number;
+  }[];
 }
 
 type PhotoStep =
@@ -156,6 +175,36 @@ function MenuSetupPageInner() {
   const [photoStep, setPhotoStep] = useState<PhotoStep>("idle");
   const [jobId, setJobId] = useState<string | null>(null);
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+  const [sizeSuggestions, setSizeSuggestions] = useState<SizeSuggestion[]>([]);
+  // Familias que el dueño ACEPTÓ juntar. Vacío = todo se queda separado, que
+  // es el comportamiento de siempre.
+  const [juntadas, setJuntadas] = useState<Set<number>>(new Set());
+  /**
+   * Nombres que YA no se listan solos porque quedaron absorbidos por una
+   * familia aceptada. Se hace por NOMBRE y no por indice: los draftItems
+   * llegan de Firestore ordenados por id, no en el orden en que se
+   * extrajeron, asi que un indice aqui seria una bomba de tiempo.
+   */
+  const ocultoPorJuntar = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of juntadas) {
+      for (const o of sizeSuggestions[i]?.options ?? []) set.add(o.sourceName);
+    }
+    return set;
+  }, [juntadas, sizeSuggestions]);
+
+  /**
+   * Cuantos platillos se van a escribir de verdad: los sueltos que quedan
+   * seleccionados MAS uno por cada familia aceptada. Contar solo los
+   * seleccionados mentia en cuanto juntabas algo.
+   */
+  const totalAPublicar = useMemo(
+    () =>
+      draftItems.filter((d) => d.selected && !ocultoPorJuntar.has(d.name)).length +
+      juntadas.size,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [draftItems, juntadas, ocultoPorJuntar],
+  );
   const [aiError, setAiError] = useState<string | null>(null);
 
   // Saving
@@ -218,6 +267,13 @@ function MenuSetupPageInner() {
         if (status === "needs_review") {
           settled = true;
           clearTimeout(timeoutId);
+          setSizeSuggestions(
+            Array.isArray(data.sizeSuggestions)
+              ? (data.sizeSuggestions as SizeSuggestion[]).filter(
+                  (f) => Array.isArray(f?.options) && f.options.length >= 2,
+                )
+              : [],
+          );
           // Load draftItems subcollection
           getDocs(collection(db, "restaurants", restaurantId, "menuImportJobs", jobId, "draftItems")).then((s) => {
             setDraftItems(
@@ -291,12 +347,58 @@ function MenuSetupPageInner() {
   async function handlePublishDrafts() {
     if (!restaurantId) return;
     const selected = draftItems.filter((d) => d.selected);
-    if (selected.length === 0) return;
+    if (selected.length === 0 && juntadas.size === 0) return;
     setPhotoStep("publishing");
     try {
       const db = getFirebaseDb();
       const batch = writeBatch(db);
+
+      // ── Las familias que el dueño aceptó juntar ─────────────────────────
+      // Cada una se guarda como UN platillo, al precio del más barato, con un
+      // grupo `Tamaño` OBLIGATORIO: una pizza sin tamaño no es un pedido. Las
+      // filas que quedaron absorbidas ya no se escriben por separado.
+      for (const i of juntadas) {
+        const f = sizeSuggestions[i];
+        if (!f) continue;
+        const base = selected.find((d) => d.name === f.options[0]?.sourceName)
+          ?? draftItems.find((d) => d.name === f.options[0]?.sourceName);
+        const newRef = doc(collection(db, "restaurants", restaurantId, "menu"));
+        batch.set(newRef, {
+          name: f.dishName,
+          description: base?.description ?? "",
+          // El precio base es el del tamaño más barato; los demás entran como
+          // sobreprecio, así ningún delta es negativo.
+          price: f.basePrice,
+          category: base?.category ?? "",
+          isAvailable: true,
+          optionGroups: [
+            {
+              id: "tamano",
+              name: f.groupName || "Tamaño",
+              required: true,
+              min: 1,
+              max: 1,
+              options: f.options.map((o) => ({
+                id: o.sizeLabel
+                  .toLowerCase()
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, ""),
+                name: o.sizeLabel,
+                priceDelta: o.priceDelta,
+              })),
+            },
+          ],
+          createdAt: serverTimestamp(),
+          importedFromJob: jobId,
+          mergedFromSizes: f.options.map((o) => o.sourceName),
+        });
+      }
+
       for (const item of selected) {
+        // Lo que quedó dentro de una familia aceptada no se escribe solo.
+        if (ocultoPorJuntar.has(item.name)) continue;
         const newRef = doc(collection(db, "restaurants", restaurantId, "menu"));
         batch.set(newRef, {
           name: item.name,
@@ -470,8 +572,66 @@ function MenuSetupPageInner() {
               <p className="text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
                 Encontramos {draftItems.length} platillos — revisa y confirma
               </p>
+
+              {/* ── El mismo platillo en dos tamaños ───────────────────────
+                  La IA lo detecta al leer la foto; el dueño decide. Nunca se
+                  junta solo: "Personal queso" y "Queso y albahaca" pueden ser
+                  la misma pizza o no, y solo él lo sabe. */}
+              {sizeSuggestions.map((f, i) => {
+                const junta = juntadas.has(i);
+                return (
+                  <div
+                    key={`${f.dishName}-${i}`}
+                    className="rounded-xl border p-3"
+                    style={{
+                      borderColor: junta ? "rgba(242,140,56,0.45)" : "rgba(20,20,19,0.1)",
+                      background: junta ? "rgba(242,140,56,0.06)" : "#ffffff",
+                    }}
+                  >
+                    <p className="text-[13px] font-bold text-[#141413]">
+                      ¿<span className="text-[#F28C38]">{f.dishName}</span> es el mismo platillo en {f.options.length} tamaños?
+                    </p>
+                    <ul className="mt-1.5 space-y-0.5">
+                      {f.options.map((o) => (
+                        <li key={o.sourceName} className="text-[12px] text-[#141413]/60">
+                          · {o.sourceName} — ${o.price.toFixed(0)}
+                          <span className="text-[#141413]/35">
+                            {"  →  "}{o.sizeLabel}
+                            {o.priceDelta > 0 ? ` +$${o.priceDelta.toFixed(0)}` : " (base)"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[11.5px] text-[#141413]/45">
+                      {junta
+                        ? `Se guarda como UN platillo de $${f.basePrice.toFixed(0)} y el cliente elige el tamaño.`
+                        : "Si los juntas, tu cliente elige el tamaño en vez de buscar en dos categorías."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setJuntadas((prev) => {
+                          const n = new Set(prev);
+                          if (n.has(i)) n.delete(i); else n.add(i);
+                          return n;
+                        })
+                      }
+                      className="mt-2 rounded-lg px-3 py-1.5 text-[12.5px] font-bold transition-colors"
+                      style={
+                        junta
+                          ? { background: "rgba(20,20,19,0.06)", color: "rgba(20,20,19,0.6)" }
+                          : { background: "#F28C38", color: "#1C2526" }
+                      }
+                    >
+                      {junta ? "Dejarlos separados" : "Sí, juntarlos"}
+                    </button>
+                  </div>
+                );
+              })}
+
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {draftItems.map((item, i) => (
+                  ocultoPorJuntar.has(item.name) ? null : (
                   <label key={item.id} className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all ${
                     item.selected ? "border-[#F28C38]/30 bg-[#F28C38]/5" : "border-[#141413]/8 bg-white"
                   }`}>
@@ -491,15 +651,15 @@ function MenuSetupPageInner() {
                       {item.price > 0 && <p className="text-xs text-[#F28C38] font-medium">${item.price.toFixed(2)}</p>}
                     </div>
                   </label>
-                ))}
+                )))}
               </div>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={handlePublishDrafts}
-                  disabled={draftItems.filter((d) => d.selected).length === 0}
-                  className="flex-1 rounded-xl bg-[#F28C38] py-2.5 text-sm font-semibold text-white hover:bg-[#c46644] disabled:opacity-50 transition-colors"
+                  disabled={totalAPublicar === 0}
+                  className="flex-1 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-[#1C2526] hover:brightness-95 disabled:opacity-50 transition-all"
                 >
-                  Agregar {draftItems.filter((d) => d.selected).length} platillos ✓
+                  Agregar {totalAPublicar} {totalAPublicar === 1 ? "platillo" : "platillos"} ✓
                 </button>
                 <button
                   onClick={() => { setPhotoStep("idle"); setDraftItems([]); setJobId(null); }}
