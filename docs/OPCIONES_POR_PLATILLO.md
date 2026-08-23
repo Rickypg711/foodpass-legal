@@ -157,6 +157,24 @@ Ya se probó **cada eslabón contra datos reales**, no solo por código:
 Lo único que **NUNCA se ha corrido** es un cobro real de Mercado Pago. Los
 montos están verificados, pero el cargo de verdad sigue pendiente de un humano.
 
+## El lado de la app (Flutter) — 23 ago 2026
+
+**Cerrado:** la app **no pintaba `selectedModifiers` en ninguna pantalla de
+pedidos**, con el dato ya guardado en Firestore y el campo ya en su modelo
+`OrderItem`. La cocina leía "1× ALITAS" sin la salsa. Arreglado en FOODPASS
+`6d38102`, con la lógica en un solo archivo: `lib/order/order_modifiers.dart`,
+espejo de `describeSelectedOptions` de aquí.
+
+**Abierto:** el catálogo. La app tiene `modifiers` en su `MenuItem`
+(`{name, options[{name, additionalPrice}], isMultiple}`) y la web escribe
+`optionGroups`. Dos campos para el mismo trabajo.
+
+Dato que cambia la decisión: **`modifiers` está en `null` en todos los platillos
+de los restaurantes revisados**, así que no hay datos que migrar — solo hay que
+decidir cuál gana. Y que la app deje **elegir** opciones no es un arreglo de
+paridad: es construirle su propia hoja de selección. Hoy no rompe nada, porque
+nadie captura desde la app y el pedido de la web llega completo.
+
 ## Cómo montar esto en un restaurante nuevo
 
 1. Corre el parser contra su menú **antes** de prometer nada. Un barrido de los
