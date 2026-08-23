@@ -12,6 +12,7 @@
  * Run: node scripts/validate-cart-options.mjs
  */
 
+import { readFileSync } from "node:fs";
 import {
   buildLineId,
   optionsPriceDelta,
@@ -183,6 +184,28 @@ check(
   1,
 );
 check("sin nada, nada", resolveOptionGroups({}).length, 0);
+
+// ------------------------------------------- el editor del dueño (fuente)
+// El div de cada grupo usa key={g.id}. Si el onChange del nombre vuelve a
+// calcular el id en cada tecla, la key cambia, React destruye y recrea el
+// bloque, y el input pierde el foco a la PRIMERA letra: el dueño escribia "S"
+// y tenia que volver a hacer clic para la siguiente. Se cazo probando el
+// editor a mano, no leyendo el codigo. Esta asercion es sobre el CODIGO
+// FUENTE porque es un comportamiento de render, no una funcion pura.
+const editorSrc = readFileSync(
+  new URL("../components/vendor/OptionGroupsEditor.tsx", import.meta.url),
+  "utf8",
+);
+const nombreGrupoOnChange = editorSrc.match(
+  /placeholder="Nombre del grupo[^]*?onChange=\{\(e\) => updateGroup\(gi, \{([^}]*)\}\)\}/,
+);
+check("el onChange del nombre del grupo existe", Boolean(nombreGrupoOnChange), true);
+check(
+  "el nombre del grupo NO reescribe g.id (si no, el input pierde el foco)",
+  (nombreGrupoOnChange?.[1] ?? "").includes("id:"),
+  false,
+);
+check("el grupo se sigue renderizando con key={g.id}", editorSrc.includes("key={g.id}"), true);
 
 if (failed) process.exit(1);
 console.log("validate-cart-options: OK");

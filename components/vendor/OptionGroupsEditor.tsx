@@ -71,7 +71,13 @@ export function OptionGroupsEditor({
               type="text"
               placeholder="Nombre del grupo (ej. Salsa)"
               value={g.name}
-              onChange={(e) => updateGroup(gi, { name: e.target.value, id: slug(e.target.value) || g.id })}
+              // OJO: aqui NO se toca g.id. El div del grupo usa key={g.id}, asi
+              // que re-slugear el id en cada tecla cambiaba la key, React
+              // destruia y recreaba el bloque, y el input perdia el foco a la
+              // PRIMERA letra. El dueño no podia escribir "Salsa": escribia
+              // "S" y tenia que volver a hacer clic. El id se genera una vez
+              // al crear el grupo y se queda quieto.
+              onChange={(e) => updateGroup(gi, { name: e.target.value })}
               className="min-w-0 flex-1 rounded-lg border border-[#141413]/12 px-2 py-1.5 text-xs text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
             />
             <button
