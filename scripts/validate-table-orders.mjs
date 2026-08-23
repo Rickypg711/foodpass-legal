@@ -114,6 +114,38 @@ check("Terraza 1 a secas", tableLabel("Terraza 1"), "Terraza 1");
 check("T3 a secas", tableLabel("T3"), "T3");
 check("A-1 a secas", tableLabel("A-1"), "A-1");
 
+// ── Mesa = cuenta abierta ───────────────────────────────────────────
+//
+// POR QUE ESTAS LINEAS SON UN TEST Y NO UN COMENTARIO:
+//
+// 1. Sin `abreCuenta`, cuatro amigos en la mesa 5 generan cuatro pedidos
+//    cerrados sueltos y el mesero suma tickets de cabeza.
+// 2. Si `abreCuenta` deja de exigir pay_at_pickup, un pedido de mesa YA PAGADO
+//    con Mercado Pago se queda colgado para siempre en "Cuentas abiertas",
+//    esperando un cobro que nunca va a llegar.
+// 3. Si el nombre vuelve a ser `Mesa ${n}`, una mesa llamada "Barra" sale como
+//    "Mesa Barra" — el mismo bug que ya arreglo `tableLabel` en la hoja de QR.
+checkSource(
+  "mesa sin pagar abre cuenta",
+  builder,
+  "Boolean(tableNumber) && paymentMethod === PAYMENT_METHOD_PAY_AT_PICKUP",
+);
+checkSource("isOpenTab lo decide abreCuenta", builder, "isOpenTab: abreCuenta");
+checkSource("el nombre pasa por tableLabel", builder, "tabName = tableLabel(");
+
+// La app tiene que escribir EXACTAMENTE la misma forma, o una mesa que ordena
+// desde la app nace distinta a una que ordena desde la web.
+const posDart = readFileSync(
+  "/Users/ricardoparedes/projects/FOODPASS/lib/services/pos_service.dart",
+  "utf8",
+);
+checkSource("app: mesa sin pagar abre cuenta", posDart, "orderMap['isOpenTab'] = true");
+checkSource(
+  "app: el nombre pasa por tableLabel",
+  posDart,
+  "orderMap['tabName'] = tableLabel(table)",
+);
+
 if (failed) {
   console.error("validate-table-orders: FAILED");
   process.exit(1);

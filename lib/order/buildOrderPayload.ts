@@ -6,12 +6,17 @@ import {
   ORDER_TYPE_DINE_IN,
   ORDER_TYPE_PICKUP,
   PAYMENT_METHOD_MERCADO_PAGO,
+  PAYMENT_METHOD_PAY_AT_PICKUP,
   type CustomerOrderPayload,
   type OrderPaymentMethod,
   type OrderRedemptionRequest,
 } from "@/lib/types/order";
 import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
-import { normalizeDiners, normalizeTableNumber } from "@/lib/order/tableSession";
+import {
+  normalizeDiners,
+  normalizeTableNumber,
+  tableLabel,
+} from "@/lib/order/tableSession";
 
 export type BuildOrderInput = {
   restaurantId: string;
@@ -82,6 +87,21 @@ export function buildCustomerWebOrderPayload(
   const tableNumber = normalizeTableNumber(input.tableNumber ?? "");
   const orderType = tableNumber ? ORDER_TYPE_DINE_IN : ORDER_TYPE_PICKUP;
 
+  // Una cuenta abierta es algo que queda POR COBRAR. Un pedido de mesa que ya
+  // se pagó con Mercado Pago no lo es: si lo abriéramos igual, se quedaría
+  // colgado para siempre en "Cuentas abiertas" de la Caja, pagado, esperando
+  // un cobro que nunca va a llegar. Por eso mesa Y sin pagar en línea.
+  const abreCuenta =
+    Boolean(tableNumber) && paymentMethod === PAYMENT_METHOD_PAY_AT_PICKUP;
+
+  // En la mesa el nombre es opcional. Vacío NO se queda vacío: la pantalla de
+  // Pedidos pinta `customerName`, y un pedido sin nombre le llega a la cocina
+  // como una tarjeta anónima. "Mesa 5" es exactamente lo que el mesero
+  // necesita leer ahí.
+  const nombreCapturado = input.customerName.trim();
+  const nombreDelPedido =
+    nombreCapturado || (tableNumber ? tableLabel(tableNumber) : "");
+
   const payload: CustomerOrderPayload = {
     restaurantId: input.restaurantId,
     customerId: input.customerId,
@@ -92,17 +112,33 @@ export function buildCustomerWebOrderPayload(
     status,
     orderType,
     orderSource: ORDER_SOURCE_CUSTOMER_WEB,
-    customerName: input.customerName.trim(),
+    customerName: nombreDelPedido,
     pickupPin: input.pickupPin,
     createdByUserId: input.customerId,
-    createdByName: input.customerName.trim(),
-    isOpenTab: false,
+    createdByName: nombreDelPedido,
+    // Comiendo AQUÍ = cuenta abierta. Para llevar = pedido que se cierra solo.
+    //
+    // POR QUE: en una mesa nadie pide una vez y ya. Pides, comes, pides otra
+    // ronda, y pagas AL FINAL. Un pedido de mesa que nace cerrado obliga al
+    // mesero a sumar tickets sueltos de cabeza, y deja fuera toda la máquina
+    // que ya existe para cobrar una mesa: propina al cierre, teléfono para los
+    // puntos, y el canje del premio.
+    //
+    // `status: "pending"` + `isOpenTab: true` es la forma canónica de una
+    // cuenta (ver pos_service.dart §62), y la cocina la SIGUE VIENDO: la
+    // pantalla de Pedidos mete `pending` y `open_tab` en la misma columna.
+    isOpenTab: abreCuenta,
     loyaltyAwarded: false,
     createdAt: serverTimestamp(),
   };
 
   if (tableNumber) {
     payload.tableNumber = tableNumber;
+    // El nombre con el que el mesero la busca en la Caja. Sin esto la cuenta
+    // sale sin nombre y hay que abrirla para saber de qué mesa es.
+    // `tableLabel`, NO `Mesa ${n}`: una mesa llamada "Barra" o "Terraza 1"
+    // saldría como "Mesa Barra". La misma regla que usa la hoja de QR.
+    if (abreCuenta) payload.tabName = tableLabel(tableNumber);
     const diners = normalizeDiners(input.diners ?? null);
     if (diners != null) payload.diners = diners;
   }

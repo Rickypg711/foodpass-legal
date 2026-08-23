@@ -70,6 +70,9 @@ export type CustomerOrderPayload = {
   restaurantName?: string;
   restaurantImageUrl?: string;
   isOpenTab: boolean;
+
+  /** Nombre de la cuenta en la Caja ("Mesa 5"). Solo en dine_in. */
+  tabName?: string;
   loyaltyAwarded?: boolean;
   createdAt: ReturnType<typeof import("firebase/firestore").serverTimestamp>;
 };

@@ -117,6 +117,12 @@ export default function CheckoutPage() {
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
+  /**
+   * Está SENTADO, no viene por su comida. Cambia tres cosas: no elige forma de
+   * pago, el botón manda a cocina en vez de cobrar, y la letra chica dice que
+   * paga al final con el mesero.
+   */
+  const enMesa = Boolean(tableNumber) && payAtPickupAvailable;
   /** Cerrado según horario configurado (lib/schedule) — bloquea el envío. */
   const [closedNow, setClosedNow] = useState(false);
   const [closedLabel, setClosedLabel] = useState<string | null>(null);
@@ -272,7 +278,11 @@ export default function CheckoutPage() {
       return;
     }
     const name = customerName.trim();
-    if (name.length < 2) {
+    // En la mesa el nombre es opcional (espejo de `pickup_info_dialog` en la
+    // app): nadie va a recoger nada, la comida va hacia él. Si lo dejó vacío
+    // se manda vacío y `buildOrderPayload` no escribe un customerName: "" que
+    // ensucie el CRM.
+    if (!enMesa && name.length < 2) {
       setError("Ingresa tu nombre (mínimo 2 caracteres).");
       return;
     }
@@ -284,8 +294,15 @@ export default function CheckoutPage() {
     setError(null);
     setSubmitting(true);
 
-    const chosenMethod =
-      payMethod ??
+    // Sentado en la mesa 5 no hay decisión de pago que tomar: comes primero y
+    // pagas al final, con el mesero. Solo se respeta si el dueño prendió
+    // "Pagar al recoger" — si nunca lo prendió, no le vamos a inventar pedidos
+    // sin cobrar; ese restaurante sigue cobrando en línea.
+    const enMesaSePagaAlFinal = Boolean(tableNumber) && payAtPickupAvailable;
+
+    const chosenMethod = enMesaSePagaAlFinal
+      ? PAYMENT_METHOD_PAY_AT_PICKUP
+      : payMethod ??
       (mercadoPagoAvailable
         ? PAYMENT_METHOD_MERCADO_PAGO
         : payAtPickupAvailable
@@ -643,15 +660,25 @@ export default function CheckoutPage() {
             </label>
             <label className="mt-4 block">
               <span className="text-sm font-semibold">
-                Tu nombre <span className="text-[#F28C38]">*</span>
+                Tu nombre{" "}
+                {enMesa ? (
+                  <span className="font-normal text-[#1C2526]/45">(opcional)</span>
+                ) : (
+                  <span className="text-[#F28C38]">*</span>
+                )}
               </span>
               <span className="mt-0.5 block text-xs text-[#1C2526]/55">
-                Para avisarte cuando tu pedido esté listo.
+                {/* En la mesa nadie recoge nada: la comida va hacia él. El
+                    nombre sirve para que el mesero sepa de quién es cada plato
+                    cuando la mesa pidió varias cosas, no para gritarlo. */}
+                {enMesa
+                  ? "Para que el mesero sepa cuál platillo es tuyo."
+                  : "Para avisarte cuando tu pedido esté listo."}
               </span>
               <input
                 type="text"
-                required
-                minLength={2}
+                required={!enMesa}
+                minLength={enMesa ? 0 : 2}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
@@ -721,8 +748,9 @@ export default function CheckoutPage() {
             })()}
           />
 
-          {/* Forma de pago — last decision before the CTA it controls. */}
-          {mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
+          {/* Forma de pago — last decision before the CTA it controls.
+              En una mesa no se muestra: ver `enMesaSePagaAlFinal`. */}
+          {enMesa ? null : mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
             <div className="rounded-2xl bg-white p-4 shadow-sm">
               <p className="text-sm font-semibold">Forma de pago</p>
               <div className="mt-2.5 flex flex-col gap-2">
@@ -796,17 +824,23 @@ export default function CheckoutPage() {
             className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-[#1C2526] shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
           >
             {submitting
-              ? payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                ? "Enviando tu pedido…"
-                : "Redirigiendo a Mercado Pago…"
-              : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                ? `Ordenar ${formatPrice(subtotal)} · Pagas al recoger`
-                : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
+              ? enMesa
+                ? "Mandando a la cocina…"
+                : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                  ? "Enviando tu pedido…"
+                  : "Redirigiendo a Mercado Pago…"
+              : enMesa
+                ? `Mandar a la cocina · ${formatPrice(subtotal)}`
+                : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                  ? `Ordenar ${formatPrice(subtotal)} · Pagas al recoger`
+                  : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
           </button>
           <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
-            {payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-              ? "💵 Pagas en el local al recoger tu pedido"
-              : "🔒 Pago procesado de forma segura por Mercado Pago"}
+            {enMesa
+              ? "🍽️ Se agrega a la cuenta de tu mesa. Pagas al final."
+              : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+                ? "💵 Pagas en el local al recoger tu pedido"
+                : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
           <p className="-mt-2 text-center text-[11px] text-[#1C2526]/40">
             Al ordenar aceptas nuestro{" "}

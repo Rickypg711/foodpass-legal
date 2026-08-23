@@ -97,3 +97,73 @@ de mesas grandes — justo las verticales que ya tienen landing.
 transacciones chicas · el caso "yo invito" (hoy no hay forma de unir carritos) ·
 cuánto dura la ventana de la sesión (ojo con la jornada de corte 4 AM) ·
 paridad con la app.
+
+---
+
+## ✅ Construido: la mesa abre una cuenta (23 ago 2026)
+
+De los 3 problemas de arriba, este cierra el **#1 y el #2**.
+
+### Qué cambió
+
+**1. Sentado en la mesa ya no se pregunta cómo va a pagar.**
+
+Antes el comensal de la mesa 5 veía "Forma de pago → Pagar al recoger — Efectivo
+o tarjeta **en el local**". Está sentado adentro: no va a recoger nada, y la
+decisión de cómo se paga la cuenta ni siquiera es suya todavía. Ahora el botón
+dice **"Mandar a la cocina · $120"** y abajo **"Se agrega a la cuenta de tu
+mesa. Pagas al final."**
+
+También el nombre pasó a ser **opcional** en mesa (paridad con
+`pickup_info_dialog` de la app), con otra razón de ser: *"Para que el mesero sepa
+cuál platillo es tuyo"*, no *"para avisarte cuando esté listo"*.
+
+**2. El pedido de mesa nace como cuenta abierta, no como ticket cerrado.**
+
+`status: "pending"` + `isOpenTab: true` — la forma canónica de una cuenta
+(`pos_service.dart` §62). Así el mesero la cierra con la máquina que YA existe:
+propina, teléfono para los puntos, y canje del premio al cobrar.
+
+La cocina la sigue viendo: `app/vendor/pedidos/page.tsx` mete `pending` y
+`open_tab` en la misma columna de pendientes.
+
+### Las dos trampas que tiene esto (y que hay un test para cada una)
+
+**a) Una mesa YA PAGADA con Mercado Pago no debe abrir cuenta.** Una cuenta
+abierta es algo *por cobrar*. Si un pedido de mesa prepagado se abriera igual, se
+quedaría colgado para siempre en "Cuentas abiertas" esperando un cobro que nunca
+llega. Por eso la condición es mesa **Y** `pay_at_pickup`, nunca solo mesa.
+
+**b) El nombre de la cuenta pasa por `tableLabel`, no por `` `Mesa ${n}` ``.**
+Una mesa llamada "Barra" o "Terraza 1" saldría como "Mesa Barra" — el mismo bug
+que ya arregló `tableLabel` en la hoja de QR.
+
+`scripts/validate-table-orders.mjs` verifica las dos, **y la forma en los dos
+repos**: si la app y la web dejan de escribir el mismo documento, truena.
+
+### Lo que NO se construyó, y por qué
+
+**Los 4 amigos de la mesa 5 siguen abriendo 4 cuentas, no una.**
+
+No es flojera: las reglas de seguridad de Firestore dicen que un cliente solo
+puede escribir en SU propio pedido —
+
+```
+allow update: if isRestaurantAssociate(...) || resource.data.customerId == request.auth.uid
+```
+
+— así que el comensal B **no puede** agregarle su orden a la cuenta del
+comensal A. Y está bien que no pueda: lo contrario deja que cualquier sesión
+anónima le escriba pedidos a la cuenta de un desconocido.
+
+Juntarlas de verdad necesita una **Cloud Function** que haga el merge del lado
+del servidor (donde las reglas no aplican y se puede validar que de veras es la
+misma mesa, la misma jornada y el mismo restaurante). Eso es la pieza que sigue.
+
+Mientras tanto el mesero ve 4 cuentas **todas llamadas "Mesa 5"**, juntas en la
+lista — que es peor que una sola cuenta, pero muchísimo mejor que 4 tickets
+cerrados sueltos que tenía que sumar de cabeza.
+
+**Cuenta dividida de verdad** (cada quien paga lo suyo desde su teléfono) sigue
+sin construirse **a propósito**: hoy ya funciona por accidente y mejor, porque
+cada quien deja su propio teléfono y son 5 clientes en la base en vez de 1.
