@@ -137,7 +137,7 @@ export function ItemOptionsSheet({
             type="button"
             onClick={confirm}
             disabled={faltantes.length > 0}
-            className="flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-white transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45"
           >
             {faltantes.length > 0
               ? `Elige ${faltantes[0]!.name.toLowerCase()}`

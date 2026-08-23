@@ -599,7 +599,7 @@ function OrderStatusPageContent() {
                       </p>
                       <a
                         href={downloadHref}
-                        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+                        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-colors hover:bg-[#d67428]"
                       >
                         Descargar Comeleal
                       </a>

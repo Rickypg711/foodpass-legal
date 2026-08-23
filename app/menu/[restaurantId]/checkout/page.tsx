@@ -252,7 +252,7 @@ export default function CheckoutPage() {
           </p>
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}`}
-            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F28C38] px-8 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#d67428]"
+            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F28C38] px-8 py-3 text-sm font-semibold text-[#1C2526] shadow-md transition-colors hover:bg-[#d67428]"
           >
             Ver el menú
           </Link>
@@ -793,7 +793,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting || closedNow || (!mercadoPagoAvailable && !payAtPickupAvailable)}
-            className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
+            className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-[#1C2526] shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
           >
             {submitting
               ? payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
