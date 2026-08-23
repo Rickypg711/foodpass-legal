@@ -205,7 +205,7 @@ export default function RecompensasPage() {
                 style={{ color: "rgba(28,37,38,0.35)" }}>¿Cómo funciona?</p>
               <div className="space-y-2.5">
                 {[
-                  { emoji: "📷", text: "El cliente escanea su código en cada visita" },
+                  { emoji: "📱", text: "Le pides su número al cobrar (o escanea su app)" },
                   { emoji: "🪙", text: "Acumula puntos automáticamente" },
                   { emoji: "🎁", text: "Canjea recompensas al alcanzar su nivel" },
                 ].map((step) => (

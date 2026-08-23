@@ -44,6 +44,7 @@ Descripción del platillo en Firestore
 | `components/menu/ItemOptionsSheet.tsx` | La hoja donde el cliente elige |
 | `components/vendor/OptionGroupsEditor.tsx` | Donde el dueño los crea y les pone precio |
 | `app/vendor/setup/menu/page.tsx` | Monta el editor y guarda `optionGroups` |
+| `app/vendor/pos/page.tsx` | La Caja: el "+" abre la misma hoja (22 ago) |
 
 ## Las reglas que NO se negocian
 
@@ -157,6 +158,38 @@ Ya se probó **cada eslabón contra datos reales**, no solo por código:
 Lo único que **NUNCA se ha corrido** es un cobro real de Mercado Pago. Los
 montos están verificados, pero el cargo de verdad sigue pendiente de un humano.
 
+## La Caja (POS web) — 22 ago 2026
+
+**Esto no era una regresión, era un hueco.** El menú del cliente preguntaba la
+salsa desde el 22 ago, pero `app/vendor/pos/page.tsx` **nunca conoció
+`optionGroups`**: su `CartItem` era `{menuItem, quantity}` y se indexaba por
+`menuItemId`. Consecuencia: toda venta de mostrador llegaba a la cocina sin
+salsa y sin cobrar el `+$25`, mientras la misma orden hecha por el cliente sí
+las llevaba. Se descubrió porque Ricardo fue a probarlo a la Caja y no pasaba
+nada.
+
+Se cerró **reusando todo**, sin lógica nueva: `resolveOptionGroups`,
+`ItemOptionsSheet`, `buildLineId`, `optionsPriceDelta`, `describeSelectedOptions`.
+Lo que se agregó al POS:
+
+- `MenuItem` ahora declara `optionGroups` (el loader ya lo traía en el
+  `...d.data()`, solo faltaba el tipo — y con la descripción, el parser cubre
+  los menús importados).
+- `CartItem` gana `lineId`, `unitPrice` y `selectedOptions`. **Alitas búfalo y
+  alitas BBQ son dos líneas**, no una de cantidad 2.
+- `cartLineToOrderItem()` — **un solo lugar** que arma la línea del pedido, con
+  `selectedModifiers` en la forma que `/vendor/pedidos` ya renderizaba. Lo usan
+  tanto el pedido nuevo como el "agregar a cuenta abierta"; antes eran dos
+  copias del mismo `map` y por ahí es como se abren estas grietas.
+- El sobreprecio entra al **precio unitario** (regla 5), así que multiplica bien
+  por cantidad y el recálculo del descuento al cerrar lo ve.
+
+Probado en el Chrome de Ricardo contra el menú real de Sushin-Gón: ALITAS 7 pide
+Salsa + Aderezo y bloquea hasta elegir; Búfalo+Ranch y BBQ+César quedan en dos
+líneas; BOLA DE ARROZ con Camarón sube el botón de `$95` a `$120`.
+
+**Pendiente hermano: el POS del app Flutter sigue sin esto** (ver abajo).
+
 ## El lado de la app (Flutter) — 23 ago 2026
 
 **Cerrado:** la app **no pintaba `selectedModifiers` en ninguna pantalla de
@@ -174,6 +207,13 @@ de los restaurantes revisados**, así que no hay datos que migrar — solo hay q
 decidir cuál gana. Y que la app deje **elegir** opciones no es un arreglo de
 paridad: es construirle su propia hoja de selección. Hoy no rompe nada, porque
 nadie captura desde la app y el pedido de la web llega completo.
+
+**Lo que cambió el 22 ago:** ya NO es cierto que "nadie captura desde la app".
+La Caja de la web ya pregunta las opciones, así que el app es el **único** lugar
+donde una venta de mostrador todavía pierde la salsa y no cobra el extra. Y ya
+hay un espejo exacto que copiar (`lib/cart/lineId.ts` +
+`components/menu/ItemOptionsSheet.tsx` + `cartLineToOrderItem`). Sigue pidiendo
+simulador y ojos encima.
 
 ## Cómo montar esto en un restaurante nuevo
 

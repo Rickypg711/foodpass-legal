@@ -697,12 +697,12 @@ export default function ClientesPage() {
             <span className="text-[48px]">👥</span>
             <p className="mt-4 text-[16px] font-bold" style={{ color: "#1C2526" }}>Sin clientes aún</p>
             <p className="mt-1 text-[13px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-              Escanea tu primer cliente para verlos aquí.
+              Pide el número de WhatsApp en tu próximo cobro y aparece aquí.
             </p>
-            <Link href="/vendor/scanner"
+            <Link href="/vendor/pos"
               className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
               style={{ background: "#F28C38" }}>
-              Ir al escáner →
+              Ir a la Caja →
             </Link>
           </div>
         ) : (

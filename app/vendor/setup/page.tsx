@@ -82,7 +82,7 @@ export default function SetupPage() {
             Activa {restaurantName}
           </h1>
           <p className="mt-1 text-sm text-[#141413]/50">
-            Completa los pasos para empezar a escanear clientes
+            Completa los pasos para empezar a sumar clientes
           </p>
 
           {/* Progress bar */}

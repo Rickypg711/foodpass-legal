@@ -23,6 +23,13 @@ import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from 
 import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
+// Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
+// Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
+// no hay, el parser lee la descripción.
+import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import { buildLineId, optionsPriceDelta, describeSelectedOptions } from "@/lib/cart/lineId";
+import type { SelectedOptionGroup } from "@/lib/cart/types";
+import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import {
   PosRedemption,
   type PosRedemptionSelection,
@@ -49,11 +56,40 @@ interface MenuItem {
   description?: string;
   imageUrl?: string;
   isAvailable: boolean;
+  optionGroups?: MenuItemOptionGroup[] | null;
 }
 
 interface CartItem {
   menuItem: MenuItem;
   quantity: number;
+  /** Llave de la línea: unas alitas búfalo y unas BBQ NO son la misma línea. */
+  lineId: string;
+  /** Precio base + sobreprecio de lo elegido. Unitario, multiplica por cantidad. */
+  unitPrice: number;
+  selectedOptions?: SelectedOptionGroup[];
+}
+
+/** Una línea del carrito tal como se guarda en el pedido. */
+function cartLineToOrderItem(c: CartItem): Record<string, unknown> {
+  return {
+    menuItemId: c.menuItem.id,
+    name: c.menuItem.name,
+    price: c.unitPrice,
+    quantity: c.quantity,
+    subtotal: c.unitPrice * c.quantity,
+    // Snapshot de la categoría: sin esto el recálculo del descuento al
+    // cerrar no puede distinguir bebidas de alimentos (per_category).
+    ...(c.menuItem.category ? { categoryName: c.menuItem.category } : {}),
+    // Misma forma que ya renderiza /vendor/pedidos y manda el WhatsApp.
+    ...(c.selectedOptions?.length
+      ? {
+          selectedModifiers: c.selectedOptions.map((g) => ({
+            modifierName: g.groupName,
+            selectedOptions: g.options.map((o) => o.name),
+          })),
+        }
+      : {}),
+  };
 }
 
 type PaymentMethod = "cash" | "card";
@@ -157,8 +193,13 @@ function CartRow({
         <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
           {cartItem.menuItem.name}
         </p>
+        {cartItem.selectedOptions && cartItem.selectedOptions.length > 0 && (
+          <p className="truncate text-[11px]" style={{ color: "#F28C38" }}>
+            ↳ {describeSelectedOptions(cartItem.selectedOptions)}
+          </p>
+        )}
         <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-          {fmt(cartItem.menuItem.price)} c/u
+          {fmt(cartItem.unitPrice)} c/u
         </p>
       </div>
 
@@ -184,7 +225,7 @@ function CartRow({
       </div>
 
       <p className="w-16 text-right text-[13px] font-bold" style={{ color: "#1C2526" }}>
-        {fmt(cartItem.menuItem.price * cartItem.quantity)}
+        {fmt(cartItem.unitPrice * cartItem.quantity)}
       </p>
     </div>
   );
@@ -774,6 +815,9 @@ export default function PosPage() {
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [optionsFor, setOptionsFor] = useState<
+    { item: MenuItem; groups: MenuItemOptionGroup[] } | null
+  >(null);
 
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
@@ -920,14 +964,7 @@ export default function PosPage() {
         const data = orderDoc.data();
         const existingItems = data.items || [];
         
-        const newItems = itemsToAdd.map((c) => ({
-          menuItemId: c.menuItem.id,
-          name: c.menuItem.name,
-          price: c.menuItem.price,
-          quantity: c.quantity,
-          subtotal: c.menuItem.price * c.quantity,
-          ...(c.menuItem.category ? { categoryName: c.menuItem.category } : {}),
-        }));
+        const newItems = itemsToAdd.map(cartLineToOrderItem);
 
         const combinedItems = [...existingItems, ...newItems];
 
@@ -1075,16 +1112,38 @@ export default function PosPage() {
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
 
-  function addToCart(item: MenuItem) {
+  function pushLine(item: MenuItem, selected: SelectedOptionGroup[] | null) {
+    const lineId = buildLineId(item.id, selected);
+    const unitPrice = item.price + optionsPriceDelta(selected);
     setCart((prev) => {
-      const idx = prev.findIndex((c) => c.menuItem.id === item.id);
+      const idx = prev.findIndex((c) => c.lineId === lineId);
       if (idx >= 0) {
         return prev.map((c, i) =>
           i === idx ? { ...c, quantity: c.quantity + 1 } : c
         );
       }
-      return [...prev, { menuItem: item, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          menuItem: item,
+          quantity: 1,
+          lineId,
+          unitPrice,
+          ...(selected && selected.length > 0 ? { selectedOptions: selected } : {}),
+        },
+      ];
     });
+  }
+
+  /** El "+" del POS. Con opciones abre la hoja; sin opciones agrega directo
+   *  (lineId === menuItemId, se comporta igual que antes). */
+  function addToCart(item: MenuItem) {
+    const groups = resolveOptionGroups(item);
+    if (groups.length > 0) {
+      setOptionsFor({ item, groups });
+      return;
+    }
+    pushLine(item, null);
   }
 
   function increment(index: number) {
@@ -1105,7 +1164,7 @@ export default function PosPage() {
     setCart([]);
   }
 
-  const subtotal = cart.reduce((s, c) => s + c.menuItem.price * c.quantity, 0);
+  const subtotal = cart.reduce((s, c) => s + c.unitPrice * c.quantity, 0);
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
 
   // ── Filtered items ──────────────────────────────────────────────────────────
@@ -1138,16 +1197,7 @@ export default function PosPage() {
     setProcessing(true);
     try {
       const db = getFirebaseDb();
-      const items: Record<string, unknown>[] = cart.map((c) => ({
-        menuItemId: c.menuItem.id,
-        name: c.menuItem.name,
-        price: c.menuItem.price,
-        quantity: c.quantity,
-        subtotal: c.menuItem.price * c.quantity,
-        // Snapshot de la categoría: sin esto el recálculo del descuento al
-        // cerrar no puede distinguir bebidas de alimentos (per_category).
-        ...(c.menuItem.category ? { categoryName: c.menuItem.category } : {}),
-      }));
+      const items: Record<string, unknown>[] = cart.map(cartLineToOrderItem);
 
       // Redeemed reward rides the ticket as a $0 line (kitchen sees it, the
       // receipt shows it, and it never adds to total → no points earned on it).
@@ -1570,7 +1620,7 @@ export default function PosPage() {
                 <div>
                   {cart.map((c, i) => (
                     <CartRow
-                      key={c.menuItem.id}
+                      key={c.lineId}
                       cartItem={c}
                       index={i}
                       onIncrement={increment}
@@ -1653,7 +1703,7 @@ export default function PosPage() {
             </div>
             <div className="overflow-y-auto px-5" style={{ maxHeight: "calc(70vh - 60px)" }}>
               {cart.map((c, i) => (
-                <CartRow key={c.menuItem.id} cartItem={c} index={i} onIncrement={increment} onDecrement={decrement} />
+                <CartRow key={c.lineId} cartItem={c} index={i} onIncrement={increment} onDecrement={decrement} />
               ))}
               <div className="py-4">
                 {cart.length > 0 && (
@@ -1737,12 +1787,25 @@ export default function PosPage() {
         }}
       />
 
+      {/* ── Opciones del platillo (salsas / extras) ── */}
+      <ItemOptionsSheet
+        open={optionsFor !== null}
+        itemName={optionsFor?.item.name ?? ""}
+        basePrice={optionsFor?.item.price ?? 0}
+        groups={optionsFor?.groups ?? []}
+        onCancel={() => setOptionsFor(null)}
+        onConfirm={(selected) => {
+          if (optionsFor) pushLine(optionsFor.item, selected);
+          setOptionsFor(null);
+        }}
+      />
+
       {/* ── Checkout dialog ── */}
       {showCheckout && (
         <CheckoutDialog
           total={subtotal}
           cartLines={cart.map((c) => ({
-            price: c.menuItem.price,
+            price: c.unitPrice,
             quantity: c.quantity,
             categoryName: c.menuItem.category,
           }))}

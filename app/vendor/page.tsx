@@ -523,10 +523,10 @@ export default function VendorDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <ManualCloseToggle restaurantId={data.restaurantId} />
-            <Link href="/vendor/scanner"
+            <Link href="/vendor/pos"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
               style={{ background: "#F28C38" }}>
-              <IconQr size={11} /> Escanear
+              💰 Cobrar
             </Link>
           </div>
         </header>
@@ -721,19 +721,19 @@ export default function VendorDashboard() {
                 <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ir a POS →</p>
               </Link>
 
-              <Link href="/vendor/scanner" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
+              <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
                 style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Clientes Comeleal hoy</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
                     style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
-                    📷
+                    📱
                   </div>
                 </div>
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
                   {data.scansToday}
                 </p>
-                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Escanear →</p>
+                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Cobrar con número →</p>
               </Link>
 
             </div>
@@ -919,7 +919,7 @@ export default function VendorDashboard() {
               <div>
                 <p className="text-[14px] font-bold text-white">Escanear cliente</p>
                 <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Cliente con la app — suma su visita
+                  Solo si trae la app — si no, cóbrale con su número
                 </p>
               </div>
               <span className="ml-auto text-white/30">›</span>
@@ -951,7 +951,7 @@ export default function VendorDashboard() {
               <WeekChart days={data.weeklyScans} />
             ) : (
               <div className="flex flex-col items-center py-6 text-center">
-                <span className="text-[26px]">📷</span>
+                <span className="text-[26px]">📱</span>
                 <p className="mt-2 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
                   Aún sin clientes Comeleal esta semana
                 </p>
@@ -1012,7 +1012,7 @@ export default function VendorDashboard() {
               <div className="flex flex-col items-center py-8 text-center">
                 <span className="text-[28px]">👋</span>
                 <p className="mt-2 text-[13px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                  Sin visitas aún — escanea tu primer cliente.
+                  Sin visitas aún — cobra con el número de tu cliente en la Caja.
                 </p>
               </div>
             )}
@@ -1340,14 +1340,14 @@ function getNbaFallbackBody(actionCode: string): string {
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
     case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
     case "configure_rewards": return "Crea tu primera recompensa para empezar a motivar visitas recurrentes.";
-    case "get_first_scan": return "Comparte tu QR con tus clientes para conseguir tus primeros escaneos.";
+    case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "grow_phone_capture": return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
     case "healthy":
     case "keep_going":
-    case "stable": return "Tu negocio va avanzando. Sigue compartiendo tu QR y mantén tus recompensas claras.";
+    case "stable": return "Tu negocio va avanzando. Pide el número en cada cobro y mantén tu recompensa clara.";
     default: return "Estamos preparando tus recomendaciones. Cuando tengas más actividad, Comeleal te mostrará el siguiente mejor paso.";
   }
 }
@@ -1364,9 +1364,9 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "lower_reward_threshold":
     case "configure_rewards":
     case "review_rewards": return "Configurar recompensas";
-    case "get_first_scan":
+    case "get_first_scan": return "Cobrar con número";
     case "healthy":
-    case "keep_going": return "Ver mi código QR";
+    case "keep_going": return "Compartir mi menú";
     default: return "Ver recompensas";
   }
 }
@@ -1382,9 +1382,9 @@ function getNbaCtaHref(actionCode: string): string {
     case "lower_reward_threshold":
     case "configure_rewards":
     case "review_rewards": return "/vendor/recompensas";
-    case "get_first_scan":
+    case "get_first_scan": return "/vendor/pos";
     case "healthy":
-    case "keep_going": return "/vendor/scanner";
+    case "keep_going": return "#compartir-qr";
     case "send_winback": return "/vendor/clientes";
     default: return "/vendor/recompensas";
   }
@@ -1573,10 +1573,10 @@ function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
           style={{ borderColor: "rgba(217,119,87,0.35)", color: "#F28C38" }}>
           Ver programa
         </Link>
-        <Link href="/vendor/scanner"
+        <Link href="/vendor/pos"
           className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-white transition hover:opacity-90"
           style={{ background: "#F28C38" }}>
-          Escanear
+          Cobrar con número
         </Link>
       </div>
     </div>
