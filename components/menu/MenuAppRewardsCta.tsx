@@ -9,17 +9,25 @@ export function menuDownloadHref(restaurantId: string): string {
 type MenuAppRewardsCtaProps = {
   restaurantId: string;
   restaurantName: string;
-  /** compact = below checkout; prominent = primary bottom CTA; banner = MP unavailable; browse = ordering off */
+  /** compact = una línea (carrito con items / cerrado); el resto = tarjeta. */
   variant: "compact" | "prominent" | "banner" | "browse";
   disabled?: boolean;
   /**
-   * The restaurant's first-visit reward (e.g. "Personal queso"). When set,
-   * the CTA sells the CONCRETE reward ("🎁 gratis en tu primera visita")
-   * instead of generic "guarda tus puntos" copy — concrete converts.
+   * Premio de bienvenida del restaurante (ej. "Shilanga"). Cuando existe, se
+   * vende el premio CONCRETO en vez de "junta puntos" — lo concreto convierte.
    */
   firstVisitRewardLabel?: string | null;
 };
 
+/**
+ * Aviso de recompensas en la página del restaurante.
+ *
+ * REGLA DE JERARQUÍA — el premio manda, el teléfono es el mecanismo, la app es
+ * comodidad opcional. Esta página es del RESTAURANTE, no de Comeleal: poner
+ * "Descargar Comeleal" como botón principal contradice lo que se le vende al
+ * dueño (esto es tuyo, no un marketplace) y además miente — los puntos se
+ * acumulan con el teléfono en la caja, sin instalar nada. La app baja a link.
+ */
 export function MenuAppRewardsCta({
   restaurantId,
   restaurantName,
@@ -30,14 +38,6 @@ export function MenuAppRewardsCta({
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
   const reward = firstVisitRewardLabel?.trim() || null;
-  // Honest mechanic: 1st visit UNLOCKS the gift, it's claimed on the next
-  // visit within 7 days. Sell the gift in the headline, the rule in the sub.
-  const headline = reward
-    ? `🎁 Regalo de bienvenida: ${reward} GRATIS`
-    : "Descarga Comeleal y guarda tus puntos";
-  const subline = reward
-    ? "Tu 1ª compra lo desbloquea y lo reclamas en la siguiente. Descarga Comeleal para no perderlo."
-    : "Gana recompensas con este restaurante";
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
     if (isDisabled) {
@@ -50,108 +50,74 @@ export function MenuAppRewardsCta({
     });
   }
 
-  /** "Mis puntos" — balance check by phone (no app, SMS-verified). */
-  const pointsLink = restaurantId ? (
-    <a
-      href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
-      className="block py-1 text-center text-xs font-semibold text-[#1C2526]/55 underline underline-offset-2 hover:text-[#F28C38]"
-    >
-      ⭐ ¿Ya has comprado aquí? Ver mis puntos
-    </a>
-  ) : null;
-
+  // ── Una línea. Va cuando el carrito YA tiene cosas o el lugar está cerrado.
+  // Aquí no hay links a propósito: si alguien está a medio pedido, sacarlo a
+  // una tienda de apps le cuesta el pedido al restaurante.
   if (variant === "compact") {
     return (
-      <a
-        href={href}
-        onClick={handleClick}
-        className={
-          "block min-h-10 rounded-lg py-2 text-center text-sm font-semibold text-[#F28C38] underline decoration-[#F28C38]/40 underline-offset-2 transition-colors hover:text-[#d67428] " +
-          (isDisabled ? "pointer-events-none opacity-60" : "")
-        }
-      >
-        {reward
-          ? `🎁 ${reward} gratis de bienvenida — descarga Comeleal`
-          : "Descarga Comeleal y guarda tus puntos"}
-      </a>
+      <p className="px-2 py-1.5 text-center text-[13px] font-semibold leading-snug text-[#1C2526]/60">
+        {reward ? (
+          <>
+            <span aria-hidden>🎁</span> {reward} gratis en tu siguiente visita
+          </>
+        ) : (
+          <>
+            <span aria-hidden>⭐</span> Cada compra te suma puntos aquí
+          </>
+        )}
+      </p>
     );
   }
 
-  if (variant === "banner") {
-    return (
-      <div className="space-y-3">
-        <div
-          className="rounded-2xl border border-[#F28C38]/20 bg-white p-4 text-sm text-[#1C2526] shadow-sm"
-          role="status"
-        >
-          <p className="font-semibold">
-            {reward ? headline : "Este lugar tiene recompensas en Comeleal"}
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-[#1C2526]/70">
-            {reward
-              ? subline
-              : "Descarga la app para acumular puntos y volver fácil a tus favoritos."}
-          </p>
-        </div>
-        <a
-          href={href}
-          onClick={handleClick}
-          aria-disabled={isDisabled}
-          className={
-            "menu-cta-enter menu-cta-pulse mx-auto block min-h-11 w-full max-w-md rounded-xl py-3 text-center text-sm font-semibold text-white " +
-            (isDisabled ? "pointer-events-none opacity-60" : "")
-          }
-        >
-          Descargar Comeleal
-        </a>
-        {pointsLink}
-      </div>
-    );
-  }
-
-  if (variant === "browse") {
-    return (
-      <div className="space-y-3">
-        <p className="text-center text-sm font-medium text-[#1C2526]/75">
-          {reward ? headline : "Este lugar tiene recompensas en Comeleal"}
-        </p>
-        <p className="text-center text-xs leading-relaxed text-[#1C2526]/70">
-          {reward
-            ? subline
-            : "Descarga la app para acumular puntos y volver fácil a tus favoritos."}
-        </p>
-        <a
-          href={href}
-          onClick={handleClick}
-          aria-disabled={isDisabled}
-          className={
-            "menu-cta-enter menu-cta-pulse mx-auto block min-h-11 w-full max-w-md rounded-xl py-3 text-center text-sm font-semibold text-white " +
-            (isDisabled ? "pointer-events-none opacity-60" : "")
-          }
-        >
-          Descargar Comeleal
-        </a>
-        {pointsLink}
-      </div>
-    );
-  }
+  const eyebrow = reward ? "Regalo de bienvenida" : "Recompensas";
+  const title = reward ?? "Junta puntos en cada compra";
+  const explain = reward
+    ? "Es tuyo en tu siguiente visita. Solo da tu teléfono en la caja."
+    : "Cámbialos por comida gratis. Solo da tu teléfono en la caja.";
 
   return (
-    <div className="rounded-xl border border-[#F28C38]/15 bg-white/90 px-3 py-2.5 text-center shadow-sm">
-      <p className="text-sm font-semibold text-[#1C2526]">{headline}</p>
-      <p className="mt-0.5 text-xs text-[#1C2526]/65">{subline}</p>
-      <a
-        href={href}
-        onClick={handleClick}
-        aria-disabled={isDisabled}
-        className={
-          "menu-cta-enter mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#d67428] " +
-          (isDisabled ? "pointer-events-none opacity-60" : "")
-        }
-      >
-        Descargar Comeleal
-      </a>
-      {pointsLink}
+    <div className="overflow-hidden rounded-2xl border border-[#F28C38]/18 bg-gradient-to-br from-[#FFF8F2] to-white shadow-[0_1px_3px_rgba(28,37,38,0.05)]">
+      <div className="flex items-start gap-3 p-4">
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#F28C38]/12 text-[19px]"
+          aria-hidden
+        >
+          {reward ? "🎁" : "⭐"}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.09em] text-[#F28C38]">
+            {eyebrow}
+          </p>
+          <p className="mt-1 text-[17px] font-bold leading-tight text-[#1C2526]">{title}</p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[#1C2526]/65">{explain}</p>
+        </div>
+      </div>
+
+      {/* Pie discreto: las dos salidas opcionales, al mismo peso. Ninguna es
+          un botón — el botón de esta página es "Ordenar", no "Descargar". */}
+      {restaurantId ? (
+        <div className="flex items-stretch border-t border-[#1C2526]/[0.07] text-[12.5px] font-semibold">
+          <a
+            href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+            className="flex-1 px-3 py-2.5 text-center text-[#1C2526]/55 transition-colors hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38]"
+          >
+            Ver mis puntos
+          </a>
+          <span className="my-2 w-px bg-[#1C2526]/[0.07]" aria-hidden />
+          <a
+            href={href}
+            onClick={handleClick}
+            aria-disabled={isDisabled}
+            className={
+              "flex-1 px-3 py-2.5 text-center text-[#1C2526]/55 transition-colors hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38] " +
+              (isDisabled ? "pointer-events-none opacity-50" : "")
+            }
+          >
+            Descargar la app
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

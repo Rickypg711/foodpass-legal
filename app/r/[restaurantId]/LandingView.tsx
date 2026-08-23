@@ -423,7 +423,7 @@ export default function LandingView({
               <Link
                 href={menuHref}
                 onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-white shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
+                className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-[#1C2526] shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
               >
                 🍽 Ver menú y ordenar
               </Link>
@@ -635,15 +635,15 @@ export default function LandingView({
               </SectionCard>
             ) : null}
 
-            {/* ---- RECOMPENSAS / APP ---- */}
-            <div className="rounded-2xl border border-[#F28C38]/20 bg-white/90 p-4 shadow-sm sm:p-5">
-              <MenuAppRewardsCta
-                restaurantId={restaurantId}
-                restaurantName={name}
-                variant="browse"
-                firstVisitRewardLabel={restaurant.firstVisitReward}
-              />
-            </div>
+            {/* ---- RECOMPENSAS / APP ----
+                 Sin envoltura: el componente ya trae su propia tarjeta. Antes
+                 iba dentro de otra y se veía doble borde. */}
+            <MenuAppRewardsCta
+              restaurantId={restaurantId}
+              restaurantName={name}
+              variant="browse"
+              firstVisitRewardLabel={restaurant.firstVisitReward}
+            />
 
             {/* ---- FIRMA (el loop viral: cada página vende Comeleal) ---- */}
             <p className="pt-2 text-center text-xs text-[#1C2526]/50">
