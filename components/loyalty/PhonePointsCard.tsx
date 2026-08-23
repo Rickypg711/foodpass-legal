@@ -20,6 +20,8 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { ensureAnonymousUser, getFirebaseAuth } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
+import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
+import { WalletPassButtons } from "@/components/loyalty/WalletPassButtons";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
@@ -77,6 +79,8 @@ export function PhonePointsCard({
   phone: string;
 }) {
   const [step, setStep] = useState<Step>("idle");
+  /** users/{uid}.linkedPhone written → a wallet pass would actually credit. */
+  const [walletReady, setWalletReady] = useState(false);
   const [code, setCode] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [balance, setBalance] = useState<Balance>(null);
@@ -159,6 +163,15 @@ export function PhonePointsCard({
   }
 
   async function loadBalance() {
+    // Mirror of the app's users/{uid}.linkedPhone write (see
+    // lib/loyalty/linkVerifiedPhone.ts). Every caller has just proven the
+    // number by SMS. The scanner resolves a customer by
+    // uid -> linkedPhone -> phoneCustomers, so skipping this leaves a verified
+    // web customer unreachable from their own uid — and their wallet pass
+    // scanning into nothing.
+    const link = await linkVerifiedPhone(phone10);
+    setWalletReady(link === "linked" || link === "already");
+
     // Reward tiers (public restaurant doc) — for the progress/unlocked lines.
     try {
       const rSnap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId));
@@ -186,7 +199,8 @@ export function PhonePointsCard({
     <div className="rounded-2xl border border-[#F28C38]/35 bg-white p-4">
       <div ref={recaptchaHostRef} />
       {step === "done" ? (
-        balance ? (
+        <>
+        {balance ? (
           <div className="text-center">
             <p className="text-base font-bold text-[#1C2526]">
               ⭐ Tienes {balance.points} punto{balance.points !== 1 ? "s" : ""} en{" "}
@@ -239,7 +253,12 @@ export function PhonePointsCard({
             Aún no tienes puntos aquí — se acreditan cuando el restaurante
             confirma tu pago. ⭐
           </p>
-        )
+        )}
+        {/* Shown even at zero points — that customer is exactly the one who
+            should carry the card BEFORE their next visit. One card for every
+            Comeleal restaurant, not one per place. */}
+        {walletReady ? <WalletPassButtons /> : null}
+        </>
       ) : step === "code" || step === "verifying" ? (
         <div className="text-center">
           <p className="text-sm font-semibold text-[#1C2526]">

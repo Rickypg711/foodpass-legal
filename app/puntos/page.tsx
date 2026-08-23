@@ -29,7 +29,9 @@ import {
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
+import { WalletPassButtons } from "@/components/loyalty/WalletPassButtons";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -76,6 +78,8 @@ export default function PuntosGlobalPage() {
   const [code, setCode] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [balances, setBalances] = useState<Balance[]>([]);
+  /** users/{uid}.linkedPhone is written → the wallet pass will actually credit. */
+  const [walletReady, setWalletReady] = useState(false);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
   const recaptchaHostRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +163,15 @@ export default function PuntosGlobalPage() {
   }
 
   async function loadBalances() {
+    // Identity first, balances second. Every path into this function has just
+    // proven the number by SMS, so this is the one place that has to mirror the
+    // app's users/{uid}.linkedPhone write — including the returning visitor who
+    // skipped straight past the code screen. Without it the scanner cannot
+    // resolve this customer's uid to their phone wallet, and the wallet pass
+    // below would be a card that credits nothing.
+    const link = await linkVerifiedPhone(digits);
+    setWalletReady(link === "linked" || link === "already");
+
     const snap = await getDocs(
       query(collectionGroup(getFirebaseDb(), "phoneCustomers"), where("phone", "==", digits)),
     );
@@ -294,6 +307,11 @@ export default function PuntosGlobalPage() {
                   </Link>
                 </div>
               ))}
+
+              {/* ONE card for every restaurant, straight from the browser —
+                  no app, no account. Gated on walletReady because the pass
+                  resolves by uid → linkedPhone. */}
+              {walletReady ? <WalletPassButtons /> : null}
 
               {/* App-as-wallet upsell — this page IS the wallet; the app is
                   the better one (push avisos + descubre lugares nuevos). */}
