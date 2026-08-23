@@ -304,6 +304,7 @@ function OrderStatusPageContent() {
 
   const cartLinesForWa: CartLine[] = order?.items?.length
     ? order.items.map((it, i) => ({
+        lineId: String(i),
         menuItemId: String(i),
         name: it.name ?? "—",
         price: 0,

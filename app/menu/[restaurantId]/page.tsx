@@ -7,6 +7,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
+import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
+import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import type { SelectedOptionGroup } from "@/lib/cart/types";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import { useCart } from "@/lib/cart/CartProvider";
 import { trackWebMenuView } from "@/lib/analytics";
@@ -31,6 +34,8 @@ type MenuRow = {
   category: string;
   imageUrl: string | null;
   isAvailable: boolean;
+  /** Opciones definidas por el vendor. Si vienen, mandan sobre la descripción. */
+  optionGroups?: MenuItemOptionGroup[];
 };
 
 /**
@@ -74,6 +79,9 @@ function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
     imageUrl:
       typeof data.imageUrl === "string" && data.imageUrl.trim() ? data.imageUrl.trim() : null,
     isAvailable: typeof data.isAvailable === "boolean" ? data.isAvailable : true,
+    optionGroups: Array.isArray(data.optionGroups)
+      ? (data.optionGroups as MenuItemOptionGroup[])
+      : undefined,
   };
 }
 
@@ -305,10 +313,16 @@ function PublicMenuPageWithOrdering() {
   const { addItem, lines, incrementLine, decrementLine } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
+  // Platillo esperando que el cliente elija sus opciones.
+  const [pendingItem, setPendingItem] = useState<
+    { id: string; name: string; price: number; imageUrl: string | null; groups: MenuItemOptionGroup[] } | null
+  >(null);
+
   const quantityByItemId = useMemo(() => {
     const map = new Map<string, number>();
     for (const line of lines) {
-      map.set(line.menuItemId, line.quantity);
+      // Un platillo puede estar varias veces con opciones distintas: se suman.
+      map.set(line.menuItemId, (map.get(line.menuItemId) ?? 0) + line.quantity);
     }
     return map;
   }, [lines]);
@@ -509,16 +523,45 @@ function PublicMenuPageWithOrdering() {
             groups={categoryGroups}
             orderingEnabled={orderingEnabled}
             getItemQuantity={(itemId) => quantityByItemId.get(itemId) ?? 0}
-            onAddItem={(item) =>
+            onAddItem={(item) => {
+              const groups = resolveOptionGroups(item);
+              if (groups.length > 0) {
+                setPendingItem({
+                  id: item.id,
+                  name: item.name,
+                  price: item.price,
+                  imageUrl: item.imageUrl,
+                  groups,
+                });
+                return;
+              }
               addItem({
                 menuItemId: item.id,
                 name: item.name,
                 price: item.price,
                 imageUrl: item.imageUrl,
-              })
-            }
-            onIncrementItem={(item) => incrementLine(item.id)}
-            onDecrementItem={(item) => decrementLine(item.id)}
+              });
+            }}
+            onIncrementItem={(item) => {
+              // Con opciones, "+" vuelve a preguntar: cada unidad puede
+              // llevar salsa distinta. Sin opciones, sube la línea de siempre.
+              const groups = resolveOptionGroups(item);
+              if (groups.length > 0) {
+                setPendingItem({
+                  id: item.id,
+                  name: item.name,
+                  price: item.price,
+                  imageUrl: item.imageUrl,
+                  groups,
+                });
+                return;
+              }
+              incrementLine(item.id);
+            }}
+            onDecrementItem={(item) => {
+              const last = [...lines].reverse().find((l) => l.menuItemId === item.id);
+              if (last) decrementLine(last.lineId);
+            }}
           />
         )}
 
@@ -530,6 +573,26 @@ function PublicMenuPageWithOrdering() {
           />
         ) : null}
       </main>
+
+      <ItemOptionsSheet
+          open={pendingItem !== null}
+          itemName={pendingItem?.name ?? ""}
+          basePrice={pendingItem?.price ?? 0}
+          groups={pendingItem?.groups ?? []}
+          onCancel={() => setPendingItem(null)}
+          onConfirm={(selected: SelectedOptionGroup[]) => {
+            if (!pendingItem) return;
+            addItem({
+              menuItemId: pendingItem.id,
+              name: pendingItem.name,
+              price: pendingItem.price,
+              imageUrl: pendingItem.imageUrl,
+              selectedOptions: selected,
+            });
+            setPendingItem(null);
+          }}
+      />
+
 
       {!closedNow && (
         <CartBar

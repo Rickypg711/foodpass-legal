@@ -45,6 +45,17 @@ export function buildCustomerWebOrderPayload(
       quantity: line.quantity,
       subtotal: line.subtotal,
     };
+    // Lo que el cliente eligió. La forma es exactamente la que la pantalla
+    // de Pedidos ya renderiza: { modifierName, selectedOptions[] }.
+    if (line.selectedOptions?.length) {
+      item.selectedModifiers = line.selectedOptions.map((g) => ({
+        modifierName: g.groupName,
+        selectedOptions: g.options.map((o) => o.name),
+      }));
+    }
+    // Nota libre por platillo (sin cebolla, término). El vendor ya la pinta.
+    const note = line.notes?.trim();
+    if (note) item.notes = note;
     // Points-powered upsell: carry the server-decided bonus onto the order so
     // it's credited at loyalty award time (order scan). Never a discount.
     if (line.isUpsell) {

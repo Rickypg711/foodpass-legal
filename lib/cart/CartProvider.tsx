@@ -20,6 +20,7 @@ import {
 } from "@/lib/cart/cartLineMath";
 import { clearCart, loadCart, saveCart } from "./cartStorage";
 import type { CartLine } from "./types";
+import { buildLineId, optionsPriceDelta } from "./lineId";
 
 type CartContextValue = {
   lines: CartLine[];
@@ -27,11 +28,12 @@ type CartContextValue = {
   subtotal: number;
   /** True after client has loaded cart from sessionStorage. */
   cartReady: boolean;
-  addItem: (item: Omit<CartLine, "quantity" | "subtotal">) => void;
-  incrementLine: (menuItemId: string) => void;
-  decrementLine: (menuItemId: string) => void;
-  updateLineQuantity: (menuItemId: string, quantity: number) => void;
-  removeLine: (menuItemId: string) => void;
+  addItem: (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">) => void;
+  incrementLine: (lineId: string) => void;
+  decrementLine: (lineId: string) => void;
+  updateLineQuantity: (lineId: string, quantity: number) => void;
+  removeLine: (lineId: string) => void;
+  setLineNotes: (lineId: string, notes: string) => void;
   clear: () => void;
 };
 
@@ -92,13 +94,16 @@ export function CartProvider({
   }, [restaurantId, lines, cartReady]);
 
   const addItem = useCallback(
-    (item: Omit<CartLine, "quantity" | "subtotal">) => {
+    (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">) => {
       if (!webOrderingAvailable) {
         mpWebDebugClient("cart_add_blocked_mp_unavailable", { restaurantId });
         return;
       }
+      // El precio de la línea ya trae el sobreprecio de lo elegido.
+      const unitPrice = item.price + optionsPriceDelta(item.selectedOptions);
+      const lineId = buildLineId(item.menuItemId, item.selectedOptions);
       setLines((prev) => {
-        const idx = prev.findIndex((l) => l.menuItemId === item.menuItemId);
+        const idx = prev.findIndex((l) => l.lineId === lineId);
         let next: CartLine[];
         let addedQty = 1;
         if (idx >= 0) {
@@ -116,8 +121,10 @@ export function CartProvider({
             ...prev,
             {
               ...item,
+              lineId,
+              price: unitPrice,
               quantity: 1,
-              subtotal: item.price,
+              subtotal: unitPrice,
             },
           ];
         }
@@ -132,34 +139,48 @@ export function CartProvider({
     [restaurantId, webOrderingAvailable],
   );
 
+  const setLineNotes = useCallback(
+    (lineId: string, notes: string) => {
+      const clean = notes.slice(0, 140);
+      setLines((prev) =>
+        prev.map((l) =>
+          l.lineId === lineId
+            ? { ...l, notes: clean.trim() ? clean : undefined }
+            : l,
+        ),
+      );
+    },
+    [],
+  );
+
   const incrementLine = useCallback(
-    (menuItemId: string) => {
+    (lineId: string) => {
       if (!webOrderingAvailable) return;
-      setLines((prev) => incrementCartLine(prev, menuItemId));
+      setLines((prev) => incrementCartLine(prev, lineId));
     },
     [webOrderingAvailable],
   );
 
   const decrementLine = useCallback(
-    (menuItemId: string) => {
+    (lineId: string) => {
       if (!webOrderingAvailable) return;
-      setLines((prev) => decrementCartLine(prev, menuItemId));
+      setLines((prev) => decrementCartLine(prev, lineId));
     },
     [webOrderingAvailable],
   );
 
   const updateLineQuantity = useCallback(
-    (menuItemId: string, quantity: number) => {
+    (lineId: string, quantity: number) => {
       if (!webOrderingAvailable) return;
-      setLines((prev) => updateCartLineQuantity(prev, menuItemId, quantity));
+      setLines((prev) => updateCartLineQuantity(prev, lineId, quantity));
     },
     [webOrderingAvailable],
   );
 
   const removeLine = useCallback(
-    (menuItemId: string) => {
+    (lineId: string) => {
       if (!webOrderingAvailable) return;
-      setLines((prev) => prev.filter((l) => l.menuItemId !== menuItemId));
+      setLines((prev) => prev.filter((l) => l.lineId !== lineId));
     },
     [webOrderingAvailable],
   );
@@ -193,6 +214,7 @@ export function CartProvider({
       decrementLine,
       updateLineQuantity,
       removeLine,
+      setLineNotes,
       clear,
     }),
     [
@@ -205,6 +227,7 @@ export function CartProvider({
       decrementLine,
       updateLineQuantity,
       removeLine,
+      setLineNotes,
       clear,
     ],
   );

@@ -29,6 +29,8 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseStorage, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness } from "@/lib/vendorReadiness";
+import { parseOptionGroupsFromDescription, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import { OptionGroupsEditor, cleanOptionGroups } from "@/components/vendor/OptionGroupsEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +42,8 @@ interface MenuItem {
   category: string;
   imageUrl: string | null;
   isAvailable: boolean;
+  /** Opciones que el cliente elige al ordenar (salsa, aderezo, extras). */
+  optionGroups: MenuItemOptionGroup[];
   /** Doc completo — preserva modifiers y demás campos que la web no edita. */
   raw: Record<string, unknown>;
 }
@@ -73,6 +77,9 @@ function parseMenuItem(id: string, data: Record<string, unknown>): MenuItem {
     category: typeof data.category === "string" ? data.category : "",
     imageUrl: typeof data.imageUrl === "string" && data.imageUrl ? data.imageUrl : null,
     isAvailable: data.isAvailable !== false,
+    optionGroups: Array.isArray(data.optionGroups)
+      ? (data.optionGroups as MenuItemOptionGroup[])
+      : [],
     raw: data,
   };
 }
@@ -693,6 +700,13 @@ function ItemFormModal({
   const [fPrice, setFPrice] = useState<string>(item && item.price > 0 ? String(item.price) : "");
   const [fCategory, setFCategory] = useState(item?.category ?? "");
   const [fAvailable, setFAvailable] = useState(item?.isAvailable ?? true);
+  // Los grupos guardados mandan; si el platillo no tiene, se arranca con lo
+  // que se detecte en la descripción para no hacer al dueño teclearlo de nuevo.
+  const [fGroups, setFGroups] = useState<MenuItemOptionGroup[]>(
+    item?.optionGroups?.length
+      ? item.optionGroups
+      : parseOptionGroupsFromDescription(item?.description),
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(item?.imageUrl ?? null);
   const [removeImage, setRemoveImage] = useState(false);
@@ -734,6 +748,7 @@ function ItemFormModal({
         category: fCategory.trim(),
         imageUrl,
         isAvailable: fAvailable,
+        optionGroups: cleanOptionGroups(fGroups),
         updatedAt: serverTimestamp(),
       };
 
@@ -885,6 +900,20 @@ function ItemFormModal({
             rows={2}
             onChange={(e) => setFDesc(e.target.value)}
             className="w-full resize-none rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
+          />
+
+          {/* Opciones que el cliente elige al ordenar. Arranca con lo que se
+              detecte en la descripción ("Elige tu salsa: A, B, C") y de ahí el
+              dueño lo edita: nombres, precios de extras, obligatorio o no. Lo
+              guardado manda sobre lo detectado. */}
+          <OptionGroupsEditor
+            groups={fGroups}
+            onChange={setFGroups}
+            detectedHint={
+              parseOptionGroupsFromDescription(fDesc).length > 0
+                ? "Detectamos opciones en la descripción. Dale a + Grupo para editarlas y ponerles precio."
+                : null
+            }
           />
           <div className="flex gap-2">
             <input

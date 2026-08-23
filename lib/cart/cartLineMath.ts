@@ -4,31 +4,33 @@ export function lineSubtotal(price: number, quantity: number): number {
   return price * quantity;
 }
 
+// Las operaciones van por `lineId`, no por `menuItemId`: el mismo platillo
+// puede estar dos veces en el carrito con opciones distintas.
 export function updateCartLineQuantity(
   lines: CartLine[],
-  menuItemId: string,
+  lineId: string,
   quantity: number,
 ): CartLine[] {
   if (quantity <= 0) {
-    return lines.filter((l) => l.menuItemId !== menuItemId);
+    return lines.filter((l) => l.lineId !== lineId);
   }
   return lines.map((l) =>
-    l.menuItemId === menuItemId
+    l.lineId === lineId
       ? { ...l, quantity, subtotal: lineSubtotal(l.price, quantity) }
       : l,
   );
 }
 
-export function incrementCartLine(lines: CartLine[], menuItemId: string): CartLine[] {
-  const line = lines.find((l) => l.menuItemId === menuItemId);
+export function incrementCartLine(lines: CartLine[], lineId: string): CartLine[] {
+  const line = lines.find((l) => l.lineId === lineId);
   if (!line) return lines;
-  return updateCartLineQuantity(lines, menuItemId, line.quantity + 1);
+  return updateCartLineQuantity(lines, lineId, line.quantity + 1);
 }
 
-export function decrementCartLine(lines: CartLine[], menuItemId: string): CartLine[] {
-  const line = lines.find((l) => l.menuItemId === menuItemId);
+export function decrementCartLine(lines: CartLine[], lineId: string): CartLine[] {
+  const line = lines.find((l) => l.lineId === lineId);
   if (!line) return lines;
-  return updateCartLineQuantity(lines, menuItemId, line.quantity - 1);
+  return updateCartLineQuantity(lines, lineId, line.quantity - 1);
 }
 
 export function cartItemCount(lines: CartLine[]): number {

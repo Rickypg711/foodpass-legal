@@ -1,5 +1,6 @@
 import { formatPrice } from "@/lib/priceFormat";
 import type { CartLine } from "@/lib/cart/types";
+import { describeSelectedOptions } from "@/lib/cart/lineId";
 
 export type WhatsappOrderContext = {
   restaurantName: string;
@@ -27,7 +28,14 @@ export function shortOrderCode(orderId: string): string {
 // renders *bold*. No exotic emojis — several render as � on desktop clients.
 export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
   const itemsLines = ctx.cartLines
-    .map((l) => `${l.quantity}x ${l.name} — ${formatPrice(l.subtotal)}`)
+    .map((l) => {
+      const head = `${l.quantity}x ${l.name} — ${formatPrice(l.subtotal)}`;
+      const extras = [describeSelectedOptions(l.selectedOptions), l.notes?.trim()]
+        .filter(Boolean)
+        .map((t) => `\n   ↳ ${t}`)
+        .join("");
+      return head + extras;
+    })
     .join("\n");
 
   return [

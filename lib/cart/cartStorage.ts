@@ -10,7 +10,10 @@ export function loadCart(restaurantId: string): CartLine[] {
     const raw = sessionStorage.getItem(storageKey(restaurantId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as CartLine[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Migración: los carritos guardados antes de `lineId` no lo traen.
+    // Sin opciones, lineId === menuItemId, así que se rellena sin perder nada.
+    return parsed.map((l) => (l.lineId ? l : { ...l, lineId: l.menuItemId }));
   } catch {
     return [];
   }
