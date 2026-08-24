@@ -50,7 +50,16 @@ export function MercadoPagoConnectCard({
       window.location.href = data.authorizeUrl;
     } catch (e) {
       console.error("[MercadoPagoConnectCard]", e);
-      setErr("No pudimos abrir Mercado Pago. Intenta de nuevo.");
+      // Un error genérico aquí obliga a depurar a ciegas. El caso de configuración
+      // se distingue porque es el único que NO se arregla reintentando.
+      const code = e instanceof Error ? e.message : "";
+      setErr(
+          code === "mp_oauth_not_configured" || code === "firebase_admin_credentials_missing" ?
+            "Mercado Pago aún no está configurado en el servidor. Avísanos y lo dejamos listo — no es algo que puedas arreglar desde aquí." :
+          code === "forbidden" ?
+            "Solo el dueño de la cuenta puede conectar Mercado Pago." :
+            "No pudimos abrir Mercado Pago. Intenta de nuevo.",
+      );
       setBusy(false);
     }
   }
