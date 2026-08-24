@@ -98,8 +98,8 @@ export function MercadoPagoConnectCard({
               </li>
               <li>
                 <b>Mercado Pago te cobra su tarifa</b> aparte, y va directo a ellos.
-                Cambia según tu contrato y en cuántos días te liberan el dinero:
-                revísala en tu cuenta de Mercado Pago.
+                Tu dinero cae en tu cuenta de Mercado Pago, no en la nuestra. La
+                tarifa exacta la ves ahí mismo.
               </li>
               <li>
                 <b>Efectivo, pago al recoger y tu terminal: 0%.</b> Siempre.
