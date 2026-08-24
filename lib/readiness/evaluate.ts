@@ -48,18 +48,54 @@ function isHoursConfirmed(data: Record<string, unknown>): boolean {
   return data.hoursConfirmed === true;
 }
 
+/**
+ * PARIDAD: la app exige `enabled == true && menuItemId != null`
+ * (FirstPurchaseRewardService.hasEnabledWithDescription → hasMenuItem →
+ * getMenuItemId). Aquí se pedía el NOMBRE. Se aceptan los dos para no dejar
+ * fuera ningún caso real, pero `menuItemId` es la señal canónica.
+ */
 function hasEnabledFirstPurchaseReward(fpr: unknown): boolean {
   if (!fpr || typeof fpr !== "object") return false;
   const r = fpr as Record<string, unknown>;
-  return r.enabled === true && typeof r.menuItemName === "string" && (r.menuItemName as string).trim().length > 0;
+  if (r.enabled !== true) return false;
+  const id = r.menuItemId;
+  if (typeof id === "string" && id.trim().length > 0) return true;
+  const name = r.menuItemName;
+  return typeof name === "string" && name.trim().length > 0;
+}
+
+/**
+ * PARIDAD CON LA APP (bug real, 24-ago-2026).
+ *
+ * Esto leía `tier.hasMenuItem === true` como si fuera un campo GUARDADO. No lo
+ * es: en Dart `hasMenuItem` es un GETTER CALCULADO (RewardTier, reward_tier.dart)
+ * que sale de `menuItemId != null`. Y los premios que aplica la IA se guardan
+ * así:
+ *
+ *   {id, visitsRequired, menuItemId, menuItemName, menuItemDescription}
+ *
+ * — sin `hasMenuItem`. Resultado: la app leía esos tiers como VÁLIDOS y la web
+ * como inválidos, para siempre. Los dos escriben isSetupComplete, así que
+ * ganaba el último en escribir, y cuando ganaba la web el local quedaba
+ * incompleto → **Mercado Pago pausado** en un local que ya estaba listo.
+ * Le pasó a Luxo grill steak house y a Sr & Sra Perro.
+ *
+ * Ahora la señal canónica es `menuItemId`, igual que en Dart. Se sigue
+ * aceptando `hasMenuItem === true` por compatibilidad con los tiers viejos que
+ * sí lo traen guardado.
+ */
+function tierHasMenuItem(tier: Record<string, unknown>): boolean {
+  const id = tier.menuItemId;
+  if (typeof id === "string" && id.trim().length > 0) return true;
+  // Docs legados que sí persistieron la bandera.
+  return tier.hasMenuItem === true;
 }
 
 function hasValidRewardTiers(raw: unknown): boolean {
   if (!Array.isArray(raw) || raw.length === 0) return false;
   return raw.every((t) => {
     if (!t || typeof t !== "object") return false;
-    const tier = t as Record<string, unknown>;
-    return tier.hasMenuItem === true;
+    return tierHasMenuItem(t as Record<string, unknown>);
   });
 }
 
