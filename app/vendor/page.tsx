@@ -1380,6 +1380,7 @@ function getNbaFallbackBody(actionCode: string): string {
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
     case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
     case "configure_rewards": return "Crea tu primera recompensa para empezar a motivar visitas recurrentes.";
+    case "enable_first_purchase_reward": return "Tu recompensa de bienvenida está apagada, y mientras siga así tu local cuenta como incompleto: el escáner de puntos y el cobro en línea quedan en pausa. Es el gancho que convierte a un cliente nuevo en uno que regresa — préndela en Recompensas, toma un minuto.";
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
@@ -1396,6 +1397,7 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
   switch (actionCode) {
     case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
     case "check_ai_draft": return "Revisar borrador de recompensa";
+    case "enable_first_purchase_reward": return "Prender recompensa de bienvenida";
     case "grow_phone_capture": return "Cobrar con número en la Caja";
     case "share_with_customers": return "Compartir mi menú";
     case "stable": return "Ver reportes";
@@ -1421,6 +1423,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "add_menu_items": return "/vendor/menu";
     case "lower_reward_threshold":
     case "configure_rewards":
+    case "enable_first_purchase_reward":
     case "review_rewards": return "/vendor/recompensas";
     case "get_first_scan": return "/vendor/pos";
     case "healthy":
