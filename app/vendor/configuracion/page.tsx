@@ -67,6 +67,10 @@ export default function ConfiguracionPage() {
   // Dirección tal como venía de Firestore. Sirve para saber si el dueño la
   // cambió de verdad y sólo entonces volver a geocodificar (ver handleSave).
   const initialAddressRef = useRef<string>("");
+  /// true cuando la dirección guardada NO se pudo ubicar en el mapa. El local
+  /// queda fuera de "Cerca de ti" y de Recompensas (la app filtra a 20 km), así
+  /// que hay que DECÍRSELO al dueño — no basta con marcarlo en Firestore.
+  const [locationUnresolved, setLocationUnresolved] = useState(false);
   const [phone, setPhone] = useState("");
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
@@ -119,6 +123,10 @@ export default function ConfiguracionPage() {
       setName((data.name as string) ?? "");
       setAddress((data.address as string) ?? "");
       initialAddressRef.current = (data.address as string) ?? "";
+      setLocationUnresolved(
+        data.locationNeedsReview === true ||
+          (Number(data.lat) === 0 && Number(data.lng) === 0),
+      );
       setPhone((data.phone as string) ?? "");
       setStory((data.story as string) ?? "");
       setSlug(slugFromRestaurantData(data));
@@ -378,6 +386,7 @@ export default function ConfiguracionPage() {
             body: JSON.stringify({ address: address.trim(), phone: phone.trim() }),
           });
           const verdict = await geoRes.json();
+          setLocationUnresolved(!verdict?.ok);
           if (verdict?.ok) {
             update.lat = verdict.lat;
             update.lng = verdict.lng;
@@ -587,6 +596,21 @@ export default function ConfiguracionPage() {
                   <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
                 )}
               </button>
+            )}
+
+            {locationUnresolved && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                <p className="font-semibold">
+                  No pudimos ubicar tu dirección en el mapa
+                </p>
+                <p className="mt-1 leading-relaxed">
+                  Tu restaurante <strong>no aparece</strong> en &ldquo;Cerca de ti&rdquo; ni
+                  en Recompensas dentro de la app hasta que lo ubiquemos.
+                  Escribe la <strong>calle y número, colonia y ciudad</strong> —
+                  con &ldquo;{address.trim() || "el centro"}&rdquo; no alcanza — y
+                  guarda otra vez.
+                </p>
+              </div>
             )}
 
             {error && (
