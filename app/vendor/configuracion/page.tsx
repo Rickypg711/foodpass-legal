@@ -2,7 +2,7 @@
 
 import { MercadoPagoConnectCard } from "@/components/vendor/MercadoPagoConnectCard";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDocs, addDoc, deleteDoc, query, where, limit } from "firebase/firestore";
@@ -64,6 +64,9 @@ export default function ConfiguracionPage() {
   // Form fields
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  // Dirección tal como venía de Firestore. Sirve para saber si el dueño la
+  // cambió de verdad y sólo entonces volver a geocodificar (ver handleSave).
+  const initialAddressRef = useRef<string>("");
   const [phone, setPhone] = useState("");
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
@@ -115,6 +118,7 @@ export default function ConfiguracionPage() {
       setRestaurantId(rid);
       setName((data.name as string) ?? "");
       setAddress((data.address as string) ?? "");
+      initialAddressRef.current = (data.address as string) ?? "";
       setPhone((data.phone as string) ?? "");
       setStory((data.story as string) ?? "");
       setSlug(slugFromRestaurantData(data));
@@ -356,7 +360,48 @@ export default function ConfiguracionPage() {
         } catch { /* sin slug esta vez — reintenta en el próximo guardado */ }
       }
 
+      // ── Re-geocodificar cuando cambia la dirección ─────────────────────
+      // PARIDAD CON LA APP: en la app, guardar la dirección escribe TAMBIÉN
+      // lat/lng (manage_restaurant_screen.dart usa el pin del mapa). Aquí no
+      // se hacía, así que un dueño podía corregir su dirección y quedarse con
+      // las coordenadas viejas — o en 0,0 para siempre. Justo el camino que
+      // usarían los locales que hoy están mal ubicados para arreglarse solos.
+      //
+      // Sólo se dispara si la dirección REALMENTE cambió, para no gastar
+      // llamadas a Google en cada guardado de horario o de meta diaria.
+      const addressChanged = address.trim() !== (initialAddressRef.current ?? "").trim();
+      if (addressChanged) {
+        try {
+          const geoRes = await fetch("/api/geocode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: address.trim(), phone: phone.trim() }),
+          });
+          const verdict = await geoRes.json();
+          if (verdict?.ok) {
+            update.lat = verdict.lat;
+            update.lng = verdict.lng;
+            update.locationSource = "vendor_web_edit";
+            update.locationPrecision = verdict.precision;
+            update.locationFormattedAddress = verdict.formatted;
+            update.locationNeedsReview = false;
+            update.locationUpdatedAt = serverTimestamp();
+          } else {
+            // No se pudo ubicar con confianza: NO se escribe un pin
+            // equivocado (peor que no tener pin) — se marca para revisión.
+            update.locationNeedsReview = true;
+            update.locationReviewReason = verdict?.reason ?? "desconocido";
+            update.locationUpdatedAt = serverTimestamp();
+          }
+        } catch (geoErr) {
+          console.warn("[configuracion/geocode]", geoErr);
+          update.locationNeedsReview = true;
+          update.locationReviewReason = "geocode_exception";
+        }
+      }
+
       await updateDoc(doc(db, "restaurants", restaurantId), update);
+      initialAddressRef.current = address.trim();
       if (claimedSlug) setSlug(claimedSlug);
       const readiness = await persistReadiness(restaurantId);
       setSetupReasons(readiness && !readiness.isComplete ? readiness.reasons : []);
