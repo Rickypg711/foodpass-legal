@@ -233,30 +233,59 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
         console.warn("[activar] tracking failed (non-blocking):", trackErr);
       }
 
-      // Geocode address → lat/lng (same pattern as Flutter app)
-      // Non-blocking: if it fails, restaurant is still created with lat:0, lng:0
+      // ── Geocodificación ────────────────────────────────────────────────
+      // ANTES (bug, 16 de 28 locales en 0,0): este bloque dependía de una
+      // llave que NO existe en el entorno de producción de Vercel, así que se
+      // saltaba entero y TODO local creado desde la web quedaba en el Golfo de
+      // Guinea — invisible en la app, que filtra Recompensas a 20 km.
+      // Además le pegaba ", Chihuahua, Chihuahua, México" a cualquier
+      // dirección, aunque el local estuviera en Colombia o Guatemala.
+      //
+      // Ahora pasa por /api/geocode (servidor), que comparte guardas EXACTAS con
+      // el backfill del lado servidor: país deducido del teléfono, piso de
+      // precisión, y rechazo de partial_match que no conserve nada de lo
+      // pedido. Un pin equivocado es PEOR que no tener pin.
+      //
+      // Y cuando NO se puede ubicar, ya no se calla: marca
+      // locationNeedsReview para que sea consultable en vez de invisible.
       try {
-        const geocodeKey = process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_API_KEY;
-        if (geocodeKey && address.trim().length >= 10) {
-          const query = encodeURIComponent(`${address.trim()}, Chihuahua, Chihuahua, México`);
-          const geoRes = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${geocodeKey}`
-          );
-          const geoData = await geoRes.json();
-          if (geoData.status === "OK" && geoData.results?.[0]?.geometry?.location) {
-            const { lat, lng } = geoData.results[0].geometry.location;
-            const { updateDoc } = await import("firebase/firestore");
-            await updateDoc(restaurantRef, {
-              lat,
-              lng,
-              locationSource: "web_signup",
-              locationVerifiedAt: serverTimestamp(),
-              locationUpdatedAt: serverTimestamp(),
-            });
-          }
+        // Ruta de servidor: la llave de Google NUNCA baja al navegador.
+        const geoRes = await fetch("/api/geocode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address: address.trim(), phone: phone.trim() }),
+        });
+        const verdict = await geoRes.json();
+        const { updateDoc } = await import("firebase/firestore");
+        if (verdict.ok) {
+          await updateDoc(restaurantRef, {
+            lat: verdict.lat,
+            lng: verdict.lng,
+            locationSource: "web_signup",
+            locationPrecision: verdict.precision,
+            locationFormattedAddress: verdict.formatted,
+            locationNeedsReview: false,
+            locationVerifiedAt: serverTimestamp(),
+            locationUpdatedAt: serverTimestamp(),
+          });
+        } else {
+          console.warn("[activar] geocode rechazado:", verdict.reason);
+          await updateDoc(restaurantRef, {
+            locationNeedsReview: true,
+            locationReviewReason: verdict.reason,
+            locationUpdatedAt: serverTimestamp(),
+          });
         }
       } catch (geoErr) {
         console.warn("[activar] geocode failed (non-blocking):", geoErr);
+        try {
+          const { updateDoc } = await import("firebase/firestore");
+          await updateDoc(restaurantRef, {
+            locationNeedsReview: true,
+            locationReviewReason: "geocode_exception",
+            locationUpdatedAt: serverTimestamp(),
+          });
+        } catch { /* nunca romper el alta por esto */ }
       }
 
       setStage("done");
