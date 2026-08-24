@@ -416,6 +416,20 @@ export default function VendorDashboard() {
         const loyaltyUsed = inSameMonth ? Number(r.scanCount ?? 0) || 0 : 0;
 
         const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
+
+        // El consejo lo calcula restaurant_brain y se guarda en Firestore; solo
+        // se recalcula en el refresco DIARIO o al aplicar un borrador de
+        // recompensas — nunca al terminar el setup. O sea que un dueño que acaba
+        // de completar su perfil sigue leyendo "Completa tu perfil" hasta 24
+        // horas, y el panel parece roto justo el dia que se dio de alta. Aqui
+        // manda el doc VIVO del restaurante, que si esta al dia.
+        const brainActionCode = (ins?.actionCode as string) ?? "unknown";
+        const nbaCode = resolveNbaActionCode(
+            brainActionCode,
+            (r.isSetupComplete as boolean) ?? true,
+        );
+        const nbaOverridden = nbaCode !== brainActionCode;
+
         setData({
           restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
@@ -431,18 +445,15 @@ export default function VendorDashboard() {
           recentScans,
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
-          // El consejo lo calcula restaurant_brain y se guarda en Firestore; solo
-          // se recalcula en el refresco DIARIO o al aplicar un borrador de
-          // recompensas — nunca al terminar el setup. O sea que un dueño que
-          // acaba de completar su perfil sigue leyendo "Completa tu perfil"
-          // hasta 24 horas, y el panel parece roto justo el dia que se dio de
-          // alta. Aqui manda el doc VIVO del restaurante, que si esta al dia.
-          nbaActionCode: resolveNbaActionCode(
-              (ins?.actionCode as string) ?? "unknown",
-              (r.isSetupComplete as boolean) ?? true,
-          ),
+          nbaActionCode: nbaCode,
           nbaTitle: (ins?.title_es as string) ?? "Siguiente mejor acción",
-          nbaBody: (ins?.body_es as string) ?? "",
+          // Si el codigo se corrigio, el texto guardado por el cerebro habla de
+          // OTRA accion: dejarlo pone "Completa tu perfil" arriba de un boton que
+          // dice "Cobrar con numero". El texto tiene que venir del codigo que se
+          // esta mostrando, no del que el cerebro creia.
+          nbaBody: nbaOverridden
+            ? getNbaFallbackBody(nbaCode)
+            : ((ins?.body_es as string) ?? ""),
           nbaMetrics: {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
             atRiskReachableCount: (insMetrics.atRiskReachableCount as number | null | undefined) ?? null,
