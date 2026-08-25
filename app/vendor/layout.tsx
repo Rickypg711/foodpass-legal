@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
+import { ServiceRequestsBell } from "@/components/pos/ServiceRequestsBell";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
@@ -632,6 +633,11 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         className="hidden shrink-0 transition-all duration-200 md:block"
         style={{ width: w }}
       />
+
+      {/* ── Campana de servicio (robo #5): mesas llamando. Vive en el LAYOUT
+          para que suene en TODO el panel — Caja, Pedidos, dashboard — no solo
+          donde el dueño esté parado (feedback de Ricardo, 25-ago). ── */}
+      {restaurantId && <ServiceRequestsBell restaurantId={restaurantId} />}
 
       {/* ── Page content ── */}
       <div 

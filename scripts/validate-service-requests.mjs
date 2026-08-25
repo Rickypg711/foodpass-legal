@@ -29,7 +29,7 @@ assert.ok(rules.includes(".hasOnly(['status', 'attendedAt', 'attendedBy'])"),
 const menuView = readFileSync(new URL("../app/menu/[restaurantId]/MenuView.tsx", import.meta.url), "utf8");
 assert.ok(menuView.includes("<TableServiceButtons"), "comensal: botones en el aviso de mesa");
 
-const posPage = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
-assert.ok(posPage.includes("<ServiceRequestsBell"), "dueño: campana en la Caja");
+const vendorLayout = readFileSync(new URL("../app/vendor/layout.tsx", import.meta.url), "utf8");
+assert.ok(vendorLayout.includes("<ServiceRequestsBell"), "dueño: campana en TODO el panel (layout)");
 
 console.log("validate-service-requests: OK");

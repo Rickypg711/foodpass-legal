@@ -23,7 +23,6 @@ import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from 
 import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { groupOpenTabs, distributeGroupNet, type TabGroup } from "@/lib/pos/tabGroups";
-import { ServiceRequestsBell } from "@/components/pos/ServiceRequestsBell";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
@@ -1900,9 +1899,6 @@ export default function PosPage() {
           onDone={() => setSuccess(null)}
         />
       )}
-
-      {/* ── Campana de servicio: mesas llamando (robo #5) ── */}
-      {restaurantId && <ServiceRequestsBell restaurantId={restaurantId} />}
 
       {/* ── Open Tabs Modal ── */}
       {showTabsModal && (

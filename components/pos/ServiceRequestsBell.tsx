@@ -91,30 +91,37 @@ export function ServiceRequestsBell({ restaurantId }: { restaurantId: string }) 
 
   return (
     <>
+      {/* Píldora ARRIBA a la derecha (feedback de Ricardo 25-ago: abajo se
+          perdía). Con pendientes no es un iconito: es un aviso con texto y
+          pulso — el mesero la tiene que ver desde el otro lado de la barra. */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${pending.length} peticiones de mesa pendientes`}
-        className="fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full text-[20px] shadow-lg transition-transform hover:scale-105"
+        className={`fixed right-3 top-3 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] font-extrabold shadow-xl transition-transform hover:scale-105 ${pending.length > 0 ? "animate-pulse" : ""}`}
         style={{
           background: pending.length > 0 ? "#F28C38" : "rgba(28,37,38,0.85)",
-          color: "#1C2526",
+          color: pending.length > 0 ? "#1C2526" : "#ffffff",
+          boxShadow: pending.length > 0 ? "0 6px 24px rgba(242,140,56,0.5)" : undefined,
         }}
       >
         🛎️
-        {pending.length > 0 && (
-          <span
-            className="absolute -right-1 -top-1 flex h-5 w-5 animate-pulse items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ background: "#DC2626" }}
-          >
-            {pending.length}
-          </span>
-        )}
+        {pending.length > 0 ? (
+          <>
+            <span>{pending.length === 1 ? "Mesa llamando" : "Mesas llamando"}</span>
+            <span
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold text-white"
+              style={{ background: "#DC2626" }}
+            >
+              {pending.length}
+            </span>
+          </>
+        ) : null}
       </button>
 
       {open && (
         <div
-          className="fixed bottom-40 right-4 z-40 w-72 overflow-hidden rounded-2xl bg-white shadow-2xl"
+          className="fixed right-3 top-16 z-50 w-72 overflow-hidden rounded-2xl bg-white shadow-2xl"
           style={{ border: "1px solid rgba(28,37,38,0.1)" }}
         >
           <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
