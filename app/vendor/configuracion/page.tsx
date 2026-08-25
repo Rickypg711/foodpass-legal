@@ -14,6 +14,7 @@ import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
+import { isGoogleReviewUrl } from "@/lib/googleReviewUrl";
 import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
@@ -75,6 +76,7 @@ export default function ConfiguracionPage() {
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
   const [story, setStory] = useState("");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   /** Slug público (comeleal.com/r/{slug}) — se auto-reclama al guardar. */
   const [slug, setSlug] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
@@ -129,6 +131,7 @@ export default function ConfiguracionPage() {
       );
       setPhone((data.phone as string) ?? "");
       setStory((data.story as string) ?? "");
+      setGoogleReviewUrl((data.googleReviewUrl as string) ?? "");
       setSlug(slugFromRestaurantData(data));
       setCategories((data.categories as string[]) ?? []);
       const goal = data.dailyRevenueGoal as number | undefined;
@@ -326,6 +329,10 @@ export default function ConfiguracionPage() {
     if (!restaurantId) return;
     if (!name.trim()) { setError("El nombre del restaurante es obligatorio."); return; }
     if (!address.trim()) { setError("La dirección es obligatoria."); return; }
+    if (googleReviewUrl.trim() && !isGoogleReviewUrl(googleReviewUrl)) {
+      setError("El link de reseñas debe ser de Google (g.page, maps.google…). Cópialo del botón \"Pedir reseñas\" de tu Perfil de Negocio de Google.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -336,6 +343,7 @@ export default function ConfiguracionPage() {
         address: address.trim(),
         phone: phone.trim(),
         story: story.trim(),
+        googleReviewUrl: googleReviewUrl.trim(),
         categories,
         payAtPickupEnabled: payAtPickup,
         lastUpdated: serverTimestamp(),
@@ -700,6 +708,23 @@ export default function ConfiguracionPage() {
                 />
                 <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
                   Se muestra como &quot;Nuestra historia&quot; en tu página comeleal.com/r/…
+                </p>
+              </Field>
+              {/* Funnel de reseñas: con la liga puesta, cada cliente que gana
+                  puntos (app y recibo web) recibe la invitación a dejar reseña
+                  justo en el momento de mayor gusto. Espejo del campo en la
+                  app (ManageRestaurantScreen, sección de redes). */}
+              <Field label="Link de reseñas de Google (opcional)">
+                <TextInput
+                  value={googleReviewUrl}
+                  onChange={(v) => { setGoogleReviewUrl(v); setSaved(false); }}
+                  placeholder="https://g.page/r/…/review"
+                  type="url"
+                />
+                <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                  Cópialo del botón &quot;Pedir reseñas&quot; en tu Perfil de Negocio de
+                  Google. Con el link puesto, Comeleal invita a tus clientes a dejarte
+                  reseña justo después de ganar puntos — reseñas de visitas reales.
                 </p>
               </Field>
             </SectionCard>
