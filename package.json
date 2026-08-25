@@ -13,7 +13,7 @@
     "test:cart-editing": "node scripts/validate-cart-editing.mjs",
     "test:cart-options": "node scripts/validate-cart-options.mjs",
     "test:discount-pro-gate": "node scripts/validate-discount-pro-gate.mjs",
-    "test": "npm run test:order-payload && npm run test:web-checkout-policy && npm run test:cart-editing && npm run test:cart-options && npm run test:mp-preference && npm run test:discount-pro-gate && npm run test:tab-discount-recalc && npm run test:subscription-entitlement && npm run test:table-orders && npm run test:readiness-hours && npm run test:readiness-tiers && npm run test:tab-groups && npm run test:upsell-dismissals && npm run test:service-requests",
+    "test": "npm run test:order-payload && npm run test:web-checkout-policy && npm run test:cart-editing && npm run test:cart-options && npm run test:mp-preference && npm run test:discount-pro-gate && npm run test:tab-discount-recalc && npm run test:subscription-entitlement && npm run test:table-orders && npm run test:readiness-hours && npm run test:readiness-tiers && npm run test:tab-groups && npm run test:upsell-dismissals && npm run test:service-requests && npm run test:register-payment",
     "test:tab-discount-recalc": "node scripts/validate-tab-discount-recalc.mjs",
     "test:subscription-entitlement": "node scripts/validate-subscription-entitlement.mjs",
     "test:table-orders": "node scripts/validate-table-orders.mjs",
@@ -21,7 +21,8 @@
     "test:readiness-tiers": "node scripts/validate-readiness-tiers.mjs",
     "test:tab-groups": "node scripts/validate-tab-groups.mjs",
     "test:upsell-dismissals": "node scripts/validate-upsell-dismissals.mjs",
-    "test:service-requests": "node scripts/validate-service-requests.mjs"
+    "test:service-requests": "node scripts/validate-service-requests.mjs",
+    "test:register-payment": "node scripts/validate-register-payment.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",

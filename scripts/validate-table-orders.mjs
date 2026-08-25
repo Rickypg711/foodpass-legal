@@ -160,7 +160,11 @@ checkSource("app: tabId en la cuenta de mesa", posDart, "orderMap['tabId'] = awa
 const posPage = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
 checkSource("web Caja: agrupa por tabId", posPage, "groupOpenTabs(activeOpenTabs");
 checkSource("web Caja: el cierre es transacción de GRUPO", posPage, "async function closeTabGroup(");
-checkSource("web Caja: reparto proporcional del neto", posPage, "distributeGroupNet(grossPerOrder");
+// Etapa 2 de la regla de dinero: la transacción y el reparto viven en el
+// módulo ÚNICO de cobro; la página solo delega.
+const registerPaymentSrc = readFileSync(new URL("../lib/pos/registerPayment.ts", import.meta.url), "utf8");
+checkSource("web Caja: delega en registerTabGroupPayment", posPage, "registerTabGroupPayment(");
+checkSource("módulo único: reparto proporcional del neto", registerPaymentSrc, "distributeGroupNet(grossPerOrder");
 const posSheetDart = readFileSync(
   "/Users/ricardoparedes/projects/FOODPASS/lib/pages/pos/dialogs/pos_tab_sheet.dart",
   "utf8",

@@ -22,7 +22,8 @@ import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
 import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
-import { groupOpenTabs, distributeGroupNet, type TabGroup } from "@/lib/pos/tabGroups";
+import { groupOpenTabs, type TabGroup } from "@/lib/pos/tabGroups";
+import { registerTabGroupPayment } from "@/lib/pos/registerPayment";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
@@ -1023,109 +1024,33 @@ export default function PosPage() {
     tip = 0,
     tipMethod: PaymentMethod = "cash",
     customerPhone = "",
-    // 🏷️ Descuento resuelto AL CERRAR (5.1.4). Lo calcula CloseTabDialog sobre
-    // TODOS los items del GRUPO, se lo enseña al cajero, y ese MISMO número
-    // es el que se cobra. Llega ya calculado a propósito: lo mostrado, lo
-    // cobrado y lo registrado tienen que ser el mismo peso.
+    // 🏷️ Descuento resuelto AL CERRAR (5.1.4): lo calcula CloseTabDialog
+    // sobre TODOS los items del GRUPO — lo mostrado, lo cobrado y lo
+    // registrado son el mismo peso.
     recalc: TabDiscountRecalc | null = null,
   ) {
     if (!restaurantId) return;
     try {
-      const db = getFirebaseDb();
-      const anchorId = group.anchor.id as string;
-      const orderIds: string[] = group.orders.map((o: any) => o.id);
-
-      // Etapa 1 (docs/PEDIDO_EN_MESA.md): el cierre cobra las N rondas de la
-      // mesa en UNA transacción — una propina, un descuento, un total. Con
-      // descuento, el neto se reparte proporcional al bruto de cada ronda en
-      // centavos exactos (la suma ES lo cobrado); los puntos de CADA teléfono
-      // salen después de su propia parte. Una cuenta suelta es el grupo de 1:
-      // misma máquina, mismos campos que el cierre clásico.
-      await runTransaction(db, async (transaction) => {
-        const snaps = [];
-        for (const oid of orderIds) {
-          const ref = doc(db, "restaurants", restaurantId, "orders", oid);
-          const snap = await transaction.get(ref);
-          if (!snap.exists()) throw new Error("Una ronda de la cuenta ya no existe.");
-          const data = snap.data();
-          if (data.isOpenTab !== true || String(data.paymentStatus || "") === "paid") {
-            throw new Error("Una ronda ya se había cobrado — recarga las cuentas.");
-          }
-          snaps.push({ ref, data });
-        }
-
-        const withDiscount = Boolean(recalc && recalc.hasDiscount && recalc.discountApplied);
-        // Bruto por ronda desde SUS items a precio original — la misma base
-        // que usa el recálculo, nunca un total que puede venir ya descontado.
-        const grossPerOrder = snaps.map((s) =>
-          (Array.isArray(s.data.items) ? s.data.items : []).reduce(
-            (sum: number, i: any) =>
-              sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
-            0,
-          ),
-        );
-        const shares = withDiscount
-          ? distributeGroupNet(grossPerOrder, recalc!.net)
-          : [];
-
-        snaps.forEach((sn, i) => {
-          const isAnchor = orderIds[i] === anchorId;
-          transaction.update(sn.ref, {
-            status: "completed",
-            isOpenTab: false,
-            paymentStatus: "paid",
-            paymentMethod: method,
-            completedAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            // Propina UNA vez, en el ancla — sumarla en cada ronda la
-            // multiplicaría en Reportes.
-            ...(isAnchor && tip > 0
-              ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }
-              : {}),
-            // El teléfono del cierre va al ANCLA. Las demás rondas conservan
-            // el suyo: cada comensal ya dejó su número al ordenar, y sus
-            // puntos son de SU consumo (el remate de PEDIDO_EN_MESA.md).
-            ...(isAnchor && customerPhone.length === 10 ? { customerPhone } : {}),
-            // El descuento REEMPLAZA lo que hubiera y el registro
-            // (discountApplied) vive UNA vez, en el ancla — sumarlo por ronda
-            // duplicaría "descuentos dados" en Reportes. El total neto se
-            // escribe ANTES de acreditar puntos (regla anti-farming).
-            ...(withDiscount
-              ? {
-                  total: shares[i],
-                  subtotal: grossPerOrder[i],
-                  ...(isAnchor ? { discountApplied: recalc!.discountApplied } : {}),
-                }
-              : {}),
-          });
-        });
+      // ⚖️ Una sola verdad del cobro: la transacción, el reparto proporcional
+      // y los puntos por ronda viven en registerPayment.ts — aquí solo la UI.
+      const result = await registerTabGroupPayment({
+        db: getFirebaseDb(),
+        restaurantId,
+        group,
+        method,
+        tip,
+        tipMethod,
+        customerPhone,
+        recalc,
       });
 
-      // Phone Points v1: cuenta cobrada → acreditar RONDA POR RONDA, cada
-      // teléfono sobre su propia parte. Idempotente por orden (loyaltyAwarded).
-      let capMsg = "";
-      let creditedCount = 0;
-      for (const oid of orderIds) {
-        try {
-          const res = await creditPhonePointsForOrder({ db, restaurantId, orderId: oid });
-          if (res.credited) {
-            creditedCount += 1;
-            console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
-            if (res.capReached === true) {
-              capMsg =
-                "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración.";
-            }
-          }
-        } catch (e) {
-          console.error("[phonePoints] tab-close credit failed", e);
-        }
-      }
-
-      const rondas = orderIds.length;
+      const capMsg = result.capReached
+        ? "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración."
+        : "";
       alert(
-        (rondas > 1
-          ? `¡Cuenta pagada y cerrada! (${rondas} rondas de la mesa` +
-            (creditedCount > 0 ? `, ${creditedCount} con puntos)` : ")")
+        (result.rondas > 1
+          ? `¡Cuenta pagada y cerrada! (${result.rondas} rondas de la mesa` +
+            (result.creditedCount > 0 ? `, ${result.creditedCount} con puntos)` : ")")
           : "¡Cuenta pagada y cerrada!") + capMsg,
       );
       loadOpenTabs(restaurantId);

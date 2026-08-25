@@ -18,6 +18,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { registerOrderPayment } from "@/lib/pos/registerPayment";
 import { tableLabel } from "@/lib/order/tableSession";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
@@ -212,35 +213,19 @@ export default function PedidosPage() {
   const chargeOrder = async (orderId: string, method: "cash" | "card") => {
     if (!restaurantId) return;
     try {
-      const db = getFirebaseDb();
-      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
-
-      await updateDoc(orderRef, {
-        paymentStatus: "paid",
-        paymentMethod: method,
-        // Una cuenta abierta es algo POR COBRAR: la ronda que se paga aquí
-        // SALE de la cuenta de la mesa. Sin esto, la Caja seguía sumándola al
-        // total del grupo y la mesa se podía DOBLE-COBRAR (hallado 25-ago al
-        // agrupar por tabId). Esto además habilita el caso legítimo "yo pago
-        // lo mío y me voy": su ronda se cobra sola y el resto sigue junta.
-        isOpenTab: false,
-        updatedAt: serverTimestamp(),
+      // ⚖️ Una sola verdad del cobro: registerPayment.ts es el ÚNICO lugar
+      // que sabe marcar pagado (transacción con guardia anti-re-cobro, saca
+      // la orden de Cuentas, y acredita los puntos del teléfono).
+      await registerOrderPayment({
+        db: getFirebaseDb(),
+        restaurantId,
+        orderId,
+        method,
       });
       setChargingOrderId(null);
-
-      // Phone Points v1: payment confirmed → credit phone loyalty (§4:
-      // points ONLY on confirmed payment). Idempotent via loyaltyAwarded.
-      try {
-        const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
-        if (res.credited) {
-          console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
-        }
-      } catch (e) {
-        console.error("[phonePoints] credit on charge failed", e);
-      }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error charging order", err);
-      alert("No se pudo registrar el pago.");
+      alert(`No se pudo registrar el pago. ${err instanceof Error ? err.message : ""}`);
     }
   };
 
