@@ -410,6 +410,18 @@ function MenuSetupPageInner() {
           importedFromJob: jobId,
         });
       }
+
+      // Cierra el loop de la IA de tamaños: el job ya trae las PROPUESTAS
+      // (sizeSuggestions); esto deja en el mismo doc cuántas ACEPTÓ el dueño.
+      // propuestas vs aceptadas = la nota del detector, medible con una sola
+      // lectura. Espejo del publishJob del app Flutter.
+      if (jobId) {
+        batch.update(doc(db, "restaurants", restaurantId, "menuImportJobs", jobId), {
+          sizeFamiliesAccepted: juntadas.size,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       await batch.commit();
 
       // Fire reward draft generation in the background so the draft is ready
