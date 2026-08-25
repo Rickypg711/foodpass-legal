@@ -16,6 +16,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart/CartProvider";
 import {
+  isUpsellDismissed,
+  rememberUpsellDismissal,
+} from "@/lib/cart/upsellDismissals";
+import {
   fetchUpsellSuggestion,
   type UpsellSuggestion as Suggestion,
 } from "@/lib/upsellSuggestionCache";
@@ -71,7 +75,13 @@ export function UpsellCard({
       // Cache precalentado desde el menú (mientras el cliente escogía) —
       // en el caso común esto resuelve al instante, sin brinco de layout.
       const s = await fetchUpsellSuggestion(restaurantId, ids);
-      if (!cancelled) setSuggestion(s);
+      // dismissedSuggestionIds (robo #4 a Biomenus): un "no, gracias" se
+      // respeta 14 días — la sugerencia rechazada no vuelve a aparecer.
+      if (!cancelled) {
+        setSuggestion(
+          s && isUpsellDismissed(restaurantId, s.menuItemId) ? null : s,
+        );
+      }
     }
     run();
     return () => {
@@ -155,8 +165,22 @@ export function UpsellCard({
   const surprise = suggestion.surprise === true;
 
   return (
-    <div className="mb-4 rounded-xl border border-[#F28C38]/40 bg-[#FFF3E8] p-4">
-      <div className="flex items-center gap-3">
+    <div className="relative mb-4 rounded-xl border border-[#F28C38]/40 bg-[#FFF3E8] p-4">
+      {/* "No, gracias" — el rechazo SE RECUERDA (14 días). Una máquina que
+          insiste con lo que ya le dijiste que no, deja de ser un mesero
+          atento y se vuelve un vendedor necio. */}
+      <button
+        type="button"
+        aria-label="No, gracias — no volver a sugerir esto"
+        onClick={() => {
+          rememberUpsellDismissal(restaurantId, suggestion.menuItemId);
+          setSuggestion(null);
+        }}
+        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-[13px] text-black/35 transition-colors hover:bg-black/5 hover:text-black/60"
+      >
+        ✕
+      </button>
+      <div className="flex items-center gap-3 pr-5">
         <div className="flex-1">
           <p className="text-sm font-bold">
             {suggestion.pitchTitle || "¿Le agregas algo?"}
