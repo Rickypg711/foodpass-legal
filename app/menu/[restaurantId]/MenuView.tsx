@@ -394,9 +394,12 @@ function PublicMenuPageWithOrdering({
   );
   useEffect(() => {
     if (!restaurantId || !upsellIds) return;
+    // 250ms y no 700: el debounce solo protege contra taps consecutivos al
+    // carrito; cada 100ms de espera aquí es 100ms de tarjeta en blanco en el
+    // checkout (la función con IA ya tarda lo suyo en frío).
     const t = setTimeout(
       () => warmUpsellSuggestion(restaurantId, upsellIds.split(",")),
-      700,
+      250,
     );
     return () => clearTimeout(t);
   }, [restaurantId, upsellIds]);

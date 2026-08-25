@@ -660,12 +660,18 @@ function OrderStatusPageContent() {
             (sessionStorage vía resolveTableFromLocation) y la ronda nueva se
             cuelga de la MISMA cuenta (tabId): pagas todo junto al final. */}
         {mesaLabel ? (
+          // ?mesa= EN LA LIGA a propósito (bug 25-ago): la sesión de mesa vive
+          // por PESTAÑA — si el comensal abre su pedido en otra pestaña (el
+          // recibo de WhatsApp, por ejemplo) y de ahí pide más, sin esto la
+          // ronda 2 caía como pedido para llevar: le volvía a preguntar
+          // nombre y forma de pago. Con la mesa en la URL, cualquier pestaña
+          // re-engancha la sesión y la ronda cae en la MISMA cuenta.
           <Link
-            href={`/menu/${encodeURIComponent(restaurantId)}`}
+            href={`/menu/${encodeURIComponent(restaurantId)}?mesa=${encodeURIComponent(mesaLabel)}`}
             className="mt-6 flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold text-[#1C2526]"
             style={{ background: "#F28C38" }}
           >
-            🍽️ Pedir otra ronda — va a la misma cuenta
+            🍽️ Pedir más — va a la misma cuenta
           </Link>
         ) : (
           <Link

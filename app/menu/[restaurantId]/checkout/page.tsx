@@ -13,6 +13,7 @@ import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreference
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
+import { loadOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
@@ -138,6 +139,17 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!restaurantId) return;
     setTableNumber(resolveTableFromLocation(restaurantId));
+  }, [restaurantId]);
+
+  // RONDA 2+ (25-ago): si esta sesión ya pidió aquí, el nombre se PREFILLEA
+  // del pedido anterior — hacerle repetir a la misma persona lo que ya dijo
+  // hace una ronda es la fricción exacta que mata el "pedir más".
+  useEffect(() => {
+    if (!restaurantId) return;
+    const prev = loadOrderSnapshot();
+    if (prev && prev.restaurantId === restaurantId && prev.customerName) {
+      setCustomerName((current) => current || prev.customerName);
+    }
   }, [restaurantId]);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLogged, setCheckoutLogged] = useState(false);
