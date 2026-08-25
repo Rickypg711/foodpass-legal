@@ -1179,6 +1179,12 @@ export default function PosPage() {
     if (restaurantId) {
       loadMenu(restaurantId);
       loadOpenTabs(restaurantId);
+      // Llegó desde Pedidos con "Cobrar en la Caja →": abrir Cuentas de una.
+      try {
+        if (new URLSearchParams(window.location.search).get("cuentas") === "1") {
+          setShowTabsModal(true);
+        }
+      } catch {/* sin query — nada */}
     }
   }, [restaurantId, loadMenu, loadOpenTabs]);
 

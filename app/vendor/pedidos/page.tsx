@@ -577,14 +577,27 @@ export default function PedidosPage() {
                             </button>
                           )}
 
-                          {!isPaid && (
+                          {!isPaid && order.isOpenTab ? (
+                            // CUENTA ABIERTA: el cobro de mesa pasa por la
+                            // Caja SIEMPRE — ahí vive la cuenta agrupada
+                            // (todas las rondas), la propina, el teléfono →
+                            // puntos y el canje. El cobro pelón de aquí
+                            // (efectivo/tarjeta y ya) cobraba UNA ronda sin
+                            // propina y por fuera de la cuenta.
+                            <a
+                              href="/vendor/pos?cuentas=1"
+                              className="flex-1 rounded-xl py-2.5 text-[11px] font-bold bg-orange-100 text-[#E07830] hover:bg-orange-200 transition-colors text-center"
+                            >
+                              Cobrar en la Caja →
+                            </a>
+                          ) : !isPaid ? (
                             <button
                               onClick={() => setChargingOrderId(order.id)}
                               className="flex-1 rounded-xl py-2.5 text-[11px] font-bold bg-orange-100 text-[#E07830] hover:bg-orange-200 transition-colors text-center"
                             >
                               Cobrar
                             </button>
-                          )}
+                          ) : null}
 
                           {order.status === "pending" && (
                             <button
