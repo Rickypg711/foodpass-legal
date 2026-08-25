@@ -763,6 +763,12 @@ function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone }: { mode:
         )}
         {receiptUrl && (
           <div className="flex w-full flex-col gap-2">
+            {/* El empujón (paridad con la app): el recibo es el gancho de
+                regreso, no un papelito. Sin esta línea, "Listo" gana. */}
+            <p className="text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
+              📲 No olvides mandarle su recibo — ahí van sus puntos y el premio
+              que lo hace volver.
+            </p>
             <button
               onClick={() => {
                 // wa.me directo al número capturado, recibo ya escrito
