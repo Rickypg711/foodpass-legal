@@ -10,6 +10,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, changeFrequency: "weekly", priority: 1 },
     {
+      // Robo #9: el directorio público — la base instalada como adquisición.
+      url: `${SITE_URL}/restaurantes`,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/lealtad-restaurantes-chihuahua`,
       changeFrequency: "weekly",
       priority: 0.9,
