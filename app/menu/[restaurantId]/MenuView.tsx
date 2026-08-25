@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
+import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
@@ -561,18 +562,25 @@ function PublicMenuPageWithOrdering({
           role="status"
         >
           <div
-            className="mx-auto flex max-w-3xl items-center gap-2 rounded-2xl px-4 py-2.5 lg:max-w-4xl"
+            className="mx-auto max-w-3xl rounded-2xl px-4 py-2.5 lg:max-w-4xl"
             style={{
               background: "rgba(242,140,56,0.1)",
               border: "1px solid rgba(242,140,56,0.3)",
             }}
           >
-            <span className="text-[18px]">🍽️</span>
-            <p className="text-[13px] font-semibold text-[#1C2526]">
-              Estás en la mesa{" "}
-              <span className="text-[#F28C38]">{tableNumber}</span> — pide desde
-              aquí y te lo llevamos.
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-[18px]">🍽️</span>
+              <p className="text-[13px] font-semibold text-[#1C2526]">
+                Estás en la mesa{" "}
+                <span className="text-[#F28C38]">{tableNumber}</span> — pide
+                desde aquí y te lo llevamos.
+              </p>
+            </div>
+            {/* Robo #5: mesero y cuenta a un tap, cooldown 30s. */}
+            <TableServiceButtons
+              restaurantId={restaurantId}
+              tableNumber={tableNumber}
+            />
           </div>
         </div>
       ) : null}
