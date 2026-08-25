@@ -169,6 +169,14 @@ checkSource("app Caja: agrupa por tabId", posSheetDart, "groupOpenTabs(_tabs)");
 checkSource("app Caja: el cierre es de GRUPO", posDart, "Future<void> completePaidTabGroup(");
 checkSource("app Caja: reparto proporcional del neto", posDart, "distributeGroupNet(grossPerOrder");
 
+// ── Una sola verdad para el cobro de MESA: solo la Caja cierra cuentas ──────
+// (regla de Ricardo, 25-ago: dos pantallas que cobran distinto es peligroso).
+// El 'Cobrar' pelón de Pedidos sobre una cuenta abierta cobraba una ronda sin
+// propina, sin teléfono→puntos y fuera de la cuenta agrupada.
+const pedidosPage = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
+checkSource("Pedidos: cuenta abierta redirige a la Caja", pedidosPage, 'href="/vendor/pos?cuentas=1"');
+checkSource("Pedidos: el cobro pelón queda solo para NO-cuentas", pedidosPage, "!isPaid && order.isOpenTab ?");
+
 if (failed) {
   console.error("validate-table-orders: FAILED");
   process.exit(1);
