@@ -84,6 +84,8 @@ export default function ConfiguracionPage() {
   /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
    * y paga en el local; el pedido llega a Pedidos y se cobra ahí. */
   const [payAtPickup, setPayAtPickup] = useState(false);
+  const [birthdayEnabled, setBirthdayEnabled] = useState(false);
+  const [birthdayPoints, setBirthdayPoints] = useState(10);
   const [mpConnected, setMpConnected] = useState(false);
   const [mpEmail, setMpEmail] = useState<string | null>(null);
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
@@ -137,6 +139,12 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
+      const bday = data.birthdayReward as Record<string, unknown> | undefined;
+      if (bday && typeof bday === "object") {
+        setBirthdayEnabled(bday.enabled === true);
+        const pts = Number(bday.points);
+        if (Number.isFinite(pts) && pts > 0) setBirthdayPoints(pts);
+      }
       setMpConnected(data.mercadoPagoConnected === true);
       setMpEmail(typeof data.mercadoPagoEmail === "string" ? data.mercadoPagoEmail : null);
       setDiscountProfiles(parseDiscountProfiles(data.discountProfiles));
@@ -346,6 +354,7 @@ export default function ConfiguracionPage() {
         googleReviewUrl: googleReviewUrl.trim(),
         categories,
         payAtPickupEnabled: payAtPickup,
+        birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
       if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
@@ -908,6 +917,72 @@ export default function ConfiguracionPage() {
                 o al recoger. Sin Mercado Pago, esta opción es la única forma de
                 recibir pedidos en línea.
               </p>
+            </SectionCard>
+
+            {/* ── Premio de cumpleaños ──
+                Espejo del BirthdayRewardToggle de la app. Puntos y no platillo
+                a propósito (viajan por todas las superficies sin estados
+                nuevos). Default OFF: es dinero del dueño. El depósito lo hace
+                functions/birthday_reward_sweep.js (dormido tras
+                BIRTHDAY_REWARD_ENABLED). */}
+            <SectionCard label="Premio de cumpleaños">
+              <button
+                type="button"
+                onClick={() => { setBirthdayEnabled((v) => !v); setSaved(false); }}
+                aria-pressed={birthdayEnabled}
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                style={{
+                  background: birthdayEnabled ? "#FFF3E8" : "#F5F3EF",
+                  border: birthdayEnabled
+                    ? "1px solid rgba(242,140,56,0.5)"
+                    : "1px solid rgba(28,37,38,0.12)",
+                }}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    🎂 Regalar puntos de cumpleaños
+                  </span>
+                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                    El día de su cumpleaños, tus clientes reciben puntos de
+                    regalo y un aviso para venir a celebrar contigo. Comeleal lo
+                    hace solito.
+                  </span>
+                </span>
+                <span
+                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                  style={{ background: birthdayEnabled ? "#F28C38" : "rgba(28,37,38,0.2)" }}
+                  aria-hidden
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
+                    style={{ left: birthdayEnabled ? "22px" : "2px" }}
+                  />
+                </span>
+              </button>
+              {birthdayEnabled ? (
+                <div className="mt-2.5 flex items-center gap-2">
+                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                    Puntos de regalo:
+                  </span>
+                  {[5, 10, 20].map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => { setBirthdayPoints(opt); setSaved(false); }}
+                      className="rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all"
+                      style={{
+                        background: birthdayPoints === opt ? "#F28C38" : "#F5F3EF",
+                        color: birthdayPoints === opt ? "#fff" : "#1C2526",
+                        border: birthdayPoints === opt
+                          ? "1px solid #F28C38"
+                          : "1px solid rgba(28,37,38,0.12)",
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </SectionCard>
 
             {/* Conectar Mercado Pago — va pegado a "Pedidos en línea" porque es

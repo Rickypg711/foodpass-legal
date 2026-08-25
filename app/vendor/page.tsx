@@ -1384,6 +1384,7 @@ function getNbaFallbackBody(actionCode: string): string {
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
+    case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "grow_phone_capture": return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
     case "healthy":
@@ -1396,6 +1397,7 @@ function getNbaFallbackBody(actionCode: string): string {
 function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
   switch (actionCode) {
     case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
+    case "add_google_review_link": return "Poner mi link de reseñas";
     case "check_ai_draft": return "Revisar borrador de recompensa";
     case "enable_first_purchase_reward": return "Prender recompensa de bienvenida";
     case "grow_phone_capture": return "Cobrar con número en la Caja";
@@ -1416,6 +1418,7 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
 function getNbaCtaHref(actionCode: string): string {
   switch (actionCode) {
     case "complete_profile": return "/vendor/configuracion";
+    case "add_google_review_link": return "/vendor/configuracion";
     case "check_ai_draft": return "/vendor/recompensas";
     case "grow_phone_capture": return "/vendor/pos";
     case "share_with_customers": return "#compartir-qr";

@@ -138,6 +138,11 @@ function OrderStatusPageContent() {
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
   const [googleReviewUrl, setGoogleReviewUrl] = useState<string | null>(null);
+  // Throttle una-vez-por-local (espejo del ask en la app): quien ya tocó el
+  // botón de reseña no lo vuelve a ver. localStorage a propósito — un contador
+  // en Firestore sería cliente-escribible (falsificable) y aquí solo queremos
+  // no estorbar.
+  const [reviewAskSeen, setReviewAskSeen] = useState(false);
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
     base: 1,
@@ -242,6 +247,11 @@ function OrderStatusPageContent() {
           const reviewUrl = d.googleReviewUrl;
           if (typeof reviewUrl === "string" && isGoogleReviewUrl(reviewUrl)) {
             setGoogleReviewUrl(reviewUrl.trim());
+            try {
+              setReviewAskSeen(
+                localStorage.getItem(`greview_tapped_${restaurantId}`) === "1",
+              );
+            } catch { /* localStorage bloqueado → se muestra, sin throttle */ }
           }
           setRestaurantLogo(getRestaurantImageUrl(d));
           setEarnPolicy(earnPolicyFromRestaurant(d));
@@ -639,12 +649,19 @@ function OrderStatusPageContent() {
                       </a>
                       {/* Momento reseña: puntos recién acreditados = pico de
                           gusto de una visita verificada. Espejo del botón en
-                          RewardPopup (app). Solo con googleReviewUrl puesta. */}
-                      {googleReviewUrl ? (
+                          RewardPopup (app), con el mismo throttle de una vez
+                          por local. Solo con googleReviewUrl puesto. */}
+                      {googleReviewUrl && !reviewAskSeen ? (
                         <a
                           href={googleReviewUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            try {
+                              localStorage.setItem(`greview_tapped_${restaurantId}`, "1");
+                            } catch { /* sin localStorage no hay throttle */ }
+                            setReviewAskSeen(true);
+                          }}
                           className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#F28C38]/50 bg-white px-4 py-2.5 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#FFF3E8]"
                         >
                           ¿Te gustó? Déjale una reseña en Google ⭐
