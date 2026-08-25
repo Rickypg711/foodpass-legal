@@ -91,14 +91,15 @@ export function ServiceRequestsBell({ restaurantId }: { restaurantId: string }) 
 
   return (
     <>
-      {/* Píldora ARRIBA a la derecha (feedback de Ricardo 25-ago: abajo se
-          perdía). Con pendientes no es un iconito: es un aviso con texto y
-          pulso — el mesero la tiene que ver desde el otro lado de la barra. */}
+      {/* Píldora ARRIBA AL CENTRO (feedback de Ricardo 25-ago, 2ª ronda: a la
+          derecha tapaba los botones del header de la Caja — "¿Quién cobra?" y
+          "Cuentas"). El centro-arriba es la única franja vacía consistente en
+          todo el panel: títulos a la izquierda, acciones a la derecha. */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${pending.length} peticiones de mesa pendientes`}
-        className={`fixed right-3 top-3 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] font-extrabold shadow-xl transition-transform hover:scale-105 ${pending.length > 0 ? "animate-pulse" : ""}`}
+        className={`fixed left-1/2 top-3 z-50 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-extrabold shadow-xl transition-transform hover:scale-105 ${pending.length > 0 ? "animate-pulse" : ""}`}
         style={{
           background: pending.length > 0 ? "#F28C38" : "rgba(28,37,38,0.85)",
           color: pending.length > 0 ? "#1C2526" : "#ffffff",
@@ -121,7 +122,7 @@ export function ServiceRequestsBell({ restaurantId }: { restaurantId: string }) 
 
       {open && (
         <div
-          className="fixed right-3 top-16 z-50 w-72 overflow-hidden rounded-2xl bg-white shadow-2xl"
+          className="fixed left-1/2 top-14 z-50 w-72 -translate-x-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl"
           style={{ border: "1px solid rgba(28,37,38,0.1)" }}
         >
           <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
