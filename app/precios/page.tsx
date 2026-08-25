@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney";
+import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
@@ -163,6 +165,9 @@ export default function Page() {
           únicamente cuando tú vendes. Las apps de delivery cobran hasta 30%.
         </p>
       </section>
+      <NeverTouchesYourMoney />
+      <LivePlatformStats />
+
 
       <section className="px-5 pb-16">
         <div className="mx-auto max-w-3xl">

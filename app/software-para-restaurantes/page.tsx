@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney";
+import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
@@ -122,6 +124,9 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <NeverTouchesYourMoney />
+      <LivePlatformStats />
     </div>
   );
 }
