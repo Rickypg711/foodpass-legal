@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import { fetchRestaurantMetadata } from "@/lib/server/restaurantMetadata";
+import { fetchRestaurantMenuFull } from "@/lib/server/restaurantLanding";
+import { buildMenuJsonLd } from "@/lib/server/menuSchema";
 import MenuRestaurantLayoutClient from "./MenuRestaurantLayoutClient";
 
 // Per-restaurant link preview for the MENU link itself — the URL behind every
@@ -57,6 +59,9 @@ export default async function MenuRestaurantLayout({
 }) {
   const { restaurantId } = await params;
   const restaurant = await fetchRestaurantMetadata(restaurantId);
+  // Menú completo para el schema (misma URL REST que usa page.tsx → Next
+  // dedupe, cero viajes extra a Firestore dentro del request).
+  const menuItems = restaurant ? await fetchRestaurantMenuFull(restaurantId) : [];
 
   // Restaurant JSON-LD so Google and AI engines understand WHO this page is:
   // a real local restaurant with a menu and WhatsApp ordering.
@@ -81,7 +86,9 @@ export default async function MenuRestaurantLayout({
         ...(restaurant.categories.length > 0
           ? { servesCuisine: restaurant.categories }
           : {}),
-        hasMenu: `${SITE_URL}/menu/${restaurantId}`,
+        // Schema Menu COMPLETO (secciones + precios), no solo la URL — es la
+        // página del menú: que el menú estructurado viva AQUÍ es lo mínimo.
+        hasMenu: buildMenuJsonLd(`${SITE_URL}/menu/${restaurantId}`, menuItems),
         acceptsReservations: false,
       }
     : null;

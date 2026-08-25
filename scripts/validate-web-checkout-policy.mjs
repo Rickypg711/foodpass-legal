@@ -86,7 +86,10 @@ if (!webOrderingSrc.includes("restaurantAllowsPayAtPickup")) {
 
 // ── Menu: browse-only when no method is available ────────────────────────────
 const menuSrc = readFileSync(
-  join(root, "app/menu/[restaurantId]/page.tsx"),
+  // La vista client vive en MenuView.tsx desde el 24-ago (page.tsx es el
+  // SERVER component que siembra el SSR); la política del checkout aplica a
+  // la vista, que es donde viven ordering, carrito y tarjetas.
+  join(root, "app/menu/[restaurantId]/MenuView.tsx"),
   "utf8",
 );
 const menuCardSrc = readFileSync(join(root, "components/menu/MenuItemCard.tsx"), "utf8");

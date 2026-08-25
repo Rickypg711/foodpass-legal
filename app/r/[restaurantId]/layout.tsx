@@ -3,8 +3,8 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import {
   fetchRestaurantMenuFull,
   resolveRestaurantHandle,
-  type LandingMenuItem,
 } from "@/lib/server/restaurantLanding";
+import { buildMenuJsonLd } from "@/lib/server/menuSchema";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
 import { buildFaq, buildLandingTitle } from "@/lib/landingContent";
@@ -89,37 +89,6 @@ export async function generateMetadata({
   };
 }
 
-/** JSON-LD Menu completo — el formato que los motores de IA citan directo
- *  ("¿cuánto cuesta la pizza en X?"). Secciones por categoría, precios MXN. */
-function buildMenuJsonLd(restaurantId: string, items: LandingMenuItem[]) {
-  if (items.length === 0) return `${SITE_URL}/menu/${restaurantId}`;
-  const byCategory = new Map<string, LandingMenuItem[]>();
-  for (const item of items) {
-    const list = byCategory.get(item.category);
-    if (list) list.push(item);
-    else byCategory.set(item.category, [item]);
-  }
-  return {
-    "@type": "Menu",
-    url: `${SITE_URL}/menu/${restaurantId}`,
-    hasMenuSection: Array.from(byCategory.entries()).map(([category, sectionItems]) => ({
-      "@type": "MenuSection",
-      name: category,
-      hasMenuItem: sectionItems.map((item) => ({
-        "@type": "MenuItem",
-        name: item.name,
-        ...(item.description ? { description: item.description } : {}),
-        ...(item.imageUrl ? { image: item.imageUrl } : {}),
-        offers: {
-          "@type": "Offer",
-          price: item.price,
-          priceCurrency: "MXN",
-        },
-      })),
-    })),
-  };
-}
-
 export default async function RestaurantLandingLayout({
   children,
   params,
@@ -189,7 +158,7 @@ export default async function RestaurantLandingLayout({
             priceRange: `MX$${Math.min(...prices)}–MX$${Math.max(...prices)}`,
           }
         : {}),
-      hasMenu: buildMenuJsonLd(restaurant.id, menu),
+      hasMenu: buildMenuJsonLd(`${SITE_URL}/menu/${restaurant.id}`, menu),
       acceptsReservations: false,
     };
 

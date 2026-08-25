@@ -149,6 +149,46 @@ export async function fetchRestaurantMenuFull(
   }
 }
 
+/**
+ * Menú CRUDO — cada doc decodificado completo, con su id y sin filtrar.
+ *
+ * Existe para el SSR de /menu/{id}: la vista client mapea con SU PROPIO
+ * `mapMenuDoc` (que conoce `optionGroups` y lo que se agregue después), así
+ * que el server no debe recortar campos. MISMA URL que
+ * fetchRestaurantMenuFull → Next dedupe: un solo viaje a Firestore aunque
+ * llamen los dos dentro del mismo request.
+ */
+export async function fetchRestaurantMenuRawDocs(
+  restaurantId: string,
+): Promise<{ id: string; data: Record<string, unknown> }[]> {
+  const id = restaurantId.trim();
+  if (!id) return [];
+  try {
+    const res = await fetch(
+      `${BASE}/restaurants/${encodeURIComponent(id)}/menu?pageSize=300&key=${API_KEY}`,
+      { next: { revalidate: 300 } },
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as {
+      documents?: {
+        name?: string;
+        fields?: Record<string, Record<string, unknown>>;
+      }[];
+    };
+    if (!Array.isArray(json.documents)) return [];
+    const docs: { id: string; data: Record<string, unknown> }[] = [];
+    for (const d of json.documents) {
+      const docId =
+        typeof d.name === "string" ? (d.name.split("/").pop() ?? "") : "";
+      if (!docId) continue;
+      docs.push({ id: docId, data: decodeFields(d.fields) });
+    }
+    return docs;
+  } catch {
+    return [];
+  }
+}
+
 /** Busca un restaurante por su campo `slug` (exacto, ya en minúsculas). */
 export async function findRestaurantBySlug(
   slug: string,
