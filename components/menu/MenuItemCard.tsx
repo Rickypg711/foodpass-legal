@@ -20,6 +20,10 @@ export type MenuItemCardProps = {
   onDecrement?: () => void;
   /** When false, no Agregar button (browse-only item card). */
   orderingEnabled?: boolean;
+  /** Robo #8 a Biomenus: la info de elección va en la CARA de la tarjeta,
+   * antes de tocar nada — "🌶️ Elige tu salsa" / "Se arma a tu gusto". La
+   * calcula el caller desde los optionGroups del platillo. */
+  optionsHint?: string | null;
 };
 
 function AddButton({ name, onAdd }: { name: string; onAdd: () => void }) {
@@ -81,6 +85,7 @@ export function MenuItemCard({
   onIncrement,
   onDecrement,
   orderingEnabled = true,
+  optionsHint = null,
 }: MenuItemCardProps) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <QuantityStepper
@@ -101,6 +106,11 @@ export function MenuItemCard({
           <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#1C2526] sm:text-base">
             {name}
           </p>
+          {optionsHint ? (
+            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-[#F28C38]/10 px-2 py-0.5 text-[11px] font-semibold text-[#B05E14]">
+              {optionsHint}
+            </span>
+          ) : null}
           {description ? (
             <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#1C2526]/60">
               {description}

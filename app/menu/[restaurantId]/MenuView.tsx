@@ -121,6 +121,22 @@ function seedItems(menu: MenuInitialData["menu"]): MenuRow[] {
     });
 }
 
+/** Robo #8: pista de elección en la cara de la tarjeta. Con un grupo
+ * llamado "salsa/aderezo" la pista es específica ("🌶️ Elige tu salsa");
+ * con cualquier otro grupo, genérica. Sin grupos → sin chip (cero ruido). */
+function optionsHintFor(item: MenuRow): string | null {
+  const groups = resolveOptionGroups(item);
+  if (!groups.length) return null;
+  const salsa = groups.find((g) => /salsa|aderezo|picante/i.test(g.name || ""));
+  if (salsa) return "🌶️ Elige tu salsa";
+  const required = groups.find((g) => g.required);
+  if (required && required.name) {
+    const n = required.name.trim().toLowerCase();
+    return `Elige ${n.length > 18 ? "tu opción" : n}`;
+  }
+  return "Se arma a tu gusto";
+}
+
 /** Items must already be sorted by category then name. */
 function groupMenuByCategory(items: MenuRow[]): { category: string; items: MenuRow[] }[] {
   const groups: { category: string; items: MenuRow[] }[] = [];
@@ -286,6 +302,7 @@ function MenuCategoryList({
                 price={item.price}
                 imageUrl={item.imageUrl}
                 orderingEnabled={orderingEnabled}
+                optionsHint={optionsHintFor(item)}
                 quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
                 onIncrement={() => onIncrementItem?.(item)}
