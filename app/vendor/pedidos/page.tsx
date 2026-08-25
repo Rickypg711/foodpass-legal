@@ -428,9 +428,29 @@ export default function PedidosPage() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
-                            {order.orderSource.toUpperCase()}
-                          </span>
+                          {/* Canal de origen en CRISTIANO, no el enum crudo
+                              (decía "CUSTOMER_WEB" en la pantalla del mesero
+                              — feedback de Ricardo 25-ago). Para pedidos de
+                              la Caja no se pinta: el chip de tipo ya dice
+                              "Caja" y repetirlo es ruido. */}
+                          {(() => {
+                            const src = String(order.orderSource || "");
+                            const label =
+                              src === "pos"
+                                ? null
+                                : order.orderType === "dine_in"
+                                ? "QR de mesa"
+                                : src === "customer_app"
+                                ? "Desde la app"
+                                : src === "customer_web"
+                                ? "Pedido web"
+                                : src;
+                            return label ? (
+                              <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
+                                {label}
+                              </span>
+                            ) : null;
+                          })()}
                           <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#F28C38]/10 text-[#F28C38]">
                             {order.orderType === "in_store"
                               ? "Caja"

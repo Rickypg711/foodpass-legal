@@ -20,6 +20,7 @@ import {
 } from "@/lib/order/paymentReturnMessage";
 import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { isGoogleReviewUrl } from "@/lib/googleReviewUrl";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
@@ -136,6 +137,7 @@ function OrderStatusPageContent() {
   const mounted = useIsClient();
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState<string | null>(null);
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
     base: 1,
@@ -236,6 +238,10 @@ function OrderStatusPageContent() {
           const wa = d.whatsapp;
           if (typeof wa === "string" && wa.trim()) {
             setWhatsapp(wa.trim());
+          }
+          const reviewUrl = d.googleReviewUrl;
+          if (typeof reviewUrl === "string" && isGoogleReviewUrl(reviewUrl)) {
+            setGoogleReviewUrl(reviewUrl.trim());
           }
           setRestaurantLogo(getRestaurantImageUrl(d));
           setEarnPolicy(earnPolicyFromRestaurant(d));
@@ -631,6 +637,19 @@ function OrderStatusPageContent() {
                       >
                         Descargar Comeleal
                       </a>
+                      {/* Momento reseña: puntos recién acreditados = pico de
+                          gusto de una visita verificada. Espejo del botón en
+                          RewardPopup (app). Solo con googleReviewUrl puesta. */}
+                      {googleReviewUrl ? (
+                        <a
+                          href={googleReviewUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#F28C38]/50 bg-white px-4 py-2.5 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#FFF3E8]"
+                        >
+                          ¿Te gustó? Déjale una reseña en Google ⭐
+                        </a>
+                      ) : null}
                     </>
                   );
                 }
