@@ -73,6 +73,9 @@ export type CustomerOrderPayload = {
 
   /** Nombre de la cuenta en la Caja ("Mesa 5"). Solo en dine_in. */
   tabName?: string;
+  /** Cuenta de la mesa (Etapa 1): agrupa las rondas de la MISMA mesa en una
+   * fila de la Caja sin fusionar tickets. Solo cuando la orden abre cuenta. */
+  tabId?: string;
   loyaltyAwarded?: boolean;
   createdAt: ReturnType<typeof import("firebase/firestore").serverTimestamp>;
 };

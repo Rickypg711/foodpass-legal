@@ -34,6 +34,13 @@ export type BuildOrderInput = {
   tableNumber?: string | null;
   /** Cuántas personas en la mesa. Solo aplica en dine_in. */
   diners?: number | null;
+  /**
+   * Cuenta de la mesa (Etapa 1, docs/PEDIDO_EN_MESA.md): llave que agrupa las
+   * rondas de la MISMA mesa en una sola cuenta en la Caja. La resuelve
+   * `resolveTableTabId` (server) o la funda `freshTabId`. Solo se escribe
+   * cuando la orden ABRE cuenta — una mesa prepagada con MP no es una cuenta.
+   */
+  tabId?: string | null;
 };
 
 /**
@@ -139,6 +146,10 @@ export function buildCustomerWebOrderPayload(
     // `tableLabel`, NO `Mesa ${n}`: una mesa llamada "Barra" o "Terraza 1"
     // saldría como "Mesa Barra". La misma regla que usa la hoja de QR.
     if (abreCuenta) payload.tabName = tableLabel(tableNumber);
+    // tabId agrupa SIN fusionar: la cocina sigue viendo cada ronda como su
+    // propio ticket; la Caja suma por tabId ("Mesa 5 · 3 personas · $840").
+    const tabId = typeof input.tabId === "string" ? input.tabId.trim() : "";
+    if (abreCuenta && tabId) payload.tabId = tabId;
     const diners = normalizeDiners(input.diners ?? null);
     if (diners != null) payload.diners = diners;
   }

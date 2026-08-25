@@ -146,6 +146,14 @@ checkSource(
   "orderMap['tabName'] = tableLabel(table)",
 );
 
+// ── Etapa 1: tabId — agrupar SIN fusionar (docs/PEDIDO_EN_MESA.md) ──────────
+// Las rondas de la MISMA mesa comparten tabId; la cocina sigue viendo cada
+// ronda como su ticket. Los DOS escritores lo escriben, o una mesa que pide
+// desde la app y otra desde la web nunca se juntan en la Caja.
+checkSource("web: tabId solo cuando abre cuenta", builder, "if (abreCuenta && tabId) payload.tabId = tabId");
+checkSource("web: el tabId se resuelve en el server o se funda", readFileSync(new URL("../lib/order/createCustomerOrder.ts", import.meta.url), "utf8"), "resolveTableTabId(params.restaurantId, mesaNormalizada)) ??");
+checkSource("app: tabId en la cuenta de mesa", posDart, "orderMap['tabId'] = await TableTabService.resolveOrFound(");
+
 if (failed) {
   console.error("validate-table-orders: FAILED");
   process.exit(1);
