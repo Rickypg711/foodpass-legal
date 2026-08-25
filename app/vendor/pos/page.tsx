@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -22,6 +22,7 @@ import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
 import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
+import { groupOpenTabs, distributeGroupNet, type TabGroup } from "@/lib/pos/tabGroups";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
@@ -830,7 +831,12 @@ export default function PosPage() {
   const [tabsLoading, setTabsLoading] = useState(false);
   const [showTabsModal, setShowTabsModal] = useState(false);
   const [addingToTab, setAddingToTab] = useState<any | null>(null);
+  // Llave del GRUPO en cobro (tabId, o el id de la cuenta si es pre-tabId).
   const [checkoutTabId, setCheckoutTabId] = useState<string | null>(null);
+  // Las cuentas abiertas agrupadas por mesa: una fila por tabId
+  // ("Mesa 5 · 3 personas · $840"). Una cuenta suelta = grupo de 1 y se ve
+  // EXACTAMENTE como siempre. Núcleo puro en lib/pos/tabGroups.ts.
+  const openTabGroups = useMemo(() => groupOpenTabs(activeOpenTabs as any[]), [activeOpenTabs]);
 
   // Modo Caja: sync con el candado del layout (salir desde la barra lateral).
   useEffect(() => {
@@ -1011,14 +1017,14 @@ export default function PosPage() {
     }
   }
 
-  async function closeOpenTab(
-    orderId: string,
+  async function closeTabGroup(
+    group: TabGroup<any>,
     method: PaymentMethod,
     tip = 0,
     tipMethod: PaymentMethod = "cash",
     customerPhone = "",
     // 🏷️ Descuento resuelto AL CERRAR (5.1.4). Lo calcula CloseTabDialog sobre
-    // TODOS los items de la cuenta, se lo enseña al cajero, y ese MISMO número
+    // TODOS los items del GRUPO, se lo enseña al cajero, y ese MISMO número
     // es el que se cobra. Llega ya calculado a propósito: lo mostrado, lo
     // cobrado y lo registrado tienen que ser el mismo peso.
     recalc: TabDiscountRecalc | null = null,
@@ -1026,80 +1032,146 @@ export default function PosPage() {
     if (!restaurantId) return;
     try {
       const db = getFirebaseDb();
-      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
-      
-      await updateDoc(orderRef, {
-        status: "completed",
-        isOpenTab: false,
-        paymentStatus: "paid",
-        paymentMethod: method,
-        completedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        // Propina al cerrar la cuenta — separada de total (no puntos/comisión).
-        ...(tip > 0
-          ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }
-          : {}),
-        // El telefono se escribe ANTES de creditPhonePointsForOrder, que lee
-        // customerPhone del doc de la orden. Sin esta linea, una cuenta abierta
-        // sin telefono jamas acredita puntos ni entra al CRM.
-        ...(customerPhone.length === 10 ? { customerPhone } : {}),
-        // El descuento REEMPLAZA lo que hubiera: el cierre es la única fuente
-        // de verdad y nunca se suma sobre un descuento anterior. El total neto
-        // se escribe ANTES de acreditar puntos, así que los puntos salen sobre
-        // lo pagado (regla anti-farming).
-        ...(recalc && recalc.hasDiscount && recalc.discountApplied
-          ? {
-              total: recalc.net,
-              subtotal: recalc.gross,
-              discountApplied: recalc.discountApplied,
-            }
-          : {}),
+      const anchorId = group.anchor.id as string;
+      const orderIds: string[] = group.orders.map((o: any) => o.id);
+
+      // Etapa 1 (docs/PEDIDO_EN_MESA.md): el cierre cobra las N rondas de la
+      // mesa en UNA transacción — una propina, un descuento, un total. Con
+      // descuento, el neto se reparte proporcional al bruto de cada ronda en
+      // centavos exactos (la suma ES lo cobrado); los puntos de CADA teléfono
+      // salen después de su propia parte. Una cuenta suelta es el grupo de 1:
+      // misma máquina, mismos campos que el cierre clásico.
+      await runTransaction(db, async (transaction) => {
+        const snaps = [];
+        for (const oid of orderIds) {
+          const ref = doc(db, "restaurants", restaurantId, "orders", oid);
+          const snap = await transaction.get(ref);
+          if (!snap.exists()) throw new Error("Una ronda de la cuenta ya no existe.");
+          const data = snap.data();
+          if (data.isOpenTab !== true) {
+            throw new Error("Una ronda ya se había cobrado — recarga las cuentas.");
+          }
+          snaps.push({ ref, data });
+        }
+
+        const withDiscount = Boolean(recalc && recalc.hasDiscount && recalc.discountApplied);
+        // Bruto por ronda desde SUS items a precio original — la misma base
+        // que usa el recálculo, nunca un total que puede venir ya descontado.
+        const grossPerOrder = snaps.map((s) =>
+          (Array.isArray(s.data.items) ? s.data.items : []).reduce(
+            (sum: number, i: any) =>
+              sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
+            0,
+          ),
+        );
+        const shares = withDiscount
+          ? distributeGroupNet(grossPerOrder, recalc!.net)
+          : [];
+
+        snaps.forEach((sn, i) => {
+          const isAnchor = orderIds[i] === anchorId;
+          transaction.update(sn.ref, {
+            status: "completed",
+            isOpenTab: false,
+            paymentStatus: "paid",
+            paymentMethod: method,
+            completedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            // Propina UNA vez, en el ancla — sumarla en cada ronda la
+            // multiplicaría en Reportes.
+            ...(isAnchor && tip > 0
+              ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }
+              : {}),
+            // El teléfono del cierre va al ANCLA. Las demás rondas conservan
+            // el suyo: cada comensal ya dejó su número al ordenar, y sus
+            // puntos son de SU consumo (el remate de PEDIDO_EN_MESA.md).
+            ...(isAnchor && customerPhone.length === 10 ? { customerPhone } : {}),
+            // El descuento REEMPLAZA lo que hubiera y el registro
+            // (discountApplied) vive UNA vez, en el ancla — sumarlo por ronda
+            // duplicaría "descuentos dados" en Reportes. El total neto se
+            // escribe ANTES de acreditar puntos (regla anti-farming).
+            ...(withDiscount
+              ? {
+                  total: shares[i],
+                  subtotal: grossPerOrder[i],
+                  ...(isAnchor ? { discountApplied: recalc!.discountApplied } : {}),
+                }
+              : {}),
+          });
+        });
       });
 
-      // Phone Points v1: tab closed = payment confirmed → credit if the
-      // order carries a customerPhone. Idempotent.
+      // Phone Points v1: cuenta cobrada → acreditar RONDA POR RONDA, cada
+      // teléfono sobre su propia parte. Idempotente por orden (loyaltyAwarded).
       let capMsg = "";
-      try {
-        const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
-        if (res.credited) {
-          console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
-          if (res.capReached === true) {
-            capMsg =
-              "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración.";
+      let creditedCount = 0;
+      for (const oid of orderIds) {
+        try {
+          const res = await creditPhonePointsForOrder({ db, restaurantId, orderId: oid });
+          if (res.credited) {
+            creditedCount += 1;
+            console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
+            if (res.capReached === true) {
+              capMsg =
+                "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración.";
+            }
           }
+        } catch (e) {
+          console.error("[phonePoints] tab-close credit failed", e);
         }
-      } catch (e) {
-        console.error("[phonePoints] tab-close credit failed", e);
       }
 
-      alert("¡Cuenta pagada y cerrada!" + capMsg);
+      const rondas = orderIds.length;
+      alert(
+        (rondas > 1
+          ? `¡Cuenta pagada y cerrada! (${rondas} rondas de la mesa` +
+            (creditedCount > 0 ? `, ${creditedCount} con puntos)` : ")")
+          : "¡Cuenta pagada y cerrada!") + capMsg,
+      );
       loadOpenTabs(restaurantId);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error closing tab", err);
-      alert("Error al cerrar la cuenta.");
+      alert(`Error al cerrar la cuenta. ${err?.message || ""}`);
     }
   }
 
-  async function voidOpenTab(orderId: string) {
+  async function voidTabGroup(group: TabGroup<any>) {
     if (!restaurantId) return;
-    const confirmed = confirm("¿Estás seguro de que deseas cancelar esta cuenta? Esta acción no se puede deshacer.");
+    const rondas = group.orders.length;
+    const confirmed = confirm(
+      rondas > 1
+        ? `¿Cancelar la cuenta completa de ${group.label}? Son ${rondas} rondas y esta acción no se puede deshacer.`
+        : "¿Estás seguro de que deseas cancelar esta cuenta? Esta acción no se puede deshacer.",
+    );
     if (!confirmed) return;
     try {
       const db = getFirebaseDb();
-      const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
-      
-      await updateDoc(orderRef, {
-        status: "cancelled",
-        isOpenTab: false,
-        voidReason: "cancelled_by_vendor",
-        updatedAt: serverTimestamp(),
+      // Cancelar a medias deja rondas huérfanas cobrables: o todas o ninguna.
+      await runTransaction(db, async (transaction) => {
+        const refs = group.orders.map((o: any) =>
+          doc(db, "restaurants", restaurantId, "orders", o.id),
+        );
+        for (const ref of refs) {
+          const snap = await transaction.get(ref);
+          if (!snap.exists() || snap.data().isOpenTab !== true) {
+            throw new Error("Una ronda cambió — recarga las cuentas.");
+          }
+        }
+        for (const ref of refs) {
+          transaction.update(ref, {
+            status: "cancelled",
+            isOpenTab: false,
+            voidReason: "cancelled_by_vendor",
+            updatedAt: serverTimestamp(),
+          });
+        }
       });
-      
-      alert("¡Cuenta cancelada!");
+
+      alert(rondas > 1 ? `¡Cuenta cancelada! (${rondas} rondas)` : "¡Cuenta cancelada!");
       loadOpenTabs(restaurantId);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error voiding tab", err);
-      alert("Error al cancelar la cuenta.");
+      alert(`Error al cancelar la cuenta. ${err?.message || ""}`);
     }
   }
 
@@ -1831,35 +1903,41 @@ export default function PosPage() {
       {/* ── Open Tabs Modal ── */}
       {showTabsModal && (
         <OpenTabsModal
-          tabs={activeOpenTabs}
+          groups={openTabGroups}
           loading={tabsLoading}
           onClose={() => setShowTabsModal(false)}
-          onCloseTab={(id) => setCheckoutTabId(id)}
-          onStartAdding={(tab) => {
-            setAddingToTab(tab);
+          onCloseGroup={(key) => setCheckoutTabId(key)}
+          onStartAdding={(group) => {
+            // Agregar productos siempre cae en el ANCLA (la ronda que fundó la
+            // mesa): una sola cuenta crece, no se abren rondas por accidente.
+            setAddingToTab(group.anchor);
             setShowTabsModal(false);
           }}
-          onVoidTab={(id) => voidOpenTab(id)}
+          onVoidGroup={(group) => voidTabGroup(group)}
         />
       )}
 
       {/* ── Close Tab Payment Method Selector ── */}
-      {checkoutTabId && (
-        <CloseTabDialog
-          tabTotal={Number(activeOpenTabs.find((t) => t.id === checkoutTabId)?.total) || 0}
-          restaurantId={restaurantId ?? ""}
-          // TODOS los items acumulados: la base del recálculo. El descuento se
-          // resuelve desde aquí (precios originales), nunca desde tabTotal,
-          // que puede venir ya descontado.
-          tabItems={activeOpenTabs.find((t) => t.id === checkoutTabId)?.items}
-          canAssignDiscount={vendorRole === "owner"}
-          onClose={() => setCheckoutTabId(null)}
-          onConfirm={(method, tip, tipMethod, phone, recalc) => {
-            closeOpenTab(checkoutTabId, method, tip, tipMethod, phone, recalc);
-            setCheckoutTabId(null);
-          }}
-        />
-      )}
+      {checkoutTabId && (() => {
+        const group = openTabGroups.find((g) => g.key === checkoutTabId);
+        if (!group) return null;
+        return (
+          <CloseTabDialog
+            tabTotal={group.total}
+            restaurantId={restaurantId ?? ""}
+            // TODOS los items del GRUPO: la base del recálculo. El descuento
+            // se resuelve desde aquí (precios originales), nunca desde el
+            // total, que puede venir ya descontado.
+            tabItems={group.orders.flatMap((o: any) => (Array.isArray(o.items) ? o.items : []))}
+            canAssignDiscount={vendorRole === "owner"}
+            onClose={() => setCheckoutTabId(null)}
+            onConfirm={(method, tip, tipMethod, phone, recalc) => {
+              closeTabGroup(group, method, tip, tipMethod, phone, recalc);
+              setCheckoutTabId(null);
+            }}
+          />
+        );
+      })()}
     </>
   );
 }
@@ -1867,19 +1945,19 @@ export default function PosPage() {
 // ─── Open Tabs Subcomponents ──────────────────────────────────────────────────
 
 function OpenTabsModal({
-  tabs,
+  groups,
   loading,
   onClose,
-  onCloseTab,
+  onCloseGroup,
   onStartAdding,
-  onVoidTab,
+  onVoidGroup,
 }: {
-  tabs: any[];
+  groups: TabGroup<any>[];
   loading: boolean;
   onClose: () => void;
-  onCloseTab: (orderId: string) => void;
-  onStartAdding: (tab: any) => void;
-  onVoidTab: (orderId: string) => void;
+  onCloseGroup: (groupKey: string) => void;
+  onStartAdding: (group: TabGroup<any>) => void;
+  onVoidGroup: (group: TabGroup<any>) => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }} onClick={onClose}>
@@ -1892,7 +1970,7 @@ function OpenTabsModal({
         <div className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
           <div>
             <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>Cuentas Abiertas</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{tabs.length} cuentas activas</p>
+            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{groups.length} cuentas activas</p>
           </div>
           <button
             onClick={onClose}
@@ -1907,39 +1985,64 @@ function OpenTabsModal({
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
           {loading ? (
             <div className="flex justify-center py-10"><Spinner size={24} /></div>
-          ) : tabs.length === 0 ? (
+          ) : groups.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <span className="text-4xl block mb-2">📋</span>
               No hay cuentas abiertas.
             </div>
           ) : (
-            tabs.map((tab) => {
-              const itemCount = tab.items?.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || 0;
-              const date = tab.createdAt?.toDate ? tab.createdAt.toDate() : new Date();
+            groups.map((group) => {
+              // Grupo de 1 = la tarjeta clásica. Con varias rondas, UNA fila
+              // por mesa: "Mesa 5 · 3 personas · $840" — la cocina ya vio cada
+              // ronda como su ticket; aquí solo importa el cobro.
+              const anchor: any = group.anchor;
+              const rondas = group.orders.length;
+              const itemCount = group.orders.reduce(
+                (sum: number, o: any) =>
+                  sum + (o.items?.reduce((s: number, i: any) => s + (i.quantity || 0), 0) || 0),
+                0,
+              );
+              const date = anchor.createdAt?.toDate ? anchor.createdAt.toDate() : new Date();
               const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 
               return (
                 <div
-                  key={tab.id}
+                  key={group.key}
                   className="rounded-2xl p-4 bg-white space-y-3"
                   style={{ border: "1px solid rgba(28,37,38,0.07)", boxShadow: "0 1px 3px rgba(28,37,38,0.04)" }}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>{tab.customerName || `Mesa/Cuenta #${tab.id.slice(-4)}`}</p>
+                      <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
+                        {group.label}
+                        {rondas > 1 && (
+                          <span className="ml-2 rounded-full bg-[#F28C38]/10 px-2 py-0.5 text-[10px] font-bold text-[#1C2526]">
+                            {group.people} {group.people === 1 ? "persona" : "personas"} · {rondas} rondas
+                          </span>
+                        )}
+                      </p>
                       <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                        Creada a las {formattedTime} · {itemCount} {itemCount === 1 ? "producto" : "productos"}
+                        Abierta a las {formattedTime} · {itemCount} {itemCount === 1 ? "producto" : "productos"}
                       </p>
                     </div>
-                    <p className="text-[15px] font-bold text-[#F28C38]">{fmt(tab.total || 0)}</p>
+                    <p className="text-[15px] font-bold text-[#F28C38]">{fmt(group.total)}</p>
                   </div>
 
-                  {/* Tab Items List */}
-                  <div className="text-[11px] text-gray-500 max-h-24 overflow-y-auto bg-gray-50 rounded-lg p-2 space-y-1">
-                    {tab.items?.map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                        <span>{fmt(item.price * item.quantity)}</span>
+                  {/* Items — con varias rondas, separadas por quién pidió */}
+                  <div className="text-[11px] text-gray-500 max-h-28 overflow-y-auto bg-gray-50 rounded-lg p-2 space-y-1">
+                    {group.orders.map((o: any, oi: number) => (
+                      <div key={o.id} className="space-y-1">
+                        {rondas > 1 && (
+                          <p className="pt-1 text-[10px] font-bold text-gray-400">
+                            Ronda {oi + 1}{o.customerName ? ` · ${o.customerName}` : ""} · {fmt(o.total || 0)}
+                          </p>
+                        )}
+                        {o.items?.map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between">
+                            <span>{item.quantity}x {item.name}</span>
+                            <span>{fmt(item.price * item.quantity)}</span>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -1947,19 +2050,19 @@ function OpenTabsModal({
                   {/* Actions */}
                   <div className="flex justify-end gap-2 pt-1">
                     <button
-                      onClick={() => onVoidTab(tab.id)}
+                      onClick={() => onVoidGroup(group)}
                       className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
-                      onClick={() => onStartAdding(tab)}
+                      onClick={() => onStartAdding(group)}
                       className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                     >
                       Agregar productos
                     </button>
                     <button
-                      onClick={() => onCloseTab(tab.id)}
+                      onClick={() => onCloseGroup(group.key)}
                       className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#1C2526] bg-[#F28C38] hover:opacity-90 transition-all"
                     >
                       Cobrar Cuenta

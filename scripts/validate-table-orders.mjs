@@ -154,6 +154,21 @@ checkSource("web: tabId solo cuando abre cuenta", builder, "if (abreCuenta && ta
 checkSource("web: el tabId se resuelve en el server o se funda", readFileSync(new URL("../lib/order/createCustomerOrder.ts", import.meta.url), "utf8"), "resolveTableTabId(params.restaurantId, mesaNormalizada)) ??");
 checkSource("app: tabId en la cuenta de mesa", posDart, "orderMap['tabId'] = await TableTabService.resolveOrFound(");
 
+// ── Etapa 1, mitad visible: la Caja agrupa y el cierre es de GRUPO ──────────
+// Si la web agrupa y la app no (o al revés), la misma mesa se ve distinta
+// según el lado — y el cierre por ronda vuelve a cobrar de cabeza.
+const posPage = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
+checkSource("web Caja: agrupa por tabId", posPage, "groupOpenTabs(activeOpenTabs");
+checkSource("web Caja: el cierre es transacción de GRUPO", posPage, "async function closeTabGroup(");
+checkSource("web Caja: reparto proporcional del neto", posPage, "distributeGroupNet(grossPerOrder");
+const posSheetDart = readFileSync(
+  "/Users/ricardoparedes/projects/FOODPASS/lib/pages/pos/dialogs/pos_tab_sheet.dart",
+  "utf8",
+);
+checkSource("app Caja: agrupa por tabId", posSheetDart, "groupOpenTabs(_tabs)");
+checkSource("app Caja: el cierre es de GRUPO", posDart, "Future<void> completePaidTabGroup(");
+checkSource("app Caja: reparto proporcional del neto", posDart, "distributeGroupNet(grossPerOrder");
+
 if (failed) {
   console.error("validate-table-orders: FAILED");
   process.exit(1);
