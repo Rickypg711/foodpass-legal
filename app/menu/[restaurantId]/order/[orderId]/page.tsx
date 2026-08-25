@@ -21,6 +21,7 @@ import {
 import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
+import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
@@ -38,6 +39,9 @@ type OrderDoc = {
   redemptionRequest?: { tierId: string; name: string; points: number };
   redemptionResult?: string;
   pickupPin?: string;
+  /** Mesa (dine_in): la orden nació del QR de una mesa. */
+  orderType?: string;
+  tableNumber?: string;
   total?: number;
   items?: Array<{
     name?: string;
@@ -272,7 +276,13 @@ function OrderStatusPageContent() {
   const isPosOrder = order?.orderSource === "pos";
   const status = mounted ? (order?.status ?? "pending") : "pending";
   const paymentStatus = mounted ? (order?.paymentStatus ?? "pending") : "pending";
+  // Mesa: manda sobre TODO el copy de esta página — el cliente está sentado.
+  const mesaLabel =
+    order?.orderType === "dine_in" && (order?.tableNumber ?? "").trim()
+      ? (order!.tableNumber as string).trim()
+      : null;
   const orderDisplay = customerOrderDisplay(status, paymentStatus, {
+    tableLabel: mesaLabel,
     posReceipt: isPosOrder,
   });
 
@@ -473,7 +483,9 @@ function OrderStatusPageContent() {
                   restaurant already (this page is their WhatsApp receipt). */}
               {isPosOrder ? null : (
                 <>
-                  <p className="mt-3 text-xs text-[#1C2526]/60">PIN de recogida</p>
+                  <p className="mt-3 text-xs text-[#1C2526]/60">
+                    {mesaLabel ? "Folio del pedido" : "PIN de recogida"}
+                  </p>
                   {displayPin ? (
                     <p
                       className="text-3xl font-bold tracking-widest"
@@ -507,8 +519,24 @@ function OrderStatusPageContent() {
               </p>
               {order?.paymentMethod === "pay_at_pickup" && paymentStatus !== "paid" ? (
                 <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
-                  💵 Pagas al recoger en el local
+                  {mesaLabel
+                    ? "💵 Pagas al final, aquí en tu mesa"
+                    : "💵 Pagas al recoger en el local"}
                 </p>
+              ) : null}
+              {/* Robo #5 también AQUÍ: esta página es donde el comensal se
+                  queda esperando su comida — el lugar exacto donde necesita
+                  llamar al mesero o pedir la cuenta (feedback Ricardo 25-ago). */}
+              {mesaLabel ? (
+                <div className="mt-3 border-t border-[#1C2526]/8 pt-3">
+                  <p className="text-xs font-semibold text-[#1C2526]/60">
+                    ¿Necesitas algo? El equipo lo ve al momento:
+                  </p>
+                  <TableServiceButtons
+                    restaurantId={restaurantId}
+                    tableNumber={mesaLabel}
+                  />
+                </div>
               ) : null}
               {order?.redemptionRequest && order?.redemptionResult !== "insufficient" ? (
                 <p className="mt-1 text-sm font-semibold" style={{ color: "#16A34A" }}>

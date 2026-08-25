@@ -11,10 +11,40 @@ export type OrderDisplayCopy = {
 export function customerOrderDisplay(
   status: string | undefined,
   paymentStatus: string | undefined,
-  opts: { posReceipt?: boolean } = {},
+  opts: { posReceipt?: boolean; tableLabel?: string | null } = {},
 ): OrderDisplayCopy {
   const s = (status ?? "").trim();
   const ps = (paymentStatus ?? "pending").trim();
+  // Pedido DE MESA: el cliente está SENTADO — nada de "pasa por él" ni
+  // "al recoger". La comida viene a él, y paga al final en su mesa.
+  const mesa = (opts.tableLabel ?? "").trim();
+  if (mesa) {
+    if (s === "cancelled") return { title: "Pedido cancelado" };
+    if (s === "payment_pending") {
+      return {
+        title: "Falta tu pago",
+        subtitle: "En cuanto Mercado Pago confirme, tu pedido llega a la cocina.",
+      };
+    }
+    if (s === "preparing") {
+      return {
+        title: "Preparando tu pedido 👨‍🍳",
+        subtitle: `Va directo a tu mesa ${mesa}.`,
+      };
+    }
+    if (s === "ready") {
+      return {
+        title: "¡Ya sale! 🛎️",
+        subtitle: `El mesero va en camino a tu mesa ${mesa}.`,
+      };
+    }
+    if (s === "completed") return { title: "Entregado en tu mesa ✔️" };
+    // pending / open tab — el caso normal de la mesa
+    return {
+      title: "¡Va a tu mesa! 🍽️",
+      subtitle: `La cocina ya lo tiene — te lo llevan a la mesa ${mesa}. Pide más rondas cuando quieras; pagas todo junto al final.`,
+    };
+  }
 
   // POS/counter orders: this page is a digital receipt, not order tracking —
   // the customer already ordered (and usually paid) in person at the counter.
