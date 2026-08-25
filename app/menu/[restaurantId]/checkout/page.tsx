@@ -13,7 +13,7 @@ import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreference
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
-import { loadOrderSnapshot } from "@/lib/order/orderSessionStorage";
+import { loadDinerIdentity } from "@/lib/order/dinerIdentity";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
@@ -141,16 +141,17 @@ export default function CheckoutPage() {
     setTableNumber(resolveTableFromLocation(restaurantId));
   }, [restaurantId]);
 
-  // RONDA 2+ (25-ago): si esta sesión ya pidió aquí, el nombre se PREFILLEA
-  // del pedido anterior — hacerle repetir a la misma persona lo que ya dijo
-  // hace una ronda es la fricción exacta que mata el "pedir más".
+  // RONDA 2+ (25-ago, v2): nombre y teléfono se PREFILLEAN de lo que este
+  // navegador ya tecleó antes (localStorage — la v1 usaba el snapshot de
+  // sessionStorage, que vive POR PESTAÑA, y por eso desde otra pestaña volvía
+  // a preguntar). Hacerle repetir a la misma persona lo que ya dijo hace una
+  // ronda es la fricción exacta que mata el "pedir más".
   useEffect(() => {
-    if (!restaurantId) return;
-    const prev = loadOrderSnapshot();
-    if (prev && prev.restaurantId === restaurantId && prev.customerName) {
-      setCustomerName((current) => current || prev.customerName);
-    }
-  }, [restaurantId]);
+    const prev = loadDinerIdentity();
+    if (!prev) return;
+    if (prev.name) setCustomerName((current) => current || prev.name);
+    if (prev.phone) setCustomerPhone((current) => current || prev.phone);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLogged, setCheckoutLogged] = useState(false);
   /** Set as soon as order is created — keeps checkout UI when cart is cleared later. */

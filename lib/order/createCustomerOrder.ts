@@ -11,6 +11,7 @@ import {
 } from "@/lib/types/order";
 import { generatePickupPin } from "@/lib/order/pickupPin";
 import { saveOrderSnapshot } from "@/lib/order/orderSessionStorage";
+import { saveDinerIdentity } from "@/lib/order/dinerIdentity";
 import type { CartLine } from "@/lib/cart/types";
 
 export type CreateOrderResult = {
@@ -79,6 +80,12 @@ export async function createCustomerWebOrder(params: {
     payload,
   );
 
+  // El navegador del comensal recuerda su nombre/teléfono para la siguiente
+  // ronda o visita (localStorage — cruza pestañas, ver dinerIdentity.ts).
+  saveDinerIdentity({
+    name: params.customerName,
+    phone: params.customerPhone ?? "",
+  });
   saveOrderSnapshot({
     orderId: ref.id,
     restaurantId: params.restaurantId,
