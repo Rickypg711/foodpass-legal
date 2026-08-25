@@ -218,6 +218,12 @@ export default function PedidosPage() {
       await updateDoc(orderRef, {
         paymentStatus: "paid",
         paymentMethod: method,
+        // Una cuenta abierta es algo POR COBRAR: la ronda que se paga aquí
+        // SALE de la cuenta de la mesa. Sin esto, la Caja seguía sumándola al
+        // total del grupo y la mesa se podía DOBLE-COBRAR (hallado 25-ago al
+        // agrupar por tabId). Esto además habilita el caso legítimo "yo pago
+        // lo mío y me voy": su ronda se cobra sola y el resto sigue junta.
+        isOpenTab: false,
         updatedAt: serverTimestamp(),
       });
       setChargingOrderId(null);

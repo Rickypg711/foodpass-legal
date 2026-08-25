@@ -1048,7 +1048,7 @@ export default function PosPage() {
           const snap = await transaction.get(ref);
           if (!snap.exists()) throw new Error("Una ronda de la cuenta ya no existe.");
           const data = snap.data();
-          if (data.isOpenTab !== true) {
+          if (data.isOpenTab !== true || String(data.paymentStatus || "") === "paid") {
             throw new Error("Una ronda ya se había cobrado — recarga las cuentas.");
           }
           snaps.push({ ref, data });

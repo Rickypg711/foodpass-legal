@@ -58,6 +58,9 @@ function str(v: unknown): string {
 export function groupOpenTabs<T extends TabOrderLike>(orders: T[]): TabGroup<T>[] {
   const byKey = new Map<string, T[]>();
   for (const o of orders) {
+    // Defensa de dinero: una ronda ya PAGADA no es "por cobrar" — no entra al
+    // grupo ni a su total, aunque un doc legado traiga isOpenTab colgado.
+    if (String((o as {paymentStatus?: unknown}).paymentStatus || "") === "paid") continue;
     const key = str(o.tabId) || o.id;
     const list = byKey.get(key);
     if (list) list.push(o);

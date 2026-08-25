@@ -29,6 +29,19 @@ const ms = (n) => ({ toMillis: () => n });
   assert.deepEqual(g.orders.map((o) => o.id), ["o1", "o2", "o3"]);
 }
 
+// ── 1b. DEFENSA DE DINERO: una ronda ya pagada NO entra al grupo ────────────
+// (cobrarla desde Pedidos la marca paid y la saca; si un doc legado se queda
+// con isOpenTab colgado, este filtro evita que la mesa se doble-cobre)
+{
+  const groups = groupOpenTabs([
+    { id: "o1", tabId: "t", total: 100, createdAt: ms(1000), tabName: "Mesa 5" },
+    { id: "o2", tabId: "t", total: 20, createdAt: ms(2000), paymentStatus: "paid" },
+  ]);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].orders.length, 1, "la pagada no cuenta como ronda");
+  assert.equal(groups[0].total, 100, "el total NO incluye lo ya cobrado");
+}
+
 // ── 2. Cuenta legada sin tabId agrupa bajo SU id — la misma llave que la
 //      callable reparte, así que las rondas nuevas se le cuelgan solas ───────
 {
