@@ -655,12 +655,26 @@ function OrderStatusPageContent() {
           </div>
         )}
 
-        <Link
-          href={`/menu/${encodeURIComponent(restaurantId)}`}
-          className="mt-6 block text-center text-sm underline text-[#1C2526]/70"
-        >
-          Volver al menú
-        </Link>
+        {/* En MESA el botón de regreso es la INVITACIÓN a la siguiente ronda
+            — botón de verdad, no un link tímido. La mesa se acuerda sola
+            (sessionStorage vía resolveTableFromLocation) y la ronda nueva se
+            cuelga de la MISMA cuenta (tabId): pagas todo junto al final. */}
+        {mesaLabel ? (
+          <Link
+            href={`/menu/${encodeURIComponent(restaurantId)}`}
+            className="mt-6 flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold text-[#1C2526]"
+            style={{ background: "#F28C38" }}
+          >
+            🍽️ Pedir otra ronda — va a la misma cuenta
+          </Link>
+        ) : (
+          <Link
+            href={`/menu/${encodeURIComponent(restaurantId)}`}
+            className="mt-6 block text-center text-sm underline text-[#1C2526]/70"
+          >
+            Volver al menú
+          </Link>
+        )}
       </main>
     </div>
   );
