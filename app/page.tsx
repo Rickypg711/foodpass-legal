@@ -252,7 +252,7 @@ export default function Home() {
             <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
                 <li key={item.step} className="relative rounded-2xl border border-[#1C2526]/8 bg-white p-5 shadow-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F28C38] text-sm font-bold text-white">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F28C38] text-sm font-bold text-[#1C2526]">
                     {item.step}
                   </span>
                   <h3 className="mt-4 font-bold text-[#1C2526]">{item.title}</h3>

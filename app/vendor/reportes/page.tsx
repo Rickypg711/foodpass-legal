@@ -401,7 +401,7 @@ export default function ReportesPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#F5F3EF" }}>
         <p className="text-sm text-gray-500">No pudimos cargar tus reportes.</p>
-        <button onClick={() => window.location.reload()} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#F28C38]">
+        <button onClick={() => window.location.reload()} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-[#1C2526] bg-[#F28C38]">
           Reintentar
         </button>
       </div>

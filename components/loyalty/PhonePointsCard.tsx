@@ -279,7 +279,7 @@ export function PhonePointsCard({
               type="button"
               onClick={confirmCode}
               disabled={step === "verifying" || code.length < 6}
-              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
             >
               {step === "verifying" ? "Verificando…" : "Ver puntos"}
             </button>

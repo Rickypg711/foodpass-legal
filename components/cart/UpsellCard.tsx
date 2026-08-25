@@ -179,14 +179,14 @@ export function UpsellCard({
             });
             setAdded({ bonus, surprise });
           }}
-          className="shrink-0 rounded-lg bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white"
+          className="shrink-0 rounded-lg bg-[#F28C38] px-4 py-2 text-sm font-semibold text-[#1C2526]"
         >
           + ${Math.round(delta)}
         </button>
       </div>
       {bonus > 0 ? (
         surprise ? (
-          <span className="mt-2 inline-block rounded-full bg-gradient-to-r from-[#F28C38] to-[#E85D75] px-3 py-1 text-xs font-bold text-white">
+          <span className="mt-2 inline-block rounded-full bg-gradient-to-r from-[#F28C38] to-[#E85D75] px-3 py-1 text-xs font-bold text-[#1C2526]">
             🎰 ¡DOBLE PUNTOS! +{bonus} puntos si lo agregas
           </span>
         ) : (

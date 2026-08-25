@@ -367,7 +367,7 @@ export function VendorLeadForm() {
         <button
           type="submit"
           disabled={formState === "submitting"}
-          className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[#F28C38] px-6 py-3.5 text-center text-sm font-semibold text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {formState === "submitting" ? "Enviando…" : "Activar por WhatsApp"}
         </button>

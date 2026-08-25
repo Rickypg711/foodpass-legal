@@ -94,7 +94,7 @@ export default function Page() {
           <div className="mt-7 flex justify-center">
             <Link
               href="/precios"
-              className="inline-flex items-center justify-center rounded-2xl bg-[#F28C38] px-7 py-4 text-[15px] font-bold text-white transition-all hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-2xl bg-[#F28C38] px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:opacity-90"
             >
               Ver precios completos →
             </Link>

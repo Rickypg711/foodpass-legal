@@ -789,7 +789,7 @@ function MenuSetupPageInner() {
         <button
           onClick={handleDone}
           disabled={saving || saved || menuItems.length === 0}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : menuItems.length === 0 ? "Agrega al menos un platillo" : `Guardar menú (${menuItems.length}) →`}
         </button>

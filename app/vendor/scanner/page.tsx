@@ -323,7 +323,7 @@ export default function VendorScanner() {
         <div className="flex gap-3">
           <button
             onClick={() => window.location.reload()}
-            className="rounded-xl bg-[#F28C38] px-5 py-2.5 text-sm font-semibold text-white"
+            className="rounded-xl bg-[#F28C38] px-5 py-2.5 text-sm font-semibold text-[#1C2526]"
           >
             Reintentar
           </button>
@@ -362,7 +362,7 @@ export default function VendorScanner() {
         </div>
         <button
           onClick={startCamera}
-          className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#c46644] active:scale-[0.98]"
+          className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-[#1C2526] shadow-lg transition-all hover:bg-[#c46644] active:scale-[0.98]"
           style={{ boxShadow: "0 4px 20px rgba(242,140,56,0.3)" }}
         >
           Activar cámara
@@ -501,7 +501,7 @@ export default function VendorScanner() {
 
             <button
               onClick={handleNextScan}
-              className="mt-7 w-full rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.98] hover:bg-[#c46644]"
+              className="mt-7 w-full rounded-xl bg-[#F28C38] py-3.5 text-sm font-semibold text-[#1C2526] transition-all active:scale-[0.98] hover:bg-[#c46644]"
               style={{ boxShadow: "0 4px 16px rgba(242,140,56,0.3)" }}
             >
               Siguiente cliente →

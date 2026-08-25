@@ -474,7 +474,7 @@ export default function ConfiguracionPage() {
                       type="button"
                       onClick={handleActivatePro}
                       disabled={activatingPro}
-                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
                       style={{ background: "#F28C38" }}
                     >
                       {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
@@ -1536,7 +1536,7 @@ function DiscountProfilesSection({
               type="button"
               onClick={handleSaveProfile}
               disabled={busy}
-              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
               style={{ background: "#F28C38" }}
             >
               {busy ? "Guardando…" : "Guardar descuento"}
@@ -1788,7 +1788,7 @@ function PosStaffSection({
               type="button"
               onClick={handleAdd}
               disabled={busy}
-              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
               style={{ background: "#F28C38" }}
             >
               {busy ? "Guardando…" : "Agregar al equipo"}

@@ -700,7 +700,7 @@ export default function ClientesPage() {
               Pide el número de WhatsApp en tu próximo cobro y aparece aquí.
             </p>
             <Link href="/vendor/pos"
-              className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
+              className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
               Ir a la Caja →
             </Link>

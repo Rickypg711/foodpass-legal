@@ -509,7 +509,7 @@ export default function VendorDashboard() {
           No pudimos cargar tu panel.
         </p>
         <button onClick={() => window.location.reload()}
-          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-[#1C2526]"
           style={{ background: "#F28C38" }}>
           Reintentar
         </button>
@@ -544,7 +544,7 @@ export default function VendorDashboard() {
           <div className="flex items-center gap-2">
             <ManualCloseToggle restaurantId={data.restaurantId} />
             <Link href="/vendor/pos"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
               💰 Cobrar
             </Link>
@@ -1566,7 +1566,7 @@ function LoyaltyQuotaCard({ used, limit }: { used: number; limit: number }) {
         {full && (
           <Link
             href="/vendor/configuracion"
-            className="shrink-0 rounded-xl px-4 py-2.5 text-[12px] font-bold text-white transition hover:opacity-90"
+            className="shrink-0 rounded-xl px-4 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90"
             style={{ background: "#F28C38" }}
           >
             Activar Pro · $299/mes →
@@ -1617,7 +1617,7 @@ function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
           Ver programa
         </Link>
         <Link href="/vendor/pos"
-          className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-white transition hover:opacity-90"
+          className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-[#1C2526] transition hover:opacity-90"
           style={{ background: "#F28C38" }}>
           Cobrar con número
         </Link>

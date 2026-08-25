@@ -427,7 +427,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
             <button
               onClick={() => setShareOpen(true)}
               title={!open ? "Compartir menú" : undefined}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-[10px] text-[13px] font-bold text-white transition-all hover:opacity-90"
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-[10px] text-[13px] font-bold text-[#1C2526] transition-all hover:opacity-90"
               style={{ background: "#F28C38", justifyContent: open ? "flex-start" : "center" }}
             >
               <span className="shrink-0"><IconShare /></span>
@@ -805,7 +805,7 @@ function ExitCajaModeDialog({
             <button
               type="button"
               onClick={onUnlock}
-              className="mt-4 w-full rounded-xl px-3 py-3 text-[13px] font-bold text-white"
+              className="mt-4 w-full rounded-xl px-3 py-3 text-[13px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}
             >
               Salir de Modo Caja

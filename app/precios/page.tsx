@@ -147,7 +147,7 @@ export default function Page() {
             </ul>
             <Link
               href="/activar"
-              className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-[#F28C38] px-6 py-3.5 text-[15px] font-bold text-white transition-all hover:opacity-90"
+              className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-[#F28C38] px-6 py-3.5 text-[15px] font-bold text-[#1C2526] transition-all hover:opacity-90"
             >
               Prueba Pro 14 días gratis →
             </Link>

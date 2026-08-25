@@ -399,7 +399,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             <button
               type="submit"
               disabled={stage === "signing"}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
             >
               {stage === "signing"
                 ? <Spinner className="text-white" />
@@ -507,7 +507,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             <button
               type="submit"
               disabled={!name.trim() || !phone.trim() || stage === "creating"}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {stage === "creating"
                 ? <><Spinner className="text-white" />Creando tu restaurante…</>
@@ -527,7 +527,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
           </p>
           <button
             onClick={() => router.push("/vendor/setup/horario?wizard=1")}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
             Configurar mi restaurante →
           </button>
@@ -544,7 +544,7 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
           </p>
           <button
             onClick={() => router.push("/vendor")}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
             Ir a mi panel →
           </button>

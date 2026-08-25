@@ -132,7 +132,7 @@ function TierRow({
         className={
           "shrink-0 rounded-full px-2.5 py-1 text-xs font-bold " +
           (reached
-            ? "bg-[#F28C38] text-white"
+            ? "bg-[#F28C38] text-[#1C2526]"
             : "bg-[#1C2526]/6 text-[#1C2526]/60")
         }
       >

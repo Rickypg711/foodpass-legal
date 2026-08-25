@@ -176,7 +176,7 @@ export default function SetupDonePage() {
         {/* CTA */}
         <button
           onClick={() => router.push("/vendor")}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c46644]"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
         >
           Ver mi panel →
         </button>

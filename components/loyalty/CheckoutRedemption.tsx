@@ -268,7 +268,7 @@ export function CheckoutRedemption({
               type="button"
               onClick={confirmOtp}
               disabled={state === "otp_verifying" || code.length < 6}
-              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
             >
               {state === "otp_verifying" ? "…" : "Ver premios"}
             </button>

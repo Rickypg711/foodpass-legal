@@ -325,7 +325,7 @@ export default function PuntosGlobalPage() {
                 </p>
                 <a
                   href="/download.html"
-                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d67428]"
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-colors hover:bg-[#d67428]"
                 >
                   Descargar Comeleal
                 </a>
@@ -362,7 +362,7 @@ export default function PuntosGlobalPage() {
                 type="button"
                 onClick={confirmCode}
                 disabled={step === "verifying" || code.length < 6}
-                className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
               >
                 {step === "verifying" ? "Verificando…" : "Ver puntos"}
               </button>
@@ -389,7 +389,7 @@ export default function PuntosGlobalPage() {
               type="button"
               disabled={!valid || step === "sending"}
               onClick={sendCode}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
             >
               {step === "sending" ? "Enviando código…" : "Ver mis puntos"}
             </button>

@@ -165,7 +165,7 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
             {fmt(item.price)}
           </p>
           <span
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[18px] font-bold text-white transition-transform group-hover:scale-110"
+            className="flex h-7 w-7 items-center justify-center rounded-xl text-[18px] font-bold text-[#1C2526] transition-transform group-hover:scale-110"
             style={{ background: "#F28C38", lineHeight: 1 }}
           >
             +
@@ -1442,7 +1442,7 @@ export default function PosPage() {
               <span className="text-[12px] font-bold text-[#1C2526] hidden sm:inline">Cuentas</span>
               {activeOpenTabs.length > 0 && (
                 <span
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white animate-pulse"
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-[#1C2526] animate-pulse"
                   style={{ background: "#F28C38" }}
                 >
                   {activeOpenTabs.length}
@@ -1495,7 +1495,7 @@ export default function PosPage() {
                       setAddingToTab(null);
                       clearCart();
                     }}
-                    className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-95"
+                    className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#1C2526] transition-opacity hover:opacity-95"
                     style={{ background: "#F28C38" }}
                   >
                     Cancelar
@@ -1751,7 +1751,7 @@ export default function PosPage() {
                   setCajaLocked(true);
                   setLockDialogOpen(false);
                 }}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-white"
+                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526]"
                 style={{ background: "#F28C38" }}
               >
                 Activar
@@ -1960,7 +1960,7 @@ function OpenTabsModal({
                     </button>
                     <button
                       onClick={() => onCloseTab(tab.id)}
-                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-white bg-[#F28C38] hover:opacity-90 transition-all"
+                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#1C2526] bg-[#F28C38] hover:opacity-90 transition-all"
                     >
                       Cobrar Cuenta
                     </button>

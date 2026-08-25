@@ -114,7 +114,7 @@ export default function RecompensasPage() {
             </p>
             <Link
               href="/vendor/setup/recompensas"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold text-white"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
               Configurar recompensas →
             </Link>

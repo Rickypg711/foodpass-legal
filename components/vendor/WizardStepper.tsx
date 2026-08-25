@@ -32,9 +32,9 @@ export function WizardStepper({ current }: { current: StepKey }) {
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
                       done
-                        ? "bg-[#F28C38] text-white"
+                        ? "bg-[#F28C38] text-[#1C2526]"
                         : active
-                        ? "bg-[#F28C38] text-white ring-4 ring-[#F28C38]/15"
+                        ? "bg-[#F28C38] text-[#1C2526] ring-4 ring-[#F28C38]/15"
                         : "bg-[#141413]/10 text-[#141413]/35"
                     }`}
                   >

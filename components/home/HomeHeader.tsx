@@ -87,7 +87,7 @@ export function HomeHeader() {
               </Link>
               <button
                 onClick={() => openSignupModal("header_desktop")}
-                className="shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#c46644]">
+                className="shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#c46644]">
                 Empieza gratis
               </button>
             </>
@@ -119,7 +119,7 @@ export function HomeHeader() {
               ) : (
                 <>
                   <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
-                  <button onClick={() => openSignupModal("header_mobile")} className="block w-full rounded-full bg-[#F28C38] px-3 py-2 text-center text-sm font-semibold text-white">Empieza gratis</button>
+                  <button onClick={() => openSignupModal("header_mobile")} className="block w-full rounded-full bg-[#F28C38] px-3 py-2 text-center text-sm font-semibold text-[#1C2526]">Empieza gratis</button>
                 </>
               )}
             </div>
