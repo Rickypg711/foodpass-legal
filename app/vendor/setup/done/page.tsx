@@ -39,6 +39,7 @@ export default function SetupDonePage() {
   const router = useRouter();
   const [restaurantName, setRestaurantName] = useState("Tu restaurante");
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [restaurantWhatsapp, setRestaurantWhatsapp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +53,8 @@ export default function SetupDonePage() {
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const name = (rSnap.data()?.name as string | undefined)?.trim();
       if (name) setRestaurantName(name);
+      const wa = String(rSnap.data()?.whatsapp ?? "").replace(/\D/g, "");
+      if (wa.length >= 10) setRestaurantWhatsapp(wa.slice(-10));
       setRestaurantId(rid);
       setLoading(false);
       fireOnboardingCompletedOnce(rid);
@@ -166,10 +169,22 @@ export default function SetupDonePage() {
             {/* Print button */}
             <button
               onClick={handlePrint}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-3 text-sm font-semibold text-[#F28C38] hover:bg-[#F28C38]/10 transition-all"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-3 text-sm font-semibold text-[#B45309] hover:bg-[#F28C38]/10 transition-all"
             >
               🖨️ Imprimir QR
             </button>
+            {restaurantWhatsapp && qrUrl && (
+              <a
+                href={`https://wa.me/52${restaurantWhatsapp}?text=${encodeURIComponent(
+                  `🎉 Mi menú digital ya está VIVO: ${qrUrl}\n\nEste link es el de mi QR — lo imprimo desde mi panel (o en cualquier papelería) y lo pongo en mis mesas. 🍽️`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/40 bg-[#25D366]/5 px-4 py-3 text-sm font-semibold text-[#128C4B] hover:bg-[#25D366]/10 transition-all"
+              >
+                📲 Mandármelo a mi WhatsApp
+              </a>
+            )}
           </div>
         )}
 

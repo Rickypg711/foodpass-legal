@@ -9,6 +9,8 @@ import {
   addDoc,
   getDoc,
   serverTimestamp,
+  updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
@@ -17,7 +19,15 @@ import {
   waitForAuthReady,
   getFirebaseAuth,
 } from "@/lib/auth";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  linkWithPopup,
+  linkWithCredential,
+  EmailAuthProvider,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -42,12 +52,21 @@ type Stage = "idle" | "signing" | "form" | "creating" | "done" | "existing";
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
+/** El claim del embudo menú-primero (§6): la cuenta nace YA VESTIDA. */
+export interface DemoClaim {
+  jobId: string;
+  items: DemoItem[];
+  info?: DemoInfo | null;
+  whatsapp?: string | null;
+}
+
 interface ActivarModalProps {
   asModal?: boolean;
   onClose?: () => void;
+  demo?: DemoClaim;
 }
 
-export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
+export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProps) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("idle");
   const [user, setUser] = useState<User | null>(null);
@@ -55,10 +74,15 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
   /// `true` cuando el fallo fue de credenciales: ahi si hay algo que ofrecer.
   const [showReset, setShowReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
+  // Modo demo: la IA ya leyó nombre/dirección/teléfono del menú de papel
+  // (§6.9 — el dato no se pide, se lee) y el WhatsApp del paso de la foto
+  // llega pre-llenado (§6.5).
+  const [name, setName] = useState(demo?.info?.restaurantName ?? "");
+  const [address, setAddress] = useState(demo?.info?.address ?? "");
+  const [phone, setPhone] = useState(demo?.whatsapp ?? demo?.info?.phone ?? "");
   const [category, setCategory] = useState("");
+  /** "📆 Leí de tu menú: Mar-Dom 1-11pm — ¿está bien?" (default sí). */
+  const [hoursOk, setHoursOk] = useState(true);
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
@@ -71,10 +95,19 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
     try {
       const auth = getFirebaseAuth();
       const email = emailInput.trim();
-      const cred =
-        authMode === "signup"
-          ? await createUserWithEmailAndPassword(auth, email, passwordInput)
-          : await signInWithEmailAndPassword(auth, email, passwordInput);
+      let cred;
+      if (authMode === "signup" && demo && auth.currentUser?.isAnonymous) {
+        // Mismo principio que Google: LINK conserva el uid dueño del demo.
+        cred = await linkWithCredential(
+          auth.currentUser,
+          EmailAuthProvider.credential(email, passwordInput),
+        );
+      } else {
+        cred =
+          authMode === "signup"
+            ? await createUserWithEmailAndPassword(auth, email, passwordInput)
+            : await signInWithEmailAndPassword(auth, email, passwordInput);
+      }
       setUser(cred.user);
       const snap = await getDoc(doc(getFirebaseDb(), "users", cred.user.uid));
       setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
@@ -147,7 +180,31 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
     setError(null);
     setStage("signing");
     try {
-      const u = await signInWithGoogle();
+      // Demo: el prospecto YA es un usuario (anónimo, dueño de su job).
+      // LINK en vez de sign-in nuevo: mismo uid → su demo sigue siendo suyo
+      // y las reglas del job no ven a un extraño. Si el Google ya tiene
+      // cuenta (credential-already-in-use), se cae al sign-in normal y la
+      // conversión se estampa por la regla de dueño-del-restaurante.
+      let u: User;
+      const current = getFirebaseAuth().currentUser;
+      if (demo && current?.isAnonymous) {
+        try {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
+          const cred = await linkWithPopup(current, provider);
+          u = cred.user;
+        } catch (linkErr: unknown) {
+          const code = (linkErr as { code?: string })?.code ?? "";
+          if (code === "auth/credential-already-in-use" ||
+              code === "auth/email-already-in-use") {
+            u = await signInWithGoogle();
+          } else {
+            throw linkErr;
+          }
+        }
+      } else {
+        u = await signInWithGoogle();
+      }
       setUser(u);
       const snap = await getDoc(doc(getFirebaseDb(), "users", u.uid));
       setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
@@ -286,6 +343,50 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
             locationUpdatedAt: serverTimestamp(),
           });
         } catch { /* nunca romper el alta por esto */ }
+      }
+
+      // ── Modo demo: la cuenta nace YA VESTIDA (§6.5/§6.8) ────────────────
+      // El menú que la IA leyó se copia al restaurante (cero re-trabajo), el
+      // horario impreso se escribe si el dueño lo confirmó, y el job estampa
+      // su conversión — el escalón "cuenta" de la escalera (§6.2).
+      if (demo) {
+        try {
+          const dbb = getFirebaseDb();
+          const items = demo.items.slice(0, 300);
+          for (let i = 0; i < items.length; i += 400) {
+            const batch = writeBatch(dbb);
+            for (const it of items.slice(i, i + 400)) {
+              const mref = doc(collection(dbb, "restaurants", restaurantRef.id, "menu"));
+              batch.set(mref, {
+                name: it.name,
+                description: it.description ?? "",
+                price: it.price,
+                category: it.category ?? "",
+                isAvailable: true,
+                ...(it.optionGroups ? { optionGroups: it.optionGroups } : {}),
+                importedFromDemo: demo.jobId,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              });
+            }
+            await batch.commit();
+          }
+          if (hoursOk && demo.info?.businessHours) {
+            await updateDoc(restaurantRef, {
+              businessHours: demo.info.businessHours,
+              hoursConfirmed: true,
+            });
+          }
+          await updateDoc(doc(dbb, "menuDemoJobs", demo.jobId), {
+            convertedToRestaurantId: restaurantRef.id,
+            convertedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        } catch (seedErr) {
+          // El alta JAMÁS se rompe por el sembrado: sin menú copiado, el
+          // wizard normal lo captura — el dueño no pierde nada.
+          console.warn("[activar] demo seed failed (non-blocking):", seedErr);
+        }
       }
 
       setStage("done");
@@ -504,6 +605,22 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
                 ))}
               </div>
             </div>
+            {demo?.info?.businessHours && demo.info.hoursText ? (
+              <label className="flex items-start gap-2.5 rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={hoursOk}
+                  onChange={(e) => setHoursOk(e.target.checked)}
+                  disabled={stage === "creating"}
+                  className="mt-0.5 h-4 w-4 accent-[#F28C38]"
+                />
+                <span className="text-[12px] leading-snug text-[#141413]/70">
+                  📆 Leí este horario en tu menú:{" "}
+                  <b className="text-[#141413]">{demo.info.hoursText}</b>
+                  {" — "}déjalo puesto (lo cambias después si quieres)
+                </span>
+              </label>
+            ) : null}
             <button
               type="submit"
               disabled={!name.trim() || !phone.trim() || stage === "creating"}
@@ -521,15 +638,19 @@ export function ActivarModal({ asModal = true, onClose }: ActivarModalProps) {
       {stage === "done" && (
         <div className="text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#F28C38]/10 text-3xl">🎉</div>
-          <h2 className="text-xl font-bold text-[#141413]">¡Restaurante creado!</h2>
+          <h2 className="text-xl font-bold text-[#141413]">
+            {demo ? "¡Es tuyo! Tu menú ya está adentro." : "¡Restaurante creado!"}
+          </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
-            Solo faltan 3 pasos rápidos: horario, menú y recompensas. Tardas menos de 5 minutos.
+            {demo
+              ? "Tus platillos, precios y tamaños ya viven en tu cuenta. Solo falta elegir tus premios — la IA ya te preparó una propuesta."
+              : "Solo faltan 3 pasos rápidos: horario, menú y recompensas. Tardas menos de 5 minutos."}
           </p>
           <button
-            onClick={() => router.push("/vendor/setup/horario?wizard=1")}
+            onClick={() => router.push(demo ? "/vendor/setup/recompensas?wizard=1" : "/vendor/setup/horario?wizard=1")}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
-            Configurar mi restaurante →
+            {demo ? "Elegir mis premios →" : "Configurar mi restaurante →"}
           </button>
         </div>
       )}
