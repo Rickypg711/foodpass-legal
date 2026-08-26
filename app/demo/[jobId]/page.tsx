@@ -428,10 +428,10 @@ export default function DemoPreviewPage() {
 
         <p className="mt-8 text-center text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
           ✏️ ¿Un precio mal leído, un platillo que falta, o quieres fotos de
-          tus platillos? Todo se edita y se agrega desde tu panel — gratis.
+          tus platillos? Todo se edita y se agrega después — gratis.
         </p>
         <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-          Vista previa generada de tu foto · los pedidos de aquí son de mentira 🎭
+          Vista previa hecha de tu foto · los pedidos de aquí son de mentira 🎭
         </p>
       </div>
 
@@ -547,7 +547,7 @@ export default function DemoPreviewPage() {
                 {cart.map((l) => `${l.qty}× ${l.name}`).join(" · ")} — {formatPrice(total)}
               </p>
               <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                En tu menú real esto te suena en tu panel — y tu cliente te lo
+                En tu menú real esto te suena al momento — y tu cliente te lo
                 puede confirmar a tu WhatsApp 📲
               </p>
             </div>
