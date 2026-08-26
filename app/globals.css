@@ -168,3 +168,26 @@ a.menu-cta-enter[aria-disabled="true"] {
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── Micro-movimiento del embudo y del menú (26-ago, nivel-2027 pass) ──
+   Tres verbos, un idioma: POP confirma (agregaste), SLIDE-UP presenta
+   (una hoja llega de abajo, como en el teléfono), FADE despide (el hint
+   que ya cumplió). Duraciones cortas: el movimiento confirma, no estorba. */
+@keyframes cart-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.animate-cart-pop { animation: cart-pop 0.3s ease; }
+
+@keyframes sheet-up {
+  from { opacity: 0.4; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-sheet-up { animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-backdrop-in { animation: backdrop-in 0.2s ease-out; }

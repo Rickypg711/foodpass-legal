@@ -71,8 +71,8 @@ export function ItemOptionsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-3xl">
+    <div className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+      <div className="animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-3xl">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-[#1C2526]">{itemName}</h3>
           <p className="text-sm text-[#1C2526]/50">Elige cómo lo quieres</p>

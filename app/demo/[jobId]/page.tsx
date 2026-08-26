@@ -59,6 +59,8 @@ export default function DemoPreviewPage() {
   const [sheetItem, setSheetItem] = useState<DemoItem | null>(null);
   const [theater, setTheater] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  /** 'on' → 'fading' (600ms de adiós) → 'off'. El hint cumple y se va. */
+  const [hint, setHint] = useState<"on" | "fading" | "off">("on");
   const stamped = useRef({ viewed: false, played: false });
 
   // Auth anónima primero (las reglas piden dueño) y luego observar el job.
@@ -123,6 +125,10 @@ export default function DemoPreviewPage() {
   const count = cart.reduce((s, l) => s + l.qty, 0);
 
   function addLine(item: DemoItem, selected: SelectedOptionGroup[] | null) {
+    if (hint === "on") {
+      setHint("fading");
+      setTimeout(() => setHint("off"), 650);
+    }
     if (!stamped.current.played) {
       stamped.current.played = true;
       if (!(job as unknown as { playedDemoAt?: unknown })?.playedDemoAt) stampPlayed(jobId);
@@ -304,8 +310,8 @@ export default function DemoPreviewPage() {
       </header>
 
       <div className="mx-auto w-full max-w-md px-4">
-        {count === 0 && (
-          <p className="mt-4 rounded-xl px-4 py-2.5 text-center text-[13px] font-bold"
+        {hint !== "off" && (
+          <p className={`mt-4 rounded-xl px-4 py-2.5 text-center text-[13px] font-bold transition-opacity duration-500 ${hint === "fading" ? "opacity-0" : "opacity-100"}`}
             style={{ background: "rgba(242,140,56,0.1)", color: "#B45309" }}>
             👆 Pruébalo como lo vería tu cliente — toca un ➕
           </p>
@@ -346,7 +352,7 @@ export default function DemoPreviewPage() {
                         onClick={() =>
                           (it.optionGroups?.length ?? 0) > 0 ? setSheetItem(it) : addLine(it, null)
                         }
-                        className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition-transform duration-150 active:scale-90"
                         style={{ background: "#F28C38", color: "#1C2526" }}
                       >
                         +
@@ -389,9 +395,10 @@ export default function DemoPreviewPage() {
         <div className="mx-auto w-full max-w-md">
           {count > 0 && (
             <button
+              key={count}
               type="button"
               onClick={() => setTheater(true)}
-              className="mb-2 flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-[13px] font-bold"
+              className="animate-cart-pop mb-2 flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-[13px] font-bold"
               style={{ background: "rgba(28,37,38,0.05)", color: "#1C2526" }}
             >
               <span>🛒 {count} artículo{count > 1 ? "s" : ""} · {formatPrice(total)}</span>
@@ -416,9 +423,9 @@ export default function DemoPreviewPage() {
       {/* 🎭 El teatro (§6.4): la experiencia del cliente Y la pantalla del
           dueño — doble venta. Nada se escribe en ningún lado. */}
       {theater && cart.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+        <div className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           onClick={() => setTheater(false)}>
-          <div className="w-full max-w-md rounded-3xl bg-white p-5"
+          <div className="animate-sheet-up w-full max-w-md rounded-3xl bg-white p-5"
             onClick={(e) => e.stopPropagation()}>
             <p className="text-center text-[22px]">🎭</p>
             <h3 className="mt-1 text-center text-[17px] font-extrabold" style={{ color: "#1C2526" }}>
