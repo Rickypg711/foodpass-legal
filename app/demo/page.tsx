@@ -74,7 +74,7 @@ export default function DemoUploadPage() {
           style={{ color: "rgba(28,37,38,0.6)" }}>
           Tus platillos, tus precios, tus salsas y tamaños — leídos de tu
           menú de papel y montados como menú digital profesional.{" "}
-          <b>Gratis, sin cuenta, sin tarjeta.</b>
+          <b>Gratis y sin tarjeta — y para verlo no necesitas ni cuenta.</b>
         </p>
 
         {/* Cámara directa (capture) — el flujo del celular del taquero. */}
@@ -127,7 +127,8 @@ export default function DemoUploadPage() {
           <span className="text-[12px] font-semibold"
             style={{ color: "rgba(28,37,38,0.55)" }}>
             📱 Tu WhatsApp <span style={{ color: "rgba(28,37,38,0.35)" }}>(opcional)</span> —
-            para recordarte activarlo antes de que tu vista previa se borre
+            para que no pierdas tu menú: te avisamos antes de que tu vista
+            previa se borre
           </span>
           <input
             type="tel"
@@ -156,7 +157,7 @@ export default function DemoUploadPage() {
           {busy ? "Subiendo tu menú…" : "Ver mi menú digital →"}
         </button>
         <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-          Gratis · Sin cuenta · Sin tarjeta · ~1 minuto
+          Gratis · Sin tarjeta · ~1 minuto
         </p>
 
         {resumeId && !busy && (
