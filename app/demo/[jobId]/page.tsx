@@ -158,6 +158,16 @@ export default function DemoPreviewPage() {
     if (theater && cart.length === 0) setTheater(false);
   }, [theater, cart.length]);
 
+  // Escape también baja el telón (además del ✕, el backdrop y el link).
+  useEffect(() => {
+    if (!theater) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTheater(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [theater]);
+
   function qtyFor(name: string): number {
     return cart.reduce((s, l) => (l.name === name ? s + l.qty : s), 0);
   }
