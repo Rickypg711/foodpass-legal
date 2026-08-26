@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -25,6 +25,7 @@ import { resolveVendorContext } from "@/lib/vendorContext";
 import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
+import { primeChime, playNewOrderChime, flashTabTitle } from "@/lib/vendor/newOrderChime";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -102,7 +103,13 @@ export default function PedidosPage() {
   const [error, setError] = useState<string | null>(null);
   const [chargingOrderId, setChargingOrderId] = useState<string | null>(null);
 
+  // La campana: ids de pedidos entrantes ya vistos por ESTE listener. null =
+  // aún no llega el primer snapshot (la carga inicial jamás suena).
+  const seenIncomingIds = useRef<Set<string> | null>(null);
+
   // ── Auth Init & Realtime Listener ──────────────────────────────────────────
+
+  useEffect(() => primeChime(), []);
 
   useEffect(() => {
     let unsubscribe: () => void = () => {};
@@ -142,6 +149,28 @@ export default function PedidosPage() {
             id: d.id,
             ...(d.data() as Omit<Order, "id">),
           }));
+
+          // La campana: un pedido ENTRANTE es el que le cae al dueño sin que
+          // él lo haya tecleado (app/web/QR de mesa, jamás los del propio
+          // POS) y aún vive en la bandeja (pending/open_tab). Suena solo lo
+          // que aparece DESPUÉS del primer snapshot.
+          const incoming = list.filter(
+            (o) =>
+              (o.status === "pending" || o.status === "open_tab") &&
+              o.orderSource !== "pos",
+          );
+          if (seenIncomingIds.current === null) {
+            seenIncomingIds.current = new Set(incoming.map((o) => o.id));
+          } else {
+            const seen = seenIncomingIds.current;
+            const fresh = incoming.filter((o) => !seen.has(o.id));
+            incoming.forEach((o) => seen.add(o.id));
+            if (fresh.length > 0) {
+              playNewOrderChime();
+              flashTabTitle();
+            }
+          }
+
           setOrders(list);
           setLoading(false);
         },
