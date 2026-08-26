@@ -32,6 +32,14 @@ type CartLine = {
   qty: number;
 };
 
+/** "en 3 días" / "mañana" / "HOY" — jamás "en 0 días". */
+function borradoLabel(dias: number | null): string | null {
+  if (dias === null) return null;
+  if (dias <= 0) return "se borra HOY";
+  if (dias === 1) return "se borra mañana";
+  return `se borra en ${dias} días`;
+}
+
 const PROCESSING_LINES = [
   "Leyendo tus platillos…",
   "Anotando tus precios…",
@@ -139,6 +147,23 @@ export default function DemoPreviewPage() {
     });
   }
 
+  // El teatro sin líneas no tiene función: se cierra solo.
+  useEffect(() => {
+    if (theater && cart.length === 0) setTheater(false);
+  }, [theater, cart.length]);
+
+  function removeLine(index: number) {
+    setCart((prev) => {
+      const next = [...prev];
+      if (next[index].qty > 1) {
+        next[index] = { ...next[index], qty: next[index].qty - 1 };
+        return next;
+      }
+      next.splice(index, 1);
+      return next;
+    });
+  }
+
   function openClaim() {
     stampClaimStarted(jobId);
     setClaiming(true);
@@ -208,6 +233,11 @@ export default function DemoPreviewPage() {
     );
   }
   if (job.status === "processing") {
+    // Rescate: si el pipeline se colgó sin marcar error, a los ~4 min se le
+    // ofrece la salida en vez de un spinner eterno.
+    const createdMs = (job as unknown as { createdAt?: { toMillis?: () => number } })
+      .createdAt?.toMillis?.() ?? Date.now();
+    const stuck = Date.now() - createdMs > 4 * 60 * 1000;
     return (
       <Shell>
         <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#F28C38]/25 border-t-[#F28C38]" />
@@ -220,6 +250,16 @@ export default function DemoPreviewPage() {
         <p className="mt-4 text-center text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>
           ~1 minuto · no cierres esta página
         </p>
+        {stuck && (
+          <>
+            <p className="mt-6 text-center text-[13px] font-semibold" style={{ color: "#B45309" }}>
+              Esto está tardando más de lo normal…
+            </p>
+            <CtaButton onClick={() => { forgetDemoJob(); router.push("/demo"); }}>
+              📸 Intentar de nuevo
+            </CtaButton>
+          </>
+        )}
       </Shell>
     );
   }
@@ -232,7 +272,7 @@ export default function DemoPreviewPage() {
       <div className="sticky top-0 z-40 px-4 py-2 text-center text-[12px] font-bold"
         style={{ background: "#1C2526", color: "#fff" }}>
         ⏳ VISTA PREVIA — aún no activo
-        {dias !== null && <span style={{ color: "#F8B26A" }}> · se borra en {dias} día{dias === 1 ? "" : "s"}</span>}
+        {borradoLabel(dias) && <span style={{ color: "#F8B26A" }}> · {borradoLabel(dias)}</span>}
       </div>
 
       <header className="px-5 pt-6 pb-4" style={{ background: "#1C2526" }}>
@@ -350,7 +390,7 @@ export default function DemoPreviewPage() {
             💛 Es tuyo. Quédatelo gratis →
           </button>
           <p className="mt-1.5 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-            {dias !== null ? `Tu vista previa se borra en ${dias} día${dias === 1 ? "" : "s"} · ` : ""}
+            {borradoLabel(dias) ? `Tu vista previa ${borradoLabel(dias)} · ` : ""}
             Gratis · Sin tarjeta · Sin contrato
           </p>
         </div>
@@ -358,7 +398,7 @@ export default function DemoPreviewPage() {
 
       {/* 🎭 El teatro (§6.4): la experiencia del cliente Y la pantalla del
           dueño — doble venta. Nada se escribe en ningún lado. */}
-      {theater && (
+      {theater && cart.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           onClick={() => setTheater(false)}>
           <div className="w-full max-w-md rounded-3xl bg-white p-5"
@@ -369,9 +409,17 @@ export default function DemoPreviewPage() {
             </h3>
             <div className="mt-3 rounded-2xl p-4" style={{ background: "rgba(28,37,38,0.04)" }}>
               {cart.map((l, i) => (
-                <div key={i} className="flex justify-between text-[13px]" style={{ color: "#1C2526" }}>
-                  <span>{l.qty}× {l.name}{l.detail ? ` · ${l.detail}` : ""}</span>
-                  <span className="font-bold">{formatPrice(l.unit * l.qty)}</span>
+                <div key={i} className="flex items-center justify-between gap-2 text-[13px]" style={{ color: "#1C2526" }}>
+                  <span className="min-w-0">{l.qty}× {l.name}{l.detail ? ` · ${l.detail}` : ""}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="font-bold">{formatPrice(l.unit * l.qty)}</span>
+                    <button type="button" aria-label={`Quitar ${l.name}`}
+                      onClick={() => removeLine(i)}
+                      className="rounded-md px-1.5 text-[12px] font-bold"
+                      style={{ color: "rgba(28,37,38,0.4)" }}>
+                      ✕
+                    </button>
+                  </span>
                 </div>
               ))}
               <div className="mt-2 flex justify-between border-t pt-2 text-[14px] font-extrabold"
