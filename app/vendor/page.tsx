@@ -427,6 +427,7 @@ export default function VendorDashboard() {
         const nbaCode = resolveNbaActionCode(
             brainActionCode,
             (r.isSetupComplete as boolean) ?? true,
+            (r.setupIncompleteReasons as string[]) ?? [],
         );
         const nbaOverridden = nbaCode !== brainActionCode;
 
@@ -593,6 +594,13 @@ export default function VendorDashboard() {
         {/* ── Page content ── */}
         <main className="flex-1 px-4 pb-16 pt-5 md:px-8 md:pt-7">
 
+          {/* Día cero: la brújula VA PRIMERO — la acción principal de un
+              restaurante sin terminar de nacer es terminar de nacer, no
+              "Nueva venta" (cazado por Ricardo en el primer claim). */}
+          {!data.isSetupComplete && (
+            <SetupBanner reasons={data.setupIncompleteReasons} />
+          )}
+
           {/* Mobile primary CTA — the sale IS the loop (points + premios en la Caja) */}
           <Link href="/vendor/pos"
             className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
@@ -611,11 +619,6 @@ export default function VendorDashboard() {
               💰
             </div>
           </Link>
-
-          {/* ── Setup banner ── */}
-          {!data.isSetupComplete && (
-            <SetupBanner reasons={data.setupIncompleteReasons} />
-          )}
 
           {/* ── Requieren tu atención ── */}
           {(riskCount > 0 || data.pedidosCola > 0 || data.expiringRewards.length > 0) && (
@@ -1380,6 +1383,8 @@ const SETUP_BLOCKING_NBA = new Set([
   "complete_profile",
   "add_menu_items",
   "configure_rewards",
+  "set_business_hours",
+  "enable_first_purchase_reward",
 ]);
 
 /**
@@ -1390,13 +1395,28 @@ const SETUP_BLOCKING_NBA = new Set([
  * configurado el siguiente paso de verdad siempre es el mismo — su primera
  * visita con puntos sale de la Caja.
  */
-function resolveNbaActionCode(brainActionCode: string, isSetupComplete: boolean): string {
+function resolveNbaActionCode(
+  brainActionCode: string,
+  isSetupComplete: boolean,
+  setupReasons: string[],
+): string {
   if (isSetupComplete && SETUP_BLOCKING_NBA.has(brainActionCode)) return "get_first_scan";
+  // Recién nacido (cazado por Ricardo en el primer claim, 26-ago): el
+  // cerebro corre con calendario, no al nacer — el día cero decía "estamos
+  // preparando recomendaciones" cuando el siguiente paso es OBVIO y está
+  // ESCRITO en el readiness. No se adivina: se lee, en el orden del wizard.
+  if (!isSetupComplete && setupReasons.length > 0 && !SETUP_BLOCKING_NBA.has(brainActionCode)) {
+    if (setupReasons.includes("business_hours")) return "set_business_hours";
+    if (setupReasons.includes("menu_items")) return "add_menu_items";
+    if (setupReasons.includes("reward_tiers")) return "configure_rewards";
+    if (setupReasons.includes("first_purchase_reward")) return "enable_first_purchase_reward";
+  }
   return brainActionCode;
 }
 
 function getNbaFallbackBody(actionCode: string): string {
   switch (actionCode) {
+    case "set_business_hours": return "Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir — toma 2 minutos.";
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
     case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
     case "configure_rewards": return "Crea tu primera recompensa para empezar a motivar visitas recurrentes.";
@@ -1416,6 +1436,7 @@ function getNbaFallbackBody(actionCode: string): string {
 
 function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
   switch (actionCode) {
+    case "set_business_hours": return "Poner mi horario — 2 min";
     case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
     case "add_google_review_link": return "Poner mi link de reseñas";
     case "check_ai_draft": return "Revisar borrador de recompensa";
@@ -1437,6 +1458,7 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
 
 function getNbaCtaHref(actionCode: string): string {
   switch (actionCode) {
+    case "set_business_hours": return "/vendor/setup/horario";
     case "complete_profile": return "/vendor/configuracion";
     case "add_google_review_link": return "/vendor/configuracion";
     case "check_ai_draft": return "/vendor/recompensas";
