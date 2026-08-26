@@ -8,6 +8,7 @@ import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
+import { OwnerHoursStrip } from "@/components/menu/OwnerHoursStrip";
 import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
@@ -556,6 +557,10 @@ function PublicMenuPageWithOrdering({
         schedule={schedule}
         address={address}
       />
+
+      {/* §6.10: si quien mira es EL DUEÑO y no hay horario, la ausencia se
+          le señala en su propia vitrina. Invisible para clientes. */}
+      <OwnerHoursStrip rdata={rdata} />
 
       {/* Llegó por el QR de su mesa: se le dice de una, para que sepa que el
           pedido va a su mesa y no tiene que ir por él. */}

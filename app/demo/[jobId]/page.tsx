@@ -36,7 +36,7 @@ const PROCESSING_LINES = [
   "Anotando tus precios…",
   "Buscando salsas y tamaños…",
   "Acomodando las categorías…",
-  "Puliendo tu carta…",
+  "Puliendo tu menú…",
 ];
 
 export default function DemoPreviewPage() {

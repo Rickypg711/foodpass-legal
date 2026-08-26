@@ -371,6 +371,13 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             }
             await batch.commit();
           }
+          // El momento IA de premios (§6.3/§6.4): el borrador se genera en
+          // background para que Recompensas lo reciba YA propuesto — igual
+          // que el publish normal del wizard. Nunca bloquea.
+          try {
+            const fns = getFunctions(getFirebaseApp(), "us-central1");
+            httpsCallable(fns, "generateRewardDraft")({ restaurantId: restaurantRef.id }).catch(() => {});
+          } catch { /* la página de recompensas tiene botón manual */ }
           if (hoursOk && demo.info?.businessHours) {
             await updateDoc(restaurantRef, {
               businessHours: demo.info.businessHours,

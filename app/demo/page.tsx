@@ -73,7 +73,7 @@ export default function DemoUploadPage() {
         <p className="mt-3 text-[14px] leading-relaxed"
           style={{ color: "rgba(28,37,38,0.6)" }}>
           Tus platillos, tus precios, tus salsas y tamaños — leídos de tu
-          menú de papel y montados como carta digital profesional.{" "}
+          menú de papel y montados como menú digital profesional.{" "}
           <b>Gratis, sin cuenta, sin tarjeta.</b>
         </p>
 

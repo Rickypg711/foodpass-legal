@@ -142,7 +142,7 @@ export default function ProspectosPage() {
                   </p>
                   <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                     {r.itemCount} platillos · {ago(r.createdAt)} ·{" "}
-                    {r.claimStarted ? "🟠 empezó a reclamar" : r.played ? "🟡 jugó el demo" : r.viewed ? "👀 vio su carta" : "subió la foto"}
+                    {r.claimStarted ? "🟠 empezó a reclamar" : r.played ? "🟡 jugó el demo" : r.viewed ? "👀 vio su menú" : "subió la foto"}
                     {r.nudgeCount > 0 && ` · 📨 ${r.nudgeCount} nudge${r.nudgeCount > 1 ? "s" : ""}`}
                   </p>
                 </div>
