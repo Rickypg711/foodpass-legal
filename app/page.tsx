@@ -143,7 +143,7 @@ export default function Home() {
                 Con QR, pedidos por WhatsApp y puntos que hacen que tus clientes SIEMPRE regresen. Sin cambiar tu caja.
               </p>
               <HomeCta />
-              <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Listo en 5 minutos</p>
+              <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Sin contrato</p>
             </div>
 
             <div className="flex justify-center lg:justify-end">
