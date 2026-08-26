@@ -415,11 +415,16 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
           <p className="mb-1 inline-block rounded-full border border-[#F28C38]/25 bg-[#F28C38]/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#F28C38]">
             Para restaurantes
           </p>
+          {/* Viniendo del demo el arco es de posesión (§7): "es tuyo" (E3) →
+              "lo quiero" (E4) → aquí se CIERRA con "hazlo tuyo". El genérico
+              se queda para quien llega sin demo. */}
           <h2 className="mt-3 text-2xl font-bold leading-tight text-[#141413] sm:text-3xl">
-            Registra tu restaurante en minutos.
+            {demo ? "Tu menú ya está montado — hazlo tuyo." : "Registra tu restaurante en minutos."}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
-            Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos.
+            {demo
+              ? "Crea tu cuenta y te lo entregamos adentro: platillos, precios y tamaños."
+              : "Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos."}
           </p>
 
           {/* Stats */}
@@ -429,9 +434,13 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               <span>siempre</span>
             </div>
             <div className="h-6 w-px bg-[#141413]/10" />
+            {/* En demo, la estadística del centro es SU dato vivo — "scans/mes"
+                es jerga que el prospecto aún no conoce. */}
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-base font-bold text-[#141413]">50</span>
-              <span>scans / mes</span>
+              <span className="text-base font-bold text-[#141413]">
+                {demo ? demo.items.length : "50"}
+              </span>
+              <span>{demo ? "platillos ya adentro" : "scans / mes"}</span>
             </div>
             <div className="h-6 w-px bg-[#141413]/10" />
             <div className="flex flex-col items-center gap-0.5">
@@ -549,8 +558,14 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-[#141413]">Cuéntanos de tu restaurante</h2>
-          <p className="mt-1 text-xs text-[#141413]/45">Solo lo esencial — completa el resto desde tu panel.</p>
+          <h2 className="text-xl font-bold text-[#141413]">
+            {demo ? "Confirma tus datos — los leí de tu menú" : "Cuéntanos de tu restaurante"}
+          </h2>
+          <p className="mt-1 text-xs text-[#141413]/45">
+            {demo
+              ? "Revisa que estén bien — el resto se completa desde tu panel."
+              : "Solo lo esencial — completa el resto desde tu panel."}
+          </p>
 
           {error && (
             <p className="mt-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
