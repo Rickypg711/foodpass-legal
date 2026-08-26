@@ -720,7 +720,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             ) : null}
             <button
               type="submit"
-              disabled={!name.trim() || !phone.trim() || stage === "creating"}
+              disabled={
+                !name.trim() ||
+                phone.replace(/\D/g, "").length < 10 ||
+                stage === "creating"
+              }
               className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {stage === "creating"
