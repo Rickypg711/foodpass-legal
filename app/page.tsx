@@ -137,61 +137,59 @@ export default function Home() {
               </p>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
                 El restaurante al que siempre regresan.{" "}
-                <span className="text-[#F28C38]">Comienza gratis.</span>
+                <span className="text-[#F28C38]">Empieza con tu menú.</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
-                Puntos con QR, Apple y Google Wallet y menú digital. Sin cambiar tu caja. Gratis para empezar.
+                Tu menú digital con QR y pedidos por WhatsApp — y puntos que traen a tus clientes de vuelta. Sin cambiar tu caja. Gratis para empezar.
               </p>
               <HomeCta />
               <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Listo en 5 minutos</p>
             </div>
 
             <div className="flex justify-center lg:justify-end">
-              <div className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-[#1e1e1e] shadow-2xl">
-                {/* Window chrome */}
-                <div className="flex items-center justify-between border-b border-white/8 bg-[#161616] px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+              {/* El mock ES la promesa del CTA: un MENÚ digital en un
+                  teléfono, recién leído del papel (decisión Ricardo, 26-ago;
+                  antes era un panel de dueño avanzado). */}
+              <div className="relative w-full max-w-[300px]">
+                <div className="overflow-hidden rounded-[2rem] border border-white/12 bg-[#faf9f5] shadow-2xl">
+                  {/* Header del menú */}
+                  <div className="bg-[#1C2526] px-4 pb-3 pt-4">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Menú digital</p>
+                    <p className="mt-0.5 text-lg font-extrabold text-white">Tacos El Güero</p>
+                    <span className="mt-1.5 inline-block rounded-full bg-green-500/15 px-2 py-0.5 text-[9px] font-bold text-green-400">
+                      🟢 Abierto · cierra 11 pm
+                    </span>
                   </div>
-                  <span className="text-[10px] text-white/30">Mi panel · Comeleal</span>
-                  <div className="w-10" />
+                  {/* Platillos */}
+                  <div className="space-y-2 p-3">
+                    {[
+                      { name: "Taco de pastor", price: "$28", chip: null },
+                      { name: "Quesadilla", price: "$45", chip: "Elige tu salsa" },
+                      { name: "Torta cubana", price: "$85", chip: "Elige tamaño" },
+                    ].map((it) => (
+                      <div key={it.name} className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm">
+                        <div>
+                          <p className="text-[12px] font-bold text-[#1C2526]">{it.name}</p>
+                          {it.chip && (
+                            <span className="mt-0.5 inline-block rounded-full bg-[#F28C38]/12 px-1.5 py-0.5 text-[8px] font-bold text-[#B45309]">
+                              {it.chip}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[12px] font-extrabold text-[#1C2526]">{it.price}</p>
+                          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F28C38] text-[12px] font-bold text-[#1C2526]">+</div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="rounded-xl bg-[#1C2526] px-3 py-2 text-center text-[10px] font-bold text-white">
+                      🛒 Ordenar por WhatsApp
+                    </div>
+                  </div>
                 </div>
-                <div className="p-5">
-                  {/* Stats */}
-                  <div className="mb-4 grid grid-cols-3 gap-2">
-                    {[
-                      { value: "47", label: "Clientes activos" },
-                      { value: "12", label: "Visitas hoy" },
-                      { value: "3", label: "Por regresar", accent: true },
-                    ].map((s) => (
-                      <div key={s.label} className="rounded-xl bg-white/5 p-3 text-center">
-                        <p className={`text-lg font-bold ${s.accent ? "text-[#F28C38]" : "text-white"}`}>{s.value}</p>
-                        <p className="mt-0.5 text-[10px] leading-tight text-white/45">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Activity feed */}
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/30">Actividad reciente</p>
-                  <div className="space-y-1.5">
-                    {[
-                      { initials: "MG", name: "María G.", action: "Canjeó recompensa", time: "3 min" },
-                      { initials: "CR", name: "Carlos R.", action: "Sumó 10 puntos", time: "12 min" },
-                      { initials: "AL", name: "Ana L.", action: "Primera visita ✦", time: "1 h" },
-                    ].map((item) => (
-                      <div key={item.name} className="flex items-center gap-2.5 rounded-lg bg-white/5 px-3 py-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F28C38]/20 text-[10px] font-bold text-[#F28C38]">
-                          {item.initials}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-white">{item.name}</p>
-                          <p className="text-[10px] text-white/45">{item.action}</p>
-                        </div>
-                        <p className="shrink-0 text-[10px] text-white/25">{item.time}</p>
-                      </div>
-                    ))}
-                  </div>
+                {/* El badge que cuenta la historia */}
+                <div className="absolute -left-3 -top-3 rounded-full bg-[#F28C38] px-3 py-1.5 text-[10px] font-extrabold text-[#1C2526] shadow-lg">
+                  📸 Leído de su menú de papel
                 </div>
               </div>
             </div>
