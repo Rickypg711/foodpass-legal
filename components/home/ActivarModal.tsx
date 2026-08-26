@@ -105,6 +105,20 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, stage]);
 
+  // En demo casi todo llega leído del papel: el cursor aterriza solo en el
+  // PRIMER campo que de verdad falta (una vez, al entrar al formulario) —
+  // cero búsqueda de "¿y a mí qué me toca llenar?".
+  useEffect(() => {
+    if (stage !== "form") return;
+    const t = window.setTimeout(() => {
+      const empty = document.querySelector<HTMLInputElement>(
+        'input[data-claim-field="empty"]',
+      );
+      empty?.focus();
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [stage]);
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -599,6 +613,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 Nombre del restaurante *
               </label>
               <input
+                data-claim-field={name.trim() ? "full" : "empty"}
                 type="text" required value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="El Rancho de Don Pepe"
@@ -611,6 +626,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 Dirección *
               </label>
               <input
+                data-claim-field={address.trim() ? "full" : "empty"}
                 type="text" required value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Av. Juárez 123, Col. Centro, Chihuahua"
@@ -624,6 +640,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 WhatsApp / Teléfono *
               </label>
               <input
+                data-claim-field={phone.trim() ? "full" : "empty"}
                 type="tel" required value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+52 614 123 4567"
