@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   MAX_DEMO_PHOTOS,
   createDemoJob,
@@ -59,10 +60,17 @@ export default function DemoUploadPage() {
   return (
     <main className="min-h-screen" style={{ background: "#faf9f5" }}>
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em]"
-          style={{ color: "rgba(28,37,38,0.4)" }}>
-          Comeleal · para restaurantes
-        </p>
+        {/* Ancla de marca: quien cae DIRECTO de un anuncio necesita saber
+            dónde está y poder ir al home (veredicto Ricardo, Estación 2). */}
+        <Link href="/" className="inline-flex items-baseline gap-1.5">
+          <span className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
+            🔥 Comeleal
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em]"
+            style={{ color: "rgba(28,37,38,0.4)" }}>
+            · para restaurantes
+          </span>
+        </Link>
         <h1 className="mt-3 text-[30px] font-extrabold leading-tight"
           style={{ color: "#1C2526" }}>
           📸 Sube la foto de tu menú
