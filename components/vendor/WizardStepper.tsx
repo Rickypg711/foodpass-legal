@@ -64,12 +64,10 @@ export function WizardStepper({
                 >
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
-                      done
+                      done || active
                         ? "bg-[#F28C38] text-[#1C2526]"
-                        : active
-                        ? "bg-[#F28C38] text-[#1C2526] ring-4 ring-[#F28C38]/15"
                         : "bg-[#141413]/10 text-[#141413]/35"
-                    }`}
+                    } ${active ? "ring-4 ring-[#F28C38]/15" : ""}`}
                   >
                     {done ? "✓" : i + 1}
                   </div>
