@@ -12,6 +12,17 @@ const CHIPS = [
   "¿Cuándo lanzar una promoción?",
 ];
 
+// Día cero (cazado por Ricardo, 26-ago): "¿Quiénes son mis VIP?" a un dueño
+// sin una sola venta garantiza un "no tienes datos" — su PRIMERA plática
+// con nuestra IA sería una decepción. El primer día se sugiere lo que la
+// IA sí puede clavar hoy.
+const DAY_ZERO_CHIPS = [
+  "¿Cómo funcionan los puntos para mis clientes?",
+  "¿Qué premio de bienvenida me conviene?",
+  "¿Cómo imprimo y comparto mi QR?",
+  "¿Cómo me llegan los pedidos?",
+];
+
 const PAGE_LABELS: Record<string, string> = {
   "/vendor": "Panel",
   "/vendor/pos": "Caja / POS",
@@ -40,11 +51,14 @@ export default function FloatingAI({
   restaurantId,
   open,
   setOpen,
+  setupIncomplete = false,
 }: {
   restaurantId: string | null;
   open: boolean;
   setOpen: (o: boolean | ((prev: boolean) => boolean)) => void;
+  setupIncomplete?: boolean;
 }) {
+  const chips = setupIncomplete ? DAY_ZERO_CHIPS : CHIPS;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -216,7 +230,7 @@ export default function FloatingAI({
 
               {/* Chips */}
               <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {CHIPS.map((chip) => (
+                {chips.map((chip) => (
                   <button
                     key={chip}
                     onClick={() => ask(chip)}
@@ -280,7 +294,7 @@ export default function FloatingAI({
           {/* Chips after first exchange */}
           {messages.length > 0 && !asking && (
             <div className="flex flex-wrap gap-1.5 pt-1">
-              {CHIPS.filter((c) => !messages.some((m) => m.text === c)).slice(0, 3).map((chip) => (
+              {chips.filter((c) => !messages.some((m) => m.text === c)).slice(0, 3).map((chip) => (
                 <button
                   key={chip}
                   onClick={() => ask(chip)}

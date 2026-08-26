@@ -447,7 +447,9 @@ export default function VendorDashboard() {
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
           nbaActionCode: nbaCode,
-          nbaTitle: (ins?.title_es as string) ?? "Siguiente mejor acción",
+          nbaTitle: nbaOverridden
+            ? getNbaFallbackTitle(nbaCode)
+            : ((ins?.title_es as string) ?? getNbaFallbackTitle(nbaCode)),
           // Si el codigo se corrigio, el texto guardado por el cerebro habla de
           // OTRA accion: dejarlo pone "Completa tu perfil" arriba de un boton que
           // dice "Cobrar con numero". El texto tiene que venir del codigo que se
@@ -1425,6 +1427,20 @@ function resolveNbaActionCode(
     if (setupReasons.includes("first_purchase_reward")) return "enable_first_purchase_reward";
   }
   return brainActionCode;
+}
+
+// El título dice LA acción — el genérico "Siguiente mejor acción" apilado
+// bajo el kicker "⚡ Tu siguiente movimiento" era la misma frase dos veces
+// (cazado por Ricardo, 26-ago).
+function getNbaFallbackTitle(actionCode: string): string {
+  switch (actionCode) {
+    case "set_business_hours": return "Ponle su horario a tu menú";
+    case "add_menu_items": return "Llena tu menú";
+    case "configure_rewards": return "Publica tus premios";
+    case "enable_first_purchase_reward": return "Prende tu premio de bienvenida";
+    case "get_first_scan": return "Tu primera visita con puntos";
+    default: return "Siguiente mejor acción";
+  }
 }
 
 function getNbaFallbackBody(actionCode: string): string {

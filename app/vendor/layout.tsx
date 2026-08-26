@@ -173,6 +173,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [restaurantName, setRestaurantName] = useState<string>("");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
+  // Día cero: Comeleal AI sugiere preguntas que SÍ puede clavar sin datos.
+  const [setupIncomplete, setSetupIncomplete] = useState(false);
   const [isLive] = useState(false);
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
@@ -223,6 +225,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       if (!cancelled) {
         setRestaurantName((rData.name as string | undefined) ?? "");
         setRestaurantLogo(getRestaurantImageUrl(rData));
+        setSetupIncomplete(rData.isSetupComplete === false);
         // Plan badge — same canonical fields as configuración/phonePoints.
         const exp = rData.subscriptionAccessExpiresAt as { toDate?: () => Date } | undefined;
         const expOk = !exp?.toDate || exp.toDate().getTime() > Date.now();
@@ -741,7 +744,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
       {/* ── Floating AI ── */}
       <Suspense fallback={null}>
-        <FloatingAI restaurantId={restaurantId} open={aiOpen} setOpen={setAiOpen} />
+        <FloatingAI restaurantId={restaurantId} open={aiOpen} setOpen={setAiOpen} setupIncomplete={setupIncomplete} />
       </Suspense>
 
       {/* ── Compartir menú: tarjeta de marca (paridad con el app) ── */}
