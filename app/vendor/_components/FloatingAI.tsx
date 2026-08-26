@@ -225,7 +225,9 @@ export default function FloatingAI({
                 Pregúntale a Comeleal AI
               </p>
               <p className="mt-1.5 text-[12px] leading-relaxed max-w-[220px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                Analiza tus clientes, ventas y tendencias en segundos.
+                {setupIncomplete
+                  ? "Te ayudo a arrancar: puntos, premios, tu QR y tus pedidos."
+                  : "Analiza tus clientes, ventas y tendencias en segundos."}
               </p>
 
               {/* Chips */}
