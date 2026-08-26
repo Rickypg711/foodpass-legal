@@ -290,7 +290,10 @@ export default function DemoPreviewPage() {
           <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(248,178,106,0.9)" }}>
             ✨ {job.stats.itemCount} platillo{job.stats.itemCount === 1 ? "" : "s"}
             {job.stats.sizeFamilies > 0 &&
-              ` y ${job.stats.sizeFamilies} con tamaños`} — leídos de tu foto
+              ` y ${job.stats.sizeFamilies} con tamaños`} — leídos de tu foto{" "}
+            <span style={{ color: "rgba(255,255,255,0.35)" }}>
+              (esta nota es solo para ti, no sale en tu menú)
+            </span>
           </p>
         )}
         <div className="mt-2 flex flex-wrap gap-2">
