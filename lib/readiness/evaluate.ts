@@ -145,3 +145,22 @@ export function completedStepCount(reasons: string[]): number {
   const pending = stepGroupFromReasons(reasons);
   return 4 - Object.values(pending).filter(Boolean).length;
 }
+
+/**
+ * Palomitas VERDADERAS para el WizardStepper. undefined cuando el doc no
+ * trae reasons (restaurantes viejos) — ahí el stepper cae a su modo
+ * posicional. Con reasons, la palomita dice la verdad: el camino del demo
+ * brinca directo a Recompensas y pintaba "✓ Horario" sin horario
+ * (cazado por Ricardo, 26-ago).
+ */
+export function wizardDoneKeys(
+  reasons: unknown,
+): Array<"horario" | "menu" | "rewards"> | undefined {
+  if (!Array.isArray(reasons)) return undefined;
+  const pending = stepGroupFromReasons(reasons as string[]);
+  const out: Array<"horario" | "menu" | "rewards"> = [];
+  if (!pending.hours) out.push("horario");
+  if (!pending.menu) out.push("menu");
+  if (!pending.rewards) out.push("rewards");
+  return out;
+}

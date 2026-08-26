@@ -12,7 +12,19 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]["key"];
 
-export function WizardStepper({ current }: { current: StepKey }) {
+export function WizardStepper({
+  current,
+  doneKeys,
+}: {
+  current: StepKey;
+  /**
+   * Pasos REALMENTE completados (del readiness). Sin esto la palomita es
+   * posicional (pasos "anteriores" al actual) — y el camino del demo brinca
+   * directo a Recompensas, pintando "✓ Horario" a un dueño SIN horario
+   * (cazado por Ricardo, 26-ago). La verdad manda cuando está disponible.
+   */
+  doneKeys?: readonly StepKey[];
+}) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
   return (
@@ -20,9 +32,8 @@ export function WizardStepper({ current }: { current: StepKey }) {
       <div className="mx-auto max-w-lg">
         <div className="flex items-center">
           {STEPS.map((step, i) => {
-            const done    = i < currentIdx;
+            const done    = doneKeys ? doneKeys.includes(step.key) : i < currentIdx;
             const active  = i === currentIdx;
-            const pending = i > currentIdx;
             const isLast  = i === STEPS.length - 1;
 
             return (

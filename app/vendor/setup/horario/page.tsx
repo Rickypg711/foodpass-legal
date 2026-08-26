@@ -26,7 +26,7 @@ import { WizardStepper } from "@/components/vendor/WizardStepper";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
-import { persistReadiness } from "@/lib/vendorReadiness";
+import { persistReadiness, wizardDoneKeys } from "@/lib/vendorReadiness";
 import { isOpenNow } from "@/lib/schedule";
 import {
   TimeSelect, formatoHora, formatoDuracion, duracionVentana, type HM,
@@ -108,6 +108,7 @@ function HorarioSetupPageInner() {
   const isWizard = searchParams.get("wizard") === "1";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
   const [patron, setPatron] = useState<DayHours>(PATRON_INICIAL);
   const [cerrados, setCerrados] = useState<Set<string>>(new Set());
   const [propios, setPropios] = useState<Record<string, DayHours>>({});
@@ -129,6 +130,7 @@ function HorarioSetupPageInner() {
       const rid = uSnap.data()?.ownedRestaurantId as string | undefined;
       if (!rid) { router.push("/activar"); return; }
       const rSnap = await getDoc(doc(db, "restaurants", rid));
+      setStepperDone(wizardDoneKeys(rSnap.data()?.setupIncompleteReasons));
       const raw = rSnap.data()?.businessHours as Record<string, unknown> | undefined;
       if (raw) {
         const semana = hoursFromFirestore(raw);
@@ -226,7 +228,7 @@ function HorarioSetupPageInner() {
     <div className="min-h-screen" style={{ background: "#faf9f5" }}>
       <div className="sticky top-0 z-20 bg-white shadow-sm">
         {isWizard ? (
-          <WizardStepper current="horario" />
+          <WizardStepper current="horario" doneKeys={stepperDone} />
         ) : (
           <div className="border-b px-4 py-4 sm:px-6" style={{ borderColor: "rgba(20,20,19,0.08)" }}>
             <div className="mx-auto flex max-w-lg items-center gap-3">

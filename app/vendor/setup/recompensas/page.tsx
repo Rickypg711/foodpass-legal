@@ -17,7 +17,7 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
-import { persistReadiness } from "@/lib/vendorReadiness";
+import { persistReadiness, wizardDoneKeys } from "@/lib/vendorReadiness";
 
 // must match hardFailRatio/bumpStartRatio in FOODPASS functions/reward_recommendation_core.js
 const HARD_FAIL_RATIO = 0.20;
@@ -77,6 +77,7 @@ function RecompensasSetupPageInner() {
   const isWizard = searchParams.get("wizard") === "1";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [spendStepAmount, setSpendStepAmount] = useState<number>(30);
@@ -129,6 +130,7 @@ function RecompensasSetupPageInner() {
 
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data();
+      setStepperDone(wizardDoneKeys(data?.setupIncompleteReasons));
 
       const loyaltyEarnPolicy = data?.loyaltyEarnPolicy as any;
       if (loyaltyEarnPolicy && typeof loyaltyEarnPolicy.spendStepAmount === "number" && loyaltyEarnPolicy.spendStepAmount > 0) {
@@ -506,7 +508,7 @@ function RecompensasSetupPageInner() {
       {/* Nav */}
       <div className="sticky top-0 z-10 bg-white shadow-sm">
         {isWizard ? (
-          <WizardStepper current="rewards" />
+          <WizardStepper current="rewards" doneKeys={stepperDone} />
         ) : (
           <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
             <div className="mx-auto flex max-w-lg items-center gap-3">
