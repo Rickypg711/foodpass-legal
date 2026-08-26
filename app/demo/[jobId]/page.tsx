@@ -222,7 +222,12 @@ export default function DemoPreviewPage() {
       </Shell>
     );
   }
-  if (job.convertedToRestaurantId) {
+  // OJO: si el modal del claim está ABIERTO, esta pantalla NO puede tomar
+  // el control — la estampa de conversión llega EN VIVO a medio festejo y
+  // desmontaba el modal antes de su 🎉 "Elegir mis premios →" (le pasó a
+  // Ricardo en el primer claim de la historia, 26-ago). Esta rama es para
+  // cuando REGRESAS otro día, no para el segundo después de activar.
+  if (job.convertedToRestaurantId && !claiming) {
     return (
       <Shell>
         <p className="text-4xl text-center">🎉</p>
