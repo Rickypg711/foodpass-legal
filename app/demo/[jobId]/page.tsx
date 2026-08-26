@@ -476,8 +476,17 @@ export default function DemoPreviewPage() {
       {theater && cart.length > 0 && (
         <div className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           onClick={() => setTheater(false)}>
-          <div className="animate-sheet-up w-full max-w-md rounded-3xl bg-white p-5"
+          <div className="animate-sheet-up relative w-full max-w-md rounded-3xl bg-white p-5"
             onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={() => setTheater(false)}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-[16px] font-bold transition-transform duration-150 active:scale-90"
+              style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+            >
+              ✕
+            </button>
             <p className="text-center text-[22px]">🎭</p>
             <h3 className="mt-1 text-center text-[17px] font-extrabold" style={{ color: "#1C2526" }}>
               Así ordenaría tu cliente
@@ -503,6 +512,10 @@ export default function DemoPreviewPage() {
               </div>
               <p className="mt-2 text-center text-[12px] font-bold" style={{ color: "#16A34A" }}>
                 ✓ Pedido enviado a la cocina — sin filas, sin gritar al mesero
+              </p>
+              <p className="mt-1 text-center text-[12px] font-bold" style={{ color: "#B45309" }}>
+                ⭐ Y con este pedido tu cliente ya sumó puntos — su razón
+                para volver
               </p>
             </div>
             <p className="mt-4 text-[11px] font-bold uppercase tracking-wide"
@@ -530,10 +543,18 @@ export default function DemoPreviewPage() {
             <button
               type="button"
               onClick={() => { setTheater(false); openClaim(); }}
-              className="mt-4 w-full rounded-2xl px-5 py-3.5 text-[15px] font-extrabold"
+              className="mt-4 w-full rounded-2xl px-5 py-3.5 text-[15px] font-extrabold transition-transform duration-150 active:scale-[0.98]"
               style={{ background: "#F28C38", color: "#1C2526" }}
             >
               Quiero esto en mi restaurante →
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheater(false)}
+              className="mt-2 w-full text-center text-[13px] font-semibold underline-offset-2 hover:underline"
+              style={{ color: "rgba(28,37,38,0.45)" }}
+            >
+              Seguir viendo mi menú
             </button>
           </div>
         </div>
