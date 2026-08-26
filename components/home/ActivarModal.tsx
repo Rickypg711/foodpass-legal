@@ -28,6 +28,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
+import { RESTAURANT_CATEGORIES, inferCategoryFromDemo } from "@/lib/demo/inferCategory";
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -37,10 +38,6 @@ import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const RESTAURANT_CATEGORIES = [
-  "Tacos","Café","Hamburguesas","Pizza","Sushi",
-  "Mariscos","Antojitos","Carnes","Postres","Otro",
-] as const;
 
 const DEFAULT_BUSINESS_HOURS = Object.fromEntries(
   ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(
@@ -80,7 +77,16 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
   const [name, setName] = useState(demo?.info?.restaurantName ?? "");
   const [address, setAddress] = useState(demo?.info?.address ?? "");
   const [phone, setPhone] = useState(demo?.whatsapp ?? demo?.info?.phone ?? "");
-  const [category, setCategory] = useState("");
+  // El tipo tampoco se pregunta si ya se puede leer: primero la clasificación
+  // de Gemini (info.category), si no el fallback de palabras clave. El dueño
+  // solo lo cambia si no le atinamos.
+  const inferredCategory =
+    (demo?.info?.category &&
+      (RESTAURANT_CATEGORIES as readonly string[]).includes(demo.info.category)
+      ? demo.info.category
+      : null) ??
+    (demo ? inferCategoryFromDemo(demo.info?.restaurantName, demo.items) : null);
+  const [category, setCategory] = useState(inferredCategory ?? "");
   /** "📆 Leí de tu menú: Mar-Dom 1-11pm — ¿está bien?" (default sí). */
   const [hoursOk, setHoursOk] = useState(true);
   const [emailInput, setEmailInput] = useState("");
@@ -566,7 +572,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             )}
             <div>
               <p className="text-sm font-semibold text-[#141413]">{user.displayName ?? user.email}</p>
-              <p className="text-xs text-[#141413]/45">{user.email}</p>
+              {/* Cuentas de correo no tienen displayName: sin esta guarda el
+                  correo salía DOS veces, apilado (cazado por Ricardo 26-ago). */}
+              {user.displayName && (
+                <p className="text-xs text-[#141413]/45">{user.email}</p>
+              )}
             </div>
           </div>
 
@@ -638,6 +648,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                   >{cat}</button>
                 ))}
               </div>
+              {inferredCategory && category === inferredCategory && (
+                <p className="mt-1.5 text-[10px] text-[#141413]/40">
+                  ✨ Lo deduje de tu menú — cámbialo si no le atiné.
+                </p>
+              )}
             </div>
             {demo?.info?.businessHours && demo.info.hoursText ? (
               <label className="flex items-start gap-2.5 rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-left">

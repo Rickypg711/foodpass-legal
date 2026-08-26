@@ -43,6 +43,8 @@ export type DemoInfo = {
   address: string | null;
   hoursText: string | null;
   businessHours: Record<string, unknown> | null;
+  /** Tipo de restaurante clasificado por Gemini del menú completo (o null). */
+  category?: string | null;
 };
 
 export type DemoJob = {
