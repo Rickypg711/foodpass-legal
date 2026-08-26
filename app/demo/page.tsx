@@ -127,7 +127,7 @@ export default function DemoUploadPage() {
           <span className="text-[12px] font-semibold"
             style={{ color: "rgba(28,37,38,0.55)" }}>
             📱 Tu WhatsApp <span style={{ color: "rgba(28,37,38,0.35)" }}>(opcional)</span> —
-            para guardarte el link de tu menú
+            para recordarte activarlo antes de que tu vista previa se borre
           </span>
           <input
             type="tel"
