@@ -825,7 +825,7 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Categorías ── */}
-            <SectionCard label="Tipo de restaurante (hasta 3)">
+            <SectionCard label="Tipo de comida (hasta 3)">
               <div className="flex flex-wrap gap-2">
                 {RESTAURANT_CATEGORIES.map((cat) => {
                   const active = categories.includes(cat);

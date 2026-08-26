@@ -86,7 +86,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
       ? demo.info.category
       : null) ??
     (demo ? inferCategoryFromDemo(demo.info?.restaurantName, demo.items) : null);
-  const [category, setCategory] = useState(inferredCategory ?? "");
+  // Hasta 3 tipos (paridad con la app) — el PRIMERO manda en el SEO. La IA
+  // propone uno; "Cambiar" abre el muro para el alitas-y-sushi de la esquina.
+  const [cats, setCats] = useState<string[]>(
+    inferredCategory ? [inferredCategory] : [],
+  );
   // Colapsado solo cuando la IA dedujo algo; sin deducción, el muro completo.
   const [categoryExpanded, setCategoryExpanded] = useState(!inferredCategory);
   /** "📆 Leí de tu menú: Mar-Dom 1-11pm — ¿está bien?" (default sí). */
@@ -273,7 +277,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         address: address.trim(),
         phone: phone10,
         whatsapp: phone10,
-        categories: category ? [category] : [],
+        categories: cats.slice(0, 3),
         ownerId: user.uid,
         billingOwnerUserId: user.uid,
         createdAt: serverTimestamp(),
@@ -327,7 +331,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
           },
         ]);
         // GA4 — mark restaurant_created as a key event in GA4 admin.
-        trackRestaurantCreated({ category, ...utms });
+        trackRestaurantCreated({ category: cats[0] ?? "", ...utms });
       } catch (trackErr) {
         console.warn("[activar] tracking failed (non-blocking):", trackErr);
       }
@@ -662,16 +666,18 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             </div>
             <div>
               <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">
-                Tipo de restaurante
+                Tipo de comida{categoryExpanded ? " (hasta 3)" : ""}
               </label>
-              {/* La IA ya eligió → se muestra SOLO su elección (fuerte) +
-                  "Cambiar". El muro de 10 chips solo aparece si el dueño
-                  quiere otra cosa o si no hubo deducción. */}
-              {!categoryExpanded && category ? (
-                <div className="flex items-center gap-2.5">
-                  <span className="rounded-full border border-[#F28C38] bg-[#F28C38] px-4 py-1.5 text-xs font-bold text-[#1C2526]">
-                    {category}
-                  </span>
+              {/* La IA propone uno y se muestra SOLO (fuerte) + "Cambiar".
+                  El muro permite hasta 3 (alitas-y-sushi existe) y se
+                  cierra con "Listo ✓" — el PRIMERO manda en el SEO. */}
+              {!categoryExpanded && cats.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {cats.map((c) => (
+                    <span key={c} className="rounded-full border border-[#F28C38] bg-[#F28C38] px-4 py-1.5 text-xs font-bold text-[#1C2526]">
+                      {c}
+                    </span>
+                  ))}
                   <button
                     type="button"
                     onClick={() => setCategoryExpanded(true)}
@@ -682,31 +688,46 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {/* En demo el muro llega ORDENADO por lo que la IA vio en
-                      ESTE menú (rivales cercanos primero, "Otro" al final);
-                      elegir uno cierra el muro solo — de vuelta al chip. */}
+                      ESTE menú (rivales cercanos primero, "Otro" al final). */}
                   {(demo
                     ? rankCategoriesForDemo(demo.info?.restaurantName, demo.items)
                     : RESTAURANT_CATEGORIES
-                  ).map((cat) => (
-                    <button key={cat} type="button"
-                      onClick={() => {
-                        const next = cat === category ? "" : cat;
-                        setCategory(next);
-                        if (next) setCategoryExpanded(false);
-                      }}
+                  ).map((cat) => {
+                    const active = cats.includes(cat);
+                    const full = cats.length >= 3 && !active;
+                    return (
+                      <button key={cat} type="button"
+                        onClick={() =>
+                          setCats((prev) =>
+                            prev.includes(cat)
+                              ? prev.filter((c) => c !== cat)
+                              : prev.length >= 3 ? prev : [...prev, cat],
+                          )
+                        }
+                        disabled={stage === "creating" || full}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-all disabled:opacity-40 ${
+                          active
+                            ? "border-[#F28C38] bg-[#F28C38] font-bold text-[#1C2526]"
+                            : "border-[#e8e6dc] bg-white font-medium text-[#141413]/55 hover:border-[#b0aea5] hover:text-[#141413]"
+                        }`}
+                      >{cat}</button>
+                    );
+                  })}
+                  {cats.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCategoryExpanded(false)}
                       disabled={stage === "creating"}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition-all disabled:opacity-50 ${
-                        category === cat
-                          ? "border-[#F28C38] bg-[#F28C38] font-bold text-[#1C2526]"
-                          : "border-[#e8e6dc] bg-white font-medium text-[#141413]/55 hover:border-[#b0aea5] hover:text-[#141413]"
-                      }`}
-                    >{cat}</button>
-                  ))}
+                      className="rounded-full border border-[#1C2526] px-3.5 py-1.5 text-xs font-bold text-[#1C2526] transition-colors hover:bg-[#1C2526] hover:text-white disabled:opacity-50"
+                    >
+                      Listo ✓
+                    </button>
+                  )}
                 </div>
               )}
-              {inferredCategory && category === inferredCategory && (
+              {inferredCategory && cats.length === 1 && cats[0] === inferredCategory && (
                 <p className="mt-1.5 text-[10px] text-[#141413]/40">
                   ✨ Lo deduje de tu menú — cámbialo si no le atiné.
                 </p>
