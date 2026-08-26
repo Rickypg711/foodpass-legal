@@ -87,6 +87,18 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
 
+  // Escape cierra — pero jamás a media conexión/creación (in-flight). El
+  // backdrop a propósito NO cierra: en teléfono un roce afuera de la tarjeta
+  // borraría el correo/contraseña a medio teclear (el ✕ siempre está).
+  useEffect(() => {
+    if (!onClose) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && stage !== "signing" && stage !== "creating") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, stage]);
+
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -712,10 +724,9 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop */}
+      {/* Backdrop — NO cierra al tap: protege lo ya tecleado (✕ y Escape sí). */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
         aria-hidden
       />
 
