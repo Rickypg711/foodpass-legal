@@ -435,6 +435,16 @@ export default function ClientesPage() {
   const [winbackReturned, setWinbackReturned] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
   const [search, setSearch] = useState("");
+
+  // Los marcadores del Panel llegan aquí YA filtrados (?segmento=riesgo).
+  // window.location en efecto (no useSearchParams) para no exigir Suspense.
+  useEffect(() => {
+    const seg = new URLSearchParams(window.location.search).get("segmento");
+    if (seg === "riesgo" || seg === "perdido" || seg === "nuevo" ||
+        seg === "regular" || seg === "campeon") {
+      setActiveTab(seg);
+    }
+  }, []);
   /** Descuentos especiales (Pro) — perfiles creados en Configuración. */
   const [discountProfiles, setDiscountProfiles] = useState<DiscountProfile[]>([]);
   const [discountsOn, setDiscountsOn] = useState(false);

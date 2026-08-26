@@ -810,7 +810,12 @@ export default function VendorDashboard() {
           {/* ── Win-back proof banner ── */}
           {/* Capture rate — coaches the "¿me das tu número?" habit. */}
           {data.captureRate !== null && (
-            <div className="mb-6 rounded-2xl p-5 flex flex-wrap items-center gap-x-5 gap-y-2"
+            // Puerta, no póster (Ricardo, 25-ago): el marcador te deja donde
+            // viven los números — la página de Clientes.
+            <div className="mb-6 rounded-2xl p-5 flex flex-wrap items-center gap-x-5 gap-y-2 cursor-pointer transition-shadow hover:shadow-md"
+              role="button" tabIndex={0}
+              onClick={() => router.push("/vendor/clientes")}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/vendor/clientes"); } }}
               style={{
                 background: "#ffffff",
                 border: "1px solid rgba(28,37,38,0.07)",
@@ -832,11 +837,20 @@ export default function VendorDashboard() {
                     : "Cada número capturado es un cliente recuperable. Pide el teléfono al cobrar: “¿Tu número para tus puntos?”"}
                 </p>
               </div>
+              <span className="shrink-0 text-[12px] font-bold" style={{ color: "#B45309" }}>
+                Ver clientes ›
+              </span>
             </div>
           )}
 
           {(data.winbackSent > 0 || data.expiryRemindersSent > 0) && (
-            <div className="mb-6 rounded-2xl p-5"
+            // Puerta, no póster: el marcador de recuperación te deja en
+            // Clientes ya filtrado a "en riesgo" — donde vive el botón de
+            // WhatsApp que esta tarjeta promete.
+            <div className="mb-6 rounded-2xl p-5 cursor-pointer transition-shadow hover:shadow-md"
+              role="button" tabIndex={0}
+              onClick={() => router.push("/vendor/clientes?segmento=riesgo")}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/vendor/clientes?segmento=riesgo"); } }}
               style={{
                 background: data.winbackReturned > 0
                   ? "linear-gradient(135deg, #0d3321 0%, #14532d 100%)"
@@ -877,6 +891,9 @@ export default function VendorDashboard() {
                       {data.winbackPesos !== null && " · estimado con tu ticket promedio de 30 días"}
                     </p>
                   </div>
+                  <span className="shrink-0 text-[12px] font-bold" style={{ color: "#4ade80" }}>
+                    Ver en riesgo ›
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
@@ -897,6 +914,9 @@ export default function VendorDashboard() {
                       La máquina detecta y escribe; tú solo das el tap. Aquí verás cuántos regresaron — y cuánto dinero representa.
                     </p>
                   </div>
+                  <span className="ml-auto shrink-0 text-[12px] font-bold" style={{ color: "#B45309" }}>
+                    Ver en riesgo ›
+                  </span>
                 </div>
               )}
             </div>
