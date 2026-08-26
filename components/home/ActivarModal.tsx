@@ -600,8 +600,10 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
             {demo ? "Confirma tus datos — los leí de tu menú" : "Cuéntanos de tu restaurante"}
           </h2>
           <p className="mt-1 text-xs text-[#141413]/45">
+            {/* Sin "panel": el prospecto aún no conoce esa palabra (jerga
+                nuestra) — aquí solo hay que quitar el miedo a equivocarse. */}
             {demo
-              ? "Revisa que estén bien — el resto se completa desde tu panel."
+              ? "Revisa que estén bien — todo lo demás lo puedes cambiar después."
               : "Solo lo esencial — completa el resto desde tu panel."}
           </p>
 
