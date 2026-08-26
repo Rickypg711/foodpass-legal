@@ -28,7 +28,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
-import { RESTAURANT_CATEGORIES, inferCategoryFromDemo } from "@/lib/demo/inferCategory";
+import { RESTAURANT_CATEGORIES, inferCategoryFromDemo, rankCategoriesForDemo } from "@/lib/demo/inferCategory";
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -683,9 +683,19 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {RESTAURANT_CATEGORIES.map((cat) => (
+                  {/* En demo el muro llega ORDENADO por lo que la IA vio en
+                      ESTE menú (rivales cercanos primero, "Otro" al final);
+                      elegir uno cierra el muro solo — de vuelta al chip. */}
+                  {(demo
+                    ? rankCategoriesForDemo(demo.info?.restaurantName, demo.items)
+                    : RESTAURANT_CATEGORIES
+                  ).map((cat) => (
                     <button key={cat} type="button"
-                      onClick={() => setCategory(cat === category ? "" : cat)}
+                      onClick={() => {
+                        const next = cat === category ? "" : cat;
+                        setCategory(next);
+                        if (next) setCategoryExpanded(false);
+                      }}
                       disabled={stage === "creating"}
                       className={`rounded-full border px-3 py-1.5 text-xs transition-all disabled:opacity-50 ${
                         category === cat

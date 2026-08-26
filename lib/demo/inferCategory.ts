@@ -24,15 +24,10 @@ const KEYWORDS: Array<[Exclude<RestaurantCategory, "Otro">, RegExp]> = [
   ["Postres", /postre|pastel|helado|crepa|reposter|nieve/i],
 ];
 
-/**
- * Deduce el tipo de restaurante de lo que el demo ya leyó. El NOMBRE pesa
- * doble ("LUZZ PIZZA" ya lo dice todo); luego platillos y sus categorías.
- * Devuelve null si ninguna domina — deducir mal es peor que preguntar.
- */
-export function inferCategoryFromDemo(
+function scoreCategories(
   restaurantName: string | null | undefined,
   items: Array<{ name?: string; category?: string }> | null | undefined,
-): RestaurantCategory | null {
+): Map<string, number> {
   const scores = new Map<string, number>();
   const bump = (cat: string, pts: number) =>
     scores.set(cat, (scores.get(cat) ?? 0) + pts);
@@ -45,6 +40,19 @@ export function inferCategoryFromDemo(
       if (it?.category && re.test(it.category)) bump(cat, 1);
     }
   }
+  return scores;
+}
+
+/**
+ * Deduce el tipo de restaurante de lo que el demo ya leyó. El NOMBRE pesa
+ * doble ("LUZZ PIZZA" ya lo dice todo); luego platillos y sus categorías.
+ * Devuelve null si ninguna domina — deducir mal es peor que preguntar.
+ */
+export function inferCategoryFromDemo(
+  restaurantName: string | null | undefined,
+  items: Array<{ name?: string; category?: string }> | null | undefined,
+): RestaurantCategory | null {
+  const scores = scoreCategories(restaurantName, items);
   if (scores.size === 0) return null;
   const ranked = [...scores.entries()].sort((a, b) => b[1] - a[1]);
   const [top, topScore] = ranked[0];
@@ -52,4 +60,22 @@ export function inferCategoryFromDemo(
   // Dominancia real: al menos 2 puntos y clara ventaja sobre el segundo.
   if (topScore < 2 || topScore < second * 2) return null;
   return top as RestaurantCategory;
+}
+
+/**
+ * El muro de "Cambiar", ordenado por lo que la IA vio en ESTE menú: lo que
+ * puntuó primero (desc), luego el resto en su orden de siempre, y "Otro"
+ * al final — el muro también sabe de dónde vienes.
+ */
+export function rankCategoriesForDemo(
+  restaurantName: string | null | undefined,
+  items: Array<{ name?: string; category?: string }> | null | undefined,
+): RestaurantCategory[] {
+  const scores = scoreCategories(restaurantName, items);
+  const base = RESTAURANT_CATEGORIES.filter((c) => c !== "Otro");
+  const ordered = [...base].sort((a, b) => {
+    const diff = (scores.get(b) ?? 0) - (scores.get(a) ?? 0);
+    return diff !== 0 ? diff : base.indexOf(a) - base.indexOf(b);
+  });
+  return [...ordered, "Otro"];
 }
