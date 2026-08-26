@@ -3,11 +3,20 @@
 // ─── Wizard Stepper ───────────────────────────────────────────────────────────
 // Shown at the top of each setup page when ?wizard=1 is in the URL.
 // Displays a 3-step progress bar: Horario → Menú → Recompensas.
+//
+// Es NAVEGACIÓN, no adorno (cazado por Ricardo, 26-ago: en modo wizard las
+// páginas no tenían NINGUNA salida — ni entre pasos ni al panel): cada paso
+// es un link a su página y "← Panel" saca al panel. Nada se pierde al
+// salir: el borrador de premios vive en Firestore y el menú/horario ya
+// guardados también — solo los cambios sin guardar de la pantalla actual
+// vuelven a su último estado guardado.
+
+import Link from "next/link";
 
 const STEPS = [
-  { key: "horario", label: "Horario" },
-  { key: "menu",    label: "Menú" },
-  { key: "rewards", label: "Recompensas" },
+  { key: "horario", label: "Horario", href: "/vendor/setup/horario?wizard=1" },
+  { key: "menu",    label: "Menú", href: "/vendor/setup/menu?wizard=1" },
+  { key: "rewards", label: "Recompensas", href: "/vendor/setup/recompensas?wizard=1" },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]["key"];
@@ -29,8 +38,17 @@ export function WizardStepper({
 
   return (
     <div className="border-b border-[#141413]/8 bg-white px-4 py-3.5 sm:px-6">
-      <div className="mx-auto max-w-lg">
-        <div className="flex items-center">
+      <div className="mx-auto flex max-w-lg items-center gap-3">
+        {/* Salida al panel — mismo patrón que el "← Volver" de las páginas
+            sin wizard (tinta 45% → tinta al hover). */}
+        <Link
+          href="/vendor"
+          className="shrink-0 text-xs font-semibold text-[#1C2526]/45 transition-colors hover:text-[#1C2526]"
+        >
+          ← Panel
+        </Link>
+        <span className="text-[#1C2526]/15">/</span>
+        <div className="flex flex-1 items-center">
           {STEPS.map((step, i) => {
             const done    = doneKeys ? doneKeys.includes(step.key) : i < currentIdx;
             const active  = i === currentIdx;
@@ -38,8 +56,12 @@ export function WizardStepper({
 
             return (
               <div key={step.key} className={`flex items-center ${!isLast ? "flex-1" : ""}`}>
-                {/* Dot + label */}
-                <div className="flex items-center gap-1.5">
+                {/* Dot + label — link a su paso */}
+                <Link
+                  href={step.href}
+                  aria-current={active ? "step" : undefined}
+                  className="flex items-center gap-1.5 transition-opacity hover:opacity-75"
+                >
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
                       done
@@ -60,7 +82,7 @@ export function WizardStepper({
                   >
                     {step.label}
                   </span>
-                </div>
+                </Link>
 
                 {/* Connector line */}
                 {!isLast && (
