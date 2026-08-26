@@ -331,7 +331,12 @@ export default function FloatingAI({
         </div>
       </div>
 
-      {/* Floating trigger button */}
+      {/* Floating trigger — oculto en el Panel: ahí la tarjeta grande de
+          Comeleal AI ya es la puerta (el 🧠 salía TRES veces en una sola
+          pantalla — poda de Ricardo, 26-ago). En Caja/Pedidos/etc. la
+          burbuja sigue siendo la única entrada. Si el chat ya está abierto,
+          el botón se queda para poder cerrarlo. */}
+      {(open || pathname !== "/vendor") && (
       <button
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[88px] right-4 z-[29] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 md:bottom-6 md:right-6 md:z-[49]"
@@ -347,6 +352,7 @@ export default function FloatingAI({
       >
         <span className="text-[20px]">{open ? "×" : "🧠"}</span>
       </button>
+      )}
     </>
   );
 }

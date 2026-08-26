@@ -523,6 +523,12 @@ export default function VendorDashboard() {
   const firstName = user?.displayName?.split(" ")[0] ?? "";
   const isLive = data.scansToday > 0;
   const riskCount = data.atRiskCount ?? 0;
+  // Modo primer día (veredicto de Ricardo, 26-ago): a un restaurante que no
+  // termina de nacer NO se le enseña el cementerio de ceros ($0, tablas
+  // vacías) — solo brújula, venta, guía AI y su QR. Al completar el setup
+  // se "gradúa" y el panel completo se abre. Gate seguro: todos los
+  // restaurantes vivos tienen isSetupComplete=true — intocados.
+  const firstDay = !data.isSetupComplete;
 
   return (
     <>
@@ -692,7 +698,8 @@ export default function VendorDashboard() {
             </div>
           )}
 
-          {/* ── Resumen de hoy ── */}
+          {/* ── Resumen de hoy (oculto el primer día: puro cero) ── */}
+          {!firstDay && (
           <div className="mb-6">
             <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
               Resumen de hoy
@@ -761,6 +768,7 @@ export default function VendorDashboard() {
 
             </div>
           </div>
+          )}
 
           {/* ── Coach Comeleal AI Card ── */}
           <AICoachPreviewCard
@@ -772,10 +780,13 @@ export default function VendorDashboard() {
           />
 
           {/* ── Lealtad quota (free tier) — PRICING.md "cap honesto" ── */}
-          {!data.isPro && (
+          {!firstDay && !data.isPro && (
             <LoyaltyQuotaCard used={data.loyaltyUsed} limit={data.loyaltyLimit} />
           )}
 
+          {/* ── Del Top productos a la Actividad: nada de esto existe el
+              primer día — se abre al graduarse del setup ── */}
+          {!firstDay && (<>
           {/* ── Top productos ── */}
           <div className="mb-6">
             <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
@@ -1060,6 +1071,7 @@ export default function VendorDashboard() {
               </div>
             )}
           </div>
+          </>)}
 
           {/* ── QR Card ── */}
           <div id="compartir-qr">
@@ -1202,13 +1214,14 @@ const REASON_TO_STEP: Record<string, typeof SETUP_STEPS[number]["key"]> = {
 };
 
 function SetupBanner({ reasons }: { reasons: string[] }) {
-  // completedStepCount counts 4 groups (business, hours, menu, rewards).
-  // We only show 3 web steps (hours, menu, rewards — business is done at signup).
-  // Cap at 3 to avoid "4 de 3 · 133% listo".
-  const doneCount = Math.min(completedStepCount(reasons), 3);
-  const total = 3;
-  const pct = Math.round((doneCount / total) * 100);
+  // Se cuenta SOLO lo que esta tarjeta muestra (hours, menu, rewards) — la
+  // misma lección que ya cobró la página del setup: contar sobre 4 grupos
+  // (con "business", que aquí no se pinta) presumía "2 de 3 · 67%" con una
+  // sola palomita puesta (cazado por Ricardo en el primer claim, 26-ago).
   const pendingKeys = new Set(reasons.map((r) => REASON_TO_STEP[r]).filter(Boolean));
+  const total = 3;
+  const doneCount = SETUP_STEPS.filter((s) => !pendingKeys.has(s.key)).length;
+  const pct = Math.round((doneCount / total) * 100);
 
   return (
     <Link href="/vendor/setup"
