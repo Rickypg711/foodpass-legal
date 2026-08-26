@@ -87,6 +87,8 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
       : null) ??
     (demo ? inferCategoryFromDemo(demo.info?.restaurantName, demo.items) : null);
   const [category, setCategory] = useState(inferredCategory ?? "");
+  // Colapsado solo cuando la IA dedujo algo; sin deducción, el muro completo.
+  const [categoryExpanded, setCategoryExpanded] = useState(!inferredCategory);
   /** "📆 Leí de tu menú: Mar-Dom 1-11pm — ¿está bien?" (default sí). */
   const [hoursOk, setHoursOk] = useState(true);
   const [emailInput, setEmailInput] = useState("");
@@ -652,19 +654,38 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">
                 Tipo de restaurante
               </label>
-              <div className="flex flex-wrap gap-2">
-                {RESTAURANT_CATEGORIES.map((cat) => (
-                  <button key={cat} type="button"
-                    onClick={() => setCategory(cat === category ? "" : cat)}
+              {/* La IA ya eligió → se muestra SOLO su elección (fuerte) +
+                  "Cambiar". El muro de 10 chips solo aparece si el dueño
+                  quiere otra cosa o si no hubo deducción. */}
+              {!categoryExpanded && category ? (
+                <div className="flex items-center gap-2.5">
+                  <span className="rounded-full border border-[#F28C38] bg-[#F28C38] px-4 py-1.5 text-xs font-bold text-[#1C2526]">
+                    {category}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryExpanded(true)}
                     disabled={stage === "creating"}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50 ${
-                      category === cat
-                        ? "border-[#F28C38] bg-[#F28C38]/8 text-[#F28C38]"
-                        : "border-[#e8e6dc] bg-white text-[#141413]/55 hover:border-[#b0aea5] hover:text-[#141413]"
-                    }`}
-                  >{cat}</button>
-                ))}
-              </div>
+                    className="text-xs font-semibold text-[#141413]/45 underline underline-offset-2 transition-colors hover:text-[#F28C38] disabled:opacity-50"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {RESTAURANT_CATEGORIES.map((cat) => (
+                    <button key={cat} type="button"
+                      onClick={() => setCategory(cat === category ? "" : cat)}
+                      disabled={stage === "creating"}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-all disabled:opacity-50 ${
+                        category === cat
+                          ? "border-[#F28C38] bg-[#F28C38] font-bold text-[#1C2526]"
+                          : "border-[#e8e6dc] bg-white font-medium text-[#141413]/55 hover:border-[#b0aea5] hover:text-[#141413]"
+                      }`}
+                    >{cat}</button>
+                  ))}
+                </div>
+              )}
               {inferredCategory && category === inferredCategory && (
                 <p className="mt-1.5 text-[10px] text-[#141413]/40">
                   ✨ Lo deduje de tu menú — cámbialo si no le atiné.
