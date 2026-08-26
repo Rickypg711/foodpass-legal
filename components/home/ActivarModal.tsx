@@ -29,6 +29,7 @@ import {
 } from "firebase/auth";
 import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
 import { RESTAURANT_CATEGORIES, inferCategoryFromDemo, rankCategoriesForDemo } from "@/lib/demo/inferCategory";
+import { persistReadiness } from "@/lib/vendorReadiness";
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -290,7 +291,12 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         locationVerifiedAt: serverTimestamp(),
         locationUpdatedAt: serverTimestamp(),
         rewardTiers: [],
-        businessHours: DEFAULT_BUSINESS_HOURS,
+        // En demo JAMÁS se inventan horas: el "Abierto · cierra 5:00 pm" del
+        // default 9-5 salía en el panel Y en el menú público sin que nadie
+        // lo dijera (cazado en el primer claim, 26-ago). Solo se escriben si
+        // venían IMPRESAS y confirmadas (abajo). El alta genérica conserva
+        // su default porque su wizard de horario siempre lo confirma.
+        ...(demo ? {} : { businessHours: DEFAULT_BUSINESS_HOURS }),
         hoursConfirmed: false,
         subscriptionPlan: "free",
         subscriptionAccessStatus: "inactive",
@@ -430,6 +436,10 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               hoursConfirmed: true,
             });
           }
+          // La brújula dice la verdad desde el día CERO: sin esto, el panel
+          // leía reasons=undefined como "nada pendiente" y presumía
+          // "3 de 3 · 100% listo" a un dueño sin horario ni premios.
+          await persistReadiness(restaurantRef.id).catch(() => {});
           await updateDoc(doc(dbb, "menuDemoJobs", demo.jobId), {
             convertedToRestaurantId: restaurantRef.id,
             convertedAt: serverTimestamp(),
