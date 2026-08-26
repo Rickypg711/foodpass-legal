@@ -144,10 +144,13 @@ export default function SetupPage() {
           })}
         </div>
 
-        {/* Skip to dashboard */}
+        {/* Salida al panel — copy del flujo viejo cazado por Ricardo 26-ago:
+            "Ir al panel sin completar" era para quien JAMÁS había visto el
+            panel (registro→wizard→panel); hoy se llega AQUÍ desde el panel,
+            y ese texto regañaba por volver a casa. */}
         <div className="mt-6 text-center">
           <Link href="/vendor" className="text-sm text-[#141413]/35 hover:text-[#141413]/60 transition-colors">
-            Ir al panel sin completar →
+            ← Volver al panel
           </Link>
         </div>
       </main>
