@@ -227,9 +227,13 @@ export default function ConfiguracionPage() {
   }
 
   function toggleCategory(cat: string) {
-    setCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
+    // Paridad con la app: "Categorías (Selecciona hasta 3)" — la web no
+    // tenía tope y dejaba palomear las 10.
+    setCategories((prev) => {
+      if (prev.includes(cat)) return prev.filter((c) => c !== cat);
+      if (prev.length >= 3) return prev;
+      return [...prev, cat];
+    });
     setSaved(false);
   }
 
@@ -821,7 +825,7 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Categorías ── */}
-            <SectionCard label="Tipo de restaurante">
+            <SectionCard label="Tipo de restaurante (hasta 3)">
               <div className="flex flex-wrap gap-2">
                 {RESTAURANT_CATEGORIES.map((cat) => {
                   const active = categories.includes(cat);
