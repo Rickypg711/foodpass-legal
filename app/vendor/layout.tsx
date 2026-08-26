@@ -143,8 +143,10 @@ const NAV_ITEMS: NavDef[] = [
   { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
   { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
   { href: "/vendor/brain", label: "Comeleal AI", icon: <IconBrain /> },
-  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
+  // Clientes arriba de Escanear: phone-first — el CRM de números capturados
+  // es el corazón; el escáner es "solo si trae la app".
   { href: "/vendor/clientes", label: "Clientes", icon: <IconUsers /> },
+  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/reportes", label: "Reportes", icon: <IconBarChart /> },
 ];
 
@@ -271,7 +273,11 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const navAllowed = (item: NavDef) =>
     canAccessVendorPath(vendorRole, item.href) && (!cajaLocked || isPathAllowedInCajaMode(item.href));
   const allNavs = [...NAV_ITEMS, ...NAV_SECONDARY].filter(navAllowed);
-  const MOBILE_PRIMARY = ["/vendor", "/vendor/pos", "/vendor/pedidos", "/vendor/scanner"];
+  // Phone-first (Ricardo, 26-ago): los puntos se dan COBRANDO CON NÚMERO en
+  // la Caja — el escáner es "solo si trae la app" (install base ~0%). El
+  // 4º trono del nav es para Clientes (el CRM que nace de esos números);
+  // Escanear vive en "Más", en Atajos y en la acción rápida del panel.
+  const MOBILE_PRIMARY = ["/vendor", "/vendor/pos", "/vendor/pedidos", "/vendor/clientes"];
   const mobileTabs = MOBILE_PRIMARY
     .map((h) => allNavs.find((i) => i.href === h))
     .filter((i): i is NavDef => Boolean(i));
