@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState, Suspense, useMemo } from "rea
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { WizardStepper } from "@/components/vendor/WizardStepper";
+import { wizardDoneKeys } from "@/lib/vendorReadiness";
 import {
   doc,
   getDoc,
@@ -159,6 +160,7 @@ function MenuSetupPageInner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   // Existing menu
@@ -229,6 +231,9 @@ function MenuSetupPageInner() {
       const uSnap = await getDoc(doc(db, "users", u.uid));
       const rid = uSnap.data()?.ownedRestaurantId as string | undefined;
       if (!rid) { router.push("/activar"); return; }
+      // La palomita del stepper sale del readiness, no de la posición.
+      const rSnap = await getDoc(doc(db, "restaurants", rid));
+      setStepperDone(wizardDoneKeys(rSnap.data()?.setupIncompleteReasons));
       await reloadMenu(rid);
       setRestaurantId(rid);
       setLoading(false);
@@ -506,7 +511,7 @@ function MenuSetupPageInner() {
       {/* Nav */}
       <div className="sticky top-0 z-10 bg-white shadow-sm">
         {isWizard ? (
-          <WizardStepper current="menu" />
+          <WizardStepper current="menu" doneKeys={stepperDone} />
         ) : (
           <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
             <div className="mx-auto flex max-w-lg items-center gap-3">
