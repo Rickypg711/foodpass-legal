@@ -1261,19 +1261,22 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
           style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #F28C38)" }} />
       </div>
 
-      {/* Step chips — cada uno abre SU paso (en modo wizard, con stepper) */}
+      {/* Step chips — cada uno abre SU paso (en modo wizard, con stepper).
+          Anatomía de BOTÓN (fondo blanco, borde, sombra, ›): un pill plano
+          no grita "tócame" aunque sea link (Ricardo, 26-ago). */}
       <div className="flex gap-2 flex-wrap">
         {SETUP_STEPS.map((step) => {
           const pending = pendingKeys.has(step.key);
           return (
             <Link key={step.key}
               href={`${step.href}?wizard=1`}
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all hover:shadow-sm active:scale-[0.97]"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold shadow-sm transition-all hover:shadow-md hover:-translate-y-px active:scale-[0.97]"
               style={pending
-                ? { background: "rgba(217,119,87,0.1)", color: "#F28C38", border: "1px solid rgba(217,119,87,0.25)" }
-                : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.45)", border: "1px solid transparent" }
+                ? { background: "#ffffff", color: "#F28C38", border: "1.5px solid rgba(242,140,56,0.45)" }
+                : { background: "#ffffff", color: "rgba(28,37,38,0.45)", border: "1.5px solid rgba(28,37,38,0.1)" }
               }>
               {pending ? step.emoji : "✓"} {step.label}
+              <span style={{ color: pending ? "rgba(242,140,56,0.7)" : "rgba(28,37,38,0.3)" }}>›</span>
             </Link>
           );
         })}
