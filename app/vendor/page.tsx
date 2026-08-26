@@ -1225,15 +1225,19 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
   const doneCount = SETUP_STEPS.filter((s) => !pendingKeys.has(s.key)).length;
   const pct = Math.round((doneCount / total) * 100);
 
+  // La tarjeta ya no es UN solo link: el encabezado lleva al MAPA (Ver →) y
+  // cada chip es PUERTA DIRECTA a su paso (regla de Ricardo, 26-ago: si
+  // tiene forma de chip y nombre de destino, LLEVA al destino — links
+  // anidados son HTML inválido, por eso el contenedor es div).
   return (
-    <Link href="/vendor/setup"
-      className="mb-5 flex flex-col rounded-2xl p-5 transition-all hover:shadow-md active:scale-[0.99]"
+    <div
+      className="mb-5 flex flex-col rounded-2xl p-5 transition-all hover:shadow-md"
       style={{
         background: "linear-gradient(135deg, #fff8f5 0%, #ffffff 100%)",
         border: "1px solid rgba(217,119,87,0.22)",
         boxShadow: "0 2px 12px rgba(217,119,87,0.08)",
       }}>
-      <div className="flex items-center justify-between mb-3">
+      <Link href="/vendor/setup" className="flex items-center justify-between mb-3 active:scale-[0.99] transition-transform">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
             style={{ background: "rgba(217,119,87,0.12)" }}>
@@ -1249,7 +1253,7 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
           </div>
         </div>
         <span style={{ color: "#F28C38", fontSize: 12, fontWeight: 600 }}>Ver →</span>
-      </div>
+      </Link>
 
       {/* Progress bar */}
       <div className="mb-3 h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(28,37,38,0.07)" }}>
@@ -1257,23 +1261,24 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
           style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #F28C38)" }} />
       </div>
 
-      {/* Step chips */}
+      {/* Step chips — cada uno abre SU paso (en modo wizard, con stepper) */}
       <div className="flex gap-2 flex-wrap">
         {SETUP_STEPS.map((step) => {
           const pending = pendingKeys.has(step.key);
           return (
-            <div key={step.key}
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            <Link key={step.key}
+              href={`${step.href}?wizard=1`}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all hover:shadow-sm active:scale-[0.97]"
               style={pending
-                ? { background: "rgba(217,119,87,0.1)", color: "#F28C38" }
-                : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.45)" }
+                ? { background: "rgba(217,119,87,0.1)", color: "#F28C38", border: "1px solid rgba(217,119,87,0.25)" }
+                : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.45)", border: "1px solid transparent" }
               }>
               {pending ? step.emoji : "✓"} {step.label}
-            </div>
+            </Link>
           );
         })}
       </div>
-    </Link>
+    </div>
   );
 }
 
