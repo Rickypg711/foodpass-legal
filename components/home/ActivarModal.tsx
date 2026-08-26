@@ -257,14 +257,22 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
     e.preventDefault();
     if (!user) return;
     setError(null);
+    // El número se normaliza AQUÍ (dígitos, últimos 10) escriba como escriba
+    // el dueño: los links wa.me anteponen "52", y un "+52..." guardado tal
+    // cual armaba wa.me/5252... — WhatsApp roto (cazado por Ricardo 26-ago).
+    const phone10 = phone.replace(/\D/g, "").slice(-10);
+    if (phone10.length !== 10) {
+      setError("Pon tu número a 10 dígitos — como lo marcas en México.");
+      return;
+    }
     setStage("creating");
     try {
       const db = getFirebaseDb();
       const restaurantRef = await addDoc(collection(db, "restaurants"), {
         name: name.trim(),
         address: address.trim(),
-        phone: phone.trim(),
-        whatsapp: phone.trim(),
+        phone: phone10,
+        whatsapp: phone10,
         categories: category ? [category] : [],
         ownerId: user.uid,
         billingOwnerUserId: user.uid,
@@ -344,7 +352,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         const geoRes = await fetch("/api/geocode", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: address.trim(), phone: phone.trim() }),
+          body: JSON.stringify({ address: address.trim(), phone: phone10 }),
         });
         const verdict = await geoRes.json();
         const { updateDoc } = await import("firebase/firestore");
@@ -647,7 +655,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 data-claim-field={phone.trim() ? "full" : "empty"}
                 type="tel" required value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+52 614 123 4567"
+                placeholder="614 123 4567"
                 disabled={stage === "creating"}
                 className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
               />

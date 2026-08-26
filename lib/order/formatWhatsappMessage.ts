@@ -57,6 +57,11 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
 }
 
 export function buildWhatsappUrl(phoneDigits: string, text: string): string {
-  const digits = phoneDigits.replace(/\D/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  // Canon MX (26-ago): wa.me exige formato internacional y Comeleal es
+  // México-only, así que TODO link se arma como 52 + últimos 10 dígitos —
+  // sin importar cómo se haya guardado el número ("+52 614...", "52614...",
+  // o 10 pelones). Antes cada consumidor esperaba SU formato y el mismo
+  // campo rompía uno u otro (wa.me/5252... o wa.me/614... sin país).
+  const last10 = phoneDigits.replace(/\D/g, "").slice(-10);
+  return `https://wa.me/52${last10}?text=${encodeURIComponent(text)}`;
 }
