@@ -359,7 +359,11 @@ export default function DemoPreviewPage() {
           </section>
         ))}
 
-        <p className="mt-8 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+        <p className="mt-8 text-center text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+          📷 ¿Y fotos de tus platillos? Las agregas cuando quieras desde tu
+          panel — gratis también.
+        </p>
+        <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
           Vista previa generada de tu foto · los pedidos de aquí son de mentira 🎭
         </p>
       </div>
