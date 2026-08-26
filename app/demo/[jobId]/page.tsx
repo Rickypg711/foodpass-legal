@@ -280,6 +280,13 @@ export default function DemoPreviewPage() {
           Así se vería tu menú
         </p>
         <h1 className="mt-1 text-[26px] font-extrabold text-white">{nombre}</h1>
+        {job.stats && (
+          <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(248,178,106,0.9)" }}>
+            ✨ {job.stats.itemCount} platillo{job.stats.itemCount === 1 ? "" : "s"}
+            {job.stats.sizeFamilies > 0 &&
+              ` y ${job.stats.sizeFamilies} con tamaños`} — leídos de tu foto
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {job.info?.hoursText && (
             <span className="rounded-full px-3 py-1 text-[11px] font-bold"
@@ -297,6 +304,12 @@ export default function DemoPreviewPage() {
       </header>
 
       <div className="mx-auto w-full max-w-md px-4">
+        {count === 0 && (
+          <p className="mt-4 rounded-xl px-4 py-2.5 text-center text-[13px] font-bold"
+            style={{ background: "rgba(242,140,56,0.1)", color: "#B45309" }}>
+            👆 Pruébalo como lo vería tu cliente — toca un ➕
+          </p>
+        )}
         {categories.map(([cat, items]) => (
           <section key={cat} className="mt-6">
             <h2 className="border-l-4 pl-2 text-[15px] font-extrabold"

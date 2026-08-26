@@ -55,6 +55,7 @@ export type DemoJob = {
   errorMessage?: string;
   expiresAt?: Timestamp;
   convertedToRestaurantId?: string;
+  stats?: { itemCount: number; rowCount: number; sizeFamilies: number };
 };
 
 // ── Núcleo puro (testeable): ¿el demo sigue vivo? ──────────────────────────
