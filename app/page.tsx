@@ -68,10 +68,10 @@ const VALUE_POINTS = [
 ] as const;
 
 const STEPS = [
-  { step: "1", title: "Registra tu negocio", body: "Crea tu lugar: nombre, dirección, categoría y datos básicos. Tarda menos de 5 minutos." },
-  { step: "2", title: "Sube tu menú y recompensa", body: "Agrega horarios, platillos y una recompensa de bienvenida. Te ayudamos en el proceso." },
-  { step: "3", title: "Comparte tu QR o menú", body: "Pon el enlace o QR en mostrador, mesas o redes sociales para que tus clientes lo encuentren." },
-  { step: "4", title: "Escanea y suma puntos", body: "Cuando el cliente visita, escaneas su QR desde tu panel. Listo — ya tienes lealtad activa." },
+  { step: "1", title: "Sube la foto de tu menú", body: "La IA lee tus platillos, precios, salsas y tamaños — y te enseña tu menú digital en ~1 minuto. Sin cuenta." },
+  { step: "2", title: "Míralo y quédatelo", body: "¿Te gustó? Es tuyo gratis: creas tu cuenta en 2 taps y tu menú ya viene montado adentro." },
+  { step: "3", title: "Acepta tus premios", body: "La IA te propone recompensas con TUS platillos para que tus clientes regresen. Tú solo dices que sí." },
+  { step: "4", title: "Imprime tu QR y a vender", body: "Tus clientes ven tu menú, ordenan y suman puntos. Todo activo en unos 5 minutos." },
 ] as const;
 
 const BENEFITS = [
@@ -225,7 +225,7 @@ export default function Home() {
               Todo lo que necesitas para que tus clientes regresen
             </h2>
             <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              Configura en 15 minutos, sin contratos. Comeleal funciona junto a tu punto de venta actual.
+              Activo en unos 5 minutos, sin contratos. Comeleal funciona junto a tu punto de venta actual.
             </p>
             <ul className="mt-10 grid gap-6 sm:grid-cols-2">
               {VALUE_POINTS.map((point) => (
@@ -285,7 +285,7 @@ export default function Home() {
               Empieza gratis hoy.
             </h2>
             <p className="mt-4 text-lg text-white/65">
-              Registra tu negocio y deja activa tu primera recompensa en menos de 5 minutos.
+              Sube la foto de tu menú, míralo digital en 1 minuto y déjalo activo con tu primera recompensa hoy mismo.
             </p>
             <HomeCta />
           </div>
