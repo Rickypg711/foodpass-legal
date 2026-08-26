@@ -15,6 +15,7 @@ import type { SelectedOptionGroup } from "@/lib/cart/types";
 import {
   daysLeft,
   demoExpired,
+  forgetDemoJob,
   stampClaimStarted,
   stampPlayed,
   stampViewed,
@@ -78,13 +79,22 @@ export default function DemoPreviewPage() {
     return () => clearInterval(t);
   }, [job]);
 
-  // Escalera (§6.2): carta vista.
+  // Escalera (§6.2), first-touch: la PRIMERA vista es la que mide el
+  // embudo — si el doc ya trae viewedAt, no se pisa.
   useEffect(() => {
     if (job?.status === "ready" && !stamped.current.viewed) {
       stamped.current.viewed = true;
-      stampViewed(jobId);
+      if (!(job as unknown as { viewedAt?: unknown }).viewedAt) stampViewed(jobId);
     }
   }, [job, jobId]);
+
+  // Un demo muerto no merece botón de "continúa": si falló, expiró o ya se
+  // convirtió, el localStorage lo suelta y /demo vuelve a ofrecer subir.
+  useEffect(() => {
+    if (!job) return;
+    const exp = job.expiresAt ? demoExpired(job.expiresAt.toMillis(), Date.now()) : false;
+    if (job.status === "failed" || exp) forgetDemoJob();
+  }, [job]);
 
   const expiresMs = job?.expiresAt ? job.expiresAt.toMillis() : null;
   const expired = demoExpired(expiresMs, Date.now());
@@ -107,7 +117,7 @@ export default function DemoPreviewPage() {
   function addLine(item: DemoItem, selected: SelectedOptionGroup[] | null) {
     if (!stamped.current.played) {
       stamped.current.played = true;
-      stampPlayed(jobId);
+      if (!(job as unknown as { playedDemoAt?: unknown })?.playedDemoAt) stampPlayed(jobId);
     }
     const delta = (selected ?? []).reduce(
       (s, g) => s + g.options.reduce((x, o) => x + o.priceDelta, 0),
