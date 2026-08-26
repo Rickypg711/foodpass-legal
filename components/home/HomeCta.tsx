@@ -46,7 +46,7 @@ export function HomeCta() {
           trackVendorCtaClick({ cta: "sube_tu_menu", section: "home_hero", ...utms });
         }}
         className="inline-flex items-center gap-2 rounded-full bg-[#F28C38] px-7 py-3.5 text-base font-semibold text-[#1C2526] shadow-lg transition-colors hover:bg-[#c46644]">
-        📸 Sube la foto de tu menú — velo gratis
+        📸 Sube la foto de tu menú
         <span aria-hidden>→</span>
       </Link>
       <button

@@ -136,11 +136,11 @@ export default function Home() {
                 Para restaurantes locales
               </p>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
-                El restaurante al que siempre regresan.{" "}
-                <span className="text-[#F28C38]">Empieza con tu menú.</span>
+                Tu menú de papel,{" "}
+                <span className="text-[#F28C38]">digital y gratis en 1 minuto.</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
-                Tu menú digital con QR y pedidos por WhatsApp — y puntos que traen a tus clientes de vuelta. Sin cambiar tu caja. Gratis para empezar.
+                Con QR, pedidos por WhatsApp y puntos que hacen que tus clientes SIEMPRE regresen. Sin cambiar tu caja.
               </p>
               <HomeCta />
               <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Listo en 5 minutos</p>
