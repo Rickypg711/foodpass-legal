@@ -158,6 +158,24 @@ export default function DemoPreviewPage() {
     if (theater && cart.length === 0) setTheater(false);
   }, [theater, cart.length]);
 
+  function qtyFor(name: string): number {
+    return cart.reduce((s, l) => (l.name === name ? s + l.qty : s), 0);
+  }
+
+  function removeOneOf(name: string) {
+    setCart((prev) => {
+      const i = [...prev].map((l) => l.name).lastIndexOf(name);
+      if (i < 0) return prev;
+      const next = [...prev];
+      if (next[i].qty > 1) {
+        next[i] = { ...next[i], qty: next[i].qty - 1 };
+      } else {
+        next.splice(i, 1);
+      }
+      return next;
+    });
+  }
+
   function removeLine(index: number) {
     setCart((prev) => {
       const next = [...prev];
@@ -349,17 +367,47 @@ export default function DemoPreviewPage() {
                       <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
                         {formatPrice(it.price)}
                       </p>
-                      <button
-                        type="button"
-                        aria-label={`Agregar ${it.name}`}
-                        onClick={() =>
-                          (it.optionGroups?.length ?? 0) > 0 ? setSheetItem(it) : addLine(it, null)
-                        }
-                        className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition-transform duration-150 active:scale-90"
-                        style={{ background: "#F28C38", color: "#1C2526" }}
-                      >
-                        +
-                      </button>
+                      {qtyFor(it.name) > 0 ? (
+                        <div className="flex items-center gap-0.5 rounded-xl"
+                          style={{ background: "rgba(28,37,38,0.06)" }}>
+                          <button
+                            type="button"
+                            aria-label={`Quitar uno de ${it.name}`}
+                            onClick={() => removeOneOf(it.name)}
+                            className="flex h-9 w-8 items-center justify-center rounded-l-xl text-lg font-bold transition-transform duration-150 active:scale-90"
+                            style={{ color: "#1C2526" }}
+                          >
+                            −
+                          </button>
+                          <span className="min-w-[1.25rem] text-center text-[14px] font-extrabold"
+                            style={{ color: "#1C2526" }}>
+                            {qtyFor(it.name)}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label={`Agregar ${it.name}`}
+                            onClick={() =>
+                              (it.optionGroups?.length ?? 0) > 0 ? setSheetItem(it) : addLine(it, null)
+                            }
+                            className="flex h-9 w-8 items-center justify-center rounded-r-xl text-lg font-bold transition-transform duration-150 active:scale-90"
+                            style={{ background: "#F28C38", color: "#1C2526" }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={`Agregar ${it.name}`}
+                          onClick={() =>
+                            (it.optionGroups?.length ?? 0) > 0 ? setSheetItem(it) : addLine(it, null)
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition-transform duration-150 active:scale-90"
+                          style={{ background: "#F28C38", color: "#1C2526" }}
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
