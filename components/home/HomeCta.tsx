@@ -15,7 +15,9 @@ export function HomeCta() {
   useEffect(() => {
     getFirebaseApp();
     const unsub = onAuthStateChanged(getAuth(), (user) => {
-      setLoggedIn(!!user);
+      // Anónimo ≠ dueño: el prospecto que jugó un demo u ordenó comida trae
+      // sesión anónima — a ése le toca el embudo, no "Ir a mi panel".
+      setLoggedIn(!!user && !user.isAnonymous);
     });
     return unsub;
   }, []);
