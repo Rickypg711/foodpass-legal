@@ -537,7 +537,8 @@ export default function DemoPreviewPage() {
                 {cart.map((l) => `${l.qty}× ${l.name}`).join(" · ")} — {formatPrice(total)}
               </p>
               <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                En tu menú real, esto también te llega por WhatsApp 📲
+                En tu menú real esto te suena en tu panel — y tu cliente te lo
+                puede confirmar a tu WhatsApp 📲
               </p>
             </div>
             <button
