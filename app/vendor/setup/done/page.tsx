@@ -9,6 +9,7 @@ import { pixelCompleteRegistration } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisition";
+import MenuShareModal from "../../_components/MenuShareModal";
 
 /**
  * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
@@ -41,6 +42,7 @@ export default function SetupDonePage() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantWhatsapp, setRestaurantWhatsapp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -66,52 +68,6 @@ export default function SetupDonePage() {
     ? `https://comeleal.com/menu/${restaurantId}`
     : null;
 
-  // Google Charts QR API — no extra dep, reliable, produces crisp PNG
-  const qrImageSrc = qrUrl
-    // NOTE: chart.googleapis.com QR API was shut down by Google — use qrserver.com instead.
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=${encodeURIComponent(qrUrl)}`
-    : null;
-
-  function handlePrint() {
-    if (!qrImageSrc || !restaurantName) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR — ${restaurantName}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              display: flex; flex-direction: column; align-items: center;
-              justify-content: center; min-height: 100vh; padding: 40px;
-              background: #fff;
-            }
-            .logo { font-size: 14px; font-weight: 700; letter-spacing: 0.08em;
-              color: #F28C38; margin-bottom: 28px; text-transform: uppercase; }
-            img { width: 260px; height: 260px; }
-            h1 { margin-top: 24px; font-size: 22px; font-weight: 800; color: #141413;
-              text-align: center; }
-            p { margin-top: 8px; font-size: 13px; color: #141413; opacity: 0.5;
-              text-align: center; max-width: 220px; line-height: 1.5; }
-            .cta { margin-top: 20px; font-size: 15px; font-weight: 700;
-              color: #F28C38; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <span class="logo">Comeleal</span>
-          <img src="${qrImageSrc}" alt="QR" />
-          <h1>${restaurantName}</h1>
-          <p>Escanea para ver nuestro menú en la app Comeleal</p>
-          <p>Descarga la app Comeleal y únete al programa de lealtad</p>
-          <script>window.onload = () => { window.print(); }<\/script>
-        </body>
-      </html>
-    `);
-    win.document.close();
-  }
 
   if (loading) {
     return (
@@ -142,36 +98,23 @@ export default function SetupDonePage() {
           Tus clientes pueden escanearte y ganar puntos desde ahora.
         </p>
 
-        {/* QR Code block */}
-        {qrImageSrc && (
+        {/* Momento QR — MISMO modal de marca que el panel (paridad, cazada
+            por Ricardo 26-ago): tarjeta con logo, QR local nítido, link
+            bonito e imprimir. Aquí vivía el "antes" que el panel ya enterró
+            (QR de api.qrserver.com + link de ID pelón + imprimir casero). */}
+        {restaurantId && (
           <div className="mt-8 rounded-2xl border border-[#141413]/8 bg-white p-6">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
               Tu código QR de menú
             </p>
             <p className="mb-4 text-xs text-[#141413]/50">
-              Ponlo en tu mesa o caja para que los clientes vean tu menú y te encuentren en la app
+              Ponlo en tu mesa o en tu caja — tus clientes escanean, ven tu menú y ganan puntos
             </p>
-
-            {/* QR image */}
-            <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl bg-white p-2 shadow-sm ring-1 ring-[#141413]/8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qrImageSrc}
-                alt="QR de tu restaurante"
-                className="h-full w-full"
-              />
-            </div>
-
-            <p className="mt-3 text-[10px] text-[#141413]/30 font-mono break-all">
-              comeleal.com/menu/{restaurantId}
-            </p>
-
-            {/* Print button */}
             <button
-              onClick={handlePrint}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-3 text-sm font-semibold text-[#B45309] hover:bg-[#F28C38]/10 transition-all"
+              onClick={() => setShareOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-4 py-3.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
             >
-              🖨️ Imprimir QR
+              📲 Ver, imprimir y compartir mi QR →
             </button>
             {restaurantWhatsapp && qrUrl && (
               <a
@@ -186,6 +129,14 @@ export default function SetupDonePage() {
               </a>
             )}
           </div>
+        )}
+
+        {restaurantId && (
+          <MenuShareModal
+            restaurantId={restaurantId}
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+          />
         )}
 
         {/* CTA */}
