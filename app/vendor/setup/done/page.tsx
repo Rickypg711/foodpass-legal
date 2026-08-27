@@ -148,12 +148,6 @@ export default function SetupDonePage() {
           Ver mi panel →
         </button>
 
-        <button
-          onClick={() => router.push("/vendor/setup")}
-          className="mt-3 w-full text-xs text-[#141413]/35 hover:text-[#141413]/60 transition-colors"
-        >
-          Revisar configuración
-        </button>
       </div>
     </div>
   );
