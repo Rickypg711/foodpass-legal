@@ -11,6 +11,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { entitlementOf } from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { parseLocationLink } from "@/lib/geocodeRestaurant";
 import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
@@ -73,6 +74,12 @@ export default function ConfiguracionPage() {
   /// queda fuera de "Cerca de ti" y de Recompensas (la app filtra a 20 km), así
   /// que hay que DECÍRSELO al dueño — no basta con marcarlo en Firestore.
   const [locationUnresolved, setLocationUnresolved] = useState(false);
+  /** Link de ubicación pegado por el dueño (WhatsApp/Google Maps) — la vía
+   * para un puesto sin ficha de Google. Ver parseLocationLink. */
+  const [pinLink, setPinLink] = useState("");
+  const [pinLinkError, setPinLinkError] = useState<string | null>(null);
+  const [savingPin, setSavingPin] = useState(false);
+  const [pinSaved, setPinSaved] = useState(false);
   const [phone, setPhone] = useState("");
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
@@ -336,6 +343,40 @@ export default function ConfiguracionPage() {
       setError("Error al eliminar la portada.");
     } finally {
       setCoverUploading(false);
+    }
+  }
+
+  /** El pin desde un link pegado (WhatsApp/Google Maps) — cierra el caso
+   * "puesto sin ficha de Google" sin construir un mapa: el GPS del dueño es
+   * la mejor verdad de ubicación que existe. parseLocationLink rechaza
+   * Null Island y links sin coordenadas — jamás se adivina un pin. */
+  async function handlePinLink() {
+    if (!restaurantId || savingPin) return;
+    const coords = parseLocationLink(pinLink);
+    if (!coords) {
+      setPinLinkError(
+        "No encontré la ubicación en ese link. Comparte la ubicación desde " +
+          "Google Maps o WhatsApp y pega el link completo.",
+      );
+      return;
+    }
+    setSavingPin(true);
+    try {
+      const db = getFirebaseDb();
+      await updateDoc(doc(db, "restaurants", restaurantId), {
+        lat: coords.lat,
+        lng: coords.lng,
+        locationSource: "owner_confirmed",
+        locationUpdatedAt: serverTimestamp(),
+        locationNeedsReview: deleteField(),
+      });
+      setLocationUnresolved(false);
+      setPinSaved(true);
+      setPinLink("");
+    } catch {
+      setPinLinkError("No pudimos guardar tu ubicación. Intenta de nuevo.");
+    } finally {
+      setSavingPin(false);
     }
   }
 
@@ -633,6 +674,40 @@ export default function ConfiguracionPage() {
                   con &ldquo;{address.trim() || "el centro"}&rdquo; no alcanza — y
                   guarda otra vez.
                 </p>
+                {/* La vía para un puesto sin ficha de Google (27-ago): el
+                    dueño comparte su ubicación de WhatsApp/Google Maps y
+                    pega el link aquí — el GPS trae el pin exacto. */}
+                <p className="mt-3 font-semibold">
+                  📍 O más fácil: párate en tu local, abre Google Maps, mantén
+                  presionado sobre tu puesto y comparte el link aquí:
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={pinLink}
+                    onChange={(e) => { setPinLink(e.target.value); setPinLinkError(null); }}
+                    placeholder="https://maps.google.com/?q=28.63,-106.08"
+                    className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-[13px] text-[#1C2526] outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePinLink}
+                    disabled={!pinLink.trim() || savingPin}
+                    className="shrink-0 rounded-lg px-4 py-2 text-[13px] font-bold text-[#1C2526] transition disabled:opacity-40"
+                    style={{ background: "#F28C38" }}
+                  >
+                    {savingPin ? "Guardando…" : "Ponerme en el mapa"}
+                  </button>
+                </div>
+                {pinLinkError && (
+                  <p className="mt-2 font-semibold text-red-700">{pinLinkError}</p>
+                )}
+              </div>
+            )}
+            {pinSaved && (
+              <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-[13px] font-semibold text-green-800">
+                ✅ ¡Listo! Tu negocio ya tiene ubicación — ya puedes aparecer
+                en &ldquo;Cerca de ti&rdquo;.
               </div>
             )}
 

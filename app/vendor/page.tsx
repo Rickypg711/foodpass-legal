@@ -1531,6 +1531,7 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "configure_rewards": return "Publica tus premios";
     case "enable_first_purchase_reward": return "Prende tu premio de bienvenida";
     case "get_first_scan": return "Tu primera visita con puntos";
+    case "set_map_pin": return "Ponte en el mapa";
     default: return "Siguiente mejor acción";
   }
 }
@@ -1548,6 +1549,7 @@ function getNbaFallbackBody(actionCode: string): string {
     case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "grow_phone_capture": return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
+    case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
     case "healthy":
     case "keep_going":
     case "stable": return "Tu negocio va avanzando. Pide el número en cada cobro y mantén tu recompensa clara.";
@@ -1560,6 +1562,7 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "set_business_hours": return "Poner mi horario — 2 min";
     case "send_winback": return atRiskCount > 0 ? `Ver ${atRiskCount} clientes ahora` : "Ver clientes en riesgo";
     case "add_google_review_link": return "Poner mi link de reseñas";
+    case "set_map_pin": return "Ponerme en el mapa — 1 min";
     case "check_ai_draft": return "Revisar borrador de recompensa";
     case "enable_first_purchase_reward": return "Prender recompensa de bienvenida";
     case "grow_phone_capture": return "Cobrar con número en la Caja";
@@ -1582,6 +1585,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "set_business_hours": return "/vendor/setup/horario";
     case "complete_profile": return "/vendor/configuracion";
     case "add_google_review_link": return "/vendor/configuracion";
+    case "set_map_pin": return "/vendor/configuracion";
     case "check_ai_draft": return "/vendor/recompensas";
     case "grow_phone_capture": return "/vendor/pos";
     case "share_with_customers": return "#compartir-qr";

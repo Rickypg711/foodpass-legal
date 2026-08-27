@@ -58,6 +58,56 @@ export function coordsInAddress(
 }
 
 /**
+ * Coordenadas desde un LINK de ubicación pegado por el dueño — la vía para
+ * un puesto sin ficha de Google (27-ago, caso Null Island): WhatsApp y
+ * Google Maps comparten links con el lat/lng del GPS adentro. Acepta:
+ *   - https://maps.google.com/?q=28.73,-106.12   (WhatsApp "Enviar ubicación")
+ *   - https://www.google.com/maps/@28.73,-106.12,17z
+ *   - .../maps/place/...!3d28.73!4d-106.12
+ *   - "28.73, -106.12" pelón (coordsInAddress)
+ * Rechaza Null Island y fuera de rango. null = no se entendió — JAMÁS
+ * adivinar: un pin equivocado es peor que sin pin.
+ */
+export function parseLocationLink(
+  text: string,
+): {lat: number; lng: number} | null {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  const direct = coordsInAddress(raw);
+  if (direct) return direct;
+
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  })();
+
+  const check = (lat: number, lng: number) => {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return null;
+    return {lat, lng};
+  };
+
+  // !3dLAT!4dLNG — el pin exacto del lugar en links largos de Google Maps
+  // (va ANTES que @: el @ de esos links es el centro de la CÁMARA, no el pin).
+  let m = decoded.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+  if (m) return check(Number(m[1]), Number(m[2]));
+
+  // ?q=LAT,LNG — el formato del "Enviar mi ubicación" de WhatsApp.
+  m = decoded.match(/[?&]q=(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+  if (m) return check(Number(m[1]), Number(m[2]));
+
+  // /@LAT,LNG — centro del mapa (aceptable cuando el dueño centró su local).
+  m = decoded.match(/@(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+  if (m) return check(Number(m[1]), Number(m[2]));
+
+  return null;
+}
+
+/**
  * País esperado, deducido del teléfono.
  *
  * Sin esto se escribe basura con toda confianza: "el centro" de un local de
