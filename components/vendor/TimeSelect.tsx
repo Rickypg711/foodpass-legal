@@ -125,7 +125,9 @@ export function TimeSelect({
     const b = botonRef.current;
     if (!b) return;
     const r = b.getBoundingClientRect();
-    const alto = Math.min(320, window.innerHeight * 0.5);
+    // 420 y no 320: en Mac el scroll inercial aventaba 48 opciones por un
+    // panel chaparro — más filas visibles = menos viaje (Ricardo, 26-ago).
+    const alto = Math.min(420, window.innerHeight * 0.6);
     const cabeAbajo = window.innerHeight - r.bottom > alto + 16;
     setCaja({
       top: cabeAbajo ? r.bottom + 6 : Math.max(8, r.top - alto - 6),
@@ -243,9 +245,12 @@ export function TimeSelect({
           className="fixed z-50 overflow-y-auto overscroll-contain rounded-xl border bg-white py-1 shadow-xl motion-safe:animate-[timeselect-in_140ms_cubic-bezier(0.16,1,0.3,1)]"
           style={{
             top: caja.top, left: caja.left, width: caja.width,
-            maxHeight: Math.min(320, window.innerHeight * 0.5),
+            maxHeight: Math.min(420, window.innerHeight * 0.6),
             borderColor: "rgba(28,37,38,0.12)",
             transformOrigin: caja.arriba ? "bottom center" : "top center",
+            // El imán: el aventón inercial de Mac ATERRIZA en una fila, no
+            // entre dos ("se mueve demasiado rápido" — Ricardo, 26-ago).
+            scrollSnapType: "y proximity",
           }}
         >
           {opciones.map((o, i) => {
@@ -277,6 +282,7 @@ export function TimeSelect({
                 className="mx-1 flex cursor-pointer items-baseline justify-between gap-3 rounded-lg px-2.5 py-2 transition-colors duration-100"
                 style={{
                   background: sel ? "rgba(242,140,56,0.14)" : act ? "rgba(28,37,38,0.05)" : "transparent",
+                  scrollSnapAlign: "start",
                 }}
               >
                 <span className="text-[14px] tabular-nums" style={{ color: "#1C2526", fontWeight: sel ? 700 : 500 }}>
