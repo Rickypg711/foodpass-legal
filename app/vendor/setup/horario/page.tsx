@@ -207,8 +207,14 @@ function HorarioSetupPageInner() {
       });
       await persistReadiness(restaurantId);
       setSaved(true);
+      // El wizard salta al primer paso PENDIENTE: los nacidos del embudo ya
+      // traen el menú hecho — mandarlos a Menú era un brinco muerto camino
+      // a Recompensas (cazado por Ricardo, 26-ago).
+      const nextWizardStep = stepperDone?.includes("menu")
+        ? "/vendor/setup/recompensas?wizard=1"
+        : "/vendor/setup/menu?wizard=1";
       setTimeout(
-        () => router.push(isWizard ? "/vendor/setup/menu?wizard=1" : "/vendor/configuracion"),
+        () => router.push(isWizard ? nextWizardStep : "/vendor/configuracion"),
         800,
       );
     } catch (e) {
@@ -259,8 +265,11 @@ function HorarioSetupPageInner() {
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ background: estado ? "#16A34A" : "#B91C1C" }}
               />
+              {/* Preview VIVO de lo que estás componiendo (pickers sin
+                  guardar) — el label viejo "Tu página dice ahora mismo"
+                  afirmaba presente sobre un horario aún no guardado. */}
               <span className="text-[13px] text-[#1C2526]/60">
-                Tu página dice ahora mismo:{" "}
+                Con este horario, ahora mismo estarías:{" "}
                 <strong className="font-bold text-[#1C2526]">{estado ? "Abierto" : "Cerrado"}</strong>
               </span>
             </>
