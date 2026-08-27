@@ -390,7 +390,7 @@ function RecompensasSetupPageInner() {
     const rango =
       `Ponlo entre ${pocosPuntos} y ${muchosPuntos} puntos ` +
       `(≈ $${Math.round(pocosPuntos * spendStepAmount).toLocaleString("es-MX")} a ` +
-      `$${Math.round(muchosPuntos * spendStepAmount).toLocaleString("es-MX")} de consumo).`;
+      `$${Math.round(muchosPuntos * spendStepAmount).toLocaleString("es-MX")} gastados).`;
 
     if (ratio > HARD_FAIL_RATIO + 1e-12) {
       return {
@@ -524,12 +524,12 @@ function RecompensasSetupPageInner() {
         <div>
           <h2 className="text-lg font-bold text-[#141413]">Programa de lealtad</h2>
           <p className="mt-1 text-sm text-[#141413]/50">
-            La IA diseña recompensas personalizadas según tu menú y tipo de restaurante.
+            La IA diseña premios a la medida de tu menú y tu tipo de comida.
           </p>
           <p className="mt-2 rounded-xl bg-[#F28C38]/8 px-3 py-2 text-xs text-[#141413]/70">
             💡 Tus clientes ganan <strong>1 punto por visita</strong> más{" "}
-            <strong>1 punto por cada ${spendStepAmount}</strong> de consumo. Así que{" "}
-            <strong>{spendStepAmount * 10} pesos de consumo ≈ 10 puntos</strong>.
+            <strong>1 punto por cada ${spendStepAmount}</strong> que gastan. Así que{" "}
+            <strong>${spendStepAmount * 10} gastados ≈ 10 puntos</strong>.
           </p>
         </div>
 
@@ -671,7 +671,7 @@ function RecompensasSetupPageInner() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-[#141413]/50 shrink-0">Puntos requeridos:</label>
+                <label className="text-xs text-[#141413]/50 shrink-0">Puntos para ganarlo:</label>
                 <input
                   type="number"
                   min={0}
@@ -686,7 +686,7 @@ function RecompensasSetupPageInner() {
                 />
                 {tier.pointsRequired > 0 && (
                   <span className="text-[11px] text-[#141413]/40">
-                    ≈ ${(tier.pointsRequired * spendStepAmount).toLocaleString("es-MX")} de consumo
+                    ≈ ${(tier.pointsRequired * spendStepAmount).toLocaleString("es-MX")} gastados
                   </span>
                 )}
               </div>
