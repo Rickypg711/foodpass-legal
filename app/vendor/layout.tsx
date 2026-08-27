@@ -146,7 +146,7 @@ const NAV_ITEMS: NavDef[] = [
   // Clientes arriba de Escanear: phone-first — el CRM de números capturados
   // es el corazón; el escáner es "solo si trae la app".
   { href: "/vendor/clientes", label: "Clientes", icon: <IconUsers /> },
-  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
+  { href: "/vendor/scanner", label: "Puntos", icon: <IconQr /> },
   { href: "/vendor/reportes", label: "Reportes", icon: <IconBarChart /> },
 ];
 

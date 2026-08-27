@@ -1141,7 +1141,7 @@ export default function VendorDashboard() {
             <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
             <Atajo href="/vendor/reportes" emoji="📊" label="Reportes" />
             <Atajo href="/vendor?ai=1" emoji="🧠" label="Comeleal AI" />
-            <Atajo href="/vendor/scanner" emoji="📷" label="Escanear" />
+            <Atajo href="/vendor/scanner" emoji="⭐" label="Puntos" />
             <Atajo href={`/menu/${data.restaurantId}`} emoji="👀" label="Mi menú" external />
             <Atajo href="/vendor/configuracion" emoji="⚙️" label="Config" />
             <Atajo

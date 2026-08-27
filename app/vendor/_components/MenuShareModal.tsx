@@ -265,7 +265,7 @@ export default function MenuShareModal({
             a 13px y es lo accionable—, no el gris. Un gris clarito "elegante"
             aqui solo lo vuelve ilegible. */}
         <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
-          La liga que mandas lleva tu menú, tu teléfono y tu ubicación
+          El link que mandas lleva tu menú, tu teléfono y tu ubicación
         </p>
         <button
           type="button"

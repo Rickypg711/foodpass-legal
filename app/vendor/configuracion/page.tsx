@@ -590,7 +590,7 @@ export default function ConfiguracionPage() {
             {/* Cambiar contraseña — NO existía en el panel, y el dueño vive
                 AQUÍ: aquí está su Caja, sus pedidos y sus reportes. Sin esto
                 tenía que bajarse la app solo para cambiarla.
-                Se manda liga por correo en vez de pedir la actual: quien la
+                Se manda link por correo en vez de pedir la actual: quien la
                 quiere cambiar suele ser justo quien no la recuerda, y pedirle
                 la vieja lo deja trabado. Solo se ofrece a cuentas que DE VERDAD
                 tienen contraseña — una de Google no la tiene. */}
@@ -609,7 +609,7 @@ export default function ConfiguracionPage() {
                   </span>
                   <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
                     {resetEnviado
-                      ? "Revisa tu correo y sigue la liga."
+                      ? "Revisa tu correo y sigue el link."
                       : "Te mandamos una liga a tu correo."}
                   </span>
                 </span>
