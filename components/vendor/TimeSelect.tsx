@@ -176,8 +176,14 @@ export function TimeSelect({
     }
     if (!caja || aterrizado.current) return;
     const id = requestAnimationFrame(() => {
-      const el = listaRef.current?.querySelector<HTMLElement>(`[data-idx="${idxSeleccion}"]`);
-      el?.scrollIntoView({ block: "center" });
+      const L = listaRef.current;
+      const el = L?.querySelector<HTMLElement>(`[data-idx="${idxSeleccion}"]`);
+      // scrollTop directo, no scrollIntoView: dentro de un position:fixed con
+      // scroll-snap el motor a veces no mueve nada (visto en prod, 26-ago) —
+      // la matemática no opina, obedece.
+      if (L && el) {
+        L.scrollTop = Math.max(0, el.offsetTop - (L.clientHeight - el.offsetHeight) / 2);
+      }
       aterrizado.current = true;
     });
     return () => cancelAnimationFrame(id);
