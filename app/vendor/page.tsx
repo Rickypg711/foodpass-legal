@@ -75,6 +75,12 @@ interface DashboardData {
   dailyGoal: number | null;
   ventasHoy: number;
   pedidosCola: number;
+  /** Robo inverso de la app (27-ago): pulso de la última hora, del MISMO
+   *  snapshot de hoy — cero queries extra. */
+  pulseLastHourCount: number;
+  pulseLastHourRevenue: number;
+  pulsePrevHourCount: number;
+  dailyRevenueGoal: number | null;
   cuentasAbiertas: number;
   // Win-back proof — combined: automatic (reEngagementStats, Cloud Functions)
   // + manual taps (phoneCustomers.lastWinbackAt vs lastVisitAt, closed loop)
@@ -218,6 +224,13 @@ export default function VendorDashboard() {
         let ventasHoy = 0;
         let pedidosCola = 0;
         let cuentasAbiertas = 0;
+        // Pulso (joya robada de la app): pedidos PAGADOS de la última hora y
+        // la anterior — ritmo del changarro en vivo.
+        let pulseLastHourCount = 0;
+        let pulseLastHourRevenue = 0;
+        let pulsePrevHourCount = 0;
+        const ahora = Date.now();
+        const unaHora = 60 * 60 * 1000;
 
         todayOrdersSnap.forEach((doc) => {
           const o = doc.data();
@@ -229,6 +242,13 @@ export default function VendorDashboard() {
           // 1. Ventas hoy: only paid orders from today
           if (paymentStatus === "paid") {
             ventasHoy += total;
+            const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
+            if (createdMs >= ahora - unaHora) {
+              pulseLastHourCount++;
+              pulseLastHourRevenue += total;
+            } else if (createdMs >= ahora - 2 * unaHora) {
+              pulsePrevHourCount++;
+            }
           }
 
           // 2. Pedidos en cola: status in ['pending', 'preparing', 'ready']
@@ -472,6 +492,10 @@ export default function VendorDashboard() {
           },
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
+          pulseLastHourCount,
+          pulseLastHourRevenue,
+          pulsePrevHourCount,
+          dailyRevenueGoal: typeof r.dailyRevenueGoal === "number" ? r.dailyRevenueGoal : null,
           pedidosCola,
           cuentasAbiertas,
           winbackSent,
@@ -580,6 +604,18 @@ export default function VendorDashboard() {
             <h1 className="mt-0.5 text-[21px] font-bold" style={{ color: "#1C2526" }}>
               {greeting}{firstName ? `, ${firstName}` : ""}
             </h1>
+            {/* Frase del día — joya robada de la app (27-ago): el día en una
+                línea, leíble en 3 segundos. Solo para el panel graduado. */}
+            {!firstDay && (
+              <p className="mt-1 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+                Hoy: ${data.ventasHoy.toLocaleString("es-MX")}
+                {" · "}Ritmo:{" "}
+                <span style={{ color: data.pulseLastHourCount >= 3 ? "#16A34A" : data.pulseLastHourCount >= 1 ? "#B45309" : "rgba(28,37,38,0.45)" }}>
+                  {data.pulseLastHourCount >= 3 ? "Fuerte 🔥" : data.pulseLastHourCount >= 1 ? "Normal" : "Lento"}
+                </span>
+                {data.dailyRevenueGoal ? ` · Meta: ${Math.round((data.ventasHoy / data.dailyRevenueGoal) * 100)}%` : ""}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <ManualCloseToggle restaurantId={data.restaurantId} />
@@ -709,9 +745,17 @@ export default function VendorDashboard() {
           {/* ── Resumen de hoy (oculto el primer día: puro cero) ── */}
           {!firstDay && (
           <div className="mb-6">
-            <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
-              Resumen de hoy
-            </h2>
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
+                Resumen de hoy
+              </h2>
+              {/* Pulso en vivo — joya robada de la app: última hora + tendencia */}
+              <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>
+                ⚡ Última hora: {data.pulseLastHourCount} pedido{data.pulseLastHourCount === 1 ? "" : "s"}
+                {data.pulseLastHourCount > 0 ? ` · $${data.pulseLastHourRevenue.toLocaleString("es-MX")}` : ""}
+                {data.pulseLastHourCount > data.pulsePrevHourCount ? " ↑" : data.pulseLastHourCount < data.pulsePrevHourCount ? " ↓" : ""}
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               
               <Link href="/vendor/reportes" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
