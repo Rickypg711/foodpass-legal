@@ -1670,10 +1670,12 @@ export default function PosPage() {
           </div>
         </div>
 
-        {/* Mobile sticky bottom bar */}
+        {/* Mobile sticky bottom bar — bottom-[72px]: el nav móvil del layout
+            vive en bottom-0 con el MISMO z-30 y la tapaba por completo (sin
+            esto, la Caja móvil no tenía NINGÚN botón para cobrar). */}
         {cartCount > 0 && (
           <div
-            className="fixed bottom-0 left-0 right-0 z-30 flex items-center gap-4 px-4 py-3 md:hidden"
+            className="fixed bottom-[72px] left-0 right-0 z-30 flex items-center gap-4 px-4 py-3 md:hidden"
             style={{ background: "#1C2526", boxShadow: "0 -4px 20px rgba(28,37,38,0.25)" }}
           >
             <div className="flex-1">
@@ -1705,7 +1707,7 @@ export default function PosPage() {
           onClick={() => setMobileCartOpen(false)}
         >
           <div
-            className="rounded-t-3xl overflow-hidden"
+            className="flex flex-col rounded-t-3xl overflow-hidden"
             style={{ background: "#ffffff", maxHeight: "70vh" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1713,7 +1715,7 @@ export default function PosPage() {
               <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>Carrito ({cartCount})</p>
               <button onClick={() => setMobileCartOpen(false)} className="text-[20px]" style={{ color: "rgba(28,37,38,0.4)" }}>×</button>
             </div>
-            <div className="overflow-y-auto px-5" style={{ maxHeight: "calc(70vh - 60px)" }}>
+            <div className="flex-1 overflow-y-auto px-5">
               {cart.map((c, i) => (
                 <CartRow key={c.lineId} cartItem={c} index={i} onIncrement={increment} onDecrement={decrement} />
               ))}
@@ -1724,6 +1726,30 @@ export default function PosPage() {
                   </button>
                 )}
               </div>
+            </div>
+            {/* Total + CTA (espejo del panel de escritorio): el drawer debe
+                poder CERRAR la venta él solo — dependía de la barra fija de
+                abajo, que el nav móvil tapaba. */}
+            <div className="px-5 py-4 space-y-3" style={{ borderTop: "1px solid rgba(28,37,38,0.07)", paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}>
+              <div className="flex items-center justify-between">
+                <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Total</p>
+                <p className="text-[20px] font-extrabold" style={{ color: "#1C2526" }}>{fmt(subtotal)}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setMobileCartOpen(false);
+                  if (addingToTab) {
+                    addItemsToTabTransaction(addingToTab.id, cart);
+                  } else {
+                    setShowCheckout(true);
+                  }
+                }}
+                disabled={cart.length === 0}
+                className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-all disabled:opacity-30 hover:opacity-90 active:scale-[0.98]"
+                style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
+              >
+                {addingToTab ? "Actualizar Cuenta" : "Listo →"}
+              </button>
             </div>
           </div>
         </div>
