@@ -34,6 +34,27 @@ interface MenuItem {
   price: number;
   category: string;
   imageUrl?: string;
+  optionGroups?: Array<{
+    name?: string;
+    required?: boolean;
+    options?: Array<{ name?: string; priceDelta?: number }>;
+  }>;
+}
+
+/**
+ * Si el platillo tiene tamaños, el premio es el tamaño BASE (el del precio
+ * mostrado — así colapsan las familias). Sin decirlo, "Pepperoni ($100)"
+ * con Personal/Grande arma pleito en el mostrador (cazado por Ricardo,
+ * 26-ago): el cliente pide el Grande gratis y el staff no tiene respaldo.
+ */
+function etiquetaTamanoBase(item: MenuItem | undefined): string {
+  const g = item?.optionGroups?.find(
+    (x) => x.required && (x.options?.length ?? 0) > 1 &&
+      (x.options ?? []).some((o) => (o.priceDelta ?? 0) > 0),
+  );
+  if (!g) return "";
+  const base = (g.options ?? []).find((o) => (o.priceDelta ?? 0) === 0);
+  return base?.name ? ` — tamaño ${base.name}` : "";
 }
 
 interface RewardTier {
@@ -399,7 +420,7 @@ function RecompensasSetupPageInner() {
       return {
         type: "error" as const,
         message:
-          `A ${tier.pointsRequired} puntos, "${item.name}" ($${item.price}) regala el ${pct}% ` +
+          `A ${tier.pointsRequired} puntos, "${item.name}${etiquetaTamanoBase(item)}" ($${item.price}) regala el ${pct}% ` +
           `de lo que gasta tu cliente. Lo sano está entre ${minPct}% y ${maxPct}%. ${rango}`,
       };
     }
@@ -635,7 +656,7 @@ function RecompensasSetupPageInner() {
                   <option value="">-- Selecciona un platillo del menú --</option>
                   {menuItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.name} (${item.price.toFixed(2)})
+                      {item.name}{etiquetaTamanoBase(item)} (${item.price.toFixed(2)})
                     </option>
                   ))}
                 </select>
@@ -725,7 +746,7 @@ function RecompensasSetupPageInner() {
                     <option value="">-- Selecciona un platillo del menú --</option>
                     {menuItems.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.name} (${item.price.toFixed(2)})
+                        {item.name}{etiquetaTamanoBase(item)} (${item.price.toFixed(2)})
                       </option>
                     ))}
                   </select>
