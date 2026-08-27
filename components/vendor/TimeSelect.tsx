@@ -142,26 +142,46 @@ export function TimeSelect({
     colocar();
     // El popover va en position:fixed para no morir recortado dentro de un
     // contenedor con overflow (regla vieja, se paga cara).
+    // El listener va en captura para atrapar scrolls de CUALQUIER contenedor
+    // de la página… pero eso incluía los scrolls DE ADENTRO de la lista:
+    // cada scrollcito recolocaba el popover (caja nueva) y peleaba contra el
+    // dedo del usuario (segundo bucle del bug de Mac, 26-ago).
+    const colocarSiEsDeAfuera = (e: Event) => {
+      if (listaRef.current?.contains(e.target as Node)) return;
+      colocar();
+    };
     window.addEventListener("resize", colocar);
-    window.addEventListener("scroll", colocar, true);
+    window.addEventListener("scroll", colocarSiEsDeAfuera, true);
     return () => {
       window.removeEventListener("resize", colocar);
-      window.removeEventListener("scroll", colocar, true);
+      window.removeEventListener("scroll", colocarSiEsDeAfuera, true);
     };
   }, [abierto, colocar]);
 
-  // Al abrir, la lista tiene que aterrizar en la hora que YA está elegida —
+  // Al abrir, la lista aterriza UNA sola vez en la hora que YA está elegida —
   // si no, un cierre de madrugada arranca a 20 opciones de distancia. Va tras
   // `caja` y dentro de un rAF: antes de que el popover esté colocado y
   // pintado, scrollIntoView no tiene a dónde llevar nada.
+  //
+  // OJO (bug cazado por Ricardo en su Mac, 26-ago: "se mueve solo, rapidísimo"):
+  // este efecto llevaba `activo` en las dependencias y `activo` cambia con el
+  // HOVER — pasar el mouse re-centraba la lista, la lista se movía bajo el
+  // cursor, otro hover, otro re-centrado: bucle infinito. El aterrizaje es a
+  // la hora ELEGIDA y solo al abrir; el flag corta cualquier re-disparo.
+  const aterrizado = useRef(false);
   useEffect(() => {
-    if (!abierto || !caja) return;
+    if (!abierto) {
+      aterrizado.current = false;
+      return;
+    }
+    if (!caja || aterrizado.current) return;
     const id = requestAnimationFrame(() => {
-      const el = listaRef.current?.querySelector<HTMLElement>(`[data-idx="${activo}"]`);
+      const el = listaRef.current?.querySelector<HTMLElement>(`[data-idx="${idxSeleccion}"]`);
       el?.scrollIntoView({ block: "center" });
+      aterrizado.current = true;
     });
     return () => cancelAnimationFrame(id);
-  }, [abierto, activo, caja]);
+  }, [abierto, caja, idxSeleccion]);
 
   useEffect(() => {
     if (!abierto) return;
