@@ -92,9 +92,9 @@ function RecompensasSetupPageInner() {
     pointsAwarded: 100,
   });
   const [currentTiers, setCurrentTiers] = useState<RewardTier[]>([
-    { pointsRequired: 500, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
-    { pointsRequired: 1000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
-    { pointsRequired: 2000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 30, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 70, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+    { pointsRequired: 120, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
   ]);
 
   // AI recommendation state
@@ -341,7 +341,10 @@ function RecompensasSetupPageInner() {
       const db = getFirebaseDb();
       const { updateDoc } = await import("firebase/firestore");
       await updateDoc(doc(db, "restaurants", restaurantId, "rewardRecommendationDrafts", activeDraftId), {
-        status: "dismissed"
+        status: "dismissed",
+        // El "no me latió" también se mide (loop cerrado): con applied vs
+        // dismissed sale la tasa de aceptación de la IA de premios.
+        dismissedAt: (await import("firebase/firestore")).serverTimestamp(),
       });
       setCurrentFPR({
         enabled: true,
@@ -352,9 +355,9 @@ function RecompensasSetupPageInner() {
         pointsAwarded: 100,
       });
       setCurrentTiers([
-        { pointsRequired: 500, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
-        { pointsRequired: 1000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
-        { pointsRequired: 2000, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+        { pointsRequired: 30, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+        { pointsRequired: 70, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
+        { pointsRequired: 120, menuItemId: "", menuItemName: "", menuItemImageUrl: "", menuItemDescription: "", hasMenuItem: false },
       ]);
       setAiReasoning(null);
       setActiveDraftId(null);
