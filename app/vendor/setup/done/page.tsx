@@ -120,7 +120,7 @@ export default function SetupDonePage() {
             {restaurantWhatsapp && qrUrl && (
               <a
                 href={`https://wa.me/52${restaurantWhatsapp}?text=${encodeURIComponent(
-                  `🎉 Mi menú digital ya está VIVO\n\n📌 Link de mi QR (este va impreso en mesas y caja):\n${qrUrl}\n\n📣 Link para mandar a mis clientes (lleva mi menú, teléfono y ubicación):\nhttps://comeleal.com/r/${slug ?? restaurantId}\n\nEl QR lo imprimo desde mi panel — o en cualquier papelería.`,
+                  `Mi menú digital ya está VIVO.\n\nLink de mi QR (este va impreso en mesas y caja):\n${qrUrl}\n\nLink para mandar a mis clientes (lleva mi menú, teléfono y ubicación):\nhttps://comeleal.com/r/${slug ?? restaurantId}\n\nEl QR lo imprimo desde mi panel — o en cualquier papelería.`,
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
