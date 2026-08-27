@@ -567,10 +567,15 @@ export default function VendorDashboard() {
             borderBottom: "1px solid rgba(28,37,38,0.07)",
           }}>
           <div>
-            <p className="text-[11px] capitalize" style={{ color: "rgba(28,37,38,0.38)" }}>
-              {new Date().toLocaleDateString("es-MX", {
-                weekday: "long", day: "numeric", month: "long"
-              })}
+            {/* Sin CSS `capitalize`: ponía "26 De Agosto" — en español el mes
+                y el "de" van en minúscula. Solo la primera letra sube. */}
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
+              {(() => {
+                const d = new Date().toLocaleDateString("es-MX", {
+                  weekday: "long", day: "numeric", month: "long",
+                });
+                return d.charAt(0).toUpperCase() + d.slice(1);
+              })()}
             </p>
             <h1 className="mt-0.5 text-[21px] font-bold" style={{ color: "#1C2526" }}>
               {greeting}{firstName ? `, ${firstName}` : ""}
@@ -599,8 +604,9 @@ export default function VendorDashboard() {
           </div>
         </div>
 
-        {/* ── Page content ── */}
-        <main className="flex-1 px-4 pb-16 pt-5 md:px-8 md:pt-7">
+        {/* ── Page content ── (día cero: columna con tope — en monitor ancho
+            las tarjetas full-width se volvían salchichas de un metro) */}
+        <main className={`flex-1 px-4 pb-16 pt-5 md:px-8 md:pt-7${firstDay ? " mx-auto w-full max-w-3xl" : ""}`}>
 
           {/* Día cero: la brújula VA PRIMERO — la acción principal de un
               restaurante sin terminar de nacer es terminar de nacer, no
