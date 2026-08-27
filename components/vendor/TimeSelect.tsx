@@ -169,25 +169,29 @@ export function TimeSelect({
   // cursor, otro hover, otro re-centrado: bucle infinito. El aterrizaje es a
   // la hora ELEGIDA y solo al abrir; el flag corta cualquier re-disparo.
   const aterrizado = useRef(false);
+  const aterrizar = useCallback((L: HTMLDivElement | null) => {
+    if (!L || aterrizado.current) return;
+    const el = L.querySelector<HTMLElement>(`[data-idx="${idxSeleccion}"]`);
+    if (!el) return;
+    // scrollTop directo, no scrollIntoView: dentro de un position:fixed con
+    // scroll-snap el motor a veces no mueve nada (visto en prod, 26-ago) —
+    // la matemática no opina, obedece.
+    L.scrollTop = Math.max(0, el.offsetTop - (L.clientHeight - el.offsetHeight) / 2);
+    aterrizado.current = true;
+  }, [idxSeleccion]);
+
+  // Doble cinturón: (1) en el ref del nodo — dispara al montarse el panel,
+  // con los hijos ya en el DOM; (2) un reintento tras la animación de
+  // entrada (140ms). El rAF de una sola pasada demostró en prod que a veces
+  // se pierde el tren.
   useEffect(() => {
     if (!abierto) {
       aterrizado.current = false;
       return;
     }
-    if (!caja || aterrizado.current) return;
-    const id = requestAnimationFrame(() => {
-      const L = listaRef.current;
-      const el = L?.querySelector<HTMLElement>(`[data-idx="${idxSeleccion}"]`);
-      // scrollTop directo, no scrollIntoView: dentro de un position:fixed con
-      // scroll-snap el motor a veces no mueve nada (visto en prod, 26-ago) —
-      // la matemática no opina, obedece.
-      if (L && el) {
-        L.scrollTop = Math.max(0, el.offsetTop - (L.clientHeight - el.offsetHeight) / 2);
-      }
-      aterrizado.current = true;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [abierto, caja, idxSeleccion]);
+    const t = window.setTimeout(() => aterrizar(listaRef.current), 170);
+    return () => window.clearTimeout(t);
+  }, [abierto, caja, aterrizar]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -262,7 +266,10 @@ export function TimeSelect({
 
       {abierto && caja && (
         <div
-          ref={listaRef}
+          ref={(node) => {
+            listaRef.current = node;
+            aterrizar(node);
+          }}
           id={idListbox}
           role="listbox"
           aria-label={label}
