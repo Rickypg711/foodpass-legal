@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import {
@@ -620,7 +621,11 @@ export default function ClientesPage() {
       // Owner-only rule: el manager ve chips de descuento asignados pero no
       // puede asignar/quitar ni filtrar (profiles vacíos = UI de asignación oculta).
       setDiscountProfiles(isOwner ? parseDiscountProfiles(rdata.discountProfiles) : []);
-      setDiscountsOn(isOwner && discountsEnabled(rdata, rid));
+      // Gate Pro con private/billing (migración 24-ago).
+      setDiscountsOn(
+        isOwner &&
+          discountsEnabled(await fetchWithBilling(db, rid, rdata as Record<string, unknown>), rid),
+      );
       await loadCustomers(rid);
     }
     init().catch(() => setLoading(false));

@@ -12,6 +12,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { entitlementOf, type Entitlement } from "@/lib/subscription/entitlement";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
@@ -61,8 +62,9 @@ export default function PlanPage() {
       const data = rSnap.data() ?? {};
       // Plan REAL (sin founder-test): delegado a la regla única compartida con
       // el servidor y la app — lib/subscription/entitlement.ts. El legado
-      // `plan: "pro"` sin campos canónicos lo respeta ahí adentro.
-      setEnt(entitlementOf(data));
+      // `plan: "pro"` sin campos canónicos lo respeta ahí adentro. La verdad
+      // canónica vive en private/billing desde la migración del 24-ago.
+      setEnt(entitlementOf(await fetchWithBilling(db, rid, data)));
       setLoading(false);
     }
     init().catch(() => setLoading(false));

@@ -8,6 +8,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { ServiceRequestsBell } from "@/components/pos/ServiceRequestsBell";
 import { getFirebaseDb } from "@/lib/firebase";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { entitlementOf } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
 import { isCajaModeLocked, isPathAllowedInCajaMode, setCajaModeLocked } from "@/lib/cajaMode";
@@ -224,14 +226,15 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
+      // Plan badge — la verdad vive en private/billing desde la migración del
+      // 24-ago (el cleanup borró los campos del doc público): leer solo el
+      // público pintaba FREE a todo restaurante pagado (caso Pecado, 26-ago).
+      const rMerged = await fetchWithBilling(db, rid, rData);
       if (!cancelled) {
         setRestaurantName((rData.name as string | undefined) ?? "");
         setRestaurantLogo(getRestaurantImageUrl(rData));
         setSetupIncomplete(rData.isSetupComplete === false);
-        // Plan badge — same canonical fields as configuración/phonePoints.
-        const exp = rData.subscriptionAccessExpiresAt as { toDate?: () => Date } | undefined;
-        const expOk = !exp?.toDate || exp.toDate().getTime() > Date.now();
-        setIsPro((rData.plan === "pro" || rData.subscriptionPlan === "pro") && expOk);
+        setIsPro(entitlementOf(rMerged).isPro);
       }
     }
     load().catch(() => {});

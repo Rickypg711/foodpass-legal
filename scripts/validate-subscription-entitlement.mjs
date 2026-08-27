@@ -80,6 +80,49 @@ check("trialEverGranted marca el sello", entitlementOf({ subscriptionTrialEndsAt
 // ── constante ──
 check("la prueba dura 14 días", TRIAL_DAYS, 14);
 
+// ── private/billing: los LECTORES web leen la verdad, no el doc público ──
+// Caso real 27-ago-2026: la migración del 24-ago movió los campos de
+// suscripción a restaurants/{rid}/private/billing y borró los del doc
+// público; la web siguió leyendo el público → TODO restaurante pagado veía
+// "Free" (Pecado Escondido reclamando por WhatsApp con 2×$299 cobrados).
+{
+  const { readFileSync } = await import("node:fs");
+  const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
+
+  // 1. La lista de campos de la web es ESPEJO de la de la app (Dart).
+  const { BILLING_FIELD_NAMES } = await import("../lib/subscription/billingDoc.ts");
+  const dart = readFileSync(
+    "/Users/ricardoparedes/projects/FOODPASS/lib/subscription/restaurant_private_docs.dart",
+    "utf8",
+  );
+  for (const f of BILLING_FIELD_NAMES) {
+    check(`campo espejo en la app: ${f}`, dart.includes(`'${f}'`), true);
+  }
+  check(
+    "misma cantidad de campos que la app (billingFieldNames)",
+    (dart.match(/'subscription[A-Za-z]+'/g) ?? []).filter((s, i, a) => a.indexOf(s) === i).length,
+    BILLING_FIELD_NAMES.length,
+  );
+
+  // 2. Cada lector de plan/gate Pro pasa por el merge de private/billing.
+  for (const [name, path, marker] of [
+    ["layout (badge)", "../app/vendor/layout.tsx", "fetchWithBilling("],
+    ["panel (cuota lealtad)", "../app/vendor/page.tsx", "fetchWithBilling("],
+    ["plan", "../app/vendor/plan/page.tsx", "fetchWithBilling("],
+    ["configuración", "../app/vendor/configuracion/page.tsx", "fetchWithBilling("],
+    ["caja (gate descuentos ×2)", "../app/vendor/pos/page.tsx", "fetchWithBilling("],
+    ["clientes (gate descuentos)", "../app/vendor/clientes/page.tsx", "fetchWithBilling("],
+    ["phonePoints (tope Free en tx)", "../lib/loyalty/phonePoints.ts", "tryTxGetBillingData("],
+  ]) {
+    check(`lector migrado: ${name}`, read(path).includes(marker), true);
+  }
+  check(
+    "caja: los DOS gates migrados",
+    (read("../app/vendor/pos/page.tsx").match(/fetchWithBilling\(/g) ?? []).length >= 2,
+    true,
+  );
+}
+
 if (failed) {
   console.error("validate-subscription-entitlement: FAILED");
   process.exit(1);

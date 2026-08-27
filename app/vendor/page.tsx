@@ -16,6 +16,8 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { entitlementOf } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
@@ -420,10 +422,11 @@ export default function VendorDashboard() {
         // ── Free-tier loyalty quota (PRICING.md "cap honesto") ───────────────
         // Same fields phonePoints.ts / the app enforce: scanCount resets each
         // calendar month via lastReset; Pro (either canonical field) = no cap.
-        const subExp = r.subscriptionAccessExpiresAt as Timestamp | undefined;
-        const subActive = !(subExp instanceof Timestamp) || subExp.toDate().getTime() > Date.now();
-        const isPro =
-          (r.plan === "pro" || r.subscriptionPlan === "pro") && subActive;
+        // private/billing manda desde la migración 24-ago (el doc público ya
+        // no trae los campos de suscripción) — misma regla única que el badge.
+        const isPro = entitlementOf(
+          await fetchWithBilling(db, rid, r as Record<string, unknown>),
+        ).isPro;
         const rawLimit = Number(r.monthlyLimit);
         const loyaltyLimit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50;
         const lastResetTs = r.lastReset as Timestamp | undefined;

@@ -10,6 +10,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { entitlementOf } from "@/lib/subscription/entitlement";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
@@ -187,8 +188,9 @@ export default function ConfiguracionPage() {
       // campos canónicos lo respeta adentro (grandfathered); aquí sólo queda
       // encima el doc viejo de subscriptions, que entitlementOf no conoce.
       const subData = subSnap?.data();
+      // La verdad canónica vive en private/billing (migración 24-ago).
       const isPro =
-        entitlementOf(data).isPro ||
+        entitlementOf(await fetchWithBilling(db, rid, data)).isPro ||
         (subData?.status === "active" && subData?.plan === "pro");
       setPlan(isPro ? "pro" : "free");
 

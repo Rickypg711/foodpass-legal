@@ -17,6 +17,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
@@ -961,7 +962,9 @@ export default function PosPage() {
       try {
         const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
         const rdata = rSnap.data() as Record<string, unknown> | undefined;
-        if (rdata && discountsEnabled(rdata, restaurantId)) {
+        // Gate Pro con private/billing (migración 24-ago): el doc público ya
+        // no trae los campos de suscripción.
+        if (rdata && discountsEnabled(await fetchWithBilling(db, restaurantId, rdata), restaurantId)) {
           tabProfiles = parseDiscountProfiles(rdata.discountProfiles);
         }
       } catch {
@@ -2115,7 +2118,8 @@ function CloseTabDialog({
           const rdata = rSnap.data() as Record<string, unknown> | undefined;
           let profile: DiscountProfile | null = null;
           let all: DiscountProfile[] = [];
-          if (rdata && discountsEnabled(rdata, restaurantId)) {
+          // Gate Pro con private/billing (migración 24-ago).
+          if (rdata && discountsEnabled(await fetchWithBilling(db, restaurantId, rdata), restaurantId)) {
             all = parseDiscountProfiles(rdata.discountProfiles);
             const pid = pc?.discountProfileId;
             if (typeof pid === "string" && pid) {

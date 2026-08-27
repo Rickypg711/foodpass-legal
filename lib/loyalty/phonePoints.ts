@@ -31,6 +31,11 @@ import {
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
 import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
+import { isProActive } from "@/lib/subscription/entitlement";
+import {
+  mergeBillingOverPublic,
+  tryTxGetBillingData,
+} from "@/lib/subscription/billingDoc";
 import {
   earnPolicyFromRestaurant,
   type EarnPolicy,
@@ -74,14 +79,11 @@ function sameCalendarMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-/** Pro plan check from canonical restaurant fields (v1: plan + expiry). */
+/** Pro = la REGLA ÚNICA (entitlement.ts). Antes miraba solo el legado
+ * `plan` — tras la migración a private/billing eso dejaba a TODO Pro con el
+ * tope de Free. El rdata que llega aquí ya viene fundido con private/billing. */
 function hasUnlimitedLoyalty(rdata: Record<string, unknown>): boolean {
-  if (rdata.plan !== "pro") return false;
-  const exp = rdata.subscriptionAccessExpiresAt;
-  if (exp instanceof Timestamp) {
-    return exp.toDate().getTime() > Date.now();
-  }
-  return true;
+  return isProActive(rdata);
 }
 
 export type PhoneCreditResult =
@@ -148,7 +150,12 @@ export async function creditPhonePointsForOrder(params: {
     }
 
     const restSnap = await tx.get(restaurantRef);
-    const rdata = (restSnap.data() ?? {}) as Record<string, unknown>;
+    // La verdad de suscripción vive en private/billing (migración 24-ago);
+    // try-read: un lector sin permiso (cliente anónimo) cae al doc público.
+    const rdata = mergeBillingOverPublic(
+      (restSnap.data() ?? {}) as Record<string, unknown>,
+      await tryTxGetBillingData(tx, db, restaurantId),
+    );
 
     // ── Monthly counter (same scanCount the app's limit enforces) ──────────
     const unlimited = hasUnlimitedLoyalty(rdata);
