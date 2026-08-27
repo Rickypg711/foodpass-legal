@@ -209,6 +209,50 @@ function activeWindowAt(
   return null;
 }
 
+/**
+ * Avance ESPERADO del día (0..100) según el horario real del negocio — joya
+ * robada de la app 27-ago (today_overview_card._expectedProgressPercentFromBusinessHours):
+ * el ritmo a meta se mide contra la ventana de apertura de HOY, no contra un
+ * día de 24h, incluyendo el derrame nocturno de ayer (cerró 2 AM → a la 1 AM
+ * sigue midiendo contra el turno de anoche). null = hoy cerrado y sin
+ * derrame: la línea de ritmo simplemente no se muestra.
+ */
+export function expectedDayProgressPercent(
+  rdata: Record<string, unknown>,
+  now: Date = new Date(),
+): number | null {
+  const hours = parseBusinessHours(rdata);
+  if (!hours) return null;
+
+  const pct = (openAt: Date, closeAt: Date): number | null => {
+    const total = closeAt.getTime() - openAt.getTime();
+    if (total <= 0) return null;
+    if (now < openAt) return null;
+    if (now > closeAt) return 100;
+    return ((now.getTime() - openAt.getTime()) / total) * 100;
+  };
+
+  // 1) Derrame nocturno de AYER (a la 1 AM manda el turno de anoche).
+  const y = new Date(now);
+  y.setDate(y.getDate() - 1);
+  const yd = readDay(hours, dayIdxFor(y));
+  if (yd && !yd.isClosed && yd.open && yd.close && spansMidnight(yd)) {
+    const openAtY = new Date(y.getFullYear(), y.getMonth(), y.getDate(), yd.open.hour, yd.open.minute);
+    const closeAtT = new Date(now.getFullYear(), now.getMonth(), now.getDate(), yd.close.hour, yd.close.minute);
+    if (now >= openAtY && now <= closeAtT) return pct(openAtY, closeAtT);
+  }
+
+  // 2) Ventana de HOY (nocturna cierra mañana).
+  const d = readDay(hours, dayIdxFor(now));
+  if (!d || d.isClosed) return null; // hoy cerrado → sin línea de ritmo
+  if (!d.open || !d.close) return null;
+  const openAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), d.open.hour, d.open.minute);
+  let closeAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), d.close.hour, d.close.minute);
+  if (closeAt <= openAt) closeAt = new Date(closeAt.getTime() + 24 * 60 * 60 * 1000);
+  if (now < openAt) return 0; // día abierto, antes de abrir → 0% de la ventana
+  return pct(openAt, closeAt);
+}
+
 /** ¿Abierto ahorita? Sin datos → false (conservador, como el mapa del app). */
 export function isOpenNow(rdata: Record<string, unknown>, now: Date = new Date()): boolean {
   if (manuallyClosedNow(rdata, now)) return false;

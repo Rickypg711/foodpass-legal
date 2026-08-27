@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { expectedDayProgressPercent } from "@/lib/schedule";
 import { entitlementOf } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
@@ -80,6 +81,10 @@ interface DashboardData {
   /** Robo inverso de la app (27-ago): pulso de la última hora, del MISMO
    *  snapshot de hoy — cero queries extra. */
   pulseLastHourCount: number;
+  /** Robo de la app (27-ago): veredicto HONESTO de la meta medido contra el
+   *  horario real del negocio (Adelantado/En camino/Atrasado; Muy cerca ≥80%,
+   *  Logrado ≥100%). null = sin meta, o cerrado hoy — no se muestra. */
+  metaPaceLabel: string | null;
   pulseLastHourRevenue: number;
   pulsePrevHourCount: number;
   dailyRevenueGoal: number | null;
@@ -495,6 +500,22 @@ export default function VendorDashboard() {
           },
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
+          // Veredicto de meta contra el horario REAL (espejo de la app,
+          // today_overview_card:120-146): ±10 puntos vs el avance esperado
+          // de la ventana de apertura; ≥80 "Muy cerca", ≥100 "Logrado".
+          metaPaceLabel: (() => {
+            const goal = typeof r.dailyRevenueGoal === "number" && r.dailyRevenueGoal > 0
+              ? r.dailyRevenueGoal : null;
+            if (!goal) return null;
+            const metaPct = (ventasHoy / goal) * 100;
+            if (metaPct >= 100) return "Logrado";
+            if (metaPct >= 80) return "Muy cerca";
+            const expected = expectedDayProgressPercent(r as Record<string, unknown>);
+            if (expected === null) return null;
+            if (metaPct >= expected + 10) return "Adelantado";
+            if (metaPct < expected - 10) return "Atrasado";
+            return "En camino";
+          })(),
           pulseLastHourCount,
           pulseLastHourRevenue,
           pulsePrevHourCount,
@@ -617,6 +638,14 @@ export default function VendorDashboard() {
                   {data.pulseLastHourCount >= 3 ? "Fuerte 🔥" : data.pulseLastHourCount >= 1 ? "Normal" : "Lento"}
                 </span>
                 {data.dailyRevenueGoal ? ` · Meta: ${Math.round((data.ventasHoy / data.dailyRevenueGoal) * 100)}%` : ""}
+                {data.metaPaceLabel ? (
+                  <>
+                    {" · "}
+                    <span style={{ color: data.metaPaceLabel === "Atrasado" ? "#DC2626" : data.metaPaceLabel === "En camino" ? "rgba(28,37,38,0.45)" : "#16A34A" }}>
+                      {data.metaPaceLabel}
+                    </span>
+                  </>
+                ) : ""}
               </p>
             )}
           </div>

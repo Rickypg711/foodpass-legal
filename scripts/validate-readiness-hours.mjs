@@ -17,7 +17,11 @@
 
 import assert from "node:assert/strict";
 import { evaluateReadiness } from "../lib/readiness/evaluate.ts";
-import { isOpenNow, isPositivelyClosedNow } from "../lib/schedule.ts";
+import {
+  expectedDayProgressPercent,
+  isOpenNow,
+  isPositivelyClosedNow,
+} from "../lib/schedule.ts";
 
 const DIAS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const dia = (o, c) => ({
@@ -91,6 +95,44 @@ const baseRestaurante = (o, c) => ({
   // Y a la 1:30, ya cerro de verdad.
   const tarde = new Date(2026, 7, 23, 1, 30);
   assert.equal(isOpenNow(rdata, tarde), false, "01:30 ya cerro");
+}
+
+// ── expectedDayProgressPercent — el ritmo a meta HONESTO (robo de la app,
+// 27-ago): se mide contra la ventana de apertura, no contra un día de 24h.
+{
+  // Abierto 8:00–20:00 (12h): a las 14:00 va el 50% de la ventana.
+  const rdata = { businessHours: horario(8, 20) };
+  const mediodia = new Date(2026, 7, 26, 14, 0); // miércoles 26-ago
+  assert.equal(
+    Math.round(expectedDayProgressPercent(rdata, mediodia)),
+    50,
+    "14:00 en ventana 8-20 = 50% esperado",
+  );
+  // Antes de abrir: 0% (día abierto, aún no empieza la ventana).
+  const alba = new Date(2026, 7, 26, 6, 0);
+  assert.equal(expectedDayProgressPercent(rdata, alba), 0, "antes de abrir = 0%");
+  // Hoy CERRADO → null: la línea de ritmo no se muestra (jamás inventa).
+  const cerrado = {
+    businessHours: {
+      ...horario(8, 20),
+      Wednesday: { ...dia(8, 20), isClosed: true },
+      Tuesday: { ...dia(8, 20), isClosed: true },
+    },
+  };
+  assert.equal(
+    expectedDayProgressPercent(cerrado, mediodia),
+    null,
+    "día cerrado = null (sin línea de ritmo)",
+  );
+  // Derrame nocturno: abre 22:00, cierra 2:00 — a la 1:00 va el 75% del
+  // turno de ANOCHE (misma regla que activeWindowAt / la app).
+  const nocturno = { businessHours: horario(22, 2) };
+  const unaAM = new Date(2026, 7, 26, 1, 0);
+  assert.equal(
+    Math.round(expectedDayProgressPercent(nocturno, unaAM)),
+    75,
+    "1 AM en turno 22-02 = 75% del turno de anoche",
+  );
 }
 
 console.log("validate-readiness-hours: OK");
