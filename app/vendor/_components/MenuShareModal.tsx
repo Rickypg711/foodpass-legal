@@ -225,11 +225,15 @@ export default function MenuShareModal({
               className="h-14 w-14 rounded-full object-cover"
             />
           ) : (
+            // Sin logo: MONOGRAMA de marca (inicial en círculo naranja) — el
+            // mismo patrón del avatar de la sidebar. El 🏪 genérico se veía
+            // de relleno en la tarjeta más compartible de la casa (cazado
+            // por Ricardo, 26-ago).
             <div
-              className="flex h-14 w-14 items-center justify-center rounded-full text-[22px]"
-              style={{ background: "rgba(28,37,38,0.08)" }}
+              className="flex h-14 w-14 items-center justify-center rounded-full text-[24px] font-extrabold"
+              style={{ background: ORANGE, color: "#1C2526" }}
             >
-              🏪
+              {(name || "C").trim().charAt(0).toUpperCase()}
             </div>
           )}
           <p className="mt-2 text-[20px] font-extrabold leading-tight" style={{ color: INK }}>
