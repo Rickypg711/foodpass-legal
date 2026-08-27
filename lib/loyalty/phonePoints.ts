@@ -34,7 +34,10 @@ import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
 import { isProActive } from "@/lib/subscription/entitlement";
 import {
   mergeBillingOverPublic,
+  mergeUsageOverPublic,
   tryTxGetBillingData,
+  tryTxGetUsageData,
+  usageRef,
 } from "@/lib/subscription/billingDoc";
 import {
   earnPolicyFromRestaurant,
@@ -150,11 +153,16 @@ export async function creditPhonePointsForOrder(params: {
     }
 
     const restSnap = await tx.get(restaurantRef);
-    // La verdad de suscripción vive en private/billing (migración 24-ago);
-    // try-read: un lector sin permiso (cliente anónimo) cae al doc público.
-    const rdata = mergeBillingOverPublic(
-      (restSnap.data() ?? {}) as Record<string, unknown>,
-      await tryTxGetBillingData(tx, db, restaurantId),
+    // La verdad de suscripción vive en private/billing y la cuota
+    // (scanCount/lastReset) en private/usage (migración 24-ago); try-read:
+    // un lector sin permiso (cliente anónimo) cae al doc público. En
+    // transacción TODAS las lecturas van antes de cualquier escritura.
+    const rdata = mergeUsageOverPublic(
+      mergeBillingOverPublic(
+        (restSnap.data() ?? {}) as Record<string, unknown>,
+        await tryTxGetBillingData(tx, db, restaurantId),
+      ),
+      await tryTxGetUsageData(tx, db, restaurantId),
     );
 
     // ── Monthly counter (same scanCount the app's limit enforces) ──────────
@@ -300,12 +308,19 @@ export async function creditPhonePointsForOrder(params: {
         : {}),
     });
 
-    // Counter burns only when something was EARNED.
+    // Counter burns only when something was EARNED. El contador vive en
+    // private/usage (espejo de phone_points_service.dart): `set` con merge,
+    // no `update` — el doc privado puede no existir todavía y un update
+    // sobre doc ausente revienta la transacción entera (y con ella el cobro).
     if (earnedPoints > 0) {
-      tx.update(restaurantRef, {
-        scanCount: effectiveCount + 1,
-        ...(inSameMonth ? {} : { lastReset: Timestamp.fromDate(now) }),
-      });
+      tx.set(
+        usageRef(db, restaurantId),
+        {
+          scanCount: effectiveCount + 1,
+          ...(inSameMonth ? {} : { lastReset: Timestamp.fromDate(now) }),
+        },
+        { merge: true },
+      );
     }
 
     return {

@@ -422,21 +422,21 @@ export default function VendorDashboard() {
         // ── Free-tier loyalty quota (PRICING.md "cap honesto") ───────────────
         // Same fields phonePoints.ts / the app enforce: scanCount resets each
         // calendar month via lastReset; Pro (either canonical field) = no cap.
-        // private/billing manda desde la migración 24-ago (el doc público ya
-        // no trae los campos de suscripción) — misma regla única que el badge.
-        const isPro = entitlementOf(
-          await fetchWithBilling(db, rid, r as Record<string, unknown>),
-        ).isPro;
-        const rawLimit = Number(r.monthlyLimit);
+        // private/billing (plan) y private/usage (scanCount/lastReset) mandan
+        // desde la migración 24-ago — el doc público ya no trae ni el plan ni
+        // la cuota; leerlos ahí pintaba Free con contador en cero.
+        const rTruth = await fetchWithBilling(db, rid, r as Record<string, unknown>);
+        const isPro = entitlementOf(rTruth).isPro;
+        const rawLimit = Number(rTruth.monthlyLimit);
         const loyaltyLimit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50;
-        const lastResetTs = r.lastReset as Timestamp | undefined;
+        const lastResetTs = rTruth.lastReset as Timestamp | undefined;
         const lastResetDt = lastResetTs?.toDate?.();
         const nowDt = new Date();
         const inSameMonth =
           !!lastResetDt &&
           lastResetDt.getFullYear() === nowDt.getFullYear() &&
           lastResetDt.getMonth() === nowDt.getMonth();
-        const loyaltyUsed = inSameMonth ? Number(r.scanCount ?? 0) || 0 : 0;
+        const loyaltyUsed = inSameMonth ? Number(rTruth.scanCount ?? 0) || 0 : 0;
 
         const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
 
@@ -457,7 +457,7 @@ export default function VendorDashboard() {
         setData({
           restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
-          scanCountTotal: (r.scanCount as number) ?? 0,
+          scanCountTotal: (rTruth.scanCount as number) ?? 0,
           // Visitas hoy = app scans + ventas con número (same rule as the chart).
           scansToday: scansToday + phoneVisitsToday,
           pointsToday,

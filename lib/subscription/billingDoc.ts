@@ -38,11 +38,23 @@ export const BILLING_FIELD_NAMES = [
   "subscriptionCompExpiresAt",
 ] as const;
 
+/** Misma lista que la app (usageFieldNames). OJO: la regla
+ * usageDocScanQuotaFieldsOnly() de firestore.rules permite EXACTAMENTE
+ * estos — si agregas uno allá, agrégalo aquí y en las rules. */
+export const USAGE_FIELD_NAMES = ["scanCount", "lastReset", "updatedAt"] as const;
+
 export function billingRef(
   db: Firestore,
   restaurantId: string,
 ): DocumentReference<DocumentData> {
   return doc(db, "restaurants", restaurantId, "private", "billing");
+}
+
+export function usageRef(
+  db: Firestore,
+  restaurantId: string,
+): DocumentReference<DocumentData> {
+  return doc(db, "restaurants", restaurantId, "private", "usage");
 }
 
 /** Copia SOLO los campos de la lista, privado manda sobre público — misma
@@ -73,16 +85,42 @@ export async function tryFetchBillingData(
   }
 }
 
-/** Doc público + private/billing fundidos — la entrada correcta para
- * entitlementOf / isProActive / discountsEnabled. */
+function mergeFields(
+  base: Record<string, unknown>,
+  privateData: Record<string, unknown> | null,
+  fields: readonly string[],
+): Record<string, unknown> {
+  if (!privateData) return base;
+  const merged = { ...base };
+  for (const k of fields) {
+    if (privateData[k] !== undefined) merged[k] = privateData[k];
+  }
+  return merged;
+}
+
+/** Doc público + private/billing + private/usage fundidos — la entrada
+ * correcta para entitlementOf / isProActive / discountsEnabled y para la
+ * cuota (scanCount/lastReset, que también se mudó a privado). */
 export async function fetchWithBilling(
   db: Firestore,
   restaurantId: string,
   publicData: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  return mergeBillingOverPublic(
-    publicData,
-    await tryFetchBillingData(db, restaurantId),
+  const [billing, usage] = await Promise.all([
+    tryFetchBillingData(db, restaurantId),
+    (async () => {
+      try {
+        const snap = await getDoc(usageRef(db, restaurantId));
+        return snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+      } catch {
+        return null;
+      }
+    })(),
+  ]);
+  return mergeFields(
+    mergeBillingOverPublic(publicData, billing),
+    usage,
+    USAGE_FIELD_NAMES,
   );
 }
 
@@ -99,4 +137,25 @@ export async function tryTxGetBillingData(
   } catch {
     return null;
   }
+}
+
+/** Cuota (private/usage) dentro de una transacción — antes de toda escritura. */
+export async function tryTxGetUsageData(
+  tx: Transaction,
+  db: Firestore,
+  restaurantId: string,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const snap = await tx.get(usageRef(db, restaurantId));
+    return snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function mergeUsageOverPublic(
+  publicData: Record<string, unknown>,
+  privateData: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+  return mergeFields(publicData, privateData ?? null, USAGE_FIELD_NAMES);
 }

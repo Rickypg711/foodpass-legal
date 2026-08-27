@@ -121,6 +121,25 @@ check("la prueba dura 14 días", TRIAL_DAYS, 14);
     (read("../app/vendor/pos/page.tsx").match(/fetchWithBilling\(/g) ?? []).length >= 2,
     true,
   );
+
+  // 3. La CUOTA también es privada: phonePoints quema scanCount en
+  // private/usage (jamás en el doc público) y el panel la lee fundida.
+  const pp = read("../lib/loyalty/phonePoints.ts");
+  check("phonePoints lee usage en tx", pp.includes("tryTxGetUsageData("), true);
+  check(
+    "phonePoints quema el contador en private/usage",
+    pp.includes("usageRef(db, restaurantId)"),
+    true,
+  );
+  check(
+    "phonePoints NO escribe scanCount al doc público",
+    /tx\.update\(restaurantRef,\s*\{\s*scanCount/.test(pp),
+    false,
+  );
+  const { USAGE_FIELD_NAMES } = await import("../lib/subscription/billingDoc.ts");
+  for (const f of USAGE_FIELD_NAMES) {
+    check(`campo usage espejo en la app: ${f}`, dart.includes(`'${f}'`), true);
+  }
 }
 
 if (failed) {
