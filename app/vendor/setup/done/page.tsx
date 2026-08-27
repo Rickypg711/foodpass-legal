@@ -115,7 +115,7 @@ export default function SetupDonePage() {
               onClick={() => setShareOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-4 py-3.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
             >
-              📲 Ver, imprimir y compartir mi QR →
+              Ver, imprimir y compartir mi QR →
             </button>
             {restaurantWhatsapp && qrUrl && (
               <a
@@ -143,7 +143,7 @@ export default function SetupDonePage() {
         {/* CTA */}
         <button
           onClick={() => router.push("/vendor")}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-[#141413]/15 bg-white px-6 py-4 text-sm font-semibold text-[#1C2526] transition-all hover:border-[#F28C38]/50 hover:text-[#B45309]"
         >
           Ver mi panel →
         </button>
