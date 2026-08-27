@@ -32,6 +32,15 @@ for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
 assert.ok(pedidos.includes("registerOrderPayment("), "pedidos delega el cobro rápido");
 assert.ok(pos.includes("registerTabGroupPayment("), "la Caja delega el cierre de grupo");
 
+// ── 2b. Candado last-10: el teléfono del cierre se normaliza, no se tira ─────
+// Antes `customerPhone.length === 10` sobre 12 dígitos ("52"+número) PERDÍA la
+// captura en silencio (caso Pecado Escondido, 26-ago-2026).
+const registerSrc = readFileSync(new URL("../lib/pos/registerPayment.ts", import.meta.url), "utf8");
+assert.ok(/phone10 = phone10\.slice\(-10\)/.test(registerSrc),
+  "registerPayment: normaliza customerPhone a last-10 antes del gate de 10 dígitos");
+assert.ok(!/customerPhone\.length === 10 \? \{ customerPhone \}/.test(registerSrc),
+  "registerPayment: prohibido gatear sobre el crudo — un 52+número se tiraba");
+
 // ── 3. El espejo Dart existe y las capas del app lo usan ────────────────────
 const dartBuilder = readFileSync(
   "/Users/ricardoparedes/projects/FOODPASS/lib/orders/paid_order_update.dart", "utf8");

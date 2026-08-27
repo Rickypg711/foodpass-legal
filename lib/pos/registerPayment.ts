@@ -107,6 +107,10 @@ export async function registerTabGroupPayment(params: {
   } = params;
   const anchorId = group.anchor.id;
   const orderIds = group.orders.map((o) => o.id);
+  // Last-10 (MX local): un cierre con el número tecleado con 52 antes se
+  // TIRABA (=== 10 sobre 12 dígitos); normalizado, la captura se conserva.
+  let phone10 = customerPhone.replace(/\D/g, "");
+  if (phone10.length > 10) phone10 = phone10.slice(-10);
 
   await runTransaction(db, async (transaction) => {
     const snaps = [];
@@ -143,7 +147,7 @@ export async function registerTabGroupPayment(params: {
           : {}),
         // El teléfono del cierre va al ANCLA; las demás rondas conservan el
         // suyo — cada comensal ya dejó su número y sus puntos son de SU consumo.
-        ...(isAnchor && customerPhone.length === 10 ? { customerPhone } : {}),
+        ...(isAnchor && phone10.length === 10 ? { customerPhone: phone10 } : {}),
         // discountApplied vive UNA vez (ancla) — por ronda duplicaría
         // "descuentos dados". El neto se escribe ANTES de acreditar puntos.
         ...(withDiscount

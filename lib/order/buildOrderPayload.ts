@@ -163,7 +163,10 @@ export function buildCustomerWebOrderPayload(
     payload.restaurantImageUrl = img;
   }
 
-  const phone = input.customerPhone?.replace(/\D/g, "") ?? "";
+  // Last-10 (MX local): con el 52 tecleado, el pedido debe apuntar al MISMO
+  // phoneCustomers/{last10} que el resto del sistema (espejo de la app).
+  let phone = input.customerPhone?.replace(/\D/g, "") ?? "";
+  if (phone.length > 10) phone = phone.slice(-10);
   if (phone) {
     payload.customerPhone = phone;
   }

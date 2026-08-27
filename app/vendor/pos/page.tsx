@@ -1199,7 +1199,10 @@ export default function PosPage() {
     tipMethod: PaymentMethod = "cash",
   ) {
     if (!restaurantId || !uid) return;
-    const phoneDigits = customerPhone.replace(/\D/g, "");
+    // Last-10 (MX local): con el 52 tecleado, la orden y los puntos deben caer
+    // en el MISMO phoneCustomers/{last10} que el lookup de descuentos.
+    let phoneDigits = customerPhone.replace(/\D/g, "");
+    if (phoneDigits.length > 10) phoneDigits = phoneDigits.slice(-10);
     // A redemption is meaningless without the phone it belongs to.
     const effectiveRedemption =
       redemption && phoneDigits.length >= 10 ? redemption : null;

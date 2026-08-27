@@ -17,6 +17,16 @@ if (!/orderSource:\s*ORDER_SOURCE_CUSTOMER_WEB/.test(buildOrderPayloadSrc)) {
   process.exit(1);
 }
 
+// Candado last-10: customerPhone se guarda normalizado a 10 dígitos (MX local).
+// Sin esto, "52" + número crea una identidad fantasma separada del
+// phoneCustomers/{last10} real (caso Pecado Escondido, 26-ago-2026).
+if (!/phone\.length > 10\)\s*phone = phone\.slice\(-10\)/.test(buildOrderPayloadSrc)) {
+  console.error(
+    "buildOrderPayload.ts must normalize customerPhone to last-10 digits before storing",
+  );
+  process.exit(1);
+}
+
 const REQUIRED_TOP_LEVEL = [
   "restaurantId",
   "customerId",
