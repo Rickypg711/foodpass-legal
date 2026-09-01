@@ -85,6 +85,29 @@ assert.ok(
   "applyRewardDraft debe mandar firstPurchaseReward — omitirlo perdía la bienvenida (bug 28-ago)",
 );
 
+// 5b. EL ORIGEN DEL MURO #1 jamás regresa: el dueño llega del claim ~20s
+//     antes que el borrador de la IA. El claim DEBE mandar born=demo y la
+//     pantalla DEBE entrar al estado de escucha en vez de enseñar el
+//     formulario vacío tras la promesa del festejo (cazado en vivo, 1-sep).
+const activar = read("components/home/ActivarModal.tsx");
+assert.ok(
+  activar.includes("/vendor/setup/recompensas?wizard=1&born=demo"),
+  "el claim debe mandar born=demo — sin él, el paso de premios no sabe que la IA viene en camino",
+);
+assert.ok(
+  /born.{0,20}=== "demo"/.test(wizard),
+  "el paso de premios debe leer born=demo",
+);
+assert.ok(
+  /bornFromDemo && !hasRewards[\s\S]{0,80}setAiStep\("generating"\)/.test(wizard),
+  "sin borrador y viniendo del claim, la pantalla debe ESCUCHAR (setAiStep generating), no enseñar el formulario vacío",
+);
+// 5c. Un trono por estado: Guardar apagado con el formulario vacío
+assert.ok(
+  wizard.includes("disabled={saving || saved || !formHasContent}"),
+  "Guardar debe apagarse con el formulario vacío — el rey del estado vacío es Armarlos por mí",
+);
+
 // 5. El wizard conserva la salida al panel (interceptable, jamás eliminada)
 const stepper = read("components/vendor/WizardStepper.tsx");
 assert.ok(
