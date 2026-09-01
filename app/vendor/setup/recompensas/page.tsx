@@ -422,6 +422,20 @@ function RecompensasSetupPageInner() {
     let fixPoints = Math.round((pocosPuntos + muchosPuntos) / 2 / 5) * 5;
     if (fixPoints < pocosPuntos) fixPoints = pocosPuntos;
     if (fixPoints > muchosPuntos) fixPoints = muchosPuntos;
+    // Que el arreglo no choque con otro premio (dos premios a los mismos
+    // puntos rompen la escalerita): esquiva hacia arriba dentro del rango
+    // sano, y si no cabe, hacia abajo.
+    const otherPoints = new Set(
+      currentTiers.filter((t) => t !== tier && t.hasMenuItem).map((t) => t.pointsRequired),
+    );
+    let up = fixPoints;
+    while (otherPoints.has(up) && up + 5 <= muchosPuntos) up += 5;
+    if (otherPoints.has(up)) {
+      let down = fixPoints;
+      while (otherPoints.has(down) && down - 5 >= pocosPuntos) down -= 5;
+      if (!otherPoints.has(down)) up = down;
+    }
+    fixPoints = up;
 
     if (ratio > HARD_FAIL_RATIO + 1e-12) {
       return {
