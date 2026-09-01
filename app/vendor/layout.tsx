@@ -123,6 +123,14 @@ function IconShare() {
   );
 }
 
+function IconGift() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+    </svg>
+  );
+}
+
 function IconExternal() {
   return (
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -148,7 +156,11 @@ const NAV_ITEMS: NavDef[] = [
   // Clientes arriba de Escanear: phone-first — el CRM de números capturados
   // es el corazón; el escáner es "solo si trae la app".
   { href: "/vendor/clientes", label: "Clientes", icon: <IconUsers /> },
-  { href: "/vendor/scanner", label: "Puntos", icon: <IconQr /> },
+  // Recompensas con botón propio (orden de Ricardo, 1-sep): es el corazón del
+  // programa de lealtad y vivía enterrado en Configuración — nadie lo hallaba
+  // (muro #1 del embudo). Y "Puntos" era nombre mentiroso para el escáner.
+  { href: "/vendor/recompensas", label: "Recompensas", icon: <IconGift /> },
+  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/reportes", label: "Reportes", icon: <IconBarChart /> },
 ];
 

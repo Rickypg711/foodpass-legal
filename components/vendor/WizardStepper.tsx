@@ -24,6 +24,7 @@ type StepKey = (typeof STEPS)[number]["key"];
 export function WizardStepper({
   current,
   doneKeys,
+  onPanelClick,
 }: {
   current: StepKey;
   /**
@@ -33,6 +34,13 @@ export function WizardStepper({
    * (cazado por Ricardo, 26-ago). La verdad manda cuando está disponible.
    */
   doneKeys?: readonly StepKey[];
+  /**
+   * La salida al panel SIEMPRE existe (regla de Ricardo, 26-ago: el wizard
+   * no puede ser una trampa). Este hook deja que un paso la intercepte UNA
+   * vez — p. ej. Recompensas ofrece dejar los premios puestos antes de
+   * salir (muro #1 del embudo, 1-sep) — pero la decisión de irse se respeta.
+   */
+  onPanelClick?: () => void;
 }) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
@@ -41,12 +49,22 @@ export function WizardStepper({
       <div className="mx-auto flex max-w-lg items-center gap-3">
         {/* Salida al panel — mismo patrón que el "← Volver" de las páginas
             sin wizard (tinta 45% → tinta al hover). */}
+        {onPanelClick ? (
+          <button
+            type="button"
+            onClick={onPanelClick}
+            className="shrink-0 text-xs font-semibold text-[#1C2526]/45 transition-colors hover:text-[#1C2526]"
+          >
+            ← Panel
+          </button>
+        ) : (
         <Link
           href="/vendor"
           className="shrink-0 text-xs font-semibold text-[#1C2526]/45 transition-colors hover:text-[#1C2526]"
         >
           ← Panel
         </Link>
+        )}
         <span className="text-[#1C2526]/15">/</span>
         <div className="flex flex-1 items-center">
           {STEPS.map((step, i) => {

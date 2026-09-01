@@ -1508,6 +1508,11 @@ function resolveNbaActionCode(
   setupReasons: string[],
 ): string {
   if (isSetupComplete && SETUP_BLOCKING_NBA.has(brainActionCode)) return "get_first_scan";
+  // check_ai_draft es MÁS específico que el fallback del readiness: el cerebro
+  // ya sabe que hay una propuesta esperando. Sobrescribirlo por
+  // "configure_rewards" borraba la mención del borrador justo para el dueño
+  // atorado que más la necesita (muro #1 del embudo, cazado 1-sep).
+  if (brainActionCode === "check_ai_draft") return brainActionCode;
   // Recién nacido (cazado por Ricardo en el primer claim, 26-ago): el
   // cerebro corre con calendario, no al nacer — el día cero decía "estamos
   // preparando recomendaciones" cuando el siguiente paso es OBVIO y está
@@ -1532,6 +1537,7 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "enable_first_purchase_reward": return "Prende tu premio de bienvenida";
     case "get_first_scan": return "Tu primera visita con puntos";
     case "set_map_pin": return "Ponte en el mapa";
+    case "check_ai_draft": return "Tus premios ya están armados";
     default: return "Siguiente mejor acción";
   }
 }
@@ -1550,6 +1556,7 @@ function getNbaFallbackBody(actionCode: string): string {
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "grow_phone_capture": return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
     case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
+    case "check_ai_draft": return "Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque — es lo único que falta para prender tu escáner de puntos.";
     case "healthy":
     case "keep_going":
     case "stable": return "Tu negocio va avanzando. Pide el número en cada cobro y mantén tu recompensa clara.";

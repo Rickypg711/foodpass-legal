@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 
@@ -26,6 +26,16 @@ interface RewardsData {
   firstPurchaseReward: FirstPurchaseReward | null;
 }
 
+// Borrador de la IA esperando a que el dueño le diga que sí. Esta página era
+// el destino del consejo del panel (check_ai_draft) y NO sabía leerlo — el
+// dueño llegaba a "Sin recompensas todavía" con su propuesta invisible
+// (hallazgo del barrido del 1-sep, muro #1 del embudo).
+interface PendingDraft {
+  id: string;
+  fprName: string | null;
+  tierNames: Array<{ points: number; name: string }>;
+}
+
 function Spinner() {
   return (
     <svg className="h-5 w-5 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
@@ -40,6 +50,7 @@ export default function RecompensasPage() {
   const [data, setData] = useState<RewardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<PendingDraft | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -67,6 +78,38 @@ export default function RecompensasPage() {
         rewardTiers: rawTiers,
         firstPurchaseReward: rawFpr ?? null,
       });
+
+      // ¿Hay una propuesta de la IA esperando? (misma consulta que el wizard)
+      try {
+        const draftsSnap = await getDocs(
+          query(
+            collection(db, "restaurants", rid, "rewardRecommendationDrafts"),
+            orderBy("createdAt", "desc"),
+            limit(1),
+          ),
+        );
+        if (!draftsSnap.empty) {
+          const dd = draftsSnap.docs[0];
+          const draft = dd.data();
+          if (draft.status === "draft" || draft.status === "ready") {
+            const fpr = draft.proposedFirstPurchaseReward || draft.firstPurchaseReward;
+            const tiers = (draft.proposedRewardTiers || draft.rewardTiers || []) as any[];
+            setPendingDraft({
+              id: dd.id,
+              fprName: fpr?.enabled && fpr?.menuItemName ? fpr.menuItemName : null,
+              tierNames: tiers
+                .filter((t) => t?.menuItemName)
+                .map((t) => ({
+                  points: t.visitsRequired ?? t.pointsRequired ?? 0,
+                  name: t.menuItemName as string,
+                })),
+            });
+          }
+        }
+      } catch {
+        // Sin permiso o sin subcolección: la página sigue sirviendo igual.
+      }
+
       setLoading(false);
     }
     init().catch(() => setLoading(false));
@@ -75,6 +118,45 @@ export default function RecompensasPage() {
   const hasFpr = data?.firstPurchaseReward?.enabled && data.firstPurchaseReward.menuItemName;
   const hasTiers = (data?.rewardTiers ?? []).length > 0;
   const hasAnyReward = hasFpr || hasTiers;
+
+  const draftBanner = pendingDraft && (
+    <div className="rounded-2xl p-5"
+      style={{ background: "#1C2526", boxShadow: "0 2px 12px rgba(28,37,38,0.18)" }}>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[18px]"
+          style={{ background: "rgba(242,140,56,0.15)" }}>🤖</div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#F28C38" }}>
+            Comeleal ya trabajó por ti
+          </p>
+          <p className="text-[15px] font-bold text-white">
+            {hasAnyReward ? "Hay una propuesta nueva de premios" : "Tus premios ya están armados"}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-1.5">
+        {pendingDraft.fprName && (
+          <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.75)" }}>
+            ⭐ Bienvenida: <span className="font-semibold text-white">{pendingDraft.fprName}</span>
+          </p>
+        )}
+        {pendingDraft.tierNames.slice(0, 3).map((t) => (
+          <p key={`${t.points}-${t.name}`} className="text-[13px]" style={{ color: "rgba(255,255,255,0.75)" }}>
+            🏆 {t.points} pts: <span className="font-semibold text-white">{t.name}</span>
+          </p>
+        ))}
+      </div>
+      <Link
+        href="/vendor/setup/recompensas?from=recompensas"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-[#1C2526]"
+        style={{ background: "#F28C38" }}>
+        Verlos y activarlos →
+      </Link>
+      <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+        Los revisas antes de que se publiquen. Los puedes cambiar cuando quieras.
+      </p>
+    </div>
+  );
 
   return (
     <>
@@ -102,7 +184,10 @@ export default function RecompensasPage() {
             <Spinner />
           </div>
         ) : !hasAnyReward ? (
-          /* Empty state */
+          /* Empty state — con propuesta de la IA esperando, ELLA es la heroína */
+          pendingDraft ? (
+            <div className="mx-auto max-w-md pt-6">{draftBanner}</div>
+          ) : (
           <div className="flex flex-col items-center py-20 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl text-[28px]"
               style={{ background: "rgba(217,119,87,0.08)" }}>🎁</div>
@@ -119,8 +204,10 @@ export default function RecompensasPage() {
               Configurar recompensas →
             </Link>
           </div>
+          )
         ) : (
           <div className="space-y-4">
+            {draftBanner}
             {/* First purchase reward */}
             {hasFpr && data?.firstPurchaseReward && (
               <div className="rounded-2xl p-5"

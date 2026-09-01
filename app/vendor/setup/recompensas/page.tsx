@@ -130,6 +130,10 @@ function RecompensasSetupPageInner() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Atajada al salir con la propuesta sin aplicar (muro #1 del embudo, 1-sep):
+  // el "← Panel" sigue existiendo — solo pregunta UNA vez antes de dejar ir.
+  const [showExitOffer, setShowExitOffer] = useState(false);
+
   // El error de guardado se limpia en cuanto el usuario edita algo.
   // Antes se quedaba pegado hasta el siguiente guardado exitoso y
   // hacia ver como si ajustar los puntos no sirviera de nada.
@@ -446,7 +450,7 @@ function RecompensasSetupPageInner() {
     };
   };
 
-  async function handleSave() {
+  async function handleSave(exitTo?: string) {
     if (!restaurantId) return;
 
     // Validate first purchase reward
@@ -516,13 +520,29 @@ function RecompensasSetupPageInner() {
 
       await persistReadiness(restaurantId);
       setSaved(true);
-      setTimeout(() => router.push(isWizard ? "/vendor/setup/done" : "/vendor/setup"), 800);
+      setTimeout(() => router.push(exitTo ?? (isWizard ? "/vendor/setup/done" : "/vendor/setup")), 800);
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
+      setShowExitOffer(false);
     } finally {
       setSaving(false);
     }
+  }
+
+  // ¿Vale la pena atajar la salida? Solo si hay una propuesta cargada que aún
+  // no se guarda y el formulario está completo (un tap la deja publicada).
+  const exitOfferAvailable =
+    !!activeDraftId && aiApplied && !saved &&
+    !!currentFPR.menuItemId &&
+    currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
+
+  function handlePanelExit() {
+    if (exitOfferAvailable) {
+      setShowExitOffer(true);
+      return;
+    }
+    router.push("/vendor");
   }
 
   if (loading) return <Spinner />;
@@ -532,7 +552,7 @@ function RecompensasSetupPageInner() {
       {/* Nav */}
       <div className="sticky top-0 z-10 bg-white shadow-sm">
         {isWizard ? (
-          <WizardStepper current="rewards" doneKeys={stepperDone} />
+          <WizardStepper current="rewards" doneKeys={stepperDone} onPanelClick={handlePanelExit} />
         ) : (
           <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
             <div className="mx-auto flex max-w-lg items-center gap-3">
@@ -543,6 +563,35 @@ function RecompensasSetupPageInner() {
           </div>
         )}
       </div>
+
+      {showExitOffer && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <p className="text-2xl">🎁</p>
+            <h3 className="mt-2 text-lg font-bold text-[#141413]">Tus premios ya están listos</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-[#141413]/60">
+              La IA los armó con tu menú. Si sales sin guardarlos, tu programa de
+              puntos queda apagado y tus clientes no ganan nada todavía.
+            </p>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handleSave("/vendor")}
+              className="mt-5 w-full rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-opacity disabled:opacity-60"
+            >
+              {saving ? "Guardando…" : "Guardarlos y salir"}
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => router.push("/vendor")}
+              className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-[#141413]/45 transition-colors hover:text-[#141413]"
+            >
+              Salir sin premios
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 space-y-6">
         <div>
@@ -789,7 +838,7 @@ function RecompensasSetupPageInner() {
         </div>
 
         <button
-          onClick={handleSave}
+          onClick={() => handleSave()}
           disabled={saving || saved}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >

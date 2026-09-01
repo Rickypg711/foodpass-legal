@@ -24,6 +24,8 @@ import {
   type DemoJob,
 } from "@/lib/demo/demoJobs";
 import { ensureAnonymousUser } from "@/lib/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase";
 
 type CartLine = {
   name: string;
@@ -203,6 +205,23 @@ export default function DemoPreviewPage() {
     setClaiming(true);
   }
 
+  // Demo ya convertido: ¿el restaurante quedó SIN premios publicados? Si sí,
+  // el CTA lleva al paso de premios, no al panel — esta liga era una puerta
+  // de escape que brincaba los premios por completo (muro #1, cazado 1-sep).
+  const [premiosPendientes, setPremiosPendientes] = useState(false);
+  useEffect(() => {
+    const rid = job?.convertedToRestaurantId;
+    if (!rid) return;
+    getDoc(doc(getFirebaseDb(), "restaurants", rid))
+      .then((snap) => {
+        const reasons = (snap.data()?.setupIncompleteReasons ?? []) as string[];
+        setPremiosPendientes(
+          reasons.includes("reward_tiers") || reasons.includes("first_purchase_reward"),
+        );
+      })
+      .catch(() => {});
+  }, [job?.convertedToRestaurantId]);
+
   // ── Estados no-listos ────────────────────────────────────────────────────
   if (job === undefined) {
     return <Shell><p className="text-center text-[14px] opacity-60">Cargando…</p></Shell>;
@@ -235,9 +254,17 @@ export default function DemoPreviewPage() {
           Este menú ya está ACTIVO
         </h1>
         <p className="mt-2 text-center text-[13px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-          Ya no es un demo — es tu menú de verdad.
+          {premiosPendientes
+            ? "Tu menú ya es de verdad. Solo falta un paso: activar tus premios — ya están armados."
+            : "Ya no es un demo — es tu menú de verdad."}
         </p>
-        <CtaButton onClick={() => router.push("/vendor")}>Ir a mi panel →</CtaButton>
+        {premiosPendientes ? (
+          <CtaButton onClick={() => router.push("/vendor/setup/recompensas?wizard=1")}>
+            🎁 Activar mis premios →
+          </CtaButton>
+        ) : (
+          <CtaButton onClick={() => router.push("/vendor")}>Ir a mi panel →</CtaButton>
+        )}
       </Shell>
     );
   }
