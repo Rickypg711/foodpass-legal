@@ -750,12 +750,19 @@ function RecompensasSetupPageInner() {
                       👀 Así lo ve tu cliente
                     </p>
                     <div className="flex items-center gap-3 rounded-xl border border-[#F28C38]/20 bg-[#F28C38]/5 p-3">
-                      {currentFPR.menuItemImageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={currentFPR.menuItemImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/15 text-lg">⭐</div>
-                      )}
+                      {(() => {
+                        // La foto sale del MENÚ vivo: los premios aplicados por
+                        // la IA se guardan con imageUrl null aunque el platillo
+                        // sí tenga foto (cazado por Ricardo, 1-sep).
+                        const foto = currentFPR.menuItemImageUrl ||
+                          menuItems.find((m) => m.id === currentFPR.menuItemId)?.imageUrl;
+                        return foto ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={foto} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                        ) : (
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/15 text-lg">⭐</div>
+                        );
+                      })()}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[#141413]">{currentFPR.menuItemName}</p>
                         <p className="text-[11px] font-bold text-[#F28C38]">GRATIS en su 2ª visita</p>
@@ -867,10 +874,14 @@ function RecompensasSetupPageInner() {
                           <p className="font-mono text-[15px] font-bold leading-none text-white">{tier.pointsRequired}</p>
                           <p className="mt-0.5 text-[8px] font-semibold uppercase leading-none text-white/55">pts</p>
                         </div>
-                        {tier.menuItemImageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={tier.menuItemImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                        )}
+                        {(() => {
+                          const foto = tier.menuItemImageUrl ||
+                            menuItems.find((m) => m.id === tier.menuItemId)?.imageUrl;
+                          return foto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={foto} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                          ) : null;
+                        })()}
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-[#141413]">{tier.menuItemName}</p>
                           {tier.menuItemDescription && (
