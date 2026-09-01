@@ -26,6 +26,15 @@ import {
 import { ensureAnonymousUser } from "@/lib/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { PUBLIC_WHATSAPP_WA_ME } from "@/lib/contactEmail";
+
+/** La puerta humana del demo fallido — mensaje listo para pegar la foto. */
+const DEMO_FAILED_WHATSAPP_URL =
+  `${PUBLIC_WHATSAPP_WA_ME}?text=` +
+  encodeURIComponent(
+    "Hola 👋 Intenté subir la foto de mi menú a Comeleal y no se pudo leer. " +
+    "¿Me lo montan ustedes? Aquí va mi menú:",
+  );
 
 type CartLine = {
   name: string;
@@ -283,18 +292,57 @@ export default function DemoPreviewPage() {
     );
   }
   if (job.status === "failed") {
+    // Salida DIGNA (cazado 1-sep: 2 de 11 demos reales murieron aquí y los
+    // prospectos se fueron sin más): tips concretos para la segunda foto y
+    // la puerta humana — "te lo montamos nosotros" abre WhatsApp a Comeleal,
+    // así el tropiezo se convierte en un mensaje ENTRANTE de alguien que
+    // quiere ayuda (el aviso llega solo, sin perseguir a nadie).
+    if (job.errorMessage === "rate_limited") {
+      return (
+        <Shell>
+          <p className="text-4xl text-center">😅</p>
+          <h1 className="mt-3 text-center text-[20px] font-extrabold" style={{ color: "#1C2526" }}>
+            Ya usaste tus 3 demos de hoy
+          </h1>
+          <p className="mt-2 text-center text-[13px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+            Vuelve mañana — o mándanos tu menú y te lo montamos nosotros.
+          </p>
+          <CtaButton onClick={() => { window.location.href = DEMO_FAILED_WHATSAPP_URL; }}>
+            💬 Mandar mi menú por WhatsApp
+          </CtaButton>
+        </Shell>
+      );
+    }
     return (
       <Shell>
-        <p className="text-4xl text-center">😵</p>
+        <p className="text-4xl text-center">📸</p>
         <h1 className="mt-3 text-center text-[20px] font-extrabold" style={{ color: "#1C2526" }}>
           No pude leer esa foto
         </h1>
         <p className="mt-2 text-center text-[13px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-          {job.errorMessage === "rate_limited"
-            ? "Ya usaste tus 3 demos de hoy — vuelve mañana."
-            : "Prueba con una foto más clara, donde se lean los precios."}
+          Pasa seguido — con otra foto casi siempre jala. Los trucos:
         </p>
-        <CtaButton onClick={() => router.push("/demo")}>📸 Intentar de nuevo</CtaButton>
+        <div className="mx-auto mt-4 max-w-xs space-y-2.5">
+          {[
+            ["💡", "Con buena luz y sin sombras encima"],
+            ["🔍", "De cerca — que los PRECIOS se lean"],
+            ["📄", "Derecha y completa, una página por foto"],
+          ].map(([emoji, tip]) => (
+            <div key={tip} className="flex items-start gap-2.5 rounded-xl bg-white px-3.5 py-2.5"
+              style={{ border: "1px solid rgba(28,37,38,0.08)" }}>
+              <span className="text-[15px]">{emoji}</span>
+              <p className="text-[13px] leading-snug" style={{ color: "rgba(28,37,38,0.7)" }}>{tip}</p>
+            </div>
+          ))}
+        </div>
+        <CtaButton onClick={() => router.push("/demo")}>📸 Intentar con otra foto</CtaButton>
+        <a
+          href={DEMO_FAILED_WHATSAPP_URL}
+          className="mx-auto mt-3 block text-center text-[13px] font-semibold underline-offset-2 hover:underline"
+          style={{ color: "#B45309" }}
+        >
+          💬 ¿Mejor te lo montamos nosotros? Mándanos tu menú por WhatsApp — gratis
+        </a>
       </Shell>
     );
   }
