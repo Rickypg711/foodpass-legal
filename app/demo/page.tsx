@@ -11,8 +11,14 @@ import Link from "next/link";
 import {
   MAX_DEMO_PHOTOS,
   createDemoJob,
+  demoExpired,
+  forgetDemoJob,
   recallDemoJob,
+  type DemoJob,
 } from "@/lib/demo/demoJobs";
+import { ensureAnonymousUser } from "@/lib/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase";
 
 export default function DemoUploadPage() {
   const router = useRouter();
@@ -24,8 +30,33 @@ export default function DemoUploadPage() {
   const [resumeId, setResumeId] = useState<string | null>(null);
 
   // §6.7: su demo lo espera en su mismo celular — reanudar, no repetir.
+  // Pero solo si el demo VIVE: el localStorage crudo pintaba el botón para
+  // demos fallidos, expirados o borrados y mandaba a la nada (cazado por
+  // Ricardo, 1-sep). Se verifica en Firestore antes de prometer.
   useEffect(() => {
-    setResumeId(recallDemoJob());
+    const id = recallDemoJob();
+    if (!id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await ensureAnonymousUser();
+        const snap = await getDoc(doc(getFirebaseDb(), "menuDemoJobs", id));
+        if (cancelled) return;
+        const job = snap.exists() ? (snap.data() as DemoJob) : null;
+        const vivo =
+          !!job &&
+          job.status !== "failed" &&
+          !demoExpired(job.expiresAt?.toMillis() ?? null, Date.now());
+        if (vivo) {
+          setResumeId(id);
+        } else {
+          forgetDemoJob();
+        }
+      } catch {
+        // Sin permiso o sin red: mejor no prometer un botón que puede fallar.
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   function pick(list: FileList | null) {
