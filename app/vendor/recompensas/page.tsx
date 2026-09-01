@@ -198,7 +198,7 @@ export default function RecompensasPage() {
               Configura las recompensas de tu programa de lealtad. Tus clientes las verán cuando ganen puntos.
             </p>
             <Link
-              href="/vendor/setup/recompensas"
+              href="/vendor/setup/recompensas?from=recompensas"
               className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
               Configurar recompensas →
@@ -308,10 +308,10 @@ export default function RecompensasPage() {
 
             {/* Edit CTA */}
             <Link
-              href="/vendor/setup/recompensas"
+              href="/vendor/setup/recompensas?from=recompensas"
               className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[14px] font-bold"
               style={{ background: "#1C2526", color: "#ffffff" }}>
-              ✏️ Editar recompensas
+              ✏️ Editar mis premios
             </Link>
           </div>
         )}

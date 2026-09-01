@@ -96,6 +96,12 @@ function RecompensasSetupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isWizard = searchParams.get("wizard") === "1";
+  // Quien llega desde la página de Recompensas del panel debe VOLVER ahí —
+  // Volver y Guardar lo aventaban a /vendor/setup, otro mundo (cazado por
+  // Ricardo, 1-sep). El botón Editar ya mandaba ?from=recompensas; ahora sí
+  // se escucha.
+  const cameFromPanel = searchParams.get("from") === "recompensas";
+  const backHref = cameFromPanel ? "/vendor/recompensas" : "/vendor/setup";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
@@ -540,7 +546,7 @@ function RecompensasSetupPageInner() {
 
       await persistReadiness(restaurantId);
       setSaved(true);
-      setTimeout(() => router.push(exitTo ?? (isWizard ? "/vendor/setup/done" : "/vendor/setup")), 800);
+      setTimeout(() => router.push(exitTo ?? (isWizard ? "/vendor/setup/done" : backHref)), 800);
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
@@ -576,7 +582,7 @@ function RecompensasSetupPageInner() {
         ) : (
           <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
             <div className="mx-auto flex max-w-lg items-center gap-3">
-              <Link href="/vendor/setup" className="text-sm text-[#141413]/45 hover:text-[#141413] transition-colors">← Volver</Link>
+              <Link href={backHref} className="text-sm text-[#141413]/45 hover:text-[#141413] transition-colors">← Volver</Link>
               <span className="text-[#141413]/20">/</span>
               <h1 className="text-sm font-semibold text-[#141413]">Recompensas</h1>
             </div>
