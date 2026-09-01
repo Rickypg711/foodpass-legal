@@ -415,38 +415,44 @@ function RecompensasSetupPageInner() {
     // Menos puntos = regalas mas; mas puntos = regalas menos.
     const pocosPuntos = Math.ceil(item.price / (BUMP_START_RATIO * spendStepAmount));
     const muchosPuntos = Math.ceil(item.price / (HEALTHY_MIN_RATIO * spendStepAmount));
-    const rango =
-      `Ponlo entre ${pocosPuntos} y ${muchosPuntos} puntos ` +
-      `(≈ $${Math.round(pocosPuntos * spendStepAmount).toLocaleString("es-MX")} a ` +
-      `$${Math.round(muchosPuntos * spendStepAmount).toLocaleString("es-MX")} gastados).`;
+    // El consejo trae su arreglo: el punto medio del rango sano, en número
+    // redondo. Antes la advertencia le dejaba la matemática al dueño ("ponlo
+    // entre 23 y 34") y NADIE la hacía — hasta Luzz tenía 2 premios fuera de
+    // rango (cazado por Ricardo, 1-sep).
+    let fixPoints = Math.round((pocosPuntos + muchosPuntos) / 2 / 5) * 5;
+    if (fixPoints < pocosPuntos) fixPoints = pocosPuntos;
+    if (fixPoints > muchosPuntos) fixPoints = muchosPuntos;
 
     if (ratio > HARD_FAIL_RATIO + 1e-12) {
       return {
         type: "error" as const,
+        fixPoints,
         message:
-          `A ${tier.pointsRequired} puntos, "${item.name}${etiquetaTamanoBase(item)}" ($${item.price}) regala el ${pct}% ` +
-          `de lo que gasta tu cliente. Lo sano está entre ${minPct}% y ${maxPct}%. ${rango}`,
+          `Así te cuesta de más: a ${tier.pointsRequired} puntos regalas el ${pct}% ` +
+          `de lo que gasta tu cliente. Lo sano es ${minPct}%–${maxPct}%.`,
       };
     }
     if (ratio > BUMP_START_RATIO + 1e-12) {
       return {
         type: "warning" as const,
+        fixPoints,
         message:
-          `⚠️ A ${tier.pointsRequired} puntos, "${item.name}" regala el ${pct}% de lo que gasta ` +
-          `tu cliente — un poco arriba del rango sano (${minPct}%–${maxPct}%). ${rango}`,
+          `⚠️ Un poco caro: a ${tier.pointsRequired} puntos regalas el ${pct}% ` +
+          `de lo que gasta tu cliente. Lo sano es ${minPct}%–${maxPct}%.`,
       };
     }
     if (ratio < HEALTHY_MIN_RATIO - 1e-12) {
       return {
         type: "info" as const,
+        fixPoints,
         message:
-          `Este premio regala solo el ${pct}% de lo que gasta tu cliente. Está por debajo del ` +
-          `rango sano (${minPct}%–${maxPct}%) y puede costarle engancharse. ${rango}`,
+          `Así el premio tarda mucho en llegar: regalas solo el ${pct}% de lo que ` +
+          `gasta tu cliente, y se puede aburrir antes de ganarlo. Lo sano es ${minPct}%–${maxPct}%.`,
       };
     }
     return {
       type: "ok" as const,
-      message: `✓ Regala el ${pct}% de lo que gasta tu cliente — dentro del rango sano (${minPct}%–${maxPct}%).`,
+      message: `✓ Bien puesto: regalas el ${pct}% de lo que gasta tu cliente — dentro de lo sano (${minPct}%–${maxPct}%).`,
     };
   };
 
@@ -626,9 +632,9 @@ function RecompensasSetupPageInner() {
               <button
                 type="button"
                 onClick={handleGenerateDraft}
-                className="shrink-0 rounded-xl bg-[#F28C38]/10 hover:bg-[#F28C38]/15 px-3 py-1.5 text-xs font-semibold text-[#F28C38] transition-all"
+                className="shrink-0 rounded-xl bg-[#F28C38] hover:opacity-90 px-4 py-2.5 text-[13px] font-bold text-[#1C2526] shadow-sm transition-all"
               >
-                {aiApplied ? "✨ Regenerar" : "✨ Autocompletar"}
+                {aiApplied ? "✨ Regenerar" : "✨ Armarlos por mí"}
               </button>
             )}
             {aiStep === "generating" && (
@@ -656,7 +662,7 @@ function RecompensasSetupPageInner() {
 
         {/* ── Manual Editor ── */}
         <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#141413]/45">Editar recompensas</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#141413]/45">Tus premios</p>
 
           {/* First Purchase Reward */}
           <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-3">
@@ -712,11 +718,30 @@ function RecompensasSetupPageInner() {
                 {currentFPR.menuItemId && (
                   <input
                     type="text"
-                    placeholder="Descripción (opcional)"
+                    placeholder="Texto que ve tu cliente (opcional)"
                     value={currentFPR.menuItemDescription ?? ""}
                     onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemDescription: e.target.value }))}
                     className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                   />
+                )}
+                {currentFPR.menuItemId && (
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#141413]/35">
+                      👀 Así lo ve tu cliente
+                    </p>
+                    <div className="flex items-center gap-3 rounded-xl border border-[#F28C38]/20 bg-[#F28C38]/5 p-3">
+                      {currentFPR.menuItemImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={currentFPR.menuItemImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/15 text-lg">⭐</div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#141413]">{currentFPR.menuItemName}</p>
+                        <p className="text-[11px] font-bold text-[#F28C38]">GRATIS en su 2ª visita</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -726,7 +751,7 @@ function RecompensasSetupPageInner() {
           {currentTiers.map((tier, i) => (
             <div key={i} className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#141413]">Nivel {i + 1}</p>
+                <p className="text-sm font-semibold text-[#141413]">Premio {i + 1}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -802,7 +827,7 @@ function RecompensasSetupPageInner() {
                   {tier.menuItemId && (
                     <input
                       type="text"
-                      placeholder="Descripción (opcional)"
+                      placeholder="Texto que ve tu cliente (opcional)"
                       value={tier.menuItemDescription ?? ""}
                       onChange={(e) => {
                         const updated = [...currentTiers];
@@ -812,23 +837,62 @@ function RecompensasSetupPageInner() {
                       className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
                     />
                   )}
+                  {tier.menuItemId && tier.pointsRequired > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#141413]/35">
+                        👀 Así lo ve tu cliente
+                      </p>
+                      <div className="flex items-center gap-3 rounded-xl border border-[#141413]/8 bg-[#F5F3EF] p-3">
+                        <div className="flex min-w-[52px] shrink-0 flex-col items-center justify-center rounded-lg bg-[#1C2526] px-2.5 py-2">
+                          <p className="font-mono text-[15px] font-bold leading-none text-white">{tier.pointsRequired}</p>
+                          <p className="mt-0.5 text-[8px] font-semibold uppercase leading-none text-white/55">pts</p>
+                        </div>
+                        {tier.menuItemImageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={tier.menuItemImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[#141413]">{tier.menuItemName}</p>
+                          {tier.menuItemDescription && (
+                            <p className="line-clamp-1 text-[11px] text-[#141413]/45">{tier.menuItemDescription}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {(() => {
                     const validation = getTierValidation(tier);
                     if (!validation) return null;
+                    const tone =
+                      validation.type === "error"
+                        ? { text: "text-red-600", bg: "bg-red-50 border-red-200" }
+                        : validation.type === "warning"
+                        ? { text: "text-amber-700", bg: "bg-amber-50 border-amber-200" }
+                        : validation.type === "ok"
+                        ? { text: "text-emerald-600", bg: "" }
+                        : { text: "text-[#141413]/60", bg: "bg-[#F28C38]/5 border-[#F28C38]/15" };
+                    if (validation.type === "ok") {
+                      return (
+                        <p className={`text-xs mt-1.5 font-medium ${tone.text}`}>{validation.message}</p>
+                      );
+                    }
                     return (
-                      <p
-                        className={`text-xs mt-1.5 font-medium ${
-                          validation.type === "error"
-                            ? "text-red-500"
-                            : validation.type === "warning"
-                            ? "text-amber-600"
-                            : validation.type === "ok"
-                            ? "text-emerald-600"
-                            : "text-[#141413]/45"
-                        }`}
-                      >
-                        {validation.message}
-                      </p>
+                      <div className={`mt-1.5 rounded-xl border px-3 py-2.5 ${tone.bg}`}>
+                        <p className={`text-xs font-medium ${tone.text}`}>{validation.message}</p>
+                        {"fixPoints" in validation && validation.fixPoints !== tier.pointsRequired && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...currentTiers];
+                              updated[i] = { ...tier, pointsRequired: validation.fixPoints };
+                              setCurrentTiers(updated);
+                            }}
+                            className="mt-2 rounded-lg bg-[#1C2526] px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-85"
+                          >
+                            Ponerlo en {validation.fixPoints} puntos ✓
+                          </button>
+                        )}
+                      </div>
                     );
                   })()}
                 </>
@@ -842,7 +906,7 @@ function RecompensasSetupPageInner() {
           disabled={saving || saved}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
         >
-          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar recompensas →"}
+          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar mis premios →"}
         </button>
 
         {aiApplied && (
