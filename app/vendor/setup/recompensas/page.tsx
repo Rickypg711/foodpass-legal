@@ -569,6 +569,11 @@ function RecompensasSetupPageInner() {
     }
   }
 
+  // ¿El formulario tiene algo que guardar? Gobierna quién es el rey de la
+  // página: vacío → "Armarlos por mí"; con contenido → "Guardar mis premios".
+  const formHasContent =
+    !!currentFPR.menuItemId || currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
+
   // ¿Vale la pena atajar la salida? Solo si hay una propuesta cargada que aún
   // no se guarda y el formulario está completo (un tap la deja publicada).
   const exitOfferAvailable =
@@ -649,7 +654,11 @@ function RecompensasSetupPageInner() {
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
         )}
 
-        {/* ── AI Recommendation Assistant ── */}
+        {/* ── AI Recommendation Assistant ──
+            UN trono por estado (regla del festejo, 1-sep): con el formulario
+            VACÍO el rey es "Armarlos por mí" (botonzote full-width) y Guardar
+            se apaga; con contenido, Guardar es el rey y la IA queda de
+            escudero ("Regenerar" chico). */}
         <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-lg">🤖</div>
@@ -658,16 +667,16 @@ function RecompensasSetupPageInner() {
                 {aiApplied ? "✨ Sugerencia cargada por Comeleal" : "Sugerencia de la IA"}
               </p>
               <p className="text-xs text-[#141413]/50">
-                {aiApplied ? "Revísala y ajústala si quieres antes de guardar." : "Autocompleta tu programa basado en tu menú"}
+                {aiApplied ? "Revísala y ajústala si quieres antes de guardar." : "La IA arma tu programa con tu menú — tú solo lo apruebas."}
               </p>
             </div>
-            {aiStep === "idle" && (
+            {aiStep === "idle" && formHasContent && (
               <button
                 type="button"
                 onClick={handleGenerateDraft}
-                className="shrink-0 rounded-xl bg-[#F28C38] hover:opacity-90 px-4 py-2.5 text-[13px] font-bold text-[#1C2526] shadow-sm transition-all"
+                className="shrink-0 rounded-xl bg-[#F28C38]/10 hover:bg-[#F28C38]/15 px-3 py-1.5 text-xs font-semibold text-[#F28C38] transition-all"
               >
-                {aiApplied ? "✨ Regenerar" : "✨ Armarlos por mí"}
+                ✨ Regenerar
               </button>
             )}
             {aiStep === "generating" && (
@@ -680,6 +689,16 @@ function RecompensasSetupPageInner() {
               </div>
             )}
           </div>
+
+          {aiStep === "idle" && !formHasContent && (
+            <button
+              type="button"
+              onClick={handleGenerateDraft}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-extrabold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
+            >
+              ✨ Armarlos por mí — 30 segundos
+            </button>
+          )}
 
           {aiError && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{aiError}</div>
@@ -947,8 +966,8 @@ function RecompensasSetupPageInner() {
 
         <button
           onClick={() => handleSave()}
-          disabled={saving || saved}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
+          disabled={saving || saved || !formHasContent}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-40"
         >
           {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar mis premios →"}
         </button>
