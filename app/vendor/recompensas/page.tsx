@@ -294,7 +294,7 @@ export default function RecompensasPage() {
                 {[
                   { emoji: "📱", text: "Le pides su número al cobrar (o escanea su app)" },
                   { emoji: "🪙", text: "Acumula puntos automáticamente" },
-                  { emoji: "🎁", text: "Canjea recompensas al alcanzar su nivel" },
+                  { emoji: "🎁", text: "Canjea sus premios cuando junta los puntos" },
                 ].map((step) => (
                   <div key={step.text} className="flex items-start gap-3">
                     <span className="text-[15px] shrink-0">{step.emoji}</span>
