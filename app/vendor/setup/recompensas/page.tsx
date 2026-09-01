@@ -102,6 +102,12 @@ function RecompensasSetupPageInner() {
   // se escucha.
   const cameFromPanel = searchParams.get("from") === "recompensas";
   const backHref = cameFromPanel ? "/vendor/recompensas" : "/vendor/setup";
+  // born=demo: el claim disparó la generación de la IA hace SEGUNDOS y el
+  // dueño llega aquí más rápido que el borrador. Sin esto veía el formulario
+  // vacío ("-- Selecciona un platillo --") justo después de la promesa "la
+  // IA ya te preparó una propuesta", picaba ← Panel y nacía un atorado —
+  // el race que fabricó el muro #1 (cazado en vivo, 1-sep).
+  const bornFromDemo = searchParams.get("born") === "demo";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
@@ -208,6 +214,13 @@ function RecompensasSetupPageInner() {
           limit(1)
         )
       );
+      // El borrador del claim aún no aterriza: escuchar con el mismo
+      // mecanismo de "Armarlos por mí" (listener + timeout de 120s) en vez
+      // de enseñar el formulario vacío. Cuando el borrador cae, se llena
+      // solo frente a sus ojos.
+      if (draftsSnap.empty && bornFromDemo && !hasRewards) {
+        setAiStep("generating");
+      }
       if (!draftsSnap.empty) {
         const d = draftsSnap.docs[0];
         const draftData = d.data();

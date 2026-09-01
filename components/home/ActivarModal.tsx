@@ -789,7 +789,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               : "Solo faltan 3 pasos rápidos: horario, menú y recompensas. Tardas menos de 5 minutos."}
           </p>
           <button
-            onClick={() => router.push(demo ? "/vendor/setup/recompensas?wizard=1" : "/vendor/setup/horario?wizard=1")}
+            // born=demo: la pantalla de premios sabe que la IA viene EN CAMINO
+            // (el claim la disparó hace segundos) y espera escuchando en vez
+            // de enseñar el formulario vacío — el race que fabricaba
+            // atorados (cazado en el recorrido en vivo del 1-sep).
+            onClick={() => router.push(demo ? "/vendor/setup/recompensas?wizard=1&born=demo" : "/vendor/setup/horario?wizard=1")}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
             {demo ? "Elegir mis premios →" : "Configurar mi restaurante →"}
