@@ -205,12 +205,16 @@ function HorarioSetupPageInner() {
         hoursConfirmed: true,
         lastUpdated: serverTimestamp(),
       });
-      await persistReadiness(restaurantId);
+      const readiness = await persistReadiness(restaurantId);
       setSaved(true);
       // El wizard salta al primer paso PENDIENTE: los nacidos del embudo ya
       // traen el menú hecho — mandarlos a Menú era un brinco muerto camino
-      // a Recompensas (cazado por Ricardo, 26-ago).
-      const nextWizardStep = stepperDone?.includes("menu")
+      // a Recompensas (cazado por Ricardo, 26-ago). Y si con este horario
+      // TODO quedó completo (el demo-born que puso premios primero y volvió
+      // por su horario), el siguiente paso es el festejo — ganado (1-sep).
+      const nextWizardStep = readiness?.isComplete
+        ? "/vendor/setup/done"
+        : stepperDone?.includes("menu")
         ? "/vendor/setup/recompensas?wizard=1"
         : "/vendor/setup/menu?wizard=1";
       setTimeout(

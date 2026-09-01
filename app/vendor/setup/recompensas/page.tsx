@@ -557,9 +557,18 @@ function RecompensasSetupPageInner() {
         });
       }
 
-      await persistReadiness(restaurantId);
+      const readiness = await persistReadiness(restaurantId);
       setSaved(true);
-      setTimeout(() => router.push(exitTo ?? (isWizard ? "/vendor/setup/done" : backHref)), 800);
+      // El festejo se GANA (espejo del fix de la app, 1-sep): el camino del
+      // demo brinca horario (claim → premios), así que el dueño llegaba a
+      // "¡está listo!" SIN horario y con el escáner apagado — así se
+      // atoraron KAMPAI, YUZU, Taco caliente y TEJABAN en business_hours.
+      // Si falta horario, el wizard lo lleva ahí; el festejo espera al final.
+      const faltaHorario = !!readiness?.reasons?.includes("business_hours");
+      const wizardTarget = faltaHorario
+        ? "/vendor/setup/horario?wizard=1"
+        : "/vendor/setup/done";
+      setTimeout(() => router.push(exitTo ?? (isWizard ? wizardTarget : backHref)), 800);
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
