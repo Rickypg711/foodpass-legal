@@ -17,7 +17,7 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
-import { persistReadiness, wizardDoneKeys } from "@/lib/vendorReadiness";
+import { persistReadiness, wizardDoneKeys, evaluateReadiness } from "@/lib/vendorReadiness";
 
 // must match hardFailRatio/bumpStartRatio in FOODPASS functions/reward_recommendation_core.js
 const HARD_FAIL_RATIO = 0.20;
@@ -146,6 +146,17 @@ function RecompensasSetupPageInner() {
   // el "← Panel" sigue existiendo — solo pregunta UNA vez antes de dejar ir.
   const [showExitOffer, setShowExitOffer] = useState(false);
 
+  // Apagar cuesta una pantalla, no el negocio (decisión 2-sep): el toggle
+  // de bienvenida y el ÚLTIMO premio por puntos preguntan una vez, con el
+  // argumento del dueño, antes de apagarse. Prender jamás pregunta.
+  const [offAsk, setOffAsk] = useState<null | { kind: "welcome" } | { kind: "tier"; index: number }>(null);
+
+  // El doc vivo del restaurante, para calcular con el MISMO evaluador de
+  // readiness qué pasa si apaga algo — la consecuencia nunca se escribe a
+  // mano aquí: cuando la bienvenida deje de bloquear `active`, la frase
+  // desaparece sola.
+  const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
+
   // El error de guardado se limpia en cuanto el usuario edita algo.
   // Antes se quedaba pegado hasta el siguiente guardado exitoso y
   // hacia ver como si ajustar los puntos no sirviera de nada.
@@ -167,6 +178,7 @@ function RecompensasSetupPageInner() {
 
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data();
+      setRestaurantData((data ?? {}) as Record<string, unknown>);
       setStepperDone(wizardDoneKeys(data?.setupIncompleteReasons));
 
       const loyaltyEarnPolicy = data?.loyaltyEarnPolicy as any;
@@ -492,28 +504,39 @@ function RecompensasSetupPageInner() {
   async function handleSave(exitTo?: string) {
     if (!restaurantId) return;
 
-    // Validate first purchase reward
-    if (currentFPR.enabled && !currentFPR.menuItemId) {
-      setError("Selecciona un platillo del menú para la recompensa de bienvenida.");
-      return;
-    }
-    // Sin ningún premio por puntos prendido, el servidor rechaza la lista
-    // vacía — mejor decirlo en cristiano que tronar (QA de Ricardo, 1-sep).
-    if (!currentTiers.some((t) => t.hasMenuItem && t.menuItemId)) {
+    // Todo apagado A PROPÓSITO se guarda tal cual (2-sep). Un formulario
+    // vacío porque nunca se armó sigue pidiendo un premio.
+    const allOff = !formHasContent;
+    if (allOff && !formIsDeliberatelyOff) {
       setError("Prende al menos un premio por puntos — es lo que tus clientes van a perseguir.");
       return;
     }
-    if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemId)) {
-      setError("Selecciona un platillo del menú para todos los niveles activos.");
-      return;
-    }
 
-    // Economics Safeguard Validation
-    for (const tier of currentTiers) {
-      const val = getTierValidation(tier);
-      if (val && val.type === "error") {
-        setError(val.message);
+    if (!allOff) {
+      // Validate first purchase reward
+      if (currentFPR.enabled && !currentFPR.menuItemId) {
+        setError("Selecciona un platillo del menú para la recompensa de bienvenida.");
         return;
+      }
+      // Con bienvenida prendida y cero premios por puntos, el servidor
+      // rechaza la lista vacía — mejor decirlo en cristiano que tronar
+      // (QA de Ricardo, 1-sep).
+      if (!currentTiers.some((t) => t.hasMenuItem && t.menuItemId)) {
+        setError("Prende al menos un premio por puntos — es lo que tus clientes van a perseguir.");
+        return;
+      }
+      if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemId)) {
+        setError("Selecciona un platillo del menú para todos los niveles activos.");
+        return;
+      }
+
+      // Economics Safeguard Validation
+      for (const tier of currentTiers) {
+        const val = getTierValidation(tier);
+        if (val && val.type === "error") {
+          setError(val.message);
+          return;
+        }
       }
     }
     setSaving(true);
@@ -542,7 +565,18 @@ function RecompensasSetupPageInner() {
         pointsAwarded: currentFPR.pointsAwarded,
       };
 
-      if (activeDraftId) {
+      if (allOff) {
+        // Apagado a propósito: applyRewardDraft rechaza una lista vacía, así
+        // que se escribe directo. El borrador se queda como propuesta viva
+        // (el panel se lo recuerda) por si cambia de opinión.
+        const { updateDoc, serverTimestamp } = await import("firebase/firestore");
+        await updateDoc(doc(getFirebaseDb(), "restaurants", restaurantId), {
+          firstPurchaseReward: { ...mappedFPR, enabled: false },
+          rewardTiers: [],
+          rewardsConfigured: true,
+          lastUpdated: serverTimestamp(),
+        });
+      } else if (activeDraftId) {
         const applyRewardDraft = httpsCallable(functions, "applyRewardDraft");
         await applyRewardDraft({
           restaurantId,
@@ -565,6 +599,12 @@ function RecompensasSetupPageInner() {
 
       const readiness = await persistReadiness(restaurantId);
       setSaved(true);
+      // Sin premios no hay festejo: de vuelta al panel, donde el consejo
+      // le dice con sus números lo que eso significa.
+      if (allOff) {
+        setTimeout(() => router.push(exitTo ?? backHref), 800);
+        return;
+      }
       // El festejo se GANA (espejo del fix de la app, 1-sep): el camino del
       // demo brinca horario (claim → premios), así que el dueño llegaba a
       // "¡está listo!" SIN horario y con el escáner apagado — así se
@@ -592,6 +632,64 @@ function RecompensasSetupPageInner() {
   const formHasContent =
     (currentFPR.enabled && !!currentFPR.menuItemId) ||
     currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
+
+  // ¿Está vacío porque nunca se armó, o porque el dueño APAGÓ lo que ya
+  // tenía? Lo segundo es una decisión suya y se puede guardar (2-sep):
+  // antes "todo apagado" dejaba Guardar muerto y la página no decía nada.
+  const formIsDeliberatelyOff =
+    !formHasContent &&
+    (!!currentFPR.menuItemId || currentTiers.some((t) => !!t.menuItemId));
+
+  const anyTierOn = currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
+
+  /** Razones de readiness si el restaurante quedara con este parche. */
+  function reasonsIf(patch: Record<string, unknown>): string[] {
+    if (!restaurantData) return [];
+    return evaluateReadiness({ ...restaurantData, ...patch }, menuItems.length).reasons;
+  }
+  const formAsRestaurantPatch = {
+    firstPurchaseReward: { enabled: currentFPR.enabled, menuItemId: currentFPR.menuItemId || null },
+    rewardTiers: currentTiers
+      .filter((t) => t.hasMenuItem && t.menuItemId)
+      .map((t) => ({ menuItemId: t.menuItemId, visitsRequired: t.pointsRequired })),
+  };
+  // ¿Lo apagado, tal como está el formulario, deja el local incompleto?
+  const rewardsOffBlocksNow = reasonsIf(formAsRestaurantPatch)
+    .some((r) => r === "first_purchase_reward" || r === "reward_tiers");
+  const welcomeOffWouldBlock = reasonsIf({
+    ...formAsRestaurantPatch,
+    firstPurchaseReward: { enabled: false, menuItemId: null },
+  }).includes("first_purchase_reward");
+  const tiersOffWouldBlock = reasonsIf({ ...formAsRestaurantPatch, rewardTiers: [] })
+    .includes("reward_tiers");
+
+  function flipTier(i: number) {
+    const updated = [...currentTiers];
+    updated[i] = { ...updated[i], hasMenuItem: !updated[i].hasMenuItem };
+    setCurrentTiers(updated);
+  }
+  function requestWelcomeToggle() {
+    if (!currentFPR.enabled) {
+      setCurrentFPR((f) => ({ ...f, enabled: true }));
+      return;
+    }
+    setOffAsk({ kind: "welcome" });
+  }
+  function requestTierToggle(i: number) {
+    const tier = currentTiers[i];
+    const othersOn = currentTiers.some((t, j) => j !== i && t.hasMenuItem && t.menuItemId);
+    if (tier.hasMenuItem && !!tier.menuItemId && !othersOn) {
+      setOffAsk({ kind: "tier", index: i });
+      return;
+    }
+    flipTier(i);
+  }
+  function confirmOff() {
+    if (!offAsk) return;
+    if (offAsk.kind === "welcome") setCurrentFPR((f) => ({ ...f, enabled: false }));
+    else flipTier(offAsk.index);
+    setOffAsk(null);
+  }
 
   // ¿Vale la pena atajar la salida? Solo si hay una propuesta cargada que aún
   // no se guarda y el formulario está completo (un tap la deja publicada).
@@ -651,6 +749,39 @@ function RecompensasSetupPageInner() {
               className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-[#141413]/45 transition-colors hover:text-[#141413]"
             >
               Salir sin premios
+            </button>
+          </div>
+        </div>
+      )}
+
+      {offAsk && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <p className="text-2xl">{offAsk.kind === "welcome" ? "🎁" : "⭐"}</p>
+            <h3 className="mt-2 text-lg font-bold text-[#141413]">
+              {offAsk.kind === "welcome" ? "¿Apagar la bienvenida?" : "¿Apagar tu último premio?"}
+            </h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-[#141413]/60">
+              {offAsk.kind === "welcome"
+                ? "Se regala en la segunda visita, nunca en la misma. Sin regalo, tu cliente escanea una vez y no vuelve."
+                : "Sin ningún premio, los puntos que juntan tus clientes no valen nada. Y el premio es la razón por la que te dan su número en la caja."}
+              {(offAsk.kind === "welcome" ? welcomeOffWouldBlock : tiersOffWouldBlock) && (
+                <> Y mientras siga así, tu local no sale en la app y el escáner queda en pausa.</>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setOffAsk(null)}
+              className="mt-5 w-full rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526]"
+            >
+              {offAsk.kind === "welcome" ? "Mejor la dejo" : "Mejor lo dejo"}
+            </button>
+            <button
+              type="button"
+              onClick={confirmOff}
+              className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-[#141413]/45 transition-colors hover:text-[#141413]"
+            >
+              Apagar de todos modos
             </button>
           </div>
         </div>
@@ -735,13 +866,28 @@ function RecompensasSetupPageInner() {
         <div className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#141413]/45">Tus premios</p>
 
+          {/* Lo apagado dice lo que significa — antes la página se quedaba muda. */}
+          {(!currentFPR.enabled || !anyTierOn) && (
+            <div className="rounded-xl border border-[#141413]/10 bg-[#141413]/[0.03] px-3.5 py-3 text-xs leading-relaxed text-[#141413]/70 space-y-1">
+              {!currentFPR.enabled && (
+                <p>🎁 Bienvenida apagada: tus clientes nuevos no tienen un regalo que los haga volver.</p>
+              )}
+              {!anyTierOn && (
+                <p>⭐ Sin premios por puntos: lo que juntan tus clientes hoy no vale nada.</p>
+              )}
+              {rewardsOffBlocksNow && (
+                <p className="font-semibold text-[#141413]">Así, tu local no sale en la app y el escáner queda en pausa.</p>
+              )}
+            </div>
+          )}
+
           {/* First Purchase Reward */}
           <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-[#141413]">Recompensa de bienvenida</p>
               <button
                 type="button"
-                onClick={() => setCurrentFPR((f) => ({ ...f, enabled: !f.enabled }))}
+                onClick={requestWelcomeToggle}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
                   currentFPR.enabled ? "bg-[#F28C38]" : "bg-[#141413]/20"
                 }`}
@@ -832,11 +978,7 @@ function RecompensasSetupPageInner() {
                 <p className="text-sm font-semibold text-[#141413]">Premio {i + 1}</p>
                 <button
                   type="button"
-                  onClick={() => {
-                    const updated = [...currentTiers];
-                    updated[i] = { ...tier, hasMenuItem: !tier.hasMenuItem };
-                    setCurrentTiers(updated);
-                  }}
+                  onClick={() => requestTierToggle(i)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
                     tier.hasMenuItem ? "bg-[#F28C38]" : "bg-[#141413]/20"
                   }`}
@@ -985,10 +1127,10 @@ function RecompensasSetupPageInner() {
 
         <button
           onClick={() => handleSave()}
-          disabled={saving || saved || !formHasContent}
+          disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-40"
         >
-          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : "Guardar mis premios →"}
+          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : formIsDeliberatelyOff ? "Guardar así, sin premios →" : "Guardar mis premios →"}
         </button>
 
         {aiApplied && (

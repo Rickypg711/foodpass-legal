@@ -102,9 +102,11 @@ assert.ok(
   /bornFromDemo && !hasRewards[\s\S]{0,80}setAiStep\("generating"\)/.test(wizard),
   "sin borrador y viniendo del claim, la pantalla debe ESCUCHAR (setAiStep generating), no enseñar el formulario vacío",
 );
-// 5c. Un trono por estado: Guardar apagado con el formulario vacío
+// 5c. Un trono por estado: Guardar apagado con el formulario vacío (vacío =
+// nunca armado; lo APAGADO a propósito sí se guarda — ver
+// validate-rewards-off-honesty.mjs, 2-sep)
 assert.ok(
-  wizard.includes("disabled={saving || saved || !formHasContent}"),
+  wizard.includes("disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}"),
   "Guardar debe apagarse con el formulario vacío — el rey del estado vacío es Armarlos por mí",
 );
 
