@@ -61,13 +61,19 @@ export default function DemoUploadPage() {
 
   function pick(list: FileList | null) {
     if (!list) return;
-    const imgs = Array.from(list)
-      .filter((f) => f.type.startsWith("image/"))
-      .slice(0, MAX_DEMO_PHOTOS);
-    if (imgs.length > 0) {
-      setFiles(imgs);
-      setError(null);
-    }
+    const nuevas = Array.from(list).filter((f) => f.type.startsWith("image/"));
+    if (nuevas.length === 0) return;
+    // AGREGA, no reemplaza (QA de Ricardo, 1-sep): con una foto puesta, el
+    // dropzone decía "toca para cambiar" y tiraba la anterior — imposible
+    // sumar la página 2 del menú si no subiste todo de un jalón.
+    setFiles((prev) => {
+      const vistas = new Set(prev.map((f) => `${f.name}|${f.size}|${f.lastModified}`));
+      const sinRepetir = nuevas.filter(
+        (f) => !vistas.has(`${f.name}|${f.size}|${f.lastModified}`),
+      );
+      return [...prev, ...sinRepetir].slice(0, MAX_DEMO_PHOTOS);
+    });
+    setError(null);
   }
 
   async function handleSubmit() {
@@ -123,7 +129,7 @@ export default function DemoUploadPage() {
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => pick(e.target.files)}
+          onChange={(e) => { pick(e.target.files); e.target.value = ""; }}
         />
         <button
           type="button"
@@ -151,16 +157,37 @@ export default function DemoUploadPage() {
               </span>
               <span className="mt-2 block text-[15px] font-bold"
                 style={{ color: "#1C2526" }}>
-                {files.length} foto{files.length > 1 ? "s" : ""} lista
-                {files.length > 1 ? "s" : ""}
+                {files.length} de {MAX_DEMO_PHOTOS} foto{files.length > 1 ? "s" : ""}
               </span>
               <span className="mt-1 block text-[12px]"
                 style={{ color: "#B45309" }}>
-                Toca para cambiar
+                {files.length < MAX_DEMO_PHOTOS
+                  ? "➕ Toca para agregar otra página de tu menú"
+                  : "Ya están todas — quita una si quieres cambiar"}
               </span>
             </>
           )}
         </button>
+        {files.length > 0 && !busy && (
+          <div className="mt-2 flex items-center justify-center gap-5">
+            <button
+              type="button"
+              onClick={() => setFiles((prev) => prev.slice(0, -1))}
+              className="text-[12px] font-semibold underline-offset-2 hover:underline"
+              style={{ color: "rgba(28,37,38,0.5)" }}
+            >
+              ✕ Quitar la última
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiles([])}
+              className="text-[12px] font-semibold underline-offset-2 hover:underline"
+              style={{ color: "rgba(28,37,38,0.5)" }}
+            >
+              Empezar de nuevo
+            </button>
+          </div>
+        )}
 
         <label className="mt-5 block">
           <span className="text-[12px] font-semibold"

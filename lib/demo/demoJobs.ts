@@ -20,7 +20,10 @@ import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 
 export const DEMO_JOB_STORE_KEY = "comeleal_demo_job_v1";
-export const MAX_DEMO_PHOTOS = 3;
+// 6 (era 3, subido 1-sep por QA de Ricardo: los menús reales traen varias
+// páginas). Debe ir EN SINCRONÍA con firestore.rules (photoPaths.size() <= 6)
+// y functions/menu_demo_ai.js (MAX_PHOTOS) — el tope vive en tres lugares.
+export const MAX_DEMO_PHOTOS = 6;
 
 export type DemoItem = {
   name: string;
