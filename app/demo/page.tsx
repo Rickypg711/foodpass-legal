@@ -157,7 +157,7 @@ export default function DemoUploadPage() {
               </span>
               <span className="mt-2 block text-[15px] font-bold"
                 style={{ color: "#1C2526" }}>
-                {files.length} de {MAX_DEMO_PHOTOS} foto{files.length > 1 ? "s" : ""}
+                {files.length} de {MAX_DEMO_PHOTOS} fotos
               </span>
               <span className="mt-1 block text-[12px]"
                 style={{ color: "#B45309" }}>
