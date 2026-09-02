@@ -497,6 +497,12 @@ function RecompensasSetupPageInner() {
       setError("Selecciona un platillo del menú para la recompensa de bienvenida.");
       return;
     }
+    // Sin ningún premio por puntos prendido, el servidor rechaza la lista
+    // vacía — mejor decirlo en cristiano que tronar (QA de Ricardo, 1-sep).
+    if (!currentTiers.some((t) => t.hasMenuItem && t.menuItemId)) {
+      setError("Prende al menos un premio por puntos — es lo que tus clientes van a perseguir.");
+      return;
+    }
     if (currentTiers.some((t) => t.hasMenuItem && !t.menuItemId)) {
       setError("Selecciona un platillo del menú para todos los niveles activos.");
       return;
@@ -578,10 +584,14 @@ function RecompensasSetupPageInner() {
     }
   }
 
-  // ¿El formulario tiene algo que guardar? Gobierna quién es el rey de la
-  // página: vacío → "Armarlos por mí"; con contenido → "Guardar mis premios".
+  // ¿El formulario tiene algo PRENDIDO que guardar? Gobierna quién es el rey
+  // de la página: vacío → "Armarlos por mí"; con contenido → "Guardar mis
+  // premios". Cuenta solo lo ENCENDIDO: con todo apagado el guardado moriría
+  // en el servidor con lista vacía (QA de Ricardo, 1-sep) — mejor apagar el
+  // botón que tronar con error genérico.
   const formHasContent =
-    !!currentFPR.menuItemId || currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
+    (currentFPR.enabled && !!currentFPR.menuItemId) ||
+    currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
 
   // ¿Vale la pena atajar la salida? Solo si hay una propuesta cargada que aún
   // no se guarda y el formulario está completo (un tap la deja publicada).
