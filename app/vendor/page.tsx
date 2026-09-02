@@ -1547,8 +1547,8 @@ function getNbaFallbackBody(actionCode: string): string {
     case "set_business_hours": return "Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir — toma 2 minutos.";
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
     case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
-    case "configure_rewards": return "Crea tu primera recompensa para empezar a motivar visitas recurrentes.";
-    case "enable_first_purchase_reward": return "Tu recompensa de bienvenida está apagada, y mientras siga así tu local cuenta como incompleto: no aparece en las búsquedas ni en el feed de la app, y el escáner de puntos y el cobro en línea quedan en pausa. Es el gancho que convierte a un cliente nuevo en uno que regresa — préndela en Recompensas, toma un minuto.";
+    case "configure_rewards": return "Tus clientes ya pueden juntar puntos contigo, pero hoy no ganan nada. Ponles un premio: la IA te lo arma con tu menú en 30 segundos.";
+    case "enable_first_purchase_reward": return "Tu bienvenida está apagada. Es el regalo que se gana en la primera visita y se cobra en la segunda: la razón para volver. Préndela en Recompensas, toma un minuto.";
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
