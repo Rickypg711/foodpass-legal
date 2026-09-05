@@ -25,6 +25,7 @@ import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { groupOpenTabs, type TabGroup } from "@/lib/pos/tabGroups";
 import { registerTabGroupPayment } from "@/lib/pos/registerPayment";
+import { POS_PAYMENT_OPTIONS, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
@@ -95,7 +96,6 @@ function cartLineToOrderItem(c: CartItem): Record<string, unknown> {
   };
 }
 
-type PaymentMethod = "cash" | "card";
 type CheckoutMode = "now" | "tab";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -471,7 +471,7 @@ function CheckoutDialog({
             <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>¿Cómo cobrar?</p>
             <div className="grid grid-cols-2 gap-2">
               {([
-                { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: "Efectivo o tarjeta" },
+                { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: "Efectivo, tarjeta o transferencia" },
                 { key: "tab", emoji: "📋", label: "Cuenta abierta", sub: "Cobrar después" },
               ] as { key: CheckoutMode; emoji: string; label: string; sub: string }[]).map((opt) => (
                 <button
@@ -497,23 +497,22 @@ function CheckoutDialog({
           {mode === "now" && !isRedeemOnly && (
             <div>
               <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Método de pago</p>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { key: "cash", emoji: "💵", label: "Efectivo" },
-                  { key: "card", emoji: "💳", label: "Tarjeta" },
-                ] as { key: PaymentMethod; emoji: string; label: string }[]).map((m) => (
+              <div className="grid grid-cols-3 gap-2">
+                {POS_PAYMENT_OPTIONS.map((m) => (
                   <button
                     key={m.key}
                     onClick={() => setMethod(m.key)}
-                    className="flex items-center gap-2.5 rounded-xl px-4 py-3 transition-all"
+                    // Tres en fila: emoji arriba y nombre abajo — "Transferencia"
+                    // no cabe al lado del emoji en una columna de 3.
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 transition-all"
                     style={
                       method === m.key
                         ? { background: "rgba(217,119,87,0.1)", border: "2px solid #F28C38" }
                         : { background: "#F5F3EF", border: "2px solid transparent" }
                     }
                   >
-                    <span className="text-[18px]">{m.emoji}</span>
-                    <span className="text-[13px] font-bold" style={{ color: "#1C2526" }}>{m.label}</span>
+                    <span className="text-[20px]">{m.emoji}</span>
+                    <span className="text-[12px] font-bold" style={{ color: "#1C2526" }}>{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -645,15 +644,12 @@ function CheckoutDialog({
                       ¿Cómo dejó la propina?
                     </p>
                     <div className="flex items-center gap-1.5">
-                      {([
-                        { key: "cash", emoji: "💵", label: "Efectivo" },
-                        { key: "card", emoji: "💳", label: "Tarjeta" },
-                      ] as { key: PaymentMethod; emoji: string; label: string }[]).map((t) => (
+                      {POS_PAYMENT_OPTIONS.map((t) => (
                         <button
                           key={t.key}
                           type="button"
                           onClick={() => setTipMethod(t.key)}
-                          className="flex-1 rounded-xl px-2 py-2.5 text-[13px] font-bold transition-all"
+                          className="flex-1 rounded-xl px-1 py-2.5 text-[12px] font-bold transition-all"
                           style={
                             effTipMethod === t.key
                               ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
@@ -1265,7 +1261,7 @@ export default function PosPage() {
         ...(mode === "now" && tip > 0
           ? {
               tipAmount: Math.round(tip * 100) / 100,
-              // Efectivo = el mesero ya la trae; tarjeta = el dueño se la debe.
+              // Efectivo = el mesero ya la trae; tarjeta/transferencia = el dueño se la debe.
               // Puede diferir de paymentMethod a proposito.
               tipMethod,
             }
@@ -2365,15 +2361,12 @@ function CloseTabDialog({
                 ¿Cómo dejó la propina?
               </p>
               <div className="flex items-center gap-1.5">
-                {([
-                  { key: "cash", emoji: "💵", label: "Efectivo" },
-                  { key: "card", emoji: "💳", label: "Tarjeta" },
-                ] as { key: PaymentMethod; emoji: string; label: string }[]).map((t) => (
+                {POS_PAYMENT_OPTIONS.map((t) => (
                   <button
                     key={t.key}
                     type="button"
                     onClick={() => setTipMethod(t.key)}
-                    className="flex-1 rounded-xl px-2 py-2 text-[13px] font-bold transition-all"
+                    className="flex-1 rounded-xl px-1 py-2 text-[12px] font-bold transition-all"
                     style={
                       tipMethod === t.key
                         ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
@@ -2394,37 +2387,26 @@ function CloseTabDialog({
             </>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() =>
-              onConfirm(
-                "cash",
-                tip,
-                tipMethod ?? "cash",
-                phoneDigits.length === 10 ? phoneDigits : "",
-                recalc,
-              )
-            }
-            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
-          >
-            <span className="text-2xl mb-1">💵</span>
-            <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
-          </button>
-          <button
-            onClick={() =>
-              onConfirm(
-                "card",
-                tip,
-                tipMethod ?? "card",
-                phoneDigits.length === 10 ? phoneDigits : "",
-                recalc,
-              )
-            }
-            className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
-          >
-            <span className="text-2xl mb-1">💳</span>
-            <span className="text-[12px] font-bold text-[#1C2526]">Tarjeta</span>
-          </button>
+        <div className="grid grid-cols-3 gap-2">
+          {POS_PAYMENT_OPTIONS.map((m) => (
+            <button
+              key={m.key}
+              onClick={() =>
+                onConfirm(
+                  m.key,
+                  tip,
+                  // Sin elección explícita, la propina viaja igual que la cuenta.
+                  tipMethod ?? m.key,
+                  phoneDigits.length === 10 ? phoneDigits : "",
+                  recalc,
+                )
+              }
+              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
+            >
+              <span className="text-2xl mb-1">{m.emoji}</span>
+              <span className="text-[12px] font-bold text-[#1C2526]">{m.label}</span>
+            </button>
+          ))}
         </div>
         <button
           onClick={onClose}

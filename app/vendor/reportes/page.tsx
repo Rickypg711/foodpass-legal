@@ -16,6 +16,7 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { businessDayStart, businessDayStartDaysAgo, businessDayKey } from "@/lib/businessDay";
+import { tipStaysWithStaff } from "@/lib/pos/paidOrderFields";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -68,7 +69,7 @@ interface ReportsData {
   /** Propinas (30d) — total y por empleado. null = ninguna. */
   tips30d: {
     total: number;
-    /** Efectivo: el mesero ya la tiene. Tarjeta: la cobro el dueno y aun no llega al mesero. */
+    /** Efectivo: el mesero ya la tiene. Tarjeta/transferencia: la cobro el dueno y aun no llega al mesero. */
     cash: number;
     card: number;
     byStaff: Record<string, { total: number; cash: number; card: number }>;
@@ -221,12 +222,14 @@ export default function ReportesPage() {
             tipsTotal30d += tipAmt;
             // tipMethod se escribe desde ago 2026; las ordenes viejas no lo
             // traen -> caen al metodo de pago de la cuenta, que era el supuesto.
-            const tMethod =
-              o.tipMethod === "card" || o.tipMethod === "cash"
+            // Dos cubetas, no tres: lo que importa es si el mesero YA la
+            // tiene (efectivo) o si la cobró el negocio (tarjeta O
+            // transferencia) y se la debe al equipo.
+            const rawTip =
+              typeof o.tipMethod === "string" && o.tipMethod
                 ? o.tipMethod
-                : o.paymentMethod === "card"
-                  ? "card"
-                  : "cash";
+                : o.paymentMethod;
+            const tMethod = tipStaysWithStaff(rawTip) ? "cash" : "card";
             if (tMethod === "card") tipsCard30d += tipAmt;
             else tipsCash30d += tipAmt;
             const tKey = sbName || "Caja";
@@ -635,8 +638,9 @@ export default function ReportesPage() {
                   <p className="text-[10px] text-gray-400">ya la tienen</p>
                 </div>
                 <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[11px] font-bold text-gray-400">💳 Tarjeta</p>
+                  <p className="text-[11px] font-bold text-gray-400">💳 Tarjeta o transferencia</p>
                   <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.card)}</p>
+                  <p className="text-[10px] text-gray-400">la cobró el negocio</p>
                   {/* Sin nota: cuando le paga al equipo lo decide el dueno
                       (diario, semanal, quincenal). El copy no lo inventa. */}
                 </div>

@@ -19,6 +19,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { registerOrderPayment } from "@/lib/pos/registerPayment";
+import { POS_PAYMENT_OPTIONS, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { tableLabel } from "@/lib/order/tableSession";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
@@ -239,7 +240,7 @@ export default function PedidosPage() {
     await updateStatus(order.id, "completed");
   };
 
-  const chargeOrder = async (orderId: string, method: "cash" | "card") => {
+  const chargeOrder = async (orderId: string, method: PaymentMethod) => {
     if (!restaurantId) return;
     try {
       // ⚖️ Una sola verdad del cobro: registerPayment.ts es el ÚNICO lugar
@@ -660,21 +661,17 @@ export default function PedidosPage() {
           <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <p className="text-[16px] font-extrabold text-[#1C2526]">Registrar Pago</p>
             <p className="text-[13px] text-gray-400 font-medium">Elige el método de pago del cliente</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => chargeOrder(chargingOrderId, "cash")}
-                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
-              >
-                <span className="text-2xl mb-1">💵</span>
-                <span className="text-[12px] font-bold text-[#1C2526]">Efectivo</span>
-              </button>
-              <button
-                onClick={() => chargeOrder(chargingOrderId, "card")}
-                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
-              >
-                <span className="text-2xl mb-1">💳</span>
-                <span className="text-[12px] font-bold text-[#1C2526]">Tarjeta</span>
-              </button>
+            <div className="grid grid-cols-3 gap-2">
+              {POS_PAYMENT_OPTIONS.map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => chargeOrder(chargingOrderId, m.key)}
+                  className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
+                >
+                  <span className="text-2xl mb-1">{m.emoji}</span>
+                  <span className="text-[12px] font-bold text-[#1C2526]">{m.label}</span>
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setChargingOrderId(null)}

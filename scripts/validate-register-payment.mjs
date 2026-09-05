@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { paidOrderFields } from "../lib/pos/paidOrderFields.ts";
+import { paidOrderFields, POS_PAYMENT_OPTIONS, tipStaysWithStaff } from "../lib/pos/paidOrderFields.ts";
 
 // ── 1. LA definición de "pagado" (espejo exacto de paid_order_update.dart —
 //       los tests Dart fijan los MISMOS nombres de campo) ───────────────────
@@ -18,7 +18,28 @@ import { paidOrderFields } from "../lib/pos/paidOrderFields.ts";
   const close = paidOrderFields("card", { close: true });
   assert.equal(close.status, "completed");
   assert.ok("completedAt" in close);
+
+  // 🏦 Transferencia (5-sep-2026, primer dueño dominicano): es un método de
+  // cobro de primera clase — pagado, sale de Cuentas, igual que efectivo.
+  const transfer = paidOrderFields("transfer");
+  assert.equal(transfer.paymentStatus, "paid");
+  assert.equal(transfer.paymentMethod, "transfer");
+  assert.equal(transfer.isOpenTab, false);
 }
+
+// ── 1b. Las TRES formas de recibir dinero, en todas las pantallas ───────────
+// Antes había dos botones (efectivo/tarjeta) y el dueño que cobra por
+// transferencia tenía que mentirle a la Caja: tarjeta rompía propinas y
+// reportes; efectivo rompía el corte. Un solo arreglo de opciones y las
+// pantallas lo mapean — ninguna puede quedarse con dos.
+assert.deepEqual(
+  POS_PAYMENT_OPTIONS.map((o) => o.key),
+  ["cash", "card", "transfer"],
+  "las opciones de cobro son efectivo, tarjeta y transferencia, en ese orden",
+);
+assert.ok(tipStaysWithStaff("cash"), "propina en efectivo: el mesero ya la tiene");
+assert.ok(!tipStaysWithStaff("card"), "propina en tarjeta: la cobró el negocio");
+assert.ok(!tipStaysWithStaff("transfer"), "propina por transferencia: la cobró el negocio");
 
 // ── 2. Candados de fuente: NADIE más escribe el pago ────────────────────────
 const pedidos = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
@@ -31,6 +52,15 @@ for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
 }
 assert.ok(pedidos.includes("registerOrderPayment("), "pedidos delega el cobro rápido");
 assert.ok(pos.includes("registerTabGroupPayment("), "la Caja delega el cierre de grupo");
+for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
+  assert.ok(src.includes("POS_PAYMENT_OPTIONS.map("),
+    `${name}: los botones de cobro salen de POS_PAYMENT_OPTIONS, no de una lista a mano`);
+  assert.ok(!/\{ key: "cash", emoji/.test(src),
+    `${name}: prohibida una lista de métodos a mano — se queda sin transferencia`);
+}
+const reportes = readFileSync(new URL("../app/vendor/reportes/page.tsx", import.meta.url), "utf8");
+assert.ok(reportes.includes("tipStaysWithStaff("),
+  "reportes: la cubeta de propinas usa tipStaysWithStaff (transferencia cae con tarjeta)");
 
 // ── 2b. Candado last-10: el teléfono del cierre se normaliza, no se tira ─────
 // Antes `customerPhone.length === 10` sobre 12 dígitos ("52"+número) PERDÍA la

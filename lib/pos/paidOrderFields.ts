@@ -5,7 +5,35 @@
 
 import { serverTimestamp } from "firebase/firestore";
 
-export type PaymentMethod = "cash" | "card";
+// 🏦 "transfer" desde el 5-sep-2026: el primer dueño dominicano (Central
+// Fast Food) cobra por transferencia bancaria y la Caja lo obligaba a mentir
+// (tarjeta rompía propinas/reportes; efectivo rompía el corte). En MX es la
+// misma realidad con SPEI. Espejo Dart: lib/orders/paid_order_update.dart.
+export type PaymentMethod = "cash" | "card" | "transfer";
+
+/**
+ * LAS opciones que la Caja, Pedidos y el cierre de cuenta le enseñan al
+ * cajero — en orden. Un solo lugar para que ninguna pantalla se quede con
+ * dos botones cuando hay tres formas reales de recibir dinero.
+ */
+export const POS_PAYMENT_OPTIONS: readonly {
+  key: PaymentMethod;
+  emoji: string;
+  label: string;
+}[] = [
+  { key: "cash", emoji: "💵", label: "Efectivo" },
+  { key: "card", emoji: "💳", label: "Tarjeta" },
+  { key: "transfer", emoji: "🏦", label: "Transferencia" },
+];
+
+/**
+ * Propina: ¿ya la tiene el mesero en la mano? Solo en efectivo. Tarjeta y
+ * transferencia caen en la cuenta del negocio y el dueño se la debe al
+ * equipo — por eso Reportes las suma juntas.
+ */
+export function tipStaysWithStaff(method: unknown): boolean {
+  return method === "cash";
+}
 
 /**
  * Campos canónicos de "pagado". `close: true` además completa el pedido
