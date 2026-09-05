@@ -4,10 +4,11 @@ import { HomeCta } from "@/components/home/HomeCta";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
 import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
+import { fetchPlatformStats } from "@/lib/server/platformStats";
 
 const PAGE_TITLE = "Comeleal para restaurantes — Empieza gratis";
 const PAGE_DESCRIPTION =
-  "Haz que tus clientes regresen: puntos con QR, Apple y Google Wallet, menú digital y panel web. Sin cambiar tu sistema actual. Gratis para empezar.";
+  "Tu menú de papel, digital y gratis en 1 minuto. Con QR, pedidos por WhatsApp y puntos para que tus clientes regresen, también cuando pagan en efectivo. Hecho en Chihuahua.";
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -41,40 +42,40 @@ const PROOF_POINTS = [
   { figure: "16 platillos con salsas", body: "montados de una foto, con precio por salsa y tamaño" },
 ] as const;
 
+/** El villano (5-sep-2026, revisión contra Owner/Fluxsales): concreto y
+ *  VERDADERO. El dato de "184 ventas, 1 teléfono" es de un local real de
+ *  Comeleal (Pecado Escondido, ago-2026), sin nombre a propósito. */
 const PROBLEM_CARDS = [
   {
-    title: "Los clientes no regresan",
-    body: "Muchos visitan una vez pero no tienes un sistema claro para que vuelvan.",
+    title: "No sabes quién te compró",
+    body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 184 ventas en un mes se quedó con 1 teléfono. Con 1 no traes a nadie de vuelta.",
+    icon: "🧾",
+  },
+  {
+    title: "El que no vuelve, no avisa",
+    body: "Nadie te dice \"ya no vengo\". Solo dejas de verlo. Sin su número no hay forma de recordarle que existes.",
     icon: "🔄",
   },
   {
-    title: "Sin presencia digital propia",
-    body: "Sin un lugar en el mapa ni puntos visibles, cuesta que nuevos vecinos te descubran — o que los habituales te recuerden.",
-    icon: "📍",
-  },
-  {
-    title: "Comisiones altas de delivery",
-    body: "Las apps de reparto se llevan un buen porcentaje y no te dejan la relación con el cliente.",
+    title: "La app de reparto se queda con tu cliente",
+    body: "Te cobra comisión por cada pedido y además se queda con el nombre, el número y la costumbre. El cliente es de ellos, no tuyo.",
     icon: "📉",
   },
 ] as const;
 
+/** Tres cosas, en el orden en que el dueño las vive. Solo lo que existe hoy. */
 const VALUE_POINTS = [
   {
-    title: "Monedero digital: Apple Wallet y Google Wallet",
-    body: "Tus clientes guardan su tarjeta de lealtad en Apple Wallet o Google Wallet. La abren desde su iPhone o Android sin descargar nada — menos fricción, más visitas.",
+    title: "Tu menú digital con QR, de una foto",
+    body: "La IA lee tu menú de papel: platillos, precios, salsas y tamaños. Lo compartes por WhatsApp o lo pegas en la mesa, y tus clientes ordenan desde ahí. Sin comisión por pedido.",
   },
   {
-    title: "Sabemos cuándo un cliente está por no regresar",
-    body: "El sistema detecta automáticamente cuando un cliente habitual lleva tiempo sin visitar y te avisa — para que actúes antes de perderlo.",
+    title: "Puntos por cada compra, también en efectivo",
+    body: "El cliente deja su número al pagar y junta puntos: en mostrador, en mesa o en pedido en línea. Los ve en Apple Wallet o Google Wallet sin descargar nada.",
   },
   {
-    title: "Puntos y recompensas con QR",
-    body: "El cliente muestra su QR; tú escaneas y sumas puntos o canjeas recompensas. Funciona junto a tu caja actual, sin reemplazarla.",
-  },
-  {
-    title: "Pedidos en línea para recoger, sin comisiones",
-    body: "Recibe pedidos pagados antes de prepararlos, directo desde tu menú digital. Sin apps de delivery, sin comisiones por venta.",
+    title: "Ves quién volvió y quién se está perdiendo",
+    body: "Cada venta con número te dice quién regresó. Y cuando un cliente de siempre lleva tiempo sin venir, te lo señalamos para que le escribas tú.",
   },
 ] as const;
 
@@ -85,13 +86,13 @@ const STEPS = [
   { step: "4", title: "Imprime tu QR y a vender", body: "Tus clientes ven tu menú, ordenan y suman puntos. Todo activo en unos 5 minutos." },
 ] as const;
 
+/** Sin repetir lo de arriba. Una sola cifra de tiempo en toda la página:
+ *  menú en 1 minuto, local activo en 5. */
 const BENEFITS = [
-  "Gratis para empezar — sin tarjeta de crédito.",
-  "Panel web: administra todo desde comeleal.com/vendor.",
-  "Apple Wallet y Google Wallet para tus clientes — sin descargar otra app.",
-  "Menú digital sin depender de fotos en WhatsApp.",
-  "Sin cambiar tu caja ni tu POS: Comeleal funciona junto a lo que ya tienes.",
-  "Activa tu negocio en menos de 5 minutos.",
+  "Gratis para empezar. Sin tarjeta, sin contrato.",
+  "Sin cambiar tu caja ni tu POS: funciona junto a lo que ya tienes.",
+  "Un celular en el mostrador es todo lo que necesitas.",
+  "Menú en 1 minuto. Local activo en 5.",
 ] as const;
 
 const FAQ_ITEMS = [
@@ -113,7 +114,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Me ayudan a configurarlo?",
-    a: "Sí. En menos de 5 minutos dejamos lo básico listo: negocio, menú inicial y primera recompensa activa.",
+    a: "Sí. Te contestamos por WhatsApp y, si quieres, montamos tu menú contigo. Comeleal lo hace una persona en Chihuahua, no un call center.",
   },
   {
     q: "¿Qué necesito en el mostrador?",
@@ -130,7 +131,11 @@ const FOOTER_LINKS = [
 ] as const;
 
 
-export default function Home() {
+export default async function Home() {
+  // Dato VIVO para el hero (no de folleto): si no se puede calcular, no se
+  // inventa — cae a la frase sin número.
+  const stats = await fetchPlatformStats();
+  const activeCount = stats && stats.activeRestaurants >= 10 ? stats.activeRestaurants : null;
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C2526]">
       <VendorPageAnalytics />
@@ -144,7 +149,9 @@ export default function Home() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
             <div>
               <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
-                Para restaurantes locales
+                {activeCount
+                  ? `Hecho en Chihuahua · ${activeCount} restaurantes activos`
+                  : "Hecho en Chihuahua · Para restaurantes locales"}
               </p>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
                 Tu menú de papel,{" "}
@@ -226,10 +233,10 @@ export default function Home() {
         <section className="px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="problema-heading">
           <div className="mx-auto max-w-6xl">
             <h2 id="problema-heading" className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
-              Problemas comunes en negocios locales
+              Lo que te está costando hoy
             </h2>
             <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              No necesitas depender de apps de delivery. Necesitas herramientas para que quien ya te conoce vuelva.
+              No es la comida. Es que no sabes quién te compró, y por eso no puedes hacer que vuelva.
             </p>
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {PROBLEM_CARDS.map((card) => (
@@ -304,6 +311,22 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── Quién está detrás (5-sep-2026) ── Señal de confianza barata y
+            verdadera: una persona en Chihuahua, no un call center. */}
+        <section className="bg-[#1C2526] px-4 py-12 sm:px-6" aria-labelledby="historia-heading">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">Quién está detrás</p>
+            <h2 id="historia-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Hecho en Chihuahua, por una persona que sí contesta.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/70">
+              Comeleal lo hace Ricardo, en Chihuahua. Lo construyó para los locales de aquí: taquerías, pizzerías,
+              fondas, cafeterías. Monta menús con los dueños y contesta el WhatsApp él mismo. No hay call center,
+              no hay contrato, y lo que la página promete es lo que ya funciona hoy.
+            </p>
+          </div>
+        </section>
+
         {/* ── Final CTA ── */}
         <section className="border-t border-[#1C2526]/8 bg-[#141414] px-4 py-16 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-3xl text-center">
@@ -311,7 +334,7 @@ export default function Home() {
               Empieza gratis hoy.
             </h2>
             <p className="mt-4 text-lg text-white/65">
-              Sube la foto de tu menú, míralo digital en 1 minuto y déjalo activo con tu primera recompensa hoy mismo.
+              Sube la foto de tu menú. En 1 minuto lo ves digital. En 5 tienes tu QR y tu primer premio. Y desde la primera venta empiezas a saber quién te compró.
             </p>
             <HomeCta />
           </div>
