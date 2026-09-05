@@ -4,7 +4,6 @@ import { HomeCta } from "@/components/home/HomeCta";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
 import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
-import { fetchPlatformStats } from "@/lib/server/platformStats";
 
 const PAGE_TITLE = "Comeleal para restaurantes — Empieza gratis";
 const PAGE_DESCRIPTION =
@@ -114,7 +113,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Me ayudan a configurarlo?",
-    a: "Sí. Te contestamos por WhatsApp y, si quieres, montamos tu menú contigo. Comeleal lo hace una persona en Chihuahua, no un call center.",
+    a: "Sí. Te contestamos por WhatsApp y, si quieres, montamos tu menú contigo.",
   },
   {
     q: "¿Qué necesito en el mostrador?",
@@ -131,11 +130,9 @@ const FOOTER_LINKS = [
 ] as const;
 
 
-export default async function Home() {
-  // Dato VIVO para el hero (no de folleto): si no se puede calcular, no se
-  // inventa — cae a la frase sin número.
-  const stats = await fetchPlatformStats();
-  const activeCount = stats && stats.activeRestaurants >= 10 ? stats.activeRestaurants : null;
+export default function Home() {
+  // Conteo vivo de restaurantes en el hero: Ricardo lo quiere hasta ~50
+  // activos (5-sep: "me da pena, esperemos"). fetchPlatformStats ya existe.
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C2526]">
       <VendorPageAnalytics />
@@ -149,9 +146,7 @@ export default async function Home() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
             <div>
               <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
-                {activeCount
-                  ? `Hecho en Chihuahua · ${activeCount} restaurantes activos`
-                  : "Hecho en Chihuahua · Para restaurantes locales"}
+                Para restaurantes locales
               </p>
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
                 Tu menú de papel,{" "}
@@ -308,22 +303,6 @@ export default async function Home() {
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-
-        {/* ── Quién está detrás (5-sep-2026) ── Señal de confianza barata y
-            verdadera: una persona en Chihuahua, no un call center. */}
-        <section className="bg-[#1C2526] px-4 py-12 sm:px-6" aria-labelledby="historia-heading">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">Quién está detrás</p>
-            <h2 id="historia-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Hecho en Chihuahua, por una persona que sí contesta.
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/70">
-              Comeleal lo hace Ricardo, en Chihuahua. Lo construyó para los locales de aquí: taquerías, pizzerías,
-              fondas, cafeterías. Monta menús con los dueños y contesta el WhatsApp él mismo. No hay call center,
-              no hay contrato, y lo que la página promete es lo que ya funciona hoy.
-            </p>
           </div>
         </section>
 
