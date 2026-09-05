@@ -159,7 +159,7 @@ const base = (overrides = {}) => ({
 
   // Las superficies leen loyaltyLive de verdad (no copy fijo).
   const mustGate = [
-    ["app/vendor/pos/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "promisesPoints: loyaltyLive", 'Para su ticket y promos']],
+    ["app/vendor/pos/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "promisesPoints: loyaltyLive", 'Para su ticket y promos', "{capReached && loyaltyLive && (", "result.capReached && loyaltyLive"]],
     ["app/vendor/pedidos/page.tsx", ["promisesPoints: loyaltyLive"]],
     ["app/menu/[restaurantId]/order/[orderId]/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(d))", "{loyaltyLive ? (<>"]],
     ["app/menu/[restaurantId]/checkout/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(data))"]],

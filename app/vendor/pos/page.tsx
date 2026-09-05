@@ -758,7 +758,9 @@ function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone, loyaltyLi
         <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
           {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
         </p>
-        {capReached && (
+        {/* Premios apagados (5-sep): el tope de 50 solo limita PUNTOS, y aquí
+            los puntos no se prometen — el aviso sería ruido. */}
+        {capReached && loyaltyLive && (
           <div
             className="rounded-2xl px-4 py-3 text-left"
             style={{ background: "rgba(242,140,56,0.1)", border: "1px solid rgba(242,140,56,0.3)" }}
@@ -1071,7 +1073,7 @@ export default function PosPage() {
         recalc,
       });
 
-      const capMsg = result.capReached
+      const capMsg = result.capReached && loyaltyLive
         ? "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración."
         : "";
       alert(
