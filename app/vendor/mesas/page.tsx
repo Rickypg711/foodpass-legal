@@ -11,6 +11,7 @@
  * La impresión es CSS puro (@media print) — sin librería de PDF, sin backend.
  */
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +37,8 @@ export default function MesasPage() {
   const [loading, setLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  /** Premios apagados (5-sep): el letrero de mesa no promete puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState(true);
   const [count, setCount] = useState(8);
 
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function MesasPage() {
       setRestaurantId(ctx.restaurantId);
       const snap = await getDoc(doc(db, "restaurants", ctx.restaurantId));
       setRestaurantName((snap.data()?.name as string) ?? "Tu restaurante");
+      setLoyaltyLive(restaurantPromisesPoints(snap.data()));
       setLoading(false);
     }
     init().catch(() => setLoading(false));
@@ -265,7 +269,7 @@ export default function MesasPage() {
               Escanea y ordena
             </p>
             <p className="mt-0.5 text-[11px] leading-snug" style={{ color: "rgba(28,37,38,0.55)" }}>
-              Pide desde tu teléfono y acumula puntos ⭐
+              {loyaltyLive ? "Pide desde tu teléfono y acumula puntos ⭐" : "Pide desde tu teléfono"}
             </p>
           </div>
         ))}

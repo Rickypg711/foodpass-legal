@@ -1,3 +1,4 @@
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import type { Metadata } from "next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import {
@@ -183,6 +184,7 @@ export default async function RestaurantLandingLayout({
       ? [...withPhoto].sort((a, b) => b.orderCount - a.orderCount)
       : withPhoto;
     const faq = buildFaq({
+      loyaltyLive: restaurantPromisesPoints(data),
       name,
       categories,
       address,

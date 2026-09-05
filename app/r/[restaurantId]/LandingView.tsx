@@ -10,6 +10,7 @@
 // resaltado de "hoy" — dependen de la hora LOCAL del visitante (el server
 // corre en UTC; evaluarlo ahí mentiría ~6 horas al día).
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { collection, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
@@ -292,6 +293,7 @@ export default function LandingView({
   const faq = useMemo(() => {
     if (!restaurant || !rdata) return [];
     return buildFaq({
+      loyaltyLive: restaurantPromisesPoints(rdata ?? undefined),
       name: restaurant.name,
       categories: restaurant.categories,
       address: restaurant.address,
@@ -305,7 +307,7 @@ export default function LandingView({
     });
   }, [restaurant, rdata, weekly, menuPhotos]);
   const seoParagraph = restaurant
-    ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address)
+    ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address, restaurantPromisesPoints(rdata ?? undefined))
     : null;
 
   // Vista registrada una vez que hay datos (server o client).
@@ -528,12 +530,14 @@ export default function LandingView({
                     imageUrl: p.imageUrl,
                   }))}
                 />
-                <Link
-                  href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
-                  className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
-                >
-                  ¿Ya has comprado aquí? Ver mis puntos →
-                </Link>
+                {restaurantPromisesPoints(rdata ?? undefined) ? (
+                  <Link
+                    href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+                    className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                  >
+                    ¿Ya has comprado aquí? Ver mis puntos →
+                  </Link>
+                ) : null}
               </SectionCard>
             ) : null}
 
@@ -643,6 +647,7 @@ export default function LandingView({
               restaurantName={name}
               variant="browse"
               firstVisitRewardLabel={restaurant.firstVisitReward}
+              loyaltyLive={restaurantPromisesPoints(rdata ?? undefined)}
             />
 
             {/* ---- FIRMA (el loop viral: cada página vende Comeleal) ---- */}

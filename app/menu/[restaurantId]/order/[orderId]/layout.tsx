@@ -23,7 +23,7 @@ export async function generateMetadata({
   }
 
   const title = `Pedido en ${restaurant.name}`;
-  const description = `Tu recibo, PIN de recogida y puntos en ${restaurant.name}.`;
+  const description = `Tu recibo y PIN de recogida en ${restaurant.name}.`;
   const image = restaurant.logoUrl ?? restaurant.bannerUrl;
 
   return {

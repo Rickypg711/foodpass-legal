@@ -17,6 +17,11 @@ type MenuAppRewardsCtaProps = {
    * vende el premio CONCRETO en vez de "junta puntos" — lo concreto convierte.
    */
   firstVisitRewardLabel?: string | null;
+  /**
+   * Premios apagados (5-sep): false = no hay nada que ganar aquí, así que
+   * este aviso NO existe (ni "junta puntos" ni la app como cartera).
+   */
+  loyaltyLive?: boolean;
 };
 
 /**
@@ -34,7 +39,9 @@ export function MenuAppRewardsCta({
   variant,
   disabled = false,
   firstVisitRewardLabel = null,
+  loyaltyLive = true,
 }: MenuAppRewardsCtaProps) {
+  if (!loyaltyLive) return null;
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
   const reward = firstVisitRewardLabel?.trim() || null;

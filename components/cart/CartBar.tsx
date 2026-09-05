@@ -10,10 +10,12 @@ export function CartBar({
   restaurantId,
   restaurantName,
   firstVisitRewardLabel = null,
+  loyaltyLive = true,
 }: {
   restaurantId: string;
   restaurantName: string;
   firstVisitRewardLabel?: string | null;
+  loyaltyLive?: boolean;
 }) {
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
@@ -69,6 +71,7 @@ export function CartBar({
           restaurantName={restaurantName}
           variant="compact"
           firstVisitRewardLabel={firstVisitRewardLabel}
+          loyaltyLive={loyaltyLive}
         />
       </div>
     </div>

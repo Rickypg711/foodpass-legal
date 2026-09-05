@@ -1,5 +1,6 @@
 "use client";
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
@@ -147,6 +148,8 @@ function OrderStatusPageContent() {
   // no estorbar.
   const [reviewAskSeen, setReviewAskSeen] = useState(false);
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
+  /** Premios apagados (5-sep): la página no promete puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState(true);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
     base: 1,
     step: 30,
@@ -258,6 +261,7 @@ function OrderStatusPageContent() {
           }
           setRestaurantLogo(getRestaurantImageUrl(d));
           setEarnPolicy(earnPolicyFromRestaurant(d));
+          setLoyaltyLive(restaurantPromisesPoints(d));
           const fpr = d.firstPurchaseReward;
           if (fpr && typeof fpr === "object") {
             const m = fpr as Record<string, unknown>;
@@ -438,7 +442,7 @@ function OrderStatusPageContent() {
             <h1 className="truncate text-lg font-bold leading-tight text-white">
               {displayRestaurant}
             </h1>
-            <p className="text-xs text-white/75">Tu pedido y tus puntos</p>
+            <p className="text-xs text-white/75">{loyaltyLive ? "Tu pedido y tus puntos" : "Tu pedido"}</p>
           </div>
         </div>
       </header>
@@ -623,7 +627,7 @@ function OrderStatusPageContent() {
             {/* Phone Points v1: real balance behind an SMS verification.
                 Only rendered once points were actually credited — before
                 that, the estimate banner below sets the expectation. */}
-            {order?.customerPhone && order?.loyaltyAwarded === true ? (
+            {loyaltyLive && order?.customerPhone && order?.loyaltyAwarded === true ? (
               <PhonePointsCard
                 restaurantId={restaurantId}
                 restaurantName={displayRestaurant}
@@ -631,6 +635,10 @@ function OrderStatusPageContent() {
               />
             ) : null}
 
+            {/* Premios apagados (5-sep): sin nada que ganar, esta tarjeta no
+                existe — los puntos se guardan en silencio en su número y el
+                recibo sigue siendo recibo. Prometer sería mentir. */}
+            {loyaltyLive ? (<>
             {/* Points banner — Phone Points v1 truth (§4): points credit to
                 the customer's NUMBER on confirmed payment; no app required.
                 Pre-payment: future tense promise. Post-credit: the app is
@@ -699,6 +707,7 @@ function OrderStatusPageContent() {
                 );
               })()}
             </div>
+            </>) : null}
           </div>
         )}
 

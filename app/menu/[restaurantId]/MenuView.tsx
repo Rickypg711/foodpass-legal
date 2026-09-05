@@ -1,5 +1,6 @@
 "use client";
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -341,12 +342,14 @@ function MenuRewardsLadderSection({
         restaurantData={rdata}
         menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
       />
-      <a
-        href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
-        className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
-      >
-        ¿Ya has comprado aquí? Ver mis puntos →
-      </a>
+      {restaurantPromisesPoints(rdata) ? (
+        <a
+          href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
+          className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+        >
+          ¿Ya has comprado aquí? Ver mis puntos →
+        </a>
+      ) : null}
     </section>
   );
 }
@@ -417,6 +420,10 @@ function PublicMenuPageWithOrdering({
   );
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
+  );
+  /** Premios apagados (5-sep): sin nada que ganar, el menú no vende puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState<boolean>(
+    initial ? restaurantPromisesPoints(initial.raw) : true,
   );
   const [items, setItems] = useState<MenuRow[]>(
     initial ? seedItems(initial.menu) : [],
@@ -491,6 +498,7 @@ function PublicMenuPageWithOrdering({
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
         setAddress(
           typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
@@ -619,6 +627,7 @@ function PublicMenuPageWithOrdering({
               restaurantName={restaurantName}
               variant="banner"
               firstVisitRewardLabel={firstVisitReward}
+              loyaltyLive={loyaltyLive}
             />
           </div>
         )}
@@ -704,6 +713,7 @@ function PublicMenuPageWithOrdering({
           restaurantId={restaurantId}
           restaurantName={restaurantName}
           firstVisitRewardLabel={firstVisitReward}
+              loyaltyLive={loyaltyLive}
         />
       )}
 
@@ -720,6 +730,7 @@ function PublicMenuPageWithOrdering({
             restaurantName={restaurantName}
             variant="compact"
             firstVisitRewardLabel={firstVisitReward}
+              loyaltyLive={loyaltyLive}
           />
         </MenuBottomDock>
       ) : showMpUnavailableDock ? (
@@ -729,6 +740,7 @@ function PublicMenuPageWithOrdering({
             restaurantName={restaurantName}
             variant="banner"
             firstVisitRewardLabel={firstVisitReward}
+              loyaltyLive={loyaltyLive}
           />
         </MenuBottomDock>
       ) : null}
@@ -753,6 +765,10 @@ function PublicMenuPageBrowseOnly({
   );
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
+  );
+  /** Premios apagados (5-sep): sin nada que ganar, el menú no vende puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState<boolean>(
+    initial ? restaurantPromisesPoints(initial.raw) : true,
   );
   const [items, setItems] = useState<MenuRow[]>(
     initial ? seedItems(initial.menu) : [],
@@ -816,6 +832,7 @@ function PublicMenuPageBrowseOnly({
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
         setAddress(
           typeof rData.address === "string" && rData.address.trim() ? rData.address.trim() : null,
@@ -907,6 +924,7 @@ function PublicMenuPageBrowseOnly({
           variant="browse"
           disabled={!menuLinkResolved}
           firstVisitRewardLabel={firstVisitReward}
+              loyaltyLive={loyaltyLive}
         />
       </MenuBottomDock>
     </div>

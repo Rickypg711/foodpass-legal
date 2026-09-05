@@ -80,6 +80,19 @@ export function readinessFieldsForFirestore(result: ReadinessResult): {
 }
 
 /**
+ * ¿Se le puede PROMETER puntos al comensal en este local? Solo cuando hay
+ * algo que ganar (`loyaltyReady !== false`). Con los premios apagados los
+ * puntos siguen acumulándose en silencio en su número (progreso dotado: el
+ * día que el dueño ponga un premio, ya llevan camino) pero ninguna pantalla,
+ * ticket ni mensaje dice "ganaste puntos" — sería una promesa que el producto
+ * no puede cumplir. Espejo de `restaurantPromisesPoints` en la app.
+ */
+export function restaurantPromisesPoints(data: Record<string, unknown> | null | undefined): boolean {
+  if (!data) return true;
+  return data.loyaltyReady !== false;
+}
+
+/**
  * Diners (búsqueda, feed, cerca de ti, puntos): solo locales completos CON
  * algo que ganar. Un local que apagó sus premios es invisible en la app de
  * puntos — igual que antes del 5-sep — pero su menú y su QR viven aquí.

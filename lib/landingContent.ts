@@ -56,9 +56,18 @@ export function buildSeoParagraph(
   name: string,
   categories: string[],
   address: string | null,
+  /** Premios apagados (5-sep): false = la página no promete puntos. */
+  loyaltyLive = true,
 ): string {
   const cat = categories[0] ? categories[0].toLowerCase() : "comida";
   const city = cityFromAddress(address);
+  if (!loyaltyLive) {
+    return (
+      `Pide ${cat}${city ? ` en ${city}` : ""} directo de ${name}: mira el menú ` +
+      `con fotos y precios y haz tu pedido en línea. Sin apps de por medio — ` +
+      `tu pedido llega directo al restaurante.`
+    );
+  }
   return (
     `Pide ${cat}${city ? ` en ${city}` : ""} directo de ${name}: mira el menú ` +
     `con fotos y precios, haz tu pedido en línea y junta puntos con cada compra ` +
@@ -86,6 +95,8 @@ export function buildFaq(args: {
   earnRule?: string | null;
   /** Premios concretos de la escalera, ej. "Pizza personal (300 ⭐)". */
   rewardExamples?: string[];
+  /** Premios apagados (5-sep): false = la FAQ no promete puntos ni premios. */
+  loyaltyLive?: boolean;
 }): FaqEntry[] {
   const {
     name,
@@ -96,6 +107,7 @@ export function buildFaq(args: {
     firstVisitReward,
     earnRule = null,
     rewardExamples = [],
+    loyaltyLive = true,
   } = args;
   const out: FaqEntry[] = [];
 
@@ -133,6 +145,7 @@ export function buildFaq(args: {
   // Respuesta con los premios CONCRETOS (robo del teardown de la app Owner:
   // el premio con nombre y costo en ⭐ convierte más que "recompensas" a
   // secas — y a los motores de IA les da la respuesta citable exacta).
+  if (!loyaltyLive) return out;
   out.push({
     q: `¿${name} tiene recompensas?`,
     a:

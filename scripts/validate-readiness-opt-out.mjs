@@ -29,7 +29,10 @@ import {
   evaluateReadiness,
   readinessFieldsForFirestore,
   isRestaurantVisibleToDiners,
+  restaurantPromisesPoints,
 } from "../lib/readiness/evaluate.ts";
+import { buildSeoParagraph, buildFaq } from "../lib/landingContent.ts";
+import { readFileSync } from "node:fs";
 
 const DIAS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const horario = () => Object.fromEntries(DIAS.map((d) => [d, {
@@ -129,6 +132,47 @@ const base = (overrides = {}) => ({
   assert.ok(page.includes("function loyaltyOffIf("), "la consecuencia se calcula sobre loyaltyReady");
   assert.ok(page.includes("rewardsConfigured: true"), "evaluar el parche como si ya estuviera guardado (guardar ES la decisión)");
   assert.ok(!page.includes('.reasons\n    .some((r) => r === "first_purchase_reward"'), "ya no se lee `reasons` para la consecuencia");
+}
+
+
+// ── 8. LA PROMESA DE PUNTOS (5-sep, tarde): sin nada que ganar, nadie le dice
+// al comensal "ganaste puntos". Los puntos se guardan en silencio (progreso
+// dotado: Nunes & Drèze) — prometerlos sería mentir (regla de Ricardo:
+// jamás prometer lo que no existe). ────────────────────────────────────────
+{
+  assert.equal(restaurantPromisesPoints({ loyaltyReady: false }), false);
+  assert.equal(restaurantPromisesPoints({ loyaltyReady: true }), true);
+  assert.equal(restaurantPromisesPoints({}), true, "doc viejo: se asume premios");
+  assert.equal(restaurantPromisesPoints(undefined), true);
+
+  // receiptWhatsapp.ts importa "@/lib" (alias de Next) y node no lo resuelve:
+  // el contrato se fija sobre el fuente, como en validate-rewards-off-honesty.
+  const receipt = readFileSync(new URL("../lib/receiptWhatsapp.ts", import.meta.url), "utf8");
+  assert.ok(receipt.includes("promisesPoints?: boolean"), "el recibo acepta promisesPoints");
+  assert.ok(receipt.includes("const points = promises ? Number(r.pointsAwarded) || 0 : 0;"), "sin promesa, cero línea de puntos");
+  assert.ok(receipt.includes('${promises ? "Tu recibo y tus puntos" : "Tu recibo"}: ${url}'), "el link sigue, sin la promesa");
+
+  const seoOff = buildSeoParagraph("Tacos X", ["Tacos"], "Chihuahua", false);
+  assert.ok(!/punto|recompensa/i.test(seoOff), "SEO sin premios no vende puntos");
+  const faqOff = buildFaq({ name: "Tacos X", categories: ["Tacos"], address: null, hoursText: null, topItems: [], firstVisitReward: null, loyaltyLive: false });
+  assert.ok(!faqOff.some((f) => /recompensas/i.test(f.q)), "la FAQ sin premios no tiene la pregunta de recompensas");
+
+  // Las superficies leen loyaltyLive de verdad (no copy fijo).
+  const mustGate = [
+    ["app/vendor/pos/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "promisesPoints: loyaltyLive", 'Para su ticket y promos']],
+    ["app/vendor/pedidos/page.tsx", ["promisesPoints: loyaltyLive"]],
+    ["app/menu/[restaurantId]/order/[orderId]/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(d))", "{loyaltyLive ? (<>"]],
+    ["app/menu/[restaurantId]/checkout/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(data))"]],
+    ["app/vendor/mesas/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(snap.data()))"]],
+    ["components/menu/MenuAppRewardsCta.tsx", ["if (!loyaltyLive) return null;"]],
+    ["app/menu/[restaurantId]/MenuView.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "loyaltyLive={loyaltyLive}"]],
+    ["app/r/[restaurantId]/LandingView.tsx", ["loyaltyLive={restaurantPromisesPoints(rdata ?? undefined)}"]],
+    ["app/r/[restaurantId]/layout.tsx", ["loyaltyLive: restaurantPromisesPoints(data)"]],
+  ];
+  for (const [file, needles] of mustGate) {
+    const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    for (const n of needles) assert.ok(src.includes(n), `${file} debe contener: ${n}`);
+  }
 }
 
 console.log("validate-readiness-opt-out: OK");

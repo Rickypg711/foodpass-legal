@@ -1,5 +1,6 @@
 "use client";
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -370,6 +371,7 @@ function CheckoutDialog({
   processing,
   canAssignDiscount = true,
   paymentOptions,
+  loyaltyLive = true,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
@@ -391,6 +393,8 @@ function CheckoutDialog({
   processing: boolean;
   /** 🎚️ Solo las formas de pago que este restaurante acepta (Configuración). */
   paymentOptions: typeof POS_PAYMENT_OPTIONS;
+  /** Premios apagados (5-sep): sin nada que ganar, no se prometen puntos. */
+  loyaltyLive?: boolean;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
   const [method, setMethod] = useState<PaymentMethod>(paymentOptions[0]?.key ?? "cash");
@@ -539,14 +543,16 @@ function CheckoutDialog({
                 inputMode="numeric"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Para sus puntos — 614 123 4567"
+                placeholder={loyaltyLive ? "Para sus puntos — 614 123 4567" : "Para su ticket y promos — 614 123 4567"}
                 maxLength={16}
                 className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
                 style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
               />
               <p className="mt-1 text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                Junta puntos automáticamente — y si el número tiene descuento
-                asignado (staff/familia), se aplica solo. ⭐ Al darlo acepta el{" "}
+                {loyaltyLive
+                  ? "Junta puntos automáticamente — y si el número tiene descuento asignado (staff/familia), se aplica solo. ⭐"
+                  : "Le mandas su ticket y le avisas de promos — y si el número tiene descuento asignado (staff/familia), se aplica solo."}{" "}
+                Al darlo acepta el{" "}
                 <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline">
                   Aviso de Privacidad
                 </a>.
@@ -723,7 +729,7 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone }: { mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string; onDone: () => void }) {
+function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss;
@@ -771,8 +777,9 @@ function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone }: { mode:
             {/* El empujón (paridad con la app): el recibo es el gancho de
                 regreso, no un papelito. Sin esta línea, "Listo" gana. */}
             <p className="text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
-              📲 No olvides mandarle su recibo — ahí van sus puntos y el premio
-              que lo hace volver.
+              {loyaltyLive
+                ? "📲 No olvides mandarle su recibo — ahí van sus puntos y el premio que lo hace volver."
+                : "📲 No olvides mandarle su recibo — es su ticket y tu puerta para avisarle de promos."}
             </p>
             <button
               onClick={() => {
@@ -808,6 +815,8 @@ export default function PosPage() {
   // Auth / restaurant
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState("POS");
+  /** Premios apagados (5-sep): la Caja pide el número por el ticket, sin prometer puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState(true);
   // 🎚️ Formas de pago que el dueño dejó prendidas en Configuración. Hasta
   // que cargue el doc, las tres (nunca una Caja sin botones).
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
@@ -880,6 +889,7 @@ export default function PosPage() {
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
       setRestaurantName((rData.name as string | undefined) ?? "POS");
+      setLoyaltyLive(restaurantPromisesPoints(rData));
       setPaymentOptions(acceptedPaymentOptions(rData));
       setRestaurantId(rid);
       setUid(u.uid);
@@ -1357,6 +1367,7 @@ export default function PosPage() {
                   : null,
               pointsAwarded,
               origin: window.location.origin,
+              promisesPoints: loyaltyLive,
             })
           : undefined;
 
@@ -1852,6 +1863,7 @@ export default function PosPage() {
       {/* ── Checkout dialog ── */}
       {showCheckout && (
         <CheckoutDialog
+          loyaltyLive={loyaltyLive}
           paymentOptions={paymentOptions}
           total={subtotal}
           cartLines={cart.map((c) => ({
@@ -1870,6 +1882,7 @@ export default function PosPage() {
       {/* ── Success overlay ── */}
       {success && (
         <SuccessOverlay
+          loyaltyLive={loyaltyLive}
           mode={success.mode}
           total={success.total}
           capReached={success.capReached}
@@ -1901,6 +1914,7 @@ export default function PosPage() {
         if (!group) return null;
         return (
           <CloseTabDialog
+            loyaltyLive={loyaltyLive}
             tabTotal={group.total}
             restaurantId={restaurantId ?? ""}
             // TODOS los items del GRUPO: la base del recálculo. El descuento
@@ -2065,6 +2079,7 @@ function CloseTabDialog({
   paymentOptions,
   onClose,
   onConfirm,
+  loyaltyLive = true,
 }: {
   tabTotal: number;
   restaurantId: string;
@@ -2083,6 +2098,8 @@ function CloseTabDialog({
     phone: string,
     recalc: TabDiscountRecalc | null,
   ) => void;
+  /** Premios apagados (5-sep): sin nada que ganar, no se prometen puntos. */
+  loyaltyLive?: boolean;
 }) {
   const [tipPct, setTipPct] = useState<number | null>(null);
   const [tipCustom, setTipCustom] = useState<number | "">("");
@@ -2241,7 +2258,7 @@ function CloseTabDialog({
             value={phone}
             autoFocus
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Su ticket y sus puntos — 614 123 4567"
+            placeholder={loyaltyLive ? "Su ticket y sus puntos — 614 123 4567" : "Su ticket — 614 123 4567"}
             className="w-full rounded-xl border px-3 py-2.5 text-[13px] outline-none"
             style={{ borderColor: "rgba(28,37,38,0.15)", color: "#1C2526" }}
           />
@@ -2338,8 +2355,10 @@ function CloseTabDialog({
             style={{ color: phoneDigits.length === 10 ? "#16A34A" : "rgba(28,37,38,0.5)" }}
           >
             {phoneDigits.length === 10
-              ? "✅ Le llega su ticket y junta sus puntos."
-              : "Opcional. Con su número le mandas el ticket y junta puntos solo. ⭐"}
+              ? (loyaltyLive ? "✅ Le llega su ticket y junta sus puntos." : "✅ Le llega su ticket.")
+              : (loyaltyLive
+                  ? "Opcional. Con su número le mandas el ticket y junta puntos solo. ⭐"
+                  : "Opcional. Con su número le mandas el ticket y le avisas de promos.")}
           </p>
         </div>
         <div>

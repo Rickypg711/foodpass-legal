@@ -31,6 +31,11 @@ export type ReceiptWhatsappInput = {
   pointsAwarded?: number;
   /** window.location.origin del llamador (para el link del recibo). */
   origin: string;
+  /**
+   * Premios apagados (5-sep): false = el recibo NO anuncia puntos (ni la
+   * línea "ganaste" ni "y tus puntos" en el link). Default true.
+   */
+  promisesPoints?: boolean;
 };
 
 const fmt = (n: number) =>
@@ -42,7 +47,8 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
     .map((i) => `${i.quantity}x ${i.name} — ${fmt(i.price * i.quantity)}`)
     .join("\n");
   const url = `${r.origin}/menu/${encodeURIComponent(r.restaurantId)}/order/${encodeURIComponent(r.orderId)}`;
-  const points = Number(r.pointsAwarded) || 0;
+  const promises = r.promisesPoints !== false;
+  const points = promises ? Number(r.pointsAwarded) || 0 : 0;
   return [
     `¡Gracias por tu compra en *${r.restaurantName || "nuestro local"}*!`,
     "",
@@ -59,7 +65,7 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
       ? ["", `⭐ Ganaste *+${points} puntos* con esta compra`]
       : []),
     "",
-    `Tu recibo y tus puntos: ${url}`,
+    `${promises ? "Tu recibo y tus puntos" : "Tu recibo"}: ${url}`,
   ].join("\n");
 }
 

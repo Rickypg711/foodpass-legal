@@ -1,5 +1,6 @@
 "use client";
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -101,6 +102,10 @@ export default function PedidosPage() {
   const router = useRouter();
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  /** Premios apagados (5-sep): el recibo por WhatsApp no anuncia puntos. */
+
+  const [loyaltyLive, setLoyaltyLive] = useState(true);
   // 🎚️ Formas de pago que el dueño acepta (Configuración); las tres hasta cargar.
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
   const [loading, setLoading] = useState(true);
@@ -138,6 +143,7 @@ export default function PedidosPage() {
       try {
         const rSnap = await getDoc(doc(db, "restaurants", rid));
         setPaymentOptions(acceptedPaymentOptions(rSnap.data()));
+        setLoyaltyLive(restaurantPromisesPoints(rSnap.data()));
       } catch {
         // Sin lectura, las tres: nunca un cobro sin botones.
       }
@@ -316,6 +322,7 @@ export default function PedidosPage() {
     window.open(
       receiptWhatsappUrl({
         restaurantId,
+        promisesPoints: loyaltyLive,
         restaurantName: order.restaurantName,
         orderId: order.id,
         customerPhone: order.customerPhone,

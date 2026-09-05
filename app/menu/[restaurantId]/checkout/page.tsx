@@ -1,5 +1,6 @@
 "use client";
 
+import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -121,6 +122,8 @@ export default function CheckoutPage() {
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({ base: 1, step: 30 });
   const [loyalty, setLoyalty] = useState<{ points: number; tiers: { id: string; name: string; points: number }[] } | null>(null);
   const [restaurantName, setRestaurantName] = useState("Restaurante");
+  /** Premios apagados (5-sep): el checkout no promete puntos. */
+  const [loyaltyLive, setLoyaltyLive] = useState(true);
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
@@ -209,6 +212,7 @@ export default function CheckoutPage() {
           setRestaurantName(name);
           setRestaurantImageUrl(getRestaurantImageUrl(data));
           setEarnPolicy(earnPolicyFromRestaurant(data));
+          setLoyaltyLive(restaurantPromisesPoints(data));
           setClosedNow(isPositivelyClosedNow(data));
           setClosedLabel(scheduleStatus(data)?.label ?? null);
           const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
@@ -677,8 +681,9 @@ export default function CheckoutPage() {
                 Tu WhatsApp <span className="text-[#F28C38]">*</span>
               </span>
               <span className="mt-0.5 block text-xs text-[#1C2526]/55">
-                Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu
-                pedido. Solo números, 10 dígitos.
+                {loyaltyLive
+                  ? "Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu pedido. Solo números, 10 dígitos."
+                  : "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."}
               </span>
               <input
                 type="tel"
@@ -910,9 +915,10 @@ export default function CheckoutPage() {
             >
               Aviso de Privacidad
             </a>
-            . Usamos tu número para tu pedido, tus puntos y para que el
-            restaurante te avise de premios o promociones — puedes pedir que
-            dejen de escribirte cuando quieras.
+            . {loyaltyLive
+              ? "Usamos tu número para tu pedido, tus puntos y para que el restaurante te avise de premios o promociones"
+              : "Usamos tu número para tu pedido y para que el restaurante te avise de promociones"}{" "}
+            — puedes pedir que dejen de escribirte cuando quieras.
           </p>
         </form>
 
