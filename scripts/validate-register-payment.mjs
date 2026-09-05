@@ -10,6 +10,7 @@ import {
   acceptedPaymentMethods,
   paymentMethodsSentence,
   pickupPaymentLine,
+  paidWithLine,
 } from "../lib/pos/paidOrderFields.ts";
 
 // ── 1. LA definición de "pagado" (espejo exacto de paid_order_update.dart —
@@ -65,6 +66,11 @@ assert.equal(pickupPaymentLine("transfer"), "🏦 Pagas por transferencia al rec
 assert.equal(pickupPaymentLine("cash"), "💵 Pagas en efectivo al recoger");
 assert.equal(pickupPaymentLine("card"), "💳 Pagas con tarjeta al recoger");
 assert.equal(pickupPaymentLine(undefined), "💵 Pagas al recoger en el local", "pedidos viejos: la línea de siempre");
+// 🧾 Cobrado: el recibo dice cómo se pagó (Ricardo, 5-sep: "¿dónde dice transferencia?").
+assert.equal(paidWithLine("transfer"), "🏦 Pagado por transferencia");
+assert.equal(paidWithLine("cash"), "💵 Pagado en efectivo");
+assert.equal(paidWithLine("mercado_pago"), "💳 Pagado en línea con Mercado Pago");
+assert.equal(paidWithLine("otra_cosa"), "✅ Pagado");
 
 // ── 2. Candados de fuente: NADIE más escribe el pago ────────────────────────
 const pedidos = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
@@ -101,6 +107,7 @@ assert.ok(!checkout.includes("Efectivo o tarjeta en el local"), "checkout: copy 
 {
   const orderPage = readFileSync(new URL("../app/menu/[restaurantId]/order/[orderId]/page.tsx", import.meta.url), "utf8");
   assert.ok(orderPage.includes("pickupPaymentLine(order?.pickupPaymentMethod)"), "la página del pedido repite lo que dijo el comensal");
+  assert.ok(orderPage.includes("paidWithLine(order?.paymentMethod)"), "cobrado, el recibo dice cómo se pagó");
   assert.ok(checkout.includes("pickupPaymentMethod: enMesaSePagaAlFinal ? null : effectivePickupPayMethod"),
     "checkout manda lo que dijo el comensal, nunca en mesa");
   assert.ok(pedidos.includes("El cliente dijo:"), "Pedidos le enseña al mesero lo que dijo el cliente");

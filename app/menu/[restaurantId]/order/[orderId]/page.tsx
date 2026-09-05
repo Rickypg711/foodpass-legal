@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
-import { pickupPaymentLine } from "@/lib/pos/paidOrderFields";
+import { paidWithLine, pickupPaymentLine } from "@/lib/pos/paidOrderFields";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { formatPrice } from "@/lib/priceFormat";
@@ -541,6 +541,14 @@ function OrderStatusPageContent() {
                   {mesaLabel
                     ? "💵 Pagas al final, aquí en tu mesa"
                     : pickupPaymentLine(order?.pickupPaymentMethod)}
+                </p>
+              ) : null}
+              {/* 🧾 Ya cobrado: el recibo dice cómo se pagó ("Pagado por
+                  transferencia"), lo que registró el cajero — no lo que el
+                  comensal dijo al ordenar. */}
+              {mounted && paymentStatus === "paid" && !isPosOrder ? (
+                <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                  {paidWithLine(order?.paymentMethod)}
                 </p>
               ) : null}
               {/* Robo #5 también AQUÍ: esta página es donde el comensal se

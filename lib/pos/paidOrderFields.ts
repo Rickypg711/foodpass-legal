@@ -81,6 +81,25 @@ export function pickupPaymentLine(method: unknown): string {
   }
 }
 
+/**
+ * Ya cobrado: el recibo dice CÓMO se pagó (lo que registró el cajero en
+ * paymentMethod). Sin método reconocido → línea genérica.
+ */
+export function paidWithLine(method: unknown): string {
+  switch (method) {
+    case "cash":
+      return "💵 Pagado en efectivo";
+    case "card":
+      return "💳 Pagado con tarjeta";
+    case "transfer":
+      return "🏦 Pagado por transferencia";
+    case "mercado_pago":
+      return "💳 Pagado en línea con Mercado Pago";
+    default:
+      return "✅ Pagado";
+  }
+}
+
 export function paymentMethodsSentence(methods: readonly PaymentMethod[]): string {
   const labels = POS_PAYMENT_OPTIONS.filter((o) => methods.includes(o.key)).map((o) => o.label);
   if (labels.length === 0) return "";
