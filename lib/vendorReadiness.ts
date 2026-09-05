@@ -14,7 +14,11 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 
 export * from "@/lib/readiness/evaluate";
-import { evaluateReadiness, type ReadinessResult } from "@/lib/readiness/evaluate";
+import {
+  evaluateReadiness,
+  readinessFieldsForFirestore,
+  type ReadinessResult,
+} from "@/lib/readiness/evaluate";
 
 // ─── Persist (mirrors RestaurantReadinessService.persistReadinessForRestaurantId) ─
 
@@ -30,12 +34,9 @@ export async function persistReadiness(
   const menuItemCount = menuSnap.size;
 
   const result = evaluateReadiness(data, menuItemCount);
-  const status = result.isComplete ? "active" : "setup";
 
   await updateDoc(doc(db, "restaurants", restaurantId), {
-    isSetupComplete: result.isComplete,
-    setupIncompleteReasons: result.reasons,
-    status,
+    ...readinessFieldsForFirestore(result),
     lastUpdated: serverTimestamp(),
   });
 

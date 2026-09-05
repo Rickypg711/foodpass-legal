@@ -84,10 +84,12 @@ const base = (overrides = {}) => ({
   assert.ok(r.reasons.includes("reward_tiers"), "menuItemId en blanco debe ser invalido");
 }
 
-// ── 6. Lista vacia sigue invalida ───────────────────────────────────────────
+// ── 6. Lista vacia sigue invalida (mientras el dueño no haya decidido) ─────
 {
   const r = evaluateReadiness(base({ rewardTiers: [] }), 10);
   assert.ok(r.reasons.includes("reward_tiers"), "sin tiers debe ser invalido");
+  // Con la pantalla de premios guardada, apagar es decisión: ver
+  // validate-readiness-opt-out.mjs (5-sep).
 }
 
 // ── 7. firstPurchaseReward: menuItemId es senal canonica, nombre es respaldo ─
@@ -102,10 +104,14 @@ const base = (overrides = {}) => ({
   }), 10);
   assert.ok(!conNombre.reasons.includes("first_purchase_reward"), "FPR con solo nombre debe ser valido");
 
+  // Desde el 5-sep la bienvenida apagada NO bloquea `active` (decisión
+  // 2-sep): es un hueco informativo (loyaltyGaps) que el cerebro persigue.
   const apagado = evaluateReadiness(base({
     firstPurchaseReward: { enabled: false, menuItemId: "m1" },
   }), 10);
-  assert.ok(apagado.reasons.includes("first_purchase_reward"), "FPR apagado debe ser invalido");
+  assert.ok(!apagado.reasons.includes("first_purchase_reward"), "FPR apagado ya no bloquea active");
+  assert.equal(apagado.isComplete, true, "con tiers puestos y bienvenida apagada el local es active");
+  assert.ok(apagado.loyaltyGaps.includes("first_purchase_reward"), "pero sigue reportado como hueco");
 }
 
 console.log("validate-readiness-tiers: OK");

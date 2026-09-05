@@ -11,9 +11,85 @@
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * Desde el 5-sep-2026 el readiness tiene DOS verdades, no una:
+ *
+ * - `isComplete` / `reasons`: ¿el local terminó de nacer? Nombre, dirección,
+ *   teléfono, categoría, horario y menú. Los premios por puntos SOLO bloquean
+ *   cuando el dueño nunca ha decidido sobre ellos (`loyaltyOptedOut` false).
+ * - `loyaltyReady`: ¿hay algo que ganar? Un premio por puntos o una bienvenida
+ *   prendida. Gobierna el escáner y la lista de puntos de la app, NO el status.
+ *
+ * Por qué: dos dueños en una semana (CURANDERO, CENTRAL FAST FOOD) apagaron
+ * los premios a propósito y el checker los degradó a `setup` — panel en modo
+ * primer día y "termina tu configuración" sobre un local con 62 platillos y
+ * ventas reales. Apagar premios es su derecho: el producto lo informa (esta
+ * página, 2-sep) y el cerebro lo persigue con SUS números, pero no lo castiga.
+ * La bienvenida dejó de bloquear `active` (decisión 2-sep).
+ *
+ * Espejo exacto de restaurant_readiness_evaluator.dart y de
+ * evaluateRestaurantReadinessForRewards (functions). Si tocas uno, toca los tres.
+ */
 export interface ReadinessResult {
+  /** Terminó de nacer: `reasons` vacío. */
   isComplete: boolean;
+  /**
+   * Razones que BLOQUEAN `active`. Nunca incluye `first_purchase_reward`
+   * (desde 5-sep) ni `reward_tiers` cuando `loyaltyOptedOut`.
+   */
   reasons: string[];
+  /** Hay algo que ganar: tiers válidos o bienvenida prendida. */
+  loyaltyReady: boolean;
+  /**
+   * El dueño guardó la pantalla de premios con TODO apagado
+   * (`rewardsConfigured === true` sin tiers ni bienvenida). Decisión suya.
+   */
+  loyaltyOptedOut: boolean;
+  /** Informativo, nunca bloquea: lo que falta de lealtad, para persuadir. */
+  loyaltyGaps: string[];
+}
+
+/**
+ * `rewardsConfigured === true`: el dueño guardó su pantalla de premios al
+ * menos una vez (web desde el 2-sep, app desde el 5-sep). Única señal de
+ * "apagado a propósito" vs "nunca lo armó" (el borrador de la IA lo espera).
+ */
+export function isRewardsOptOutAttested(data: Record<string, unknown>): boolean {
+  return data.rewardsConfigured === true;
+}
+
+/**
+ * Campos derivados que TODO escritor persiste juntos en `restaurants/{id}`
+ * (web: persistReadiness; app: readinessFieldsForFirestore; functions:
+ * applyRewardDraft). Una sola forma para que ningún lado olvide uno.
+ */
+export function readinessFieldsForFirestore(result: ReadinessResult): {
+  isSetupComplete: boolean;
+  setupIncompleteReasons: string[];
+  status: "active" | "setup";
+  loyaltyReady: boolean;
+  loyaltyOptedOut: boolean;
+} {
+  return {
+    isSetupComplete: result.isComplete,
+    setupIncompleteReasons: result.reasons,
+    status: result.isComplete ? "active" : "setup",
+    loyaltyReady: result.loyaltyReady,
+    loyaltyOptedOut: result.loyaltyOptedOut,
+  };
+}
+
+/**
+ * Diners (búsqueda, feed, cerca de ti, puntos): solo locales completos CON
+ * algo que ganar. Un local que apagó sus premios es invisible en la app de
+ * puntos — igual que antes del 5-sep — pero su menú y su QR viven aquí.
+ * Espejo de `isRestaurantVisibleToDiners` en la app. Docs anteriores al
+ * 5-sep no traen `loyaltyReady`: completo implicaba premios.
+ */
+export function isRestaurantVisibleToDiners(data: Record<string, unknown> | undefined): boolean {
+  if (!data) return false;
+  if (data.isSetupComplete !== true) return false;
+  return data.loyaltyReady !== false;
 }
 
 export type SetupStep = "business" | "hours" | "menu" | "rewards";
@@ -119,15 +195,27 @@ export function evaluateReadiness(
 
   if (menuItemCount < 1) reasons.push("menu_items");
 
-  if (!hasEnabledFirstPurchaseReward(restaurantData.firstPurchaseReward)) {
-    reasons.push("first_purchase_reward");
-  }
+  const hasWelcome = hasEnabledFirstPurchaseReward(restaurantData.firstPurchaseReward);
+  const hasTiers = hasValidRewardTiers(restaurantData.rewardTiers);
 
-  if (!hasValidRewardTiers(restaurantData.rewardTiers)) {
-    reasons.push("reward_tiers");
-  }
+  // El dueño ya DECIDIÓ sobre sus premios: guardó la pantalla y la dejó sin
+  // nada prendido. Sin ese guardado, un local sin tiers sigue siendo un paso
+  // pendiente (el borrador de la IA lo espera) — el muro #1 no se abre.
+  const loyaltyOptedOut = isRewardsOptOutAttested(restaurantData) && !hasTiers && !hasWelcome;
 
-  return { isComplete: reasons.length === 0, reasons };
+  const loyaltyGaps: string[] = [];
+  if (!hasWelcome) loyaltyGaps.push("first_purchase_reward");
+  if (!hasTiers) loyaltyGaps.push("reward_tiers");
+
+  if (!hasTiers && !loyaltyOptedOut) reasons.push("reward_tiers");
+
+  return {
+    isComplete: reasons.length === 0,
+    reasons,
+    loyaltyReady: hasTiers || hasWelcome,
+    loyaltyOptedOut,
+    loyaltyGaps,
+  };
 }
 
 /** Groups `setupIncompleteReasons` codes into the 4 UI step groups. */

@@ -642,10 +642,19 @@ function RecompensasSetupPageInner() {
 
   const anyTierOn = currentTiers.some((t) => t.hasMenuItem && t.menuItemId);
 
-  /** Razones de readiness si el restaurante quedara con este parche. */
-  function reasonsIf(patch: Record<string, unknown>): string[] {
-    if (!restaurantData) return [];
-    return evaluateReadiness({ ...restaurantData, ...patch }, menuItems.length).reasons;
+  /**
+   * ¿Quedaría SIN nada que ganar con este parche? Desde el 5-sep apagar
+   * premios ya no degrada a `setup` (guardar la pantalla es la decisión del
+   * dueño: `rewardsConfigured`), pero sí deja el escáner en pausa y saca al
+   * local de la lista de puntos de la app. Eso es lo que la hoja avisa. Se
+   * calcula con evaluateReadiness, la misma verdad que decide `active`.
+   */
+  function loyaltyOffIf(patch: Record<string, unknown>): boolean {
+    if (!restaurantData) return false;
+    return !evaluateReadiness(
+      { ...restaurantData, ...patch, rewardsConfigured: true },
+      menuItems.length,
+    ).loyaltyReady;
   }
   const formAsRestaurantPatch = {
     firstPurchaseReward: { enabled: currentFPR.enabled, menuItemId: currentFPR.menuItemId || null },
@@ -653,15 +662,13 @@ function RecompensasSetupPageInner() {
       .filter((t) => t.hasMenuItem && t.menuItemId)
       .map((t) => ({ menuItemId: t.menuItemId, visitsRequired: t.pointsRequired })),
   };
-  // ¿Lo apagado, tal como está el formulario, deja el local incompleto?
-  const rewardsOffBlocksNow = reasonsIf(formAsRestaurantPatch)
-    .some((r) => r === "first_purchase_reward" || r === "reward_tiers");
-  const welcomeOffWouldBlock = reasonsIf({
+  // ¿Lo apagado, tal como está el formulario, deja el escáner en pausa?
+  const rewardsOffBlocksNow = loyaltyOffIf(formAsRestaurantPatch);
+  const welcomeOffWouldBlock = loyaltyOffIf({
     ...formAsRestaurantPatch,
     firstPurchaseReward: { enabled: false, menuItemId: null },
-  }).includes("first_purchase_reward");
-  const tiersOffWouldBlock = reasonsIf({ ...formAsRestaurantPatch, rewardTiers: [] })
-    .includes("reward_tiers");
+  });
+  const tiersOffWouldBlock = loyaltyOffIf({ ...formAsRestaurantPatch, rewardTiers: [] });
 
   function flipTier(i: number) {
     const updated = [...currentTiers];
@@ -766,7 +773,7 @@ function RecompensasSetupPageInner() {
                 ? "Se regala en la segunda visita, nunca en la misma. Sin regalo, tu cliente escanea una vez y no vuelve."
                 : "Sin ningún premio, los puntos que juntan tus clientes no valen nada. Y el premio es la razón por la que te dan su número en la caja."}
               {(offAsk.kind === "welcome" ? welcomeOffWouldBlock : tiersOffWouldBlock) && (
-                <> Y mientras siga así, tu local no sale en la app y el escáner queda en pausa.</>
+                <> Y mientras siga así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</>
               )}
             </p>
             <button
@@ -876,7 +883,7 @@ function RecompensasSetupPageInner() {
                 <p>⭐ Sin premios por puntos: lo que juntan tus clientes hoy no vale nada.</p>
               )}
               {rewardsOffBlocksNow && (
-                <p className="font-semibold text-[#141413]">Así, tu local no sale en la app y el escáner queda en pausa.</p>
+                <p className="font-semibold text-[#141413]">Así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</p>
               )}
             </div>
           )}

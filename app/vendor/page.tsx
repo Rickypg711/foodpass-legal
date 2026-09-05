@@ -69,6 +69,8 @@ interface DashboardData {
   recentScans: RecentScan[];
   isSetupComplete: boolean;
   setupIncompleteReasons: string[];
+  /** `loyaltyReady` (5-sep): completo pero sin nada que ganar → false. */
+  loyaltyReady: boolean;
   // NBA (Next Best Action) from vendorInsights/current
   nbaActionCode: string;
   nbaTitle: string;
@@ -456,6 +458,7 @@ export default function VendorDashboard() {
             brainActionCode,
             (r.isSetupComplete as boolean) ?? true,
             (r.setupIncompleteReasons as string[]) ?? [],
+            r.loyaltyReady !== false,
         );
         const nbaOverridden = nbaCode !== brainActionCode;
 
@@ -474,6 +477,7 @@ export default function VendorDashboard() {
           recentScans,
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
+          loyaltyReady: r.loyaltyReady !== false,
           nbaActionCode: nbaCode,
           nbaTitle: nbaOverridden
             ? getNbaFallbackTitle(nbaCode)
@@ -483,7 +487,7 @@ export default function VendorDashboard() {
           // dice "Cobrar con numero". El texto tiene que venir del codigo que se
           // esta mostrando, no del que el cerebro creia.
           nbaBody: nbaOverridden
-            ? getNbaFallbackBody(nbaCode)
+            ? getNbaFallbackBody(nbaCode, r.loyaltyReady !== false)
             : ((ins?.body_es as string) ?? ""),
           nbaMetrics: {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
@@ -1506,7 +1510,21 @@ function resolveNbaActionCode(
   brainActionCode: string,
   isSetupComplete: boolean,
   setupReasons: string[],
+  loyaltyReady = true,
 ): string {
+  // Completo pero SIN nada que ganar (premios apagados a propósito, 5-sep):
+  // el escáner está en pausa, así que "tu primera visita con puntos" sería
+  // mentira. El único siguiente paso de lealtad es ponerle un premio — y el
+  // cerebro lo argumenta con sus números. Espejo de la app (NBA card).
+  if (isSetupComplete && !loyaltyReady) {
+    if (brainActionCode === "configure_rewards" || brainActionCode === "enable_first_purchase_reward") {
+      return brainActionCode;
+    }
+    if (SETUP_BLOCKING_NBA.has(brainActionCode) || brainActionCode === "get_first_scan" || brainActionCode === "unknown") {
+      return "configure_rewards";
+    }
+    return brainActionCode;
+  }
   if (isSetupComplete && SETUP_BLOCKING_NBA.has(brainActionCode)) return "get_first_scan";
   // check_ai_draft es MÁS específico que el fallback del readiness: el cerebro
   // ya sabe que hay una propuesta esperando. Sobrescribirlo por
@@ -1542,7 +1560,12 @@ function getNbaFallbackTitle(actionCode: string): string {
   }
 }
 
-function getNbaFallbackBody(actionCode: string): string {
+function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
+  // Completo pero sin nada que ganar (5-sep): la consecuencia real es el
+  // escáner en pausa y no salir en la app de puntos — no "incompleto".
+  if (actionCode === "configure_rewards" && !loyaltyReady) {
+    return "Tu local ya está completo. Sin un premio, el escáner queda en pausa y no sales en la app de puntos; tu Caja, tu menú y tu QR siguen igual. Ponle un premio: la IA te lo arma con tu menú en 30 segundos.";
+  }
   switch (actionCode) {
     case "set_business_hours": return "Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir — toma 2 minutos.";
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
