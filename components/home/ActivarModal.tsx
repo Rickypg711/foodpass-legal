@@ -37,7 +37,8 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
-import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone } from "@/lib/phone/phoneCountry";
+import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -268,6 +269,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
     // el dueño: los links wa.me anteponen "52", y un "+52..." guardado tal
     // cual armaba wa.me/5252... — WhatsApp roto (cazado por Ricardo 26-ago).
     const phone10 = phone.replace(/\D/g, "").slice(-10);
+    const signupCurrency = currencyForTypedPhone(phone) ?? "MXN";
     if (phone10.length !== 10) {
       setError("Pon tus 10 dígitos. Si no estás en México, ponlo con + y tu país, como +1 809 123 4567.");
       return;
@@ -287,8 +289,10 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         ownerId: user.uid,
         billingOwnerUserId: user.uid,
         createdAt: serverTimestamp(),
-        currencyCode: "MXN",
-        loyaltyEarnPolicy: { currencyCode: "MXN", basePointsPerPurchase: 1, spendStepAmount: 30 },
+        // Moneda y regla de puntos según el país del número (5-sep): "+1 809"
+        // es RD (DOP, paso 100); otro "+1" es USD; "+57" COP; 10 pelones MXN.
+        currencyCode: signupCurrency,
+        loyaltyEarnPolicy: newVenueEarnPolicy(signupCurrency),
         pointsPerVisit: 1,
         pointsRequired: 10,
         lat: 0, lng: 0,

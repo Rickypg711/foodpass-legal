@@ -24,6 +24,7 @@ import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
 import type { User } from "firebase/auth";
 import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
+import { defaultSpendStepForCurrency, earnRuleLine, newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,10 @@ export default function ConfiguracionPage() {
   const [phone, setPhone] = useState("");
   /** País del teléfono (5-sep): wa.me y SMS del local marcan con este código. */
   const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
+  /** Moneda del local; el paso de puntos ("1 extra por cada $X") sale de ella. */
+  const [currency, setCurrency] = useState("MXN");
+  /** Moneda tal como se cargó: sólo si cambia se reescribe la política de puntos. */
+  const [loadedCurrency, setLoadedCurrency] = useState("MXN");
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
   const [story, setStory] = useState("");
@@ -150,6 +155,13 @@ export default function ConfiguracionPage() {
       );
       setPhone((data.phone as string) ?? "");
       setPhoneCountry(phoneCountryOf(data));
+      {
+        const cur = typeof data.currencyCode === "string" && data.currencyCode.trim()
+          ? data.currencyCode.trim().toUpperCase()
+          : "MXN";
+        setCurrency(cur);
+        setLoadedCurrency(cur);
+      }
       setStory((data.story as string) ?? "");
       setGoogleReviewUrl((data.googleReviewUrl as string) ?? "");
       setSlug(slugFromRestaurantData(data));
@@ -425,6 +437,7 @@ export default function ConfiguracionPage() {
         address: address.trim(),
         phone: phone.trim(),
         phoneCountryCode: phoneCountry,
+        currencyCode: currency,
         story: story.trim(),
         googleReviewUrl: googleReviewUrl.trim(),
         categories,
@@ -433,6 +446,12 @@ export default function ConfiguracionPage() {
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
+      // Cambió de moneda (5-sep): la regla de puntos se recalibra a su
+      // moneda (MXN 30 · USD 2 · DOP 100 · COP 8,000). Misma moneda = no se
+      // toca lo que ya tenía.
+      if (currency !== loadedCurrency) {
+        update.loyaltyEarnPolicy = newVenueEarnPolicy(currency);
+      }
       if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
         update.dailyRevenueGoal = Number(dailyRevenueGoal);
       } else {
@@ -811,7 +830,8 @@ export default function ConfiguracionPage() {
                 <div className="flex gap-2">
                   <PhoneCountrySelect
                     value={phoneCountry}
-                    onChange={(c) => { setPhoneCountry(c); setSaved(false); }}
+                    currency={currency}
+                    onChange={(c) => { setPhoneCountry(c.code); setCurrency(c.currency); setSaved(false); }}
                     className="max-w-[46%] shrink-0"
                   />
                   <TextInput
@@ -823,6 +843,8 @@ export default function ConfiguracionPage() {
                 </div>
                 <p className="mt-1.5 text-[11px] text-[#1C2526]/55">
                   Si tu local no está en México, cambia el país aquí. Así tu botón de WhatsApp y los códigos por SMS de tus clientes marcan bien.
+                  {" "}Tus precios quedan en {currency} y tus clientes ganan {earnRuleLine({ base: 1, step: defaultSpendStepForCurrency(currency) })}.
+                  {currency !== loadedCurrency ? " Al guardar, la regla de puntos se ajusta a la nueva moneda." : ""}
                 </p>
               </Field>
               <Field label="Tu historia (opcional)">

@@ -381,7 +381,7 @@ export default function PuntosGlobalPage() {
               todos tus lugares. Sin apps, sin cuentas.
             </p>
             <div className="mt-4 flex gap-2">
-              <PhoneCountrySelect value={country} onChange={setCountry} className="max-w-[46%] shrink-0" />
+              <PhoneCountrySelect value={country} onChange={(c) => setCountry(c.code)} className="max-w-[46%] shrink-0" />
               <input
                 type="tel"
                 inputMode="numeric"

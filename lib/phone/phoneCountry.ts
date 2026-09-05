@@ -21,15 +21,48 @@ export type PhoneCountry = {
   flag: string;
   /** Ejemplo local de 10 dígitos para el placeholder. */
   example: string;
+  /** Moneda del país (ISO 4217). El paso de puntos sale de aquí (earnPolicy.ts). */
+  currency: string;
 };
 
 /** Sólo países con número nacional de 10 dígitos (ver nota arriba). */
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
-  { code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567" },
-  { code: "1", label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567" },
-  { code: "1", label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567" },
-  { code: "57", label: "Colombia", flag: "🇨🇴", example: "321 123 4567" },
+  { code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567", currency: "MXN" },
+  { code: "1", label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP" },
+  { code: "1", label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD" },
+  { code: "57", label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP" },
 ] as const;
+
+/** Ladas de República Dominicana dentro del +1 (NANP). */
+const DO_AREA_CODES = ["809", "829", "849"];
+
+/**
+ * La entrada del selector que corresponde a un restaurante: por código de
+ * país y, cuando el código lo comparten varios (+1), por moneda. México si
+ * no hay nada.
+ */
+export function phoneCountryEntryOf(
+  data: { phoneCountryCode?: unknown; currencyCode?: unknown } | Record<string, unknown> | null | undefined,
+): PhoneCountry {
+  const code = phoneCountryOf(data);
+  const cur = (data as { currencyCode?: unknown } | null | undefined)?.currencyCode;
+  const byBoth = PHONE_COUNTRIES.find((c) => c.code === code && c.currency === cur);
+  return byBoth ?? PHONE_COUNTRIES.find((c) => c.code === code) ?? PHONE_COUNTRIES[0];
+}
+
+/**
+ * Moneda que delata el número escrito con "+": "+1 809..." es DOP (RD),
+ * cualquier otro "+1" es USD, "+57" COP, "+52" MXN. Sin "+" no adivinamos.
+ */
+export function currencyForTypedPhone(raw: string): string | null {
+  const code = countryFromTypedPhone(raw);
+  if (!code) return null;
+  if (code === "1") {
+    const p10 = phoneLast10(raw);
+    return DO_AREA_CODES.includes(p10.slice(0, 3)) ? "DOP" : "USD";
+  }
+  return PHONE_COUNTRIES.find((c) => c.code === code)?.currency ?? null;
+}
 
 /** ¿Es un código de país que aceptamos? */
 export function isSupportedPhoneCountry(code: unknown): code is string {

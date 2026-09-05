@@ -88,4 +88,23 @@ const cfgSrc = read("app/vendor/configuracion/page.tsx");
 if (!/phoneCountryCode: phoneCountry/.test(cfgSrc)) fail("Configuración debe guardar phoneCountryCode");
 if (!/PHONE_COUNTRIES/.test(cfgSrc)) fail("Configuración debe ofrecer el selector de país (PHONE_COUNTRIES)");
 
+// 6) El país trae su moneda y la moneda su paso de puntos (5-sep, Central Fast Food).
+for (const pair of ['code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567", currency: "MXN"',
+                    'label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP"',
+                    'label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD"',
+                    'label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP"']) {
+  if (!countrySrc.includes(pair)) fail(`PHONE_COUNTRIES debe traer la moneda: ${pair}`);
+}
+if (!/DO_AREA_CODES = \["809", "829", "849"\]/.test(countrySrc)) fail("+1 809/829/849 debe reconocerse como República Dominicana (DOP)");
+const earnSrc = read("lib/loyalty/earnPolicy.ts");
+for (const [cc, step] of [["USD", "2"], ["DOP", "100"], ["COP", "8000"]]) {
+  if (!new RegExp(`case "${cc}":\\s*return ${step};`).test(earnSrc)) fail(`defaultSpendStepForCurrency: ${cc} debe dar ${step}`);
+}
+if (!/default:\s*return 30;/.test(earnSrc)) fail("MXN (y desconocidos) siguen en 30");
+if (/cc === "USD" \? 2 : 30/.test(earnSrc)) fail("earnPolicyFromRestaurant ya no puede tener la tabla a mano");
+if (!/currencyCode: currency,/.test(cfgSrc)) fail("Configuración debe guardar currencyCode junto con el país");
+if (!/update\.loyaltyEarnPolicy = newVenueEarnPolicy\(currency\)/.test(cfgSrc)) fail("Configuración debe recalibrar la regla de puntos cuando cambia la moneda");
+if (/currencyCode: "MXN",/.test(modalSrc)) fail("el alta ya no puede coser MXN — la moneda sale del número escrito");
+if (!/loyaltyEarnPolicy: newVenueEarnPolicy\(signupCurrency\)/.test(modalSrc)) fail("el alta debe guardar la regla de puntos de la moneda detectada");
+
 console.log("✓ canon WhatsApp: se guardan 10 dígitos, todo link es wa.me/PAÍS+últimos10 (México si el local no dice otro)");

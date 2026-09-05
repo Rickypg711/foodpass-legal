@@ -6,10 +6,11 @@
 // Lista corta a propósito: sólo países con número nacional de 10 dígitos
 // (ver lib/phone/phoneCountry.ts).
 
-import { PHONE_COUNTRIES } from "@/lib/phone/phoneCountry";
+import { PHONE_COUNTRIES, type PhoneCountry } from "@/lib/phone/phoneCountry";
 
 export function PhoneCountrySelect({
   value,
+  currency,
   onChange,
   disabled = false,
   className = "",
@@ -17,16 +18,20 @@ export function PhoneCountrySelect({
 }: {
   /** Código de país en dígitos ("52", "1", "57"). */
   value: string;
-  onChange: (code: string) => void;
+  /** Moneda del local: desempata los países que comparten código (+1). */
+  currency?: string;
+  /** Devuelve la entrada completa: código, moneda, ejemplo. */
+  onChange: (country: PhoneCountry) => void;
   disabled?: boolean;
   className?: string;
   ariaLabel?: string;
 }) {
   // DO y US comparten "+1": el <select> necesita un valor único por opción,
   // así que el valor es el índice y el país se traduce al salir.
+  const byBoth = PHONE_COUNTRIES.findIndex((c) => c.code === value && c.currency === currency);
   const selectedIndex = Math.max(
     0,
-    PHONE_COUNTRIES.findIndex((c) => c.code === value),
+    byBoth >= 0 ? byBoth : PHONE_COUNTRIES.findIndex((c) => c.code === value),
   );
   return (
     <select
@@ -35,7 +40,7 @@ export function PhoneCountrySelect({
       disabled={disabled}
       onChange={(e) => {
         const c = PHONE_COUNTRIES[Number(e.target.value)];
-        if (c) onChange(c.code);
+        if (c) onChange(c);
       }}
       className={`rounded-xl border border-[#1C2526]/12 bg-[#F5F3EF] px-2.5 py-2.5 text-[13px] text-[#1C2526] outline-none focus:border-[#F28C38] disabled:opacity-50 ${className}`}
     >
