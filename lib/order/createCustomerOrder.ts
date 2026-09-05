@@ -34,6 +34,8 @@ export async function createCustomerWebOrder(params: {
   tableNumber?: string | null;
   /** Personas en la mesa. Solo dine_in. */
   diners?: number | null;
+  /** Cómo dijo el comensal que paga al recoger (pay_at_pickup sin mesa). */
+  pickupPaymentMethod?: import("@/lib/types/order").PickupPaymentMethod | null;
 }): Promise<CreateOrderResult> {
   const user = await ensureAnonymousUser();
   const pickupPin = generatePickupPin();
@@ -66,6 +68,7 @@ export async function createCustomerWebOrder(params: {
     tableNumber: params.tableNumber,
     diners: params.diners,
     tabId,
+    pickupPaymentMethod: params.pickupPaymentMethod ?? null,
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {

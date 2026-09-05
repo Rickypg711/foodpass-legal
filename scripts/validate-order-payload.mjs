@@ -27,6 +27,15 @@ if (!/phone\.length > 10\)\s*phone = phone\.slice\(-10\)/.test(buildOrderPayload
   process.exit(1);
 }
 
+// 🏦 pickupPaymentMethod (5-sep-2026): lo que el comensal DIJO. Solo en
+// pay_at_pickup y nunca en mesa — en mesa se paga al final con el mesero, y
+// con MP ya pagó. Si esto se afloja, un pedido prepagado diría "pagas por
+// transferencia al recoger".
+if (!/paymentMethod === PAYMENT_METHOD_PAY_AT_PICKUP && !tableNumber\s*\?\s*normalizePickupPaymentMethod/.test(buildOrderPayloadSrc)) {
+  console.error("buildOrderPayload.ts: pickupPaymentMethod solo en pay_at_pickup sin mesa");
+  process.exit(1);
+}
+
 const REQUIRED_TOP_LEVEL = [
   "restaurantId",
   "customerId",

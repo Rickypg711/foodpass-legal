@@ -7,7 +7,12 @@ import { useEffect, useState } from "react";
 import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
 import { UpsellCard } from "@/components/cart/UpsellCard";
 import { useCart } from "@/lib/cart/CartProvider";
-import { acceptedPaymentMethods, paymentMethodsSentence } from "@/lib/pos/paidOrderFields";
+import {
+  POS_PAYMENT_OPTIONS,
+  acceptedPaymentMethods,
+  paymentMethodsSentence,
+  type PaymentMethod,
+} from "@/lib/pos/paidOrderFields";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
@@ -121,12 +126,20 @@ export default function CheckoutPage() {
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
   /** 🎚️ "Efectivo o transferencia" — lo que el dueño dejó prendido en Configuración. */
   const [pickupMethodsLabel, setPickupMethodsLabel] = useState("Efectivo o tarjeta");
+  /** 🎚️ Las formas que el local acepta, para que el comensal diga cuál usará. */
+  const [acceptedMethods, setAcceptedMethods] = useState<PaymentMethod[]>([]);
+  /** 🏦 "Pago por transferencia": lo que el comensal dice al ordenar. null = la primera aceptada. */
+  const [pickupPayMethod, setPickupPayMethod] = useState<PaymentMethod | null>(null);
   /**
    * Está SENTADO, no viene por su comida. Cambia tres cosas: no elige forma de
    * pago, el botón manda a cocina en vez de cobrar, y la letra chica dice que
    * paga al final con el mesero.
    */
   const enMesa = Boolean(tableNumber) && payAtPickupAvailable;
+  const effectivePickupPayMethod: PaymentMethod | null =
+    pickupPayMethod && acceptedMethods.includes(pickupPayMethod)
+      ? pickupPayMethod
+      : (acceptedMethods[0] ?? null);
   /** Cerrado según horario configurado (lib/schedule) — bloquea el envío. */
   const [closedNow, setClosedNow] = useState(false);
   const [closedLabel, setClosedLabel] = useState<string | null>(null);
@@ -200,7 +213,9 @@ export default function CheckoutPage() {
           const papOk = restaurantAllowsPayAtPickup(data);
           setMercadoPagoAvailable(mpOk);
           setPayAtPickupAvailable(papOk);
-          setPickupMethodsLabel(paymentMethodsSentence(acceptedPaymentMethods(data)));
+          const accepted = acceptedPaymentMethods(data);
+          setAcceptedMethods(accepted);
+          setPickupMethodsLabel(paymentMethodsSentence(accepted));
           // Default selection: MP when available (pay-before-prepare stays the
           // preferred path); otherwise pay-at-pickup if the vendor allows it.
           setPayMethod(
@@ -354,6 +369,8 @@ export default function CheckoutPage() {
           redemptionRequest: redemption,
           tableNumber,
           diners: diners ? Number.parseInt(diners, 10) : null,
+          // En mesa no hay decisión (se paga al final con el mesero).
+          pickupPaymentMethod: enMesaSePagaAlFinal ? null : effectivePickupPayMethod,
         });
         mpWebDebugClient("order_create_success", {
           restaurantId,
@@ -810,6 +827,35 @@ export default function CheckoutPage() {
                   </span>
                 </button>
               </div>
+              {/* 🏦 ¿Con qué vas a pagar al recoger? Solo cuando eligió pagar
+                  en el local Y el dueño acepta más de una forma. El mesero lo
+                  ve en Pedidos y tu página de pedido lo repite. */}
+              {payMethod === PAYMENT_METHOD_PAY_AT_PICKUP && acceptedMethods.length > 1 ? (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-[#1C2526]/70">¿Con qué vas a pagar?</p>
+                  <div className="mt-1.5 flex gap-1.5">
+                    {POS_PAYMENT_OPTIONS.filter((o) => acceptedMethods.includes(o.key)).map((o) => {
+                      const on = effectivePickupPayMethod === o.key;
+                      return (
+                        <button
+                          key={o.key}
+                          type="button"
+                          disabled={submitting}
+                          onClick={() => setPickupPayMethod(o.key)}
+                          aria-pressed={on}
+                          className={`flex-1 rounded-xl border px-2 py-2 text-xs font-semibold transition-colors ${
+                            on
+                              ? "border-[#F28C38] bg-[#FFF3E8] text-[#1C2526]"
+                              : "border-[#1C2526]/12 bg-[#FAF7F2] text-[#1C2526]/70 hover:border-[#F28C38]/50"
+                          }`}
+                        >
+                          {o.emoji} {o.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
             <div className="rounded-2xl bg-white p-4 shadow-sm">

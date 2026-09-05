@@ -63,6 +63,24 @@ export function acceptedPaymentOptions(data: unknown) {
  * "Efectivo o transferencia", "Efectivo, tarjeta o transferencia" — para el
  * copy que le dice al cliente cómo puede pagar en el local.
  */
+/**
+ * Lo que el comensal DIJO que va a hacer al recoger ("pickupPaymentMethod").
+ * Copy para su página de pedido y para el app. Sin dato (pedidos viejos, o
+ * el dueño solo acepta una forma) → la línea genérica de siempre.
+ */
+export function pickupPaymentLine(method: unknown): string {
+  switch (method) {
+    case "cash":
+      return "💵 Pagas en efectivo al recoger";
+    case "card":
+      return "💳 Pagas con tarjeta al recoger";
+    case "transfer":
+      return "🏦 Pagas por transferencia al recoger";
+    default:
+      return "💵 Pagas al recoger en el local";
+  }
+}
+
 export function paymentMethodsSentence(methods: readonly PaymentMethod[]): string {
   const labels = POS_PAYMENT_OPTIONS.filter((o) => methods.includes(o.key)).map((o) => o.label);
   if (labels.length === 0) return "";

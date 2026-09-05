@@ -64,6 +64,8 @@ interface Order {
   isOpenTab?: boolean;
   paymentMethod: string;
   paymentStatus: "paid" | "pending";
+  /** 🏦 Lo que el comensal dijo al ordenar (cash/card/transfer). */
+  pickupPaymentMethod?: string;
   orderType: "pickup" | "delivery" | "in_store" | "dine_in";
   /** Mesa cuando el comensal pidió desde el QR de su mesa (orderType dine_in). */
   tableNumber?: string;
@@ -496,6 +498,14 @@ export default function PedidosPage() {
                               {order.diners ? ` · ${order.diners}p` : ""}
                             </span>
                           ) : null}
+                          {/* 🏦 Lo que el comensal DIJO al ordenar. Solo mientras
+                              no se cobra: ya cobrado, manda paymentMethod. */}
+                          {!isPaid && order.pickupPaymentMethod ? (
+                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#FFF3E8] text-[#C2410C]">
+                              {POS_PAYMENT_OPTIONS.find((o) => o.key === order.pickupPaymentMethod)?.emoji ?? "💵"}{" "}
+                              Paga con {POS_PAYMENT_OPTIONS.find((o) => o.key === order.pickupPaymentMethod)?.label.toLowerCase() ?? order.pickupPaymentMethod}
+                            </span>
+                          ) : null}
                           {order.isOpenTab && (
                             <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600">
                               Cuenta Abierta
@@ -669,12 +679,25 @@ export default function PedidosPage() {
           <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <p className="text-[16px] font-extrabold text-[#1C2526]">Registrar Pago</p>
             <p className="text-[13px] text-gray-400 font-medium">Elige el método de pago del cliente</p>
+            {(() => {
+              const said = orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod;
+              const opt = said ? POS_PAYMENT_OPTIONS.find((o) => o.key === said) : undefined;
+              return opt ? (
+                <p className="text-[12px] font-semibold text-[#C2410C]">
+                  El cliente dijo: {opt.emoji} {opt.label}
+                </p>
+              ) : null;
+            })()}
             <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
               {paymentOptions.map((m) => (
                 <button
                   key={m.key}
                   onClick={() => chargeOrder(chargingOrderId, m.key)}
-                  className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
+                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border hover:bg-orange-50 hover:border-[#F28C38] transition-all ${
+                    orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod === m.key
+                      ? "bg-orange-50 border-[#F28C38] ring-2 ring-[#F28C38]/25"
+                      : "bg-gray-50 border-gray-100"
+                  }`}
                 >
                   <span className="text-2xl mb-1">{m.emoji}</span>
                   <span className="text-[12px] font-bold text-[#1C2526]">{m.label}</span>

@@ -10,6 +10,7 @@ import {
   type CustomerOrderPayload,
   type OrderPaymentMethod,
   type OrderRedemptionRequest,
+  type PickupPaymentMethod,
 } from "@/lib/types/order";
 import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
 import {
@@ -41,11 +42,20 @@ export type BuildOrderInput = {
    * cuando la orden ABRE cuenta — una mesa prepagada con MP no es una cuenta.
    */
   tabId?: string | null;
+  /** Cómo dijo el comensal que paga al recoger. Solo pay_at_pickup sin mesa. */
+  pickupPaymentMethod?: PickupPaymentMethod | null;
 };
 
 /**
  * Builds Firestore order map aligned with Flutter Order.toMap() (Phase 1).
  */
+function normalizePickupPaymentMethod(
+  raw: unknown,
+): PickupPaymentMethod | null {
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return v === "cash" || v === "card" || v === "transfer" ? v : null;
+}
+
 export function buildCustomerWebOrderPayload(
   input: BuildOrderInput,
 ): CustomerOrderPayload {
@@ -138,6 +148,15 @@ export function buildCustomerWebOrderPayload(
     loyaltyAwarded: false,
     createdAt: serverTimestamp(),
   };
+
+  // 🏦 "Pago por transferencia": lo que el comensal dijo, para que el mesero
+  // lo vea en Pedidos y la página del pedido no diga "pagas al recoger" a
+  // secas. Nunca en mesa (se paga al final con el mesero) ni con MP (ya pagó).
+  const pickupPaymentMethod =
+    paymentMethod === PAYMENT_METHOD_PAY_AT_PICKUP && !tableNumber
+      ? normalizePickupPaymentMethod(input.pickupPaymentMethod)
+      : null;
+  if (pickupPaymentMethod) payload.pickupPaymentMethod = pickupPaymentMethod;
 
   if (tableNumber) {
     payload.tableNumber = tableNumber;

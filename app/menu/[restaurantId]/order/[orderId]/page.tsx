@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
+import { pickupPaymentLine } from "@/lib/pos/paidOrderFields";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { formatPrice } from "@/lib/priceFormat";
@@ -33,6 +34,8 @@ type OrderDoc = {
   status?: string;
   paymentStatus?: string;
   paymentMethod?: string;
+  /** 🏦 Cómo dijo el comensal que paga al recoger (cash/card/transfer). */
+  pickupPaymentMethod?: string;
   orderSource?: string;
   customerName?: string;
   customerPhone?: string;
@@ -537,7 +540,7 @@ function OrderStatusPageContent() {
                 <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
                   {mesaLabel
                     ? "💵 Pagas al final, aquí en tu mesa"
-                    : "💵 Pagas al recoger en el local"}
+                    : pickupPaymentLine(order?.pickupPaymentMethod)}
                 </p>
               ) : null}
               {/* Robo #5 también AQUÍ: esta página es donde el comensal se

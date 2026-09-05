@@ -43,6 +43,9 @@ export type OrderRedemptionRequest = {
   points: number;
 };
 
+/** Cómo dijo el comensal que paga al recoger (solo pay_at_pickup, sin mesa). */
+export type PickupPaymentMethod = "cash" | "card" | "transfer";
+
 export type CustomerOrderPayload = {
   restaurantId: string;
   customerId: string;
@@ -76,6 +79,13 @@ export type CustomerOrderPayload = {
   /** Cuenta de la mesa (Etapa 1): agrupa las rondas de la MISMA mesa en una
    * fila de la Caja sin fusionar tickets. Solo cuando la orden abre cuenta. */
   tabId?: string;
+  /**
+   * 🏦 Lo que el comensal DIJO al ordenar: "pago por transferencia" (o
+   * efectivo, o tarjeta). NO es el cobro — ese lo registra el mesero en
+   * Pedidos y vive en paymentMethod. Solo se escribe en pay_at_pickup para
+   * llevar; en mesa se paga al final con el mesero y no hay decisión.
+   */
+  pickupPaymentMethod?: PickupPaymentMethod;
   loyaltyAwarded?: boolean;
   createdAt: ReturnType<typeof import("firebase/firestore").serverTimestamp>;
 };

@@ -9,6 +9,7 @@ import {
   tipStaysWithStaff,
   acceptedPaymentMethods,
   paymentMethodsSentence,
+  pickupPaymentLine,
 } from "../lib/pos/paidOrderFields.ts";
 
 // ── 1. LA definición de "pagado" (espejo exacto de paid_order_update.dart —
@@ -59,6 +60,12 @@ assert.equal(paymentMethodsSentence(["cash", "transfer"]), "Efectivo o transfere
 assert.equal(paymentMethodsSentence(["cash", "card", "transfer"]), "Efectivo, tarjeta o transferencia");
 assert.equal(paymentMethodsSentence(["card"]), "Tarjeta");
 
+// ── 1d. 🏦 Lo que el comensal dijo al ordenar, en su página y en Pedidos ─────
+assert.equal(pickupPaymentLine("transfer"), "🏦 Pagas por transferencia al recoger");
+assert.equal(pickupPaymentLine("cash"), "💵 Pagas en efectivo al recoger");
+assert.equal(pickupPaymentLine("card"), "💳 Pagas con tarjeta al recoger");
+assert.equal(pickupPaymentLine(undefined), "💵 Pagas al recoger en el local", "pedidos viejos: la línea de siempre");
+
 // ── 2. Candados de fuente: NADIE más escribe el pago ────────────────────────
 const pedidos = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
 const pos = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
@@ -90,6 +97,14 @@ assert.ok(configuracion.includes("Tiene que quedar al menos una."), "configuraci
 const checkout = readFileSync(new URL("../app/menu/[restaurantId]/checkout/page.tsx", import.meta.url), "utf8");
 assert.ok(checkout.includes("paymentMethodsSentence("), "el cliente ve las formas de pago reales, no un texto fijo");
 assert.ok(!checkout.includes("Efectivo o tarjeta en el local"), "checkout: copy fijo 'Efectivo o tarjeta' eliminado");
+// 🏦 §1d (fuente): lo que dijo el comensal viaja del checkout al mesero y a su página.
+{
+  const orderPage = readFileSync(new URL("../app/menu/[restaurantId]/order/[orderId]/page.tsx", import.meta.url), "utf8");
+  assert.ok(orderPage.includes("pickupPaymentLine(order?.pickupPaymentMethod)"), "la página del pedido repite lo que dijo el comensal");
+  assert.ok(checkout.includes("pickupPaymentMethod: enMesaSePagaAlFinal ? null : effectivePickupPayMethod"),
+    "checkout manda lo que dijo el comensal, nunca en mesa");
+  assert.ok(pedidos.includes("El cliente dijo:"), "Pedidos le enseña al mesero lo que dijo el cliente");
+}
 const reportes = readFileSync(new URL("../app/vendor/reportes/page.tsx", import.meta.url), "utf8");
 assert.ok(reportes.includes("tipStaysWithStaff("),
   "reportes: la cubeta de propinas usa tipStaysWithStaff (transferencia cae con tarjeta)");
