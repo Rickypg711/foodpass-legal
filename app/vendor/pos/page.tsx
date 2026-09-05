@@ -25,7 +25,12 @@ import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { groupOpenTabs, type TabGroup } from "@/lib/pos/tabGroups";
 import { registerTabGroupPayment } from "@/lib/pos/registerPayment";
-import { POS_PAYMENT_OPTIONS, type PaymentMethod } from "@/lib/pos/paidOrderFields";
+import {
+  POS_PAYMENT_OPTIONS,
+  acceptedPaymentOptions,
+  paymentMethodsSentence,
+  type PaymentMethod,
+} from "@/lib/pos/paidOrderFields";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
@@ -364,6 +369,7 @@ function CheckoutDialog({
   onConfirm,
   processing,
   canAssignDiscount = true,
+  paymentOptions,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
@@ -383,9 +389,11 @@ function CheckoutDialog({
     tipMethod: PaymentMethod,
   ) => void;
   processing: boolean;
+  /** 🎚️ Solo las formas de pago que este restaurante acepta (Configuración). */
+  paymentOptions: typeof POS_PAYMENT_OPTIONS;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
-  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [method, setMethod] = useState<PaymentMethod>(paymentOptions[0]?.key ?? "cash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -471,7 +479,7 @@ function CheckoutDialog({
             <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>¿Cómo cobrar?</p>
             <div className="grid grid-cols-2 gap-2">
               {([
-                { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: "Efectivo, tarjeta o transferencia" },
+                { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: paymentMethodsSentence(paymentOptions.map((o) => o.key)) },
                 { key: "tab", emoji: "📋", label: "Cuenta abierta", sub: "Cobrar después" },
               ] as { key: CheckoutMode; emoji: string; label: string; sub: string }[]).map((opt) => (
                 <button
@@ -497,8 +505,8 @@ function CheckoutDialog({
           {mode === "now" && !isRedeemOnly && (
             <div>
               <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Método de pago</p>
-              <div className="grid grid-cols-3 gap-2">
-                {POS_PAYMENT_OPTIONS.map((m) => (
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
+                {paymentOptions.map((m) => (
                   <button
                     key={m.key}
                     onClick={() => setMethod(m.key)}
@@ -644,7 +652,7 @@ function CheckoutDialog({
                       ¿Cómo dejó la propina?
                     </p>
                     <div className="flex items-center gap-1.5">
-                      {POS_PAYMENT_OPTIONS.map((t) => (
+                      {paymentOptions.map((t) => (
                         <button
                           key={t.key}
                           type="button"
@@ -800,6 +808,9 @@ export default function PosPage() {
   // Auth / restaurant
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState("POS");
+  // 🎚️ Formas de pago que el dueño dejó prendidas en Configuración. Hasta
+  // que cargue el doc, las tres (nunca una Caja sin botones).
+  const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
   const [uid, setUid] = useState<string | null>(null);
   const [vendorRole, setVendorRole] = useState<VendorRole>("owner");
   /** Equipo de la caja (PIN roster) — switcher "¿Quién cobra?". */
@@ -869,6 +880,7 @@ export default function PosPage() {
       const restSnap = await getDoc(doc(db, "restaurants", rid));
       const rData = restSnap.data() ?? {};
       setRestaurantName((rData.name as string | undefined) ?? "POS");
+      setPaymentOptions(acceptedPaymentOptions(rData));
       setRestaurantId(rid);
       setUid(u.uid);
       // Equipo de la caja: roster de PINs (associate-readable). Restaura el
@@ -1840,6 +1852,7 @@ export default function PosPage() {
       {/* ── Checkout dialog ── */}
       {showCheckout && (
         <CheckoutDialog
+          paymentOptions={paymentOptions}
           total={subtotal}
           cartLines={cart.map((c) => ({
             price: c.unitPrice,
@@ -1895,6 +1908,7 @@ export default function PosPage() {
             // total, que puede venir ya descontado.
             tabItems={group.orders.flatMap((o: any) => (Array.isArray(o.items) ? o.items : []))}
             canAssignDiscount={vendorRole === "owner"}
+            paymentOptions={paymentOptions}
             onClose={() => setCheckoutTabId(null)}
             onConfirm={(method, tip, tipMethod, phone, recalc) => {
               closeTabGroup(group, method, tip, tipMethod, phone, recalc);
@@ -2048,6 +2062,7 @@ function CloseTabDialog({
   restaurantId,
   tabItems,
   canAssignDiscount = false,
+  paymentOptions,
   onClose,
   onConfirm,
 }: {
@@ -2058,6 +2073,8 @@ function CloseTabDialog({
   /** Owner-only: asignar descuentos especiales desde el cierre de cuenta.
    *  Un cajero con PIN no debe poder auto-descontarse. */
   canAssignDiscount?: boolean;
+  /** 🎚️ Solo las formas de pago que este restaurante acepta (Configuración). */
+  paymentOptions: typeof POS_PAYMENT_OPTIONS;
   onClose: () => void;
   onConfirm: (
     method: PaymentMethod,
@@ -2361,7 +2378,7 @@ function CloseTabDialog({
                 ¿Cómo dejó la propina?
               </p>
               <div className="flex items-center gap-1.5">
-                {POS_PAYMENT_OPTIONS.map((t) => (
+                {paymentOptions.map((t) => (
                   <button
                     key={t.key}
                     type="button"
@@ -2387,8 +2404,8 @@ function CloseTabDialog({
             </>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {POS_PAYMENT_OPTIONS.map((m) => (
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
+          {paymentOptions.map((m) => (
             <button
               key={m.key}
               onClick={() =>

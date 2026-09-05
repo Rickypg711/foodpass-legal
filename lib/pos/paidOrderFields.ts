@@ -36,6 +36,42 @@ export function tipStaysWithStaff(method: unknown): boolean {
 }
 
 /**
+ * 🎚️ Las formas de pago que ESTE restaurante acepta, en orden canónico.
+ * Lee `restaurants/{id}.paymentMethods` (string[]). Sin campo, vacío o sin
+ * nada válido → las tres (nadie se queda sin botones por un doc viejo).
+ *
+ * Nació el 5-sep-2026 cuando Central Fast Food (RD) pidió quitar Tarjeta:
+ * no tiene terminal. Espejo Dart: acceptedPaymentMethods en
+ * lib/orders/paid_order_update.dart.
+ */
+export function acceptedPaymentMethods(data: unknown): PaymentMethod[] {
+  const all = POS_PAYMENT_OPTIONS.map((o) => o.key);
+  const raw = (data as { paymentMethods?: unknown } | null | undefined)?.paymentMethods;
+  if (!Array.isArray(raw)) return all;
+  const wanted = new Set(raw.map((v) => String(v).trim().toLowerCase()));
+  const kept = all.filter((k) => wanted.has(k));
+  return kept.length > 0 ? kept : all;
+}
+
+/** Las opciones (emoji + nombre) que sí se le enseñan al cajero. */
+export function acceptedPaymentOptions(data: unknown) {
+  const keys = acceptedPaymentMethods(data);
+  return POS_PAYMENT_OPTIONS.filter((o) => keys.includes(o.key));
+}
+
+/**
+ * "Efectivo o transferencia", "Efectivo, tarjeta o transferencia" — para el
+ * copy que le dice al cliente cómo puede pagar en el local.
+ */
+export function paymentMethodsSentence(methods: readonly PaymentMethod[]): string {
+  const labels = POS_PAYMENT_OPTIONS.filter((o) => methods.includes(o.key)).map((o) => o.label);
+  if (labels.length === 0) return "";
+  const lower = labels.map((l, i) => (i === 0 ? l : l.toLowerCase()));
+  if (lower.length === 1) return lower[0];
+  return `${lower.slice(0, -1).join(", ")} o ${lower[lower.length - 1]}`;
+}
+
+/**
  * Campos canónicos de "pagado". `close: true` además completa el pedido
  * (cierre de cuenta); el cobro rápido NO completa — la cocina sigue su flujo.
  */

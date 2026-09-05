@@ -9,6 +9,7 @@ import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDo
 import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
+import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { entitlementOf } from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { parseLocationLink } from "@/lib/geocodeRestaurant";
@@ -92,6 +93,10 @@ export default function ConfiguracionPage() {
   /** "Pagar al recoger" en el menú web — el cliente ordena sin pago en línea
    * y paga en el local; el pedido llega a Pedidos y se cobra ahí. */
   const [payAtPickup, setPayAtPickup] = useState(false);
+  // 🎚️ Formas de pago que acepta el local (Caja + lo que ve el cliente).
+  const [acceptedMethods, setAcceptedMethods] = useState<PaymentMethod[]>(
+    POS_PAYMENT_OPTIONS.map((o) => o.key),
+  );
   const [birthdayEnabled, setBirthdayEnabled] = useState(false);
   const [birthdayPoints, setBirthdayPoints] = useState(10);
   const [mpConnected, setMpConnected] = useState(false);
@@ -147,6 +152,7 @@ export default function ConfiguracionPage() {
       const goal = data.dailyRevenueGoal as number | undefined;
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
+      setAcceptedMethods(acceptedPaymentMethods(data));
       const bday = data.birthdayReward as Record<string, unknown> | undefined;
       if (bday && typeof bday === "object") {
         setBirthdayEnabled(bday.enabled === true);
@@ -401,6 +407,7 @@ export default function ConfiguracionPage() {
         googleReviewUrl: googleReviewUrl.trim(),
         categories,
         payAtPickupEnabled: payAtPickup,
+        paymentMethods: acceptedMethods,
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
@@ -958,6 +965,67 @@ export default function ConfiguracionPage() {
               </Field>
             </SectionCard>
 
+            {/* ── Formas de pago ── */}
+            <SectionCard label="Formas de pago">
+              <p className="mb-2 text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+                Lo que aceptas en el mostrador. Solo estas salen como botones en
+                tu Caja y se las decimos a tus clientes.
+              </p>
+              <div className="space-y-2">
+                {POS_PAYMENT_OPTIONS.map((opt) => {
+                  const on = acceptedMethods.includes(opt.key);
+                  // Al menos una prendida: una Caja sin botones no cobra nada.
+                  const lastOne = on && acceptedMethods.length === 1;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      disabled={lastOne}
+                      onClick={() => {
+                        setAcceptedMethods((prev) =>
+                          prev.includes(opt.key)
+                            ? prev.filter((k) => k !== opt.key)
+                            : POS_PAYMENT_OPTIONS.map((o) => o.key).filter(
+                                (k) => k === opt.key || prev.includes(k),
+                              ),
+                        );
+                        setSaved(false);
+                      }}
+                      aria-pressed={on}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all disabled:cursor-default"
+                      style={{
+                        background: on ? "#FFF3E8" : "#F5F3EF",
+                        border: on
+                          ? "1px solid rgba(242,140,56,0.5)"
+                          : "1px solid rgba(28,37,38,0.12)",
+                      }}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                          {opt.emoji} {opt.label}
+                        </span>
+                        {lastOne ? (
+                          <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                            Tiene que quedar al menos una.
+                          </span>
+                        ) : null}
+                      </span>
+                      <span
+                        className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                        style={{ background: on ? "#F28C38" : "rgba(28,37,38,0.2)" }}
+                        aria-hidden
+                      >
+                        <span
+                          className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
+                          style={{ left: on ? "22px" : "2px" }}
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SectionCard>
+
             {/* ── Pedidos en línea ── */}
             <SectionCard label="Pedidos en línea">
               <button
@@ -979,7 +1047,7 @@ export default function ConfiguracionPage() {
                   <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                     Tus clientes ordenan desde el menú sin pagar en línea y pagan
                     al recoger. El pedido llega a Pedidos y lo cobras ahí
-                    (efectivo o tarjeta).
+                    con las formas de pago que aceptas.
                   </span>
                 </span>
                 <span

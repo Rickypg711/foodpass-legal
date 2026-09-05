@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
 import { UpsellCard } from "@/components/cart/UpsellCard";
 import { useCart } from "@/lib/cart/CartProvider";
+import { acceptedPaymentMethods, paymentMethodsSentence } from "@/lib/pos/paidOrderFields";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
@@ -118,6 +119,8 @@ export default function CheckoutPage() {
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
+  /** 🎚️ "Efectivo o transferencia" — lo que el dueño dejó prendido en Configuración. */
+  const [pickupMethodsLabel, setPickupMethodsLabel] = useState("Efectivo o tarjeta");
   /**
    * Está SENTADO, no viene por su comida. Cambia tres cosas: no elige forma de
    * pago, el botón manda a cocina en vez de cobrar, y la letra chica dice que
@@ -197,6 +200,7 @@ export default function CheckoutPage() {
           const papOk = restaurantAllowsPayAtPickup(data);
           setMercadoPagoAvailable(mpOk);
           setPayAtPickupAvailable(papOk);
+          setPickupMethodsLabel(paymentMethodsSentence(acceptedPaymentMethods(data)));
           // Default selection: MP when available (pay-before-prepare stays the
           // preferred path); otherwise pay-at-pickup if the vendor allows it.
           setPayMethod(
@@ -801,7 +805,7 @@ export default function CheckoutPage() {
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold">Pagar al recoger</span>
                     <span className="block text-xs text-[#1C2526]/55">
-                      Efectivo o tarjeta en el local
+                      {pickupMethodsLabel} en el local
                     </span>
                   </span>
                 </button>

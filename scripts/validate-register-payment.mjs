@@ -3,7 +3,13 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { paidOrderFields, POS_PAYMENT_OPTIONS, tipStaysWithStaff } from "../lib/pos/paidOrderFields.ts";
+import {
+  paidOrderFields,
+  POS_PAYMENT_OPTIONS,
+  tipStaysWithStaff,
+  acceptedPaymentMethods,
+  paymentMethodsSentence,
+} from "../lib/pos/paidOrderFields.ts";
 
 // ── 1. LA definición de "pagado" (espejo exacto de paid_order_update.dart —
 //       los tests Dart fijan los MISMOS nombres de campo) ───────────────────
@@ -41,6 +47,18 @@ assert.ok(tipStaysWithStaff("cash"), "propina en efectivo: el mesero ya la tiene
 assert.ok(!tipStaysWithStaff("card"), "propina en tarjeta: la cobró el negocio");
 assert.ok(!tipStaysWithStaff("transfer"), "propina por transferencia: la cobró el negocio");
 
+// ── 1c. 🎚️ El dueño apaga lo que no acepta (Central Fast Food: sin terminal) ─
+assert.deepEqual(acceptedPaymentMethods(undefined), ["cash", "card", "transfer"], "sin doc: las tres");
+assert.deepEqual(acceptedPaymentMethods({}), ["cash", "card", "transfer"], "sin campo: las tres");
+assert.deepEqual(acceptedPaymentMethods({ paymentMethods: [] }), ["cash", "card", "transfer"], "vacío: las tres");
+assert.deepEqual(acceptedPaymentMethods({ paymentMethods: ["bitcoin"] }), ["cash", "card", "transfer"], "nada válido: las tres");
+assert.deepEqual(acceptedPaymentMethods({ paymentMethods: ["transfer", "cash"] }), ["cash", "transfer"],
+  "se respeta el orden canónico, no el del doc");
+assert.deepEqual(acceptedPaymentMethods({ paymentMethods: [" Card "] }), ["card"], "tolera espacios/mayúsculas");
+assert.equal(paymentMethodsSentence(["cash", "transfer"]), "Efectivo o transferencia");
+assert.equal(paymentMethodsSentence(["cash", "card", "transfer"]), "Efectivo, tarjeta o transferencia");
+assert.equal(paymentMethodsSentence(["card"]), "Tarjeta");
+
 // ── 2. Candados de fuente: NADIE más escribe el pago ────────────────────────
 const pedidos = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
 const pos = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
@@ -53,11 +71,25 @@ for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
 assert.ok(pedidos.includes("registerOrderPayment("), "pedidos delega el cobro rápido");
 assert.ok(pos.includes("registerTabGroupPayment("), "la Caja delega el cierre de grupo");
 for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
-  assert.ok(src.includes("POS_PAYMENT_OPTIONS.map("),
-    `${name}: los botones de cobro salen de POS_PAYMENT_OPTIONS, no de una lista a mano`);
+  assert.ok(src.includes("paymentOptions.map("),
+    `${name}: los botones de cobro se mapean de la lista canónica filtrada, no de una lista a mano`);
   assert.ok(!/\{ key: "cash", emoji/.test(src),
     `${name}: prohibida una lista de métodos a mano — se queda sin transferencia`);
 }
+// 🎚️ Las pantallas que cobran FILTRAN por lo que el dueño aceptó — la lista
+// completa solo vive en Configuración (donde se prende/apaga) y en el default.
+for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
+  assert.ok(src.includes("acceptedPaymentOptions("),
+    `${name}: los botones salen de acceptedPaymentOptions (Configuración manda)`);
+  assert.ok(!/POS_PAYMENT_OPTIONS\.map\(/.test(src),
+    `${name}: prohibido mapear la lista completa — se ignoraría lo que apagó el dueño`);
+}
+const configuracion = readFileSync(new URL("../app/vendor/configuracion/page.tsx", import.meta.url), "utf8");
+assert.ok(/paymentMethods:\s*acceptedMethods/.test(configuracion), "configuración guarda paymentMethods");
+assert.ok(configuracion.includes("Tiene que quedar al menos una."), "configuración: no se pueden apagar las tres");
+const checkout = readFileSync(new URL("../app/menu/[restaurantId]/checkout/page.tsx", import.meta.url), "utf8");
+assert.ok(checkout.includes("paymentMethodsSentence("), "el cliente ve las formas de pago reales, no un texto fijo");
+assert.ok(!checkout.includes("Efectivo o tarjeta en el local"), "checkout: copy fijo 'Efectivo o tarjeta' eliminado");
 const reportes = readFileSync(new URL("../app/vendor/reportes/page.tsx", import.meta.url), "utf8");
 assert.ok(reportes.includes("tipStaysWithStaff("),
   "reportes: la cubeta de propinas usa tipStaysWithStaff (transferencia cae con tarjeta)");

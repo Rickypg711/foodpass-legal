@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { registerOrderPayment } from "@/lib/pos/registerPayment";
-import { POS_PAYMENT_OPTIONS, type PaymentMethod } from "@/lib/pos/paidOrderFields";
+import { POS_PAYMENT_OPTIONS, acceptedPaymentOptions, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { tableLabel } from "@/lib/order/tableSession";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext } from "@/lib/vendorContext";
@@ -99,6 +99,8 @@ export default function PedidosPage() {
   const router = useRouter();
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  // 🎚️ Formas de pago que el dueño acepta (Configuración); las tres hasta cargar.
+  const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +133,12 @@ export default function PedidosPage() {
       }
       const rid = ctx.restaurantId;
       setRestaurantId(rid);
+      try {
+        const rSnap = await getDoc(doc(db, "restaurants", rid));
+        setPaymentOptions(acceptedPaymentOptions(rSnap.data()));
+      } catch {
+        // Sin lectura, las tres: nunca un cobro sin botones.
+      }
 
       // Fetch last 48 hours to ensure all active orders are visible
       const twoDaysAgo = new Date();
@@ -661,8 +669,8 @@ export default function PedidosPage() {
           <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <p className="text-[16px] font-extrabold text-[#1C2526]">Registrar Pago</p>
             <p className="text-[13px] text-gray-400 font-medium">Elige el método de pago del cliente</p>
-            <div className="grid grid-cols-3 gap-2">
-              {POS_PAYMENT_OPTIONS.map((m) => (
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
+              {paymentOptions.map((m) => (
                 <button
                   key={m.key}
                   onClick={() => chargeOrder(chargingOrderId, m.key)}
