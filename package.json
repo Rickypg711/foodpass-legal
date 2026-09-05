@@ -14,7 +14,7 @@
     "test:cart-editing": "node scripts/validate-cart-editing.mjs",
     "test:cart-options": "node scripts/validate-cart-options.mjs",
     "test:discount-pro-gate": "node scripts/validate-discount-pro-gate.mjs",
-    "test": "npm run test:order-payload && npm run test:whatsapp-url && npm run test:web-checkout-policy && npm run test:cart-editing && npm run test:cart-options && npm run test:mp-preference && npm run test:discount-pro-gate && npm run test:tab-discount-recalc && npm run test:subscription-entitlement && npm run test:table-orders && npm run test:readiness-hours && npm run test:readiness-tiers && npm run test:readiness-opt-out && npm run test:tab-groups && npm run test:upsell-dismissals && npm run test:service-requests && npm run test:register-payment && npm run test:location-link && npm run test:reward-draft-visibility && npm run test:rewards-off-honesty && npm run test:no-automatic-whatsapp && npm run test:earn-preview",
+    "test": "npm run test:order-payload && npm run test:whatsapp-url && npm run test:web-checkout-policy && npm run test:cart-editing && npm run test:cart-options && npm run test:mp-preference && npm run test:discount-pro-gate && npm run test:tab-discount-recalc && npm run test:subscription-entitlement && npm run test:table-orders && npm run test:readiness-hours && npm run test:readiness-tiers && npm run test:readiness-opt-out && npm run test:tab-groups && npm run test:upsell-dismissals && npm run test:service-requests && npm run test:register-payment && npm run test:location-link && npm run test:reward-draft-visibility && npm run test:rewards-off-honesty && npm run test:no-automatic-whatsapp && npm run test:earn-preview && npm run test:landing-seo",
     "test:tab-discount-recalc": "node scripts/validate-tab-discount-recalc.mjs",
     "test:subscription-entitlement": "node scripts/validate-subscription-entitlement.mjs",
     "test:table-orders": "node scripts/validate-table-orders.mjs",
@@ -29,7 +29,8 @@
     "test:rewards-off-honesty": "node scripts/validate-rewards-off-honesty.mjs",
     "test:readiness-opt-out": "node scripts/validate-readiness-opt-out.mjs",
     "test:no-automatic-whatsapp": "node scripts/validate-no-automatic-whatsapp.mjs",
-    "test:earn-preview": "node scripts/validate-earn-preview.mjs"
+    "test:earn-preview": "node scripts/validate-earn-preview.mjs",
+    "test:landing-seo": "node scripts/validate-landing-seo.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",

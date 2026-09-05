@@ -5,6 +5,7 @@
 // un mapa con pines en Null Island es peor que no tener mapa.
 
 import { decodeFields } from "@/lib/server/restaurantLanding";
+import { cityForRestaurant, seoCategories } from "@/lib/landingContent";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 
 const PROJECT_ID = "foodpass-18b33";
@@ -18,6 +19,8 @@ export type DirectoryRestaurant = {
   description: string | null;
   categories: string[];
   address: string | null;
+  /** Ciudad estructurada (Google, con el pin) o heurística; null si no se sabe. */
+  city: string | null;
   imageUrl: string | null;
 };
 
@@ -70,15 +73,16 @@ export async function fetchDirectoryRestaurants(
           typeof data.description === "string" && data.description.trim()
             ? data.description.trim()
             : null,
-        categories: Array.isArray(data.categories)
-          ? (data.categories as unknown[])
-              .map((c) => (typeof c === "string" ? c.trim() : ""))
-              .filter(Boolean)
-          : [],
+        categories: seoCategories(
+          Array.isArray(data.categories)
+            ? (data.categories as unknown[]).map((c) => (typeof c === "string" ? c.trim() : ""))
+            : [],
+        ),
         address:
           typeof data.address === "string" && data.address.trim()
             ? data.address.trim()
             : null,
+        city: cityForRestaurant(data),
         imageUrl: getRestaurantBannerUrl(data) ?? getRestaurantImageUrl(data),
       });
     }

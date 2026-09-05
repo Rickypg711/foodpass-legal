@@ -4,6 +4,8 @@ import {
   expectedCountryFromPhone,
   coordsInAddress,
   MIN_ADDRESS_CHARS,
+  localityFromReverseResults,
+  type AddressComponent,
 } from "@/lib/geocodeRestaurant";
 
 /**
@@ -36,9 +38,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "json_invalido" }, { status: 400 });
   }
 
-  const { address, phone } = (body ?? {}) as { address?: string; phone?: string };
+  const { address, phone, lat, lng } = (body ?? {}) as {
+    address?: string;
+    phone?: string;
+    lat?: number;
+    lng?: number;
+  };
   const addr = String(address ?? "").trim();
   const tel = String(phone ?? "").trim();
+
+  // REVERSE: el dueño confirmó el pin a mano (mapa). Google sabe la ciudad de
+  // ese punto; la respuesta es SOLO ciudad/estado/país — el pin ya lo tiene él.
+  if (!addr && typeof lat === "number" && typeof lng === "number") {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
+      return NextResponse.json({ ok: false, reason: "pin_invalido" }, { status: 400 });
+    }
+    const apiKey = process.env.GOOGLE_GEOCODING_API_KEY;
+    if (!apiKey) {
+      console.error("[geocode] GOOGLE_GEOCODING_API_KEY no está configurada");
+      return NextResponse.json({ ok: false, reason: "sin_api_key" }, { status: 503 });
+    }
+    try {
+      const url =
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
+        encodeURIComponent(`${lat},${lng}`) +
+        "&language=es&key=" +
+        apiKey;
+      const res = await fetch(url);
+      const geoData = (await res.json()) as { status?: string; results?: Array<{ address_components?: AddressComponent[] }> };
+      if (geoData?.status !== "OK") {
+        return NextResponse.json({ ok: false, reason: `status_${geoData?.status ?? "no_response"}` });
+      }
+      return NextResponse.json({ ok: true, ...localityFromReverseResults(geoData.results) });
+    } catch (e) {
+      console.error("[geocode] reverse falló:", e);
+      return NextResponse.json({ ok: false, reason: "geocode_exception" }, { status: 502 });
+    }
+  }
 
   if (!addr) {
     return NextResponse.json({ ok: false, reason: "sin_direccion" }, { status: 400 });
@@ -75,7 +111,7 @@ export async function POST(request: Request) {
     const url =
       "https://maps.googleapis.com/maps/api/geocode/json?address=" +
       encodeURIComponent(addr) +
-      "&key=" +
+      "&language=es&key=" +
       apiKey;
     const res = await fetch(url);
     const geoData = await res.json();

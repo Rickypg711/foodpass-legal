@@ -117,8 +117,14 @@ export default async function RestaurantDirectoryPage() {
                       {r.description}
                     </p>
                   ) : null}
-                  {r.address ? (
-                    <p className="mt-2 text-[12px] text-[#1C2526]/45">📍 {r.address}</p>
+                  {r.address || r.city ? (
+                    <p className="mt-2 text-[12px] text-[#1C2526]/45">
+                      📍 {r.address ?? r.city}
+                      {/* La ciudad real (Google) cuando el dueño no la escribió. */}
+                      {r.address && r.city && !r.address.toLowerCase().includes(r.city.toLowerCase())
+                        ? ` · ${r.city}`
+                        : ""}
+                    </p>
                   ) : null}
                   <p className="mt-3 text-[13px] font-bold text-[#F28C38]">
                     Ver menú y premios →

@@ -23,8 +23,80 @@
 // mal ubicado sigue invisible, pero además ya nadie lo nota. Ante la duda, se
 // deja sin coordenadas y se marca para revisión.
 
+/**
+ * Ciudad ESTRUCTURADA desde Google — la única forma 100% correcta.
+ * Los dueños escriben "Carpinteros de paracho 894, Vasco de Quiroga" o
+ * "el centro": sin ciudad. Adivinarla del texto da colonias como ciudad.
+ * Google SÍ sabe la ciudad de cada pin (address_components). Espejo de
+ * functions/geo/locality.js (regla de paridad): locality → postal_town →
+ * municipio (administrative_area_level_2); estado = level_1 largo; país corto.
+ */
+export type PlaceLocality = {city: string | null; state: string | null; countryCode: string | null};
+
+export type AddressComponent = {types?: string[]; long_name?: string; short_name?: string};
+
+function pickComponent(
+  components: AddressComponent[] | undefined,
+  type: string,
+  field: 'long_name' | 'short_name',
+): string | null {
+  const c = (components || []).find((k) => Array.isArray(k.types) && k.types.includes(type));
+  if (!c) return null;
+  const v = c[field] || c.long_name || c.short_name;
+  return typeof v === 'string' && v.trim() ? v.trim() : null;
+}
+
+export function localityFromComponents(components: AddressComponent[] | undefined): PlaceLocality {
+  const city =
+    pickComponent(components, 'locality', 'long_name') ||
+    pickComponent(components, 'postal_town', 'long_name') ||
+    pickComponent(components, 'administrative_area_level_2', 'long_name');
+  const state = pickComponent(components, 'administrative_area_level_1', 'long_name');
+  const countryCode = pickComponent(components, 'country', 'short_name');
+  return {city, state, countryCode};
+}
+
+/**
+ * Reverse geocode. Google devuelve varios resultados a distinta escala; en
+ * México a veces etiqueta una COLONIA como `locality` dentro del resultado de
+ * la calle ("Del Real" en Villas del Real). El resultado cuya propia `types`
+ * es `locality` ES la ciudad: ese manda. Espejo de functions/geo/locality.js.
+ */
+export function localityFromReverseResults(
+  results: Array<{types?: string[]; address_components?: AddressComponent[]}> | undefined,
+): PlaceLocality {
+  const list = Array.isArray(results) ? results : [];
+  const cityResult = list.find((r) => Array.isArray(r?.types) && r.types.includes('locality'));
+  if (cityResult) {
+    const loc = localityFromComponents(cityResult.address_components);
+    if (loc.city) return loc;
+  }
+  for (const r of list) {
+    const loc = localityFromComponents(r?.address_components);
+    if (loc.city) return loc;
+  }
+  return list.length ? localityFromComponents(list[0]?.address_components) : {city: null, state: null, countryCode: null};
+}
+
+/**
+ * Campos de ciudad que se guardan JUNTO con el pin (paridad con
+ * functions/geo/locality.js#cityUpdateFields). Solo lo que Google dio.
+ */
+export function cityFieldsFromVerdict(
+  v: Partial<PlaceLocality> | null | undefined,
+  lat: number,
+  lng: number,
+  source: 'geocode' | 'reverse_geocode',
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {citySource: source, cityDerivedFrom: {lat, lng}};
+  if (v?.city) out.city = v.city;
+  if (v?.state) out.state = v.state;
+  if (v?.countryCode) out.countryCode = v.countryCode;
+  return out;
+}
+
 export type GeocodeVerdict =
-  | {ok: true; lat: number; lng: number; precision: string; formatted: string}
+  | ({ok: true; lat: number; lng: number; precision: string; formatted: string} & PlaceLocality)
   | {ok: false; reason: string; formatted?: string};
 
 /** Precisiones que sirven para el pin de un local. */
@@ -169,7 +241,7 @@ export function evaluateGeocodeResult(
       geometry?: {location?: {lat: number; lng: number}; location_type?: string};
       formatted_address?: string;
       partial_match?: boolean;
-      address_components?: Array<{types?: string[]; short_name?: string}>;
+      address_components?: AddressComponent[];
     }>;
   } | null,
   expectedCountry: string | null,
@@ -207,7 +279,8 @@ export function evaluateGeocodeResult(
     return {ok: false, reason: 'partial_match_sin_coincidencia', formatted};
   }
 
-  return {ok: true, lat, lng, precision, formatted};
+  // La ciudad viaja con el pin: quien guarde lat/lng guarda city/state/país.
+  return {ok: true, lat, lng, precision, formatted, ...localityFromComponents(r.address_components)};
 }
 
 /**
@@ -233,6 +306,10 @@ export async function geocodeRestaurantAddress(args: {
       lng: inline.lng,
       precision: 'ADDRESS_FIELD_COORDS',
       formatted: address,
+      // Coordenadas pegadas a mano: sin address_components, la ciudad la deriva el servidor.
+      city: null,
+      state: null,
+      countryCode: null,
     };
   }
   if (address.length < MIN_ADDRESS_CHARS) {

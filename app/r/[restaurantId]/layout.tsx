@@ -8,7 +8,7 @@ import {
 import { buildMenuJsonLd } from "@/lib/server/menuSchema";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
-import { buildFaq, buildLandingTitle } from "@/lib/landingContent";
+import { buildFaq, buildLandingTitle, cityForRestaurant, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 
@@ -59,15 +59,17 @@ export async function generateMetadata({
 
   const { data, name } = restaurant;
   const description = str(data.description);
-  const metaCategories = Array.isArray(data.categories)
-    ? (data.categories as unknown[])
-        .map((c) => (typeof c === "string" ? c.trim() : ""))
-        .filter(Boolean)
-    : [];
+  // Sin comodines ("Otro") — no es una frase que alguien busque.
+  const metaCategories = seoCategories(
+    Array.isArray(data.categories)
+      ? (data.categories as unknown[]).map((c) => (typeof c === "string" ? c.trim() : ""))
+      : [],
+  );
 
   // SEO local estilo Owner: la FRASE DE BÚSQUEDA en el title —
   // "{Nombre} | {Categoría} en {Ciudad} — menú, pedidos y horario".
-  const title = buildLandingTitle(name, metaCategories, str(data.address));
+  // La ciudad es la ESTRUCTURADA (Google, con el pin), no la adivinada.
+  const title = buildLandingTitle(name, metaCategories, str(data.address), cityForRestaurant(data));
   const metaDescription = description
     ? `${description} Mira el menú de ${name}, checa el horario, pide por WhatsApp y junta puntos con cada compra.`
     : `Mira el menú de ${name} con fotos y precios, checa el horario y la ubicación, y pide por WhatsApp.`;
@@ -116,11 +118,14 @@ export default async function RestaurantLandingLayout({
     const description = str(data.description);
     const logoUrl = getRestaurantImageUrl(data);
     const bannerUrl = getRestaurantBannerUrl(data);
-    const categories = Array.isArray(data.categories)
-      ? (data.categories as unknown[])
-          .map((c) => (typeof c === "string" ? c.trim() : ""))
-          .filter(Boolean)
-      : [];
+    const categories = seoCategories(
+      Array.isArray(data.categories)
+        ? (data.categories as unknown[]).map((c) => (typeof c === "string" ? c.trim() : ""))
+        : [],
+    );
+    const city = cityForRestaurant(data);
+    const region = str(data.state);
+    const country = str(data.countryCode);
     const hours = weeklyHoursRaw(data);
     const prices = menu.map((i) => i.price).filter((p) => p > 0);
     const images = [bannerUrl, logoUrl].filter(Boolean) as string[];
@@ -138,8 +143,11 @@ export default async function RestaurantLandingLayout({
             address: {
               "@type": "PostalAddress",
               streetAddress: address,
-              addressRegion: "Chihuahua",
-              addressCountry: "MX",
+              // Región y país salen del doc (hay locales en Oaxaca, Colombia y
+              // RD): jamás "Chihuahua" a fuerza. Sin dato, se omite.
+              ...(city ? { addressLocality: city } : {}),
+              ...(region ? { addressRegion: region } : {}),
+              ...(country ? { addressCountry: country } : {}),
             },
           }
         : {}),
@@ -188,6 +196,7 @@ export default async function RestaurantLandingLayout({
       name,
       categories,
       address,
+      city,
       hoursText,
       topItems: topSource.slice(0, 3).map((i) => i.name),
       firstVisitReward,
