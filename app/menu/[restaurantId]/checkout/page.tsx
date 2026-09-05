@@ -8,6 +8,7 @@ import { CheckoutCartLines } from "@/components/cart/CheckoutCartLines";
 import { UpsellCard } from "@/components/cart/UpsellCard";
 import { useCart } from "@/lib/cart/CartProvider";
 import {
+  PICKUP_CHOICE_COPY,
   POS_PAYMENT_OPTIONS,
   acceptedPaymentMethods,
   pickupPaymentLine,
@@ -836,9 +837,9 @@ export default function CheckoutPage() {
                         >
                           <span className="text-xl" aria-hidden>{o.emoji}</span>
                           <span className="min-w-0">
-                            <span className="block text-sm font-semibold">{o.label} al recoger</span>
+                            <span className="block text-sm font-semibold">{PICKUP_CHOICE_COPY[o.key].title}</span>
                             <span className="block text-xs text-[#1C2526]/55">
-                              Pagas en el local cuando recojas tu pedido
+                              {PICKUP_CHOICE_COPY[o.key].sub}
                             </span>
                           </span>
                         </button>
@@ -886,8 +887,10 @@ export default function CheckoutPage() {
                 ? `Mandar a la cocina · ${formatPrice(subtotal)}`
                 : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
                   ? `Ordenar ${formatPrice(subtotal)} · ${
-                      POS_PAYMENT_OPTIONS.find((o) => o.key === effectivePickupPayMethod)?.label ?? "Pagas"
-                    } al recoger`
+                      effectivePickupPayMethod
+                        ? PICKUP_CHOICE_COPY[effectivePickupPayMethod].cta
+                        : "Pagas al recoger"
+                    }`
                   : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
           </button>
           <p className="-mt-1 text-center text-xs text-[#1C2526]/50">

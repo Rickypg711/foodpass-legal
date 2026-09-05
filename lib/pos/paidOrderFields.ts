@@ -75,11 +75,37 @@ export function pickupPaymentLine(method: unknown): string {
     case "card":
       return "💳 Pagas con tarjeta al recoger";
     case "transfer":
-      return "🏦 Pagas por transferencia al recoger";
+      // La transferencia no vive en el mostrador: puede ir antes o al llegar.
+      return "🏦 Pagas por transferencia, antes o al recoger";
     default:
       return "💵 Pagas al recoger en el local";
   }
 }
+
+/**
+ * Copy de cada opción "al recoger" en el checkout. Cada forma dice la
+ * verdad de CÓMO ocurre: efectivo y tarjeta pasan en el mostrador; la
+ * transferencia puede ir antes o al llegar y el local la confirma
+ * (Ricardo, 5-sep: "pagas en el local cuando recojas no tiene sentido
+ * para transferencia").
+ */
+export const PICKUP_CHOICE_COPY: Record<PaymentMethod, { title: string; sub: string; cta: string }> = {
+  cash: {
+    title: "Efectivo al recoger",
+    sub: "Pagas en el mostrador cuando recojas tu pedido",
+    cta: "Efectivo al recoger",
+  },
+  card: {
+    title: "Tarjeta al recoger",
+    sub: "Pagas con la terminal del local cuando recojas",
+    cta: "Tarjeta al recoger",
+  },
+  transfer: {
+    title: "Transferencia",
+    sub: "Antes o al recoger. El local la confirma al entregarte",
+    cta: "Por transferencia",
+  },
+};
 
 /**
  * Ya cobrado: el recibo dice CÓMO se pagó (lo que registró el cajero en

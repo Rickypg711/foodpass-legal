@@ -62,7 +62,8 @@ assert.equal(paymentMethodsSentence(["cash", "card", "transfer"]), "Efectivo, ta
 assert.equal(paymentMethodsSentence(["card"]), "Tarjeta");
 
 // ── 1d. 🏦 Lo que el comensal dijo al ordenar, en su página y en Pedidos ─────
-assert.equal(pickupPaymentLine("transfer"), "🏦 Pagas por transferencia al recoger");
+assert.equal(pickupPaymentLine("transfer"), "🏦 Pagas por transferencia, antes o al recoger",
+  "la transferencia no vive en el mostrador: antes o al llegar");
 assert.equal(pickupPaymentLine("cash"), "💵 Pagas en efectivo al recoger");
 assert.equal(pickupPaymentLine("card"), "💳 Pagas con tarjeta al recoger");
 assert.equal(pickupPaymentLine(undefined), "💵 Pagas al recoger en el local", "pedidos viejos: la línea de siempre");
@@ -101,6 +102,8 @@ const configuracion = readFileSync(new URL("../app/vendor/configuracion/page.tsx
 assert.ok(/paymentMethods:\s*acceptedMethods/.test(configuracion), "configuración guarda paymentMethods");
 assert.ok(configuracion.includes("Tiene que quedar al menos una."), "configuración: no se pueden apagar las tres");
 const checkout = readFileSync(new URL("../app/menu/[restaurantId]/checkout/page.tsx", import.meta.url), "utf8");
+assert.ok(checkout.includes("PICKUP_CHOICE_COPY[o.key].sub"), "cada forma dice cómo ocurre de verdad, no un texto único");
+assert.ok(!checkout.includes("Pagas en el local cuando recojas tu pedido"), "copy genérico 'en el local' eliminado");
 assert.ok(checkout.includes("POS_PAYMENT_OPTIONS.filter((o) => acceptedMethods.includes(o.key)).map"),
   "el cliente ve CADA forma de pago aceptada como su propia opción (Transferencia al recoger)");
 assert.ok(!checkout.includes("mercadoPagoAvailable && payAtPickupAvailable ? ("),
