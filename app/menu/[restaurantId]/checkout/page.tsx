@@ -10,7 +10,7 @@ import { useCart } from "@/lib/cart/CartProvider";
 import {
   POS_PAYMENT_OPTIONS,
   acceptedPaymentMethods,
-  paymentMethodsSentence,
+  pickupPaymentLine,
   type PaymentMethod,
 } from "@/lib/pos/paidOrderFields";
 import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
@@ -125,7 +125,6 @@ export default function CheckoutPage() {
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
   /** 🎚️ "Efectivo o transferencia" — lo que el dueño dejó prendido en Configuración. */
-  const [pickupMethodsLabel, setPickupMethodsLabel] = useState("Efectivo o tarjeta");
   /** 🎚️ Las formas que el local acepta, para que el comensal diga cuál usará. */
   const [acceptedMethods, setAcceptedMethods] = useState<PaymentMethod[]>([]);
   /** 🏦 "Pago por transferencia": lo que el comensal dice al ordenar. null = la primera aceptada. */
@@ -136,6 +135,8 @@ export default function CheckoutPage() {
    * paga al final con el mesero.
    */
   const enMesa = Boolean(tableNumber) && payAtPickupAvailable;
+  const paymentChoiceCount =
+    (mercadoPagoAvailable ? 1 : 0) + (payAtPickupAvailable ? acceptedMethods.length : 0);
   const effectivePickupPayMethod: PaymentMethod | null =
     pickupPayMethod && acceptedMethods.includes(pickupPayMethod)
       ? pickupPayMethod
@@ -215,7 +216,6 @@ export default function CheckoutPage() {
           setPayAtPickupAvailable(papOk);
           const accepted = acceptedPaymentMethods(data);
           setAcceptedMethods(accepted);
-          setPickupMethodsLabel(paymentMethodsSentence(accepted));
           // Default selection: MP when available (pay-before-prepare stays the
           // preferred path); otherwise pay-at-pickup if the vendor allows it.
           setPayMethod(
@@ -784,78 +784,68 @@ export default function CheckoutPage() {
 
           {/* Forma de pago — last decision before the CTA it controls.
               En una mesa no se muestra: ver `enMesaSePagaAlFinal`. */}
-          {enMesa ? null : mpChecked && mercadoPagoAvailable && payAtPickupAvailable ? (
+          {/* 🏦 Cada forma de pago es SU propia opción: "Transferencia al
+              recoger" al lado de "Pagar en línea", no un sub-menú escondido
+              detrás de "Pagar al recoger" (Ricardo, 5-sep: "transferencia as
+              a payment method"). Solo lo que el dueño acepta. Con una sola
+              opción en total no hay nada que elegir y no se enseña. */}
+          {enMesa ? null : mpChecked && paymentChoiceCount > 1 ? (
             <div className="rounded-2xl bg-white p-4 shadow-sm">
               <p className="text-sm font-semibold">Forma de pago</p>
               <div className="mt-2.5 flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
-                  aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
-                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                    payMethod === PAYMENT_METHOD_MERCADO_PAGO
-                      ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                      : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                  }`}
-                >
-                  <span className="text-xl" aria-hidden>💳</span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">Pagar en línea</span>
-                    <span className="block text-xs text-[#1C2526]/55">
-                      Mercado Pago · tarjeta, OXXO y más
+                {mercadoPagoAvailable ? (
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
+                    aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
+                    className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                      payMethod === PAYMENT_METHOD_MERCADO_PAGO
+                        ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                        : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                    }`}
+                  >
+                    <span className="text-xl" aria-hidden>💳</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">Pagar en línea</span>
+                      <span className="block text-xs text-[#1C2526]/55">
+                        Mercado Pago · tarjeta, OXXO y más
+                      </span>
                     </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setPayMethod(PAYMENT_METHOD_PAY_AT_PICKUP)}
-                  aria-pressed={payMethod === PAYMENT_METHOD_PAY_AT_PICKUP}
-                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                    payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                      ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                      : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                  }`}
-                >
-                  <span className="text-xl" aria-hidden>💵</span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">Pagar al recoger</span>
-                    <span className="block text-xs text-[#1C2526]/55">
-                      {pickupMethodsLabel} en el local
-                    </span>
-                  </span>
-                </button>
-              </div>
-              {/* 🏦 ¿Con qué vas a pagar al recoger? Solo cuando eligió pagar
-                  en el local Y el dueño acepta más de una forma. El mesero lo
-                  ve en Pedidos y tu página de pedido lo repite. */}
-              {payMethod === PAYMENT_METHOD_PAY_AT_PICKUP && acceptedMethods.length > 1 ? (
-                <div className="mt-3">
-                  <p className="text-xs font-semibold text-[#1C2526]/70">¿Con qué vas a pagar?</p>
-                  <div className="mt-1.5 flex gap-1.5">
-                    {POS_PAYMENT_OPTIONS.filter((o) => acceptedMethods.includes(o.key)).map((o) => {
-                      const on = effectivePickupPayMethod === o.key;
+                  </button>
+                ) : null}
+                {payAtPickupAvailable
+                  ? POS_PAYMENT_OPTIONS.filter((o) => acceptedMethods.includes(o.key)).map((o) => {
+                      const on =
+                        payMethod === PAYMENT_METHOD_PAY_AT_PICKUP && effectivePickupPayMethod === o.key;
                       return (
                         <button
                           key={o.key}
                           type="button"
                           disabled={submitting}
-                          onClick={() => setPickupPayMethod(o.key)}
+                          onClick={() => {
+                            setPayMethod(PAYMENT_METHOD_PAY_AT_PICKUP);
+                            setPickupPayMethod(o.key);
+                          }}
                           aria-pressed={on}
-                          className={`flex-1 rounded-xl border px-2 py-2 text-xs font-semibold transition-colors ${
+                          className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
                             on
-                              ? "border-[#F28C38] bg-[#FFF3E8] text-[#1C2526]"
-                              : "border-[#1C2526]/12 bg-[#FAF7F2] text-[#1C2526]/70 hover:border-[#F28C38]/50"
+                              ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                              : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
                           }`}
                         >
-                          {o.emoji} {o.label}
+                          <span className="text-xl" aria-hidden>{o.emoji}</span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold">{o.label} al recoger</span>
+                            <span className="block text-xs text-[#1C2526]/55">
+                              Pagas en el local cuando recojas tu pedido
+                            </span>
+                          </span>
                         </button>
                       );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+                    })
+                  : null}
+              </div>
             </div>
           ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
             <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -895,14 +885,16 @@ export default function CheckoutPage() {
               : enMesa
                 ? `Mandar a la cocina · ${formatPrice(subtotal)}`
                 : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                  ? `Ordenar ${formatPrice(subtotal)} · Pagas al recoger`
+                  ? `Ordenar ${formatPrice(subtotal)} · ${
+                      POS_PAYMENT_OPTIONS.find((o) => o.key === effectivePickupPayMethod)?.label ?? "Pagas"
+                    } al recoger`
                   : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
           </button>
           <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
             {enMesa
               ? "🍽️ Se agrega a la cuenta de tu mesa. Pagas al final."
               : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                ? "💵 Pagas en el local al recoger tu pedido"
+                ? pickupPaymentLine(effectivePickupPayMethod)
                 : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
           <p className="-mt-2 text-center text-[11px] text-[#1C2526]/40">

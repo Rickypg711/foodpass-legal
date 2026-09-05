@@ -101,7 +101,10 @@ const configuracion = readFileSync(new URL("../app/vendor/configuracion/page.tsx
 assert.ok(/paymentMethods:\s*acceptedMethods/.test(configuracion), "configuración guarda paymentMethods");
 assert.ok(configuracion.includes("Tiene que quedar al menos una."), "configuración: no se pueden apagar las tres");
 const checkout = readFileSync(new URL("../app/menu/[restaurantId]/checkout/page.tsx", import.meta.url), "utf8");
-assert.ok(checkout.includes("paymentMethodsSentence("), "el cliente ve las formas de pago reales, no un texto fijo");
+assert.ok(checkout.includes("POS_PAYMENT_OPTIONS.filter((o) => acceptedMethods.includes(o.key)).map"),
+  "el cliente ve CADA forma de pago aceptada como su propia opción (Transferencia al recoger)");
+assert.ok(!checkout.includes("mercadoPagoAvailable && payAtPickupAvailable ? ("),
+  "la sección de pago ya no exige Mercado Pago para aparecer — sin MP (RD) también se elige");
 assert.ok(!checkout.includes("Efectivo o tarjeta en el local"), "checkout: copy fijo 'Efectivo o tarjeta' eliminado");
 // 🏦 §1d (fuente): lo que dijo el comensal viaja del checkout al mesero y a su página.
 {
