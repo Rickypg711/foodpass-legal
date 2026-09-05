@@ -32,6 +32,7 @@ import {
 } from "@/lib/types/order";
 import { CheckoutRedemption } from "@/components/loyalty/CheckoutRedemption";
 import { earnPolicyFromRestaurant } from "@/lib/loyalty/phonePoints";
+import { buildEarnPreview, earnPreviewLine, welcomePreviewLine } from "@/lib/loyalty/earnPreview";
 import type { UpsellGoalContext } from "@/components/cart/UpsellCard";
 import {
   CUSTOMER_WEB_PAYMENT_METHOD,
@@ -124,6 +125,9 @@ export default function CheckoutPage() {
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   /** Premios apagados (5-sep): el checkout no promete puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState(true);
+  /** Doc del local, para decir ANTES cuántos puntos junta ESTE pedido
+   *  (robo 5-sep: Fluxsales "Acumulas 37 Boras con este pedido"). */
+  const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
@@ -139,6 +143,9 @@ export default function CheckoutPage() {
    * paga al final con el mesero.
    */
   const enMesa = Boolean(tableNumber) && payAtPickupAvailable;
+  /** Lo que GANA con este pedido, dicho ANTES del campo de teléfono (robo
+   *  5-sep: Fluxsales). Null cuando el local no promete puntos. */
+  const earnLine = loyaltyLive ? earnPreviewLine(buildEarnPreview(restaurantData, subtotal)) : null;
   const paymentChoiceCount =
     (mercadoPagoAvailable ? 1 : 0) + (payAtPickupAvailable ? acceptedMethods.length : 0);
   const effectivePickupPayMethod: PaymentMethod | null =
@@ -213,6 +220,7 @@ export default function CheckoutPage() {
           setRestaurantImageUrl(getRestaurantImageUrl(data));
           setEarnPolicy(earnPolicyFromRestaurant(data));
           setLoyaltyLive(restaurantPromisesPoints(data));
+          setRestaurantData(data);
           setClosedNow(isPositivelyClosedNow(data));
           setClosedLabel(scheduleStatus(data)?.label ?? null);
           const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
@@ -680,10 +688,33 @@ export default function CheckoutPage() {
               <span className="text-sm font-semibold">
                 Tu WhatsApp <span className="text-[#F28C38]">*</span>
               </span>
+              {/* Lo que GANA con este pedido, dicho ANTES del campo y con el
+                  número de ESTE pedido — la razón para soltar el teléfono. La
+                  bienvenida solo mientras el número no está completo: con 10
+                  dígitos manda CheckoutRedemption (su estado real). */}
+              {(() => {
+                if (!earnLine) return null;
+                const phoneDigitsTyped = customerPhone.replace(/\D/g, "");
+                const welcomeLine =
+                  phoneDigitsTyped.length < 10
+                    ? welcomePreviewLine(buildEarnPreview(restaurantData, subtotal))
+                    : null;
+                return (
+                  <span className="mt-1 block rounded-xl bg-[#F28C38]/10 px-3 py-2 text-[13px] text-[#1C2526]">
+                    <span className="font-bold">{"⭐ "}{earnLine}</span>
+                    {welcomeLine ? (
+                      <span className="mt-0.5 block text-xs text-[#1C2526]/70">{"🎁 "}{welcomeLine}.</span>
+                    ) : null}
+                  </span>
+                );
+              })()}
               <span className="mt-0.5 block text-xs text-[#1C2526]/55">
-                {loyaltyLive
-                  ? "Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu pedido. Solo números, 10 dígitos."
-                  : "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."}
+                {/* Con el preview arriba, aquí ya no se repite "tus puntos". */}
+                {earnLine
+                  ? "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."
+                  : loyaltyLive
+                    ? "Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu pedido. Solo números, 10 dígitos."
+                    : "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."}
               </span>
               <input
                 type="tel"

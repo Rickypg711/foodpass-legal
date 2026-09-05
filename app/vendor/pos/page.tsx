@@ -1,6 +1,7 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
+import { buildEarnPreview, cashierEarnLine, cashierWelcomeLine } from "@/lib/loyalty/earnPreview";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -372,6 +373,7 @@ function CheckoutDialog({
   canAssignDiscount = true,
   paymentOptions,
   loyaltyLive = true,
+  restaurantData = null,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
@@ -395,6 +397,9 @@ function CheckoutDialog({
   paymentOptions: typeof POS_PAYMENT_OPTIONS;
   /** Premios apagados (5-sep): sin nada que ganar, no se prometen puntos. */
   loyaltyLive?: boolean;
+  /** Doc del local, para decir ANTES cuántos puntos junta ESTA venta
+   *  (robo 5-sep: Fluxsales "Acumulas 37 Boras con este pedido"). */
+  restaurantData?: Record<string, unknown> | null;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
   const [method, setMethod] = useState<PaymentMethod>(paymentOptions[0]?.key ?? "cash");
@@ -424,6 +429,9 @@ function CheckoutDialog({
   const discountRes =
     discountProfile && total > 0 ? computeDiscount(cartLines, discountProfile) : null;
   const effTotal = Math.max(0, total - (discountRes?.amount ?? 0));
+  /** Lo que GANA el cliente con esta venta, dicho antes de pedirle el número. */
+  const earnPreview = loyaltyLive ? buildEarnPreview(restaurantData, effTotal) : { points: null, welcomeRewardName: null };
+  const phoneDigitsTyped = phone.replace(/\D/g, "");
   const tipAmount =
     tipCustom !== "" && Number(tipCustom) > 0
       ? Math.round(Number(tipCustom) * 100) / 100
@@ -549,8 +557,9 @@ function CheckoutDialog({
                 style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
               />
               <p className="mt-1 text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                {/* Con el número de ESTA venta, no "junta puntos" a secas. */}
                 {loyaltyLive
-                  ? "Junta puntos automáticamente — y si el número tiene descuento asignado (staff/familia), se aplica solo. ⭐"
+                  ? `${cashierEarnLine(earnPreview) ?? "Junta puntos automáticamente"} — y si el número tiene descuento asignado (staff/familia), se aplica solo. ⭐`
                   : "Le mandas su ticket y le avisas de promos — y si el número tiene descuento asignado (staff/familia), se aplica solo."}{" "}
                 Al darlo acepta el{" "}
                 <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline">
@@ -558,6 +567,15 @@ function CheckoutDialog({
                 </a>.
               </p>
             </div>
+
+            {/* La bienvenida es la razón para pedir el número aunque sea su
+                primera vez. Solo mientras faltan dígitos: con 10 manda
+                PosRedemption (su estado real). */}
+            {loyaltyLive && phoneDigitsTyped.length < 10 && cashierWelcomeLine(earnPreview) ? (
+              <p className="text-[11px] font-semibold" style={{ color: "#B45309" }}>
+                {"🎁 "}{cashierWelcomeLine(earnPreview)}.
+              </p>
+            ) : null}
 
             {/* Redemption: balance + unlocked rewards for the typed phone.
                 Selecting one asks for the customer's código de canje. */}
@@ -819,6 +837,8 @@ export default function PosPage() {
   const [restaurantName, setRestaurantName] = useState("POS");
   /** Premios apagados (5-sep): la Caja pide el número por el ticket, sin prometer puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState(true);
+  /** Doc del local (para el preview de puntos en el cobro). */
+  const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
   // 🎚️ Formas de pago que el dueño dejó prendidas en Configuración. Hasta
   // que cargue el doc, las tres (nunca una Caja sin botones).
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
@@ -892,6 +912,7 @@ export default function PosPage() {
       const rData = restSnap.data() ?? {};
       setRestaurantName((rData.name as string | undefined) ?? "POS");
       setLoyaltyLive(restaurantPromisesPoints(rData));
+      setRestaurantData(rData as Record<string, unknown>);
       setPaymentOptions(acceptedPaymentOptions(rData));
       setRestaurantId(rid);
       setUid(u.uid);
@@ -1866,6 +1887,7 @@ export default function PosPage() {
       {showCheckout && (
         <CheckoutDialog
           loyaltyLive={loyaltyLive}
+          restaurantData={restaurantData}
           paymentOptions={paymentOptions}
           total={subtotal}
           cartLines={cart.map((c) => ({

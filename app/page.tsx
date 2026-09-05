@@ -30,6 +30,17 @@ export const metadata: Metadata = {
 };
 
 
+/** Números REALES de restaurantes en Comeleal (5-sep-2026). Sin nombres a
+ *  propósito; si Ricardo quiere firmar cada cifra con el local, se agrega.
+ *  - 62 platillos: CENTRAL FAST FOOD montó su menú de una foto en una tarde (4-sep).
+ *  - 163 ventas: Pecado Escondido cobró 163 ventas en su Caja en agosto 2026.
+ *  - 16 con salsas: Spicy & Sweet, 32 platillos y 16 con salsas de una foto (23-ago). */
+const PROOF_POINTS = [
+  { figure: "62 platillos", body: "leídos de una sola foto del menú, en una tarde" },
+  { figure: "163 ventas", body: "cobradas en un mes desde la Caja de un solo local" },
+  { figure: "16 platillos con salsas", body: "montados de una foto, con precio por salsa y tamaño" },
+] as const;
+
 const PROBLEM_CARDS = [
   {
     title: "Los clientes no regresan",
@@ -140,7 +151,8 @@ export default function Home() {
                 <span className="text-[#F28C38]">digital y gratis en 1 minuto.</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
-                Con QR, pedidos por WhatsApp y puntos que hacen que tus clientes SIEMPRE regresen. Sin cambiar tu caja.
+                <span className="font-semibold text-white/90">Que te pidan, que regresen, que lo veas.</span>{" "}
+                Menú con QR, pedidos por WhatsApp y puntos. Sin cambiar tu caja.
               </p>
               <HomeCta />
               <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Sin contrato</p>
@@ -194,6 +206,20 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ── Números reales (5-sep-2026) ── Cifras de restaurantes reales en
+            Comeleal, sin nombres (eso lo decide Ricardo). Regla: solo números
+            que existan — jamás prometer lo que no existe. */}
+        <section className="border-b border-[#1C2526]/8 bg-white px-4 py-8 sm:px-6" aria-label="Números reales">
+          <ul className="mx-auto grid max-w-5xl grid-cols-1 gap-6 text-center sm:grid-cols-3">
+            {PROOF_POINTS.map((p) => (
+              <li key={p.figure}>
+                <p className="text-3xl font-extrabold tracking-tight text-[#1C2526] sm:text-4xl">{p.figure}</p>
+                <p className="mt-1 text-sm text-[#1C2526]/65">{p.body}</p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* ── Problem ── */}
