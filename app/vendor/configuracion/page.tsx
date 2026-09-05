@@ -536,7 +536,7 @@ export default function ConfiguracionPage() {
                     </p>
                     <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
                       <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
-                      <li>✓ Recuperación automática por WhatsApp sin límite</li>
+                      <li>✓ Cuentas con acceso propio para tu equipo, cada quien con su rol</li>
                       <li>✓ Comeleal AI sin límite</li>
                       <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
                       <li>✓ Soporte directo — te contesta una persona</li>

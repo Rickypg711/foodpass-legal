@@ -24,6 +24,7 @@ const FREE_FEATURES = [
   "Caja / punto de venta: cobra en segundos, cuentas abiertas por mesa",
   "Pedidos en línea y por WhatsApp",
   "Tus clientes guardados: visitas, gasto y quién dejó de venir",
+  "Recupera al que dejó de venir: Comeleal te dice quién y te arma el WhatsApp — tú lo mandas, sin tope",
   "Reportes de ventas y de clientes",
   "Tu página en Google — te ponemos en los resultados de búsqueda",
   "Lealtad: hasta 50 visitas de clientes al mes",
@@ -31,7 +32,6 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Lealtad ilimitada — ningún cliente se queda sin sus puntos",
-  "Recuperación automática por WhatsApp sin límite: si un cliente deja de venir, le llega un mensaje para que regrese",
   "Comeleal AI sin límite: pregúntale por tus ventas, tus VIP y cuándo lanzar promos",
   "Descuentos especiales para staff y familia — la caja los aplica sola al cobrar",
   "Soporte directo — te contesta una persona, no un bot",

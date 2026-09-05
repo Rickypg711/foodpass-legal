@@ -39,7 +39,7 @@ export type Vertical = {
 export const FAQ_COMUN: { q: string; a: string }[] = [
   {
     q: "¿De verdad es gratis o hay letras chiquitas?",
-    a: "El menú QR, el punto de venta, los pedidos, tus clientes y los reportes son gratis para siempre, sin tarjeta y sin límite de tiempo. Solo los pagos digitales en línea llevan 3% — en efectivo y con tu terminal de siempre, 0%. Si quieres la lealtad ilimitada y la recuperación automática por WhatsApp, eso es Pro: $299 al mes, y puedes probarlo 14 días gratis sin dejar tarjeta.",
+    a: "El menú QR, el punto de venta, los pedidos, tus clientes y los reportes son gratis para siempre, sin tarjeta y sin límite de tiempo. Solo los pagos digitales en línea llevan 3% — en efectivo y con tu terminal de siempre, 0%. Si quieres la lealtad ilimitada y la descuentos especiales para staff y familia, eso es Pro: $299 al mes, y puedes probarlo 14 días gratis sin dejar tarjeta.",
   },
   {
     q: "¿Necesito comprar equipo nuevo?",
@@ -105,7 +105,7 @@ export const VERTICALES: Vertical[] = [
       { t: "Sugerencia de extras automática", d: "Cuando el cliente arma su pedido, el sistema le sugiere el refresco o el pan de ajo — el ticket sube solo, sin que nadie tenga que acordarse." },
       { t: "Comanda directa al horno", d: "El pedido aparece en la pantalla de cocina con todo el detalle y el tiempo corriendo. Sabes qué lleva esperando y qué ya va tarde." },
       { t: "Puntos que hacen que te pidan a ti", d: "El cliente acumula con su número en cada pedido, aquí o en línea. La pizza gratis a los X puntos la pones tú — le cuesta poco a tu margen y lo trae de vuelta." },
-      { t: "Recuperación automática del que dejó de pedir", d: "Si un cliente frecuente lleva semanas sin pedir, la IA lo detecta y te deja listo el mensaje de WhatsApp para traerlo." },
+      { t: "Recupera al que dejó de pedir", d: "Si un cliente frecuente lleva semanas sin pedir, la IA lo detecta y te deja listo el mensaje de WhatsApp — tú lo mandas con un toque." },
     ],
     faq: [
       { q: "¿Puedo cobrar el envío?", a: "Hoy Comeleal maneja pedidos para recoger y pedidos que tú entregas con tu propio repartidor, cobrando el envío como un producto más de tu menú. El cálculo automático de envío por distancia está en camino." },
@@ -291,7 +291,7 @@ export const VERTICALES: Vertical[] = [
       { t: "Comandas digitales por marca", d: "Los pedidos entran a la pantalla de cocina con todo el detalle, ordenados por tiempo de espera." },
       { t: "Reportes que te dicen qué deja margen", d: "Ves qué se vende más, por qué canal y con qué método de pago. Con eso decides qué platillo empujar y cuál matar." },
       { t: "Puntos para forzar la segunda compra", d: "El cliente que ya te compró acumula, y la segunda compra directa te sale sin comisión. Ahí está el margen." },
-      { t: "Recuperación automática por WhatsApp", d: "Cuando un cliente deja de pedir, la IA lo detecta y te deja listo el mensaje. Sin volver a pagar por adquirirlo." },
+      { t: "Recupera al que dejó de pedir", d: "Cuando un cliente deja de pedir, la IA lo detecta y te deja listo el mensaje de WhatsApp — tú lo mandas con un toque. Sin volver a pagar por adquirirlo." },
     ],
     faq: [
       { q: "¿Puedo manejar varias marcas en la misma cocina?", a: "Sí, puedes tener más de un negocio en Comeleal y verlos por separado, cada uno con su menú, su link y sus clientes." },

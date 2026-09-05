@@ -22,12 +22,12 @@ const FREE_INCLUDES = [
   "Caja / POS completa: cobro, cuentas, equipo con PIN y propinas",
   "Pedidos en línea sin comisiones de reparto",
   "Tus clientes guardados con su número — CRM y reportes",
+  "Recupera al que dejó de venir: Comeleal te dice quién y te arma el WhatsApp — tú lo mandas, sin tope",
   "Lealtad: hasta 50 visitas de clientes al mes",
 ];
 
 const PRO_INCLUDES = [
   "Lealtad ilimitada — ningún cliente se queda sin sus puntos",
-  "Recuperación automática por WhatsApp: si un cliente deja de venir, le llega un mensaje para que regrese",
   "Descuentos especiales (staff y familia) — la caja los aplica sola",
   "Cuentas con acceso propio para tu equipo, cada quien con su rol",
   "Comeleal AI sin límite: tus ventas, tus VIP, cuándo lanzar promos",
@@ -363,7 +363,7 @@ export default function PlanPage() {
                 },
                 {
                   q: "¿Qué pasa si cancelo Pro?",
-                  a: "Nada se rompe: sigues operando gratis con todo tu historial. Solo se pausa la máquina — lealtad ilimitada, win-back y AI.",
+                  a: "Nada se rompe: sigues operando gratis con todo tu historial. Solo se pausa la máquina — lealtad ilimitada, descuentos especiales, equipo con roles y AI sin límite.",
                 },
                 {
                   q: "¿Cómo se paga?",
