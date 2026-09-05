@@ -35,6 +35,7 @@ interface BarcodeDetectorInstance {
 
 type ScanStage =
   | "loading"    // checking auth + getting restaurantId
+  | "rewards_off" // local completo pero sin nada que ganar (premios apagados, 5-sep)
   | "permission" // about to ask for camera
   | "scanning"   // camera active
   | "processing" // QR found, writing to Firestore
@@ -95,6 +96,15 @@ export default function VendorScanner() {
           restaurantId: rid,
           pointsPerVisit: restData?.pointsPerVisit ?? 1,
         });
+
+        // Sin nada que ganar (premios apagados a propósito, 5-sep) el escáner
+        // no regala puntos: las reglas de Firestore ya lo niegan del lado del
+        // servidor (loyaltyReady == false); aquí se dice ANTES de pedir la
+        // cámara, con la puerta a Premios. Espejo del escáner de la app.
+        if (restData?.loyaltyReady === false) {
+          setStage("rewards_off");
+          return;
+        }
 
         // Check BarcodeDetector support
         if (!("BarcodeDetector" in window)) {
@@ -308,6 +318,36 @@ export default function VendorScanner() {
         >
           ← Volver al panel
         </Link>
+      </div>
+    );
+  }
+
+  // ── Premios apagados: local completo, escáner en pausa ──────────────────
+  if (stage === "rewards_off") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#141414] px-6 text-center">
+        <div className="text-4xl">🎁</div>
+        <div>
+          <p className="text-xl font-bold text-white">Prende un premio para escanear</p>
+          <p className="mt-2 text-sm leading-relaxed text-white/50">
+            Tu local ya está completo. El escáner da puntos y los puntos necesitan un premio.
+            Ponle uno y el escáner se prende solo. Tu Caja, tu menú y tu QR siguen igual.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link
+            href="/vendor/setup/recompensas"
+            className="rounded-xl bg-[#F28C38] px-5 py-2.5 text-sm font-semibold text-[#1C2526]"
+          >
+            Ir a premios
+          </Link>
+          <Link
+            href="/vendor"
+            className="rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/70 hover:text-white"
+          >
+            Volver
+          </Link>
+        </div>
       </div>
     );
   }
