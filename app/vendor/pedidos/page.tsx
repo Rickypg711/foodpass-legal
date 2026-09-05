@@ -28,6 +28,7 @@ import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 import { primeChime, playNewOrderChime, flashTabTitle } from "@/lib/vendor/newOrderChime";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,8 @@ export default function PedidosPage() {
   /** Premios apagados (5-sep): el recibo por WhatsApp no anuncia puntos. */
 
   const [loyaltyLive, setLoyaltyLive] = useState(true);
+  /** País del teléfono del local (5-sep): sus clientes marcan como él. */
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   // 🎚️ Formas de pago que el dueño acepta (Configuración); las tres hasta cargar.
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
   const [loading, setLoading] = useState(true);
@@ -144,6 +147,7 @@ export default function PedidosPage() {
         const rSnap = await getDoc(doc(db, "restaurants", rid));
         setPaymentOptions(acceptedPaymentOptions(rSnap.data()));
         setLoyaltyLive(restaurantPromisesPoints(rSnap.data()));
+        setPhoneCountry(phoneCountryOf(rSnap.data()));
       } catch {
         // Sin lectura, las tres: nunca un cobro sin botones.
       }
@@ -323,6 +327,7 @@ export default function PedidosPage() {
       receiptWhatsappUrl({
         restaurantId,
         promisesPoints: loyaltyLive,
+        phoneCountryCode: phoneCountry,
         restaurantName: order.restaurantName,
         orderId: order.id,
         customerPhone: order.customerPhone,
@@ -583,7 +588,7 @@ export default function PedidosPage() {
                         {order.customerPhone && (
                           <div className="flex items-center justify-between gap-2">
                             <a
-                              href={`https://wa.me/${order.customerPhone.length === 10 ? `52${order.customerPhone}` : order.customerPhone}`}
+                              href={`https://wa.me/${waNumber(order.customerPhone, phoneCountry)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"

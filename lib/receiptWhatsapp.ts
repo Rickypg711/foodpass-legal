@@ -12,6 +12,7 @@
 // fix 5.1.3 le agrega el mismo wa.me directo cuando hay customerPhone.
 
 import { shortOrderCode, buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
+import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 
 export type ReceiptItem = { name: string; quantity: number; price: number };
 
@@ -19,8 +20,10 @@ export type ReceiptWhatsappInput = {
   restaurantId: string;
   restaurantName?: string | null;
   orderId: string;
-  /** Teléfono capturado (dígitos; 10 = MX local → se antepone 52). */
+  /** Teléfono capturado (dígitos; se usan los últimos 10 + el país del local). */
   customerPhone: string;
+  /** País del teléfono del restaurante (phoneCountryCode); default México. */
+  phoneCountryCode?: string;
   customerName?: string | null;
   /** Items del ticket — incluye la línea $0 del premio si hubo canje. */
   items: ReceiptItem[];
@@ -71,7 +74,6 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
 
 /** URL wa.me directa al número del cliente con el recibo ya escrito. */
 export function receiptWhatsappUrl(r: ReceiptWhatsappInput): string {
-  const digits = r.customerPhone.replace(/\D/g, "");
-  const phone = digits.length === 10 ? `52${digits}` : digits;
-  return buildWhatsappUrl(phone, buildReceiptWhatsappText(r));
+  // El país lo pone el restaurante (5-sep): sus clientes marcan como él.
+  return buildWhatsappUrl(r.customerPhone, buildReceiptWhatsappText(r), phoneCountryOf(r));
 }

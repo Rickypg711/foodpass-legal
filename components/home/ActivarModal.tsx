@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,6 +37,7 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
+import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone } from "@/lib/phone/phoneCountry";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -267,7 +269,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
     // cual armaba wa.me/5252... — WhatsApp roto (cazado por Ricardo 26-ago).
     const phone10 = phone.replace(/\D/g, "").slice(-10);
     if (phone10.length !== 10) {
-      setError("Pon tu número a 10 dígitos — como lo marcas en México.");
+      setError("Pon tus 10 dígitos. Si no estás en México, ponlo con + y tu país, como +1 809 123 4567.");
       return;
     }
     setStage("creating");
@@ -278,6 +280,9 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         address: address.trim(),
         phone: phone10,
         whatsapp: phone10,
+        // País del teléfono (5-sep): si escribió "+1 809..." se guarda "1";
+        // 10 dígitos pelones son México. Se cambia después en Configuración.
+        phoneCountryCode: countryFromTypedPhone(phone) ?? DEFAULT_PHONE_COUNTRY,
         categories: cats.slice(0, 3),
         ownerId: user.uid,
         billingOwnerUserId: user.uid,
@@ -370,6 +375,8 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
           await updateDoc(restaurantRef, {
             lat: verdict.lat,
             lng: verdict.lng,
+            // La ciudad viaja con el pin (Google la sabe; el texto del dueño no).
+            ...cityFieldsFromVerdict(verdict, verdict.lat, verdict.lng, "geocode"),
             locationSource: "web_signup",
             locationPrecision: verdict.precision,
             locationFormattedAddress: verdict.formatted,

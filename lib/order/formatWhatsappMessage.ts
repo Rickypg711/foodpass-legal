@@ -1,6 +1,7 @@
 import { formatPrice } from "@/lib/priceFormat";
 import type { CartLine } from "@/lib/cart/types";
 import { describeSelectedOptions } from "@/lib/cart/lineId";
+import { DEFAULT_PHONE_COUNTRY, waNumber } from "@/lib/phone/phoneCountry";
 
 export type WhatsappOrderContext = {
   restaurantName: string;
@@ -56,12 +57,16 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
   ].join("\n");
 }
 
-export function buildWhatsappUrl(phoneDigits: string, text: string): string {
-  // Canon MX (26-ago): wa.me exige formato internacional y Comeleal es
-  // México-only, así que TODO link se arma como 52 + últimos 10 dígitos —
+export function buildWhatsappUrl(
+  phoneDigits: string,
+  text: string,
+  countryCode: string = DEFAULT_PHONE_COUNTRY,
+): string {
+  // Canon (26-ago, abierto al mundo el 5-sep): wa.me exige formato
+  // internacional, así que TODO link se arma como país + últimos 10 dígitos —
   // sin importar cómo se haya guardado el número ("+52 614...", "52614...",
-  // o 10 pelones). Antes cada consumidor esperaba SU formato y el mismo
-  // campo rompía uno u otro (wa.me/5252... o wa.me/614... sin país).
-  const last10 = phoneDigits.replace(/\D/g, "").slice(-10);
-  return `https://wa.me/52${last10}?text=${encodeURIComponent(text)}`;
+  // o 10 pelones). El país lo dice el restaurante (phoneCountryCode) y si no
+  // dice nada es México. Antes "52" iba cosido y a un dueño de República
+  // Dominicana su propio botón de WhatsApp le marcaba a un número mexicano.
+  return `https://wa.me/${waNumber(phoneDigits, countryCode)}?text=${encodeURIComponent(text)}`;
 }

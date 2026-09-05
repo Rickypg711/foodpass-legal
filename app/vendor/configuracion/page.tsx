@@ -12,7 +12,7 @@ import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { entitlementOf } from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
-import { parseLocationLink } from "@/lib/geocodeRestaurant";
+import { parseLocationLink, cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
@@ -22,6 +22,8 @@ import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/pos
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
 import type { User } from "firebase/auth";
+import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,6 +84,8 @@ export default function ConfiguracionPage() {
   const [savingPin, setSavingPin] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
   const [phone, setPhone] = useState("");
+  /** País del teléfono (5-sep): wa.me y SMS del local marcan con este código. */
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
   const [story, setStory] = useState("");
@@ -145,6 +149,7 @@ export default function ConfiguracionPage() {
           (Number(data.lat) === 0 && Number(data.lng) === 0),
       );
       setPhone((data.phone as string) ?? "");
+      setPhoneCountry(phoneCountryOf(data));
       setStory((data.story as string) ?? "");
       setGoogleReviewUrl((data.googleReviewUrl as string) ?? "");
       setSlug(slugFromRestaurantData(data));
@@ -369,9 +374,25 @@ export default function ConfiguracionPage() {
     setSavingPin(true);
     try {
       const db = getFirebaseDb();
+      // El pin lo puso el dueño a mano: Google nos dice la ciudad de ese
+      // punto (reverse). Si falla, el pin se guarda igual; la ciudad la
+      // deriva el servidor después (functions/restaurant_city_from_pin.js).
+      let cityFields: Record<string, unknown> = {};
+      try {
+        const rev = await fetch("/api/geocode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: coords.lat, lng: coords.lng }),
+        });
+        const loc = await rev.json();
+        if (loc?.ok) cityFields = cityFieldsFromVerdict(loc, coords.lat, coords.lng, "reverse_geocode");
+      } catch {
+        /* la ciudad la deriva el servidor */
+      }
       await updateDoc(doc(db, "restaurants", restaurantId), {
         lat: coords.lat,
         lng: coords.lng,
+        ...cityFields,
         locationSource: "owner_confirmed",
         locationUpdatedAt: serverTimestamp(),
         locationNeedsReview: deleteField(),
@@ -403,6 +424,7 @@ export default function ConfiguracionPage() {
         name: name.trim(),
         address: address.trim(),
         phone: phone.trim(),
+        phoneCountryCode: phoneCountry,
         story: story.trim(),
         googleReviewUrl: googleReviewUrl.trim(),
         categories,
@@ -461,6 +483,7 @@ export default function ConfiguracionPage() {
           if (verdict?.ok) {
             update.lat = verdict.lat;
             update.lng = verdict.lng;
+            Object.assign(update, cityFieldsFromVerdict(verdict, verdict.lat, verdict.lng, "geocode"));
             update.locationSource = "vendor_web_edit";
             update.locationPrecision = verdict.precision;
             update.locationFormattedAddress = verdict.formatted;
@@ -785,7 +808,22 @@ export default function ConfiguracionPage() {
                 <TextInput value={address} onChange={(v) => { setAddress(v); setSaved(false); }} placeholder="Calle, colonia, ciudad" />
               </Field>
               <Field label="Teléfono">
-                <TextInput value={phone} onChange={(v) => { setPhone(v); setSaved(false); }} placeholder="614 123 4567" type="tel" />
+                <div className="flex gap-2">
+                  <PhoneCountrySelect
+                    value={phoneCountry}
+                    onChange={(c) => { setPhoneCountry(c); setSaved(false); }}
+                    className="max-w-[46%] shrink-0"
+                  />
+                  <TextInput
+                    value={phone}
+                    onChange={(v) => { setPhone(v); setSaved(false); }}
+                    placeholder={PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.example ?? "614 123 4567"}
+                    type="tel"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#1C2526]/55">
+                  Si tu local no está en México, cambia el país aquí. Así tu botón de WhatsApp y los códigos por SMS de tus clientes marcan bien.
+                </p>
               </Field>
               <Field label="Tu historia (opcional)">
                 <textarea

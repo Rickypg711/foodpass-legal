@@ -10,6 +10,7 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisition";
 import MenuShareModal from "../../_components/MenuShareModal";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 
 /**
  * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
@@ -41,6 +42,7 @@ export default function SetupDonePage() {
   const [restaurantName, setRestaurantName] = useState("Tu restaurante");
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantWhatsapp, setRestaurantWhatsapp] = useState<string | null>(null);
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [slug, setSlug] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
@@ -58,6 +60,7 @@ export default function SetupDonePage() {
       if (name) setRestaurantName(name);
       const wa = String(rSnap.data()?.whatsapp ?? "").replace(/\D/g, "");
       if (wa.length >= 10) setRestaurantWhatsapp(wa.slice(-10));
+      setPhoneCountry(phoneCountryOf(rSnap.data()));
       setRestaurantId(rid);
       setLoading(false);
       fireOnboardingCompletedOnce(rid);
@@ -119,7 +122,7 @@ export default function SetupDonePage() {
             </button>
             {restaurantWhatsapp && qrUrl && (
               <a
-                href={`https://wa.me/52${restaurantWhatsapp}?text=${encodeURIComponent(
+                href={`https://wa.me/${waNumber(restaurantWhatsapp, phoneCountry)}?text=${encodeURIComponent(
                   `Mi menú digital ya está VIVO.\n\nLink de mi QR (este va impreso en mesas y caja):\n${qrUrl}\n\nLink para mandar a mis clientes (lleva mi menú, teléfono y ubicación):\nhttps://comeleal.com/r/${slug ?? restaurantId}\n\nEl QR lo imprimo desde mi panel — o en cualquier papelería.`,
                 )}`}
                 target="_blank"

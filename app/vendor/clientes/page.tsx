@@ -56,6 +56,7 @@ interface Customer {
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
 import { FIRST_VISIT_CLAIM_DAYS } from "@/lib/loyalty/rewardCatalog";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ function CustomerCard({
   customer,
   restaurantId,
   restaurantName,
+  phoneCountry = DEFAULT_PHONE_COUNTRY,
   isActuaHoy = false,
   discountProfiles = [],
   discountsOn = false,
@@ -129,6 +131,8 @@ function CustomerCard({
   customer: Customer;
   restaurantId: string;
   restaurantName: string;
+  /** País del teléfono del local (5-sep): el win-back marca como él. */
+  phoneCountry?: string;
   isActuaHoy?: boolean;
   /** Descuentos especiales (Pro): perfiles disponibles para asignar. */
   discountProfiles?: DiscountProfile[];
@@ -184,7 +188,7 @@ function CustomerCard({
     if (!customer.phone) return;
     const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
     if (msg) {
-      const waUrl = `https://wa.me/${customer.phone.length === 10 ? `52${customer.phone}` : customer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/${waNumber(customer.phone, phoneCountry)}?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, "_blank");
       return;
     }
@@ -205,7 +209,7 @@ function CustomerCard({
         `¡Te esperamos pronto!`;
       setMsg(generated);
       logPhoneWinbackTap(phone10);
-      const waUrl = `https://wa.me/52${phone10}?text=${encodeURIComponent(generated)}`;
+      const waUrl = `https://wa.me/${waNumber(phone10, phoneCountry)}?text=${encodeURIComponent(generated)}`;
       window.open(waUrl, "_blank");
       return;
     }
@@ -229,8 +233,7 @@ function CustomerCard({
       });
       const generated = res.data.message;
       setMsg(generated);
-      const phone = customer.phone.replace(/\D/g, "");
-      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(generated)}`;
+      const waUrl = `https://wa.me/${waNumber(customer.phone, phoneCountry)}?text=${encodeURIComponent(generated)}`;
       window.open(waUrl, "_blank");
     } catch {
       setMsgError(true);
@@ -430,6 +433,7 @@ export default function ClientesPage() {
   const router = useRouter();
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>("");
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [winbackSent, setWinbackSent] = useState<number>(0);
@@ -618,6 +622,7 @@ export default function ClientesPage() {
       setRestaurantId(rid);
       const rdata = restSnap.data() ?? {};
       setRestaurantName((rdata.name as string | undefined) ?? "");
+      setPhoneCountry(phoneCountryOf(rdata));
       // Owner-only rule: el manager ve chips de descuento asignados pero no
       // puede asignar/quitar ni filtrar (profiles vacíos = UI de asignación oculta).
       setDiscountProfiles(isOwner ? parseDiscountProfiles(rdata.discountProfiles) : []);
@@ -763,6 +768,7 @@ export default function ClientesPage() {
                 <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {actuaHoy.map((c) => (
                     <CustomerCard
+                      phoneCountry={phoneCountry}
                       key={c.userId}
                       customer={c}
                       restaurantId={restaurantId!}
@@ -874,6 +880,7 @@ export default function ClientesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filtered.map((c) => (
                   <CustomerCard
+                      phoneCountry={phoneCountry}
                     key={c.userId}
                     customer={c}
                     restaurantId={restaurantId!}

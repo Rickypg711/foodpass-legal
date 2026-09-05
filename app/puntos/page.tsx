@@ -32,6 +32,8 @@ import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
 import { WalletPassButtons } from "@/components/loyalty/WalletPassButtons";
+import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, toE164 } from "@/lib/phone/phoneCountry";
+import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -74,6 +76,8 @@ function last10(digits: string): string {
 
 export default function PuntosGlobalPage() {
   const [phoneInput, setPhoneInput] = useState("");
+  /** País del número (5-sep): aquí no hay restaurante, lo elige la persona. */
+  const [country, setCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [step, setStep] = useState<Step>("idle");
   const [code, setCode] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -106,7 +110,7 @@ export default function PuntosGlobalPage() {
       if (!verifierRef.current) throw new Error("recaptcha_unavailable");
       confirmRef.current = await linkWithPhoneNumber(
         user,
-        `+52${digits}`,
+        toE164(digits, country),
         verifierRef.current,
       );
       setStep("code");
@@ -376,15 +380,18 @@ export default function PuntosGlobalPage() {
               Escribe tu WhatsApp y te mandamos un código para ver tu saldo en
               todos tus lugares. Sin apps, sin cuentas.
             </p>
-            <input
-              type="tel"
-              inputMode="numeric"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              placeholder="Ej. 614 123 4567"
-              maxLength={16}
-              className="mt-4 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-center text-[15px] outline-none focus:border-[#F28C38]"
-            />
+            <div className="mt-4 flex gap-2">
+              <PhoneCountrySelect value={country} onChange={setCountry} className="max-w-[46%] shrink-0" />
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                placeholder={`Ej. ${PHONE_COUNTRIES.find((c) => c.code === country)?.example ?? "614 123 4567"}`}
+                maxLength={16}
+                className="w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-center text-[15px] outline-none focus:border-[#F28C38]"
+              />
+            </div>
             <button
               type="button"
               disabled={!valid || step === "sending"}

@@ -23,6 +23,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 import { WalletPassButtons } from "@/components/loyalty/WalletPassButtons";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
+import { DEFAULT_PHONE_COUNTRY, toE164 } from "@/lib/phone/phoneCountry";
 
 type Step = "idle" | "sending" | "code" | "verifying" | "done" | "error";
 
@@ -63,20 +64,17 @@ function last10(digits: string): string {
   return d.length > 10 ? d.slice(-10) : d;
 }
 
-function toE164Mx(digits: string): string {
-  const d = digits.replace(/\D/g, "");
-  if (d.length === 10) return `+52${d}`;
-  return `+${d}`;
-}
-
 export function PhonePointsCard({
   restaurantId,
   restaurantName,
   phone,
+  phoneCountryCode = DEFAULT_PHONE_COUNTRY,
 }: {
   restaurantId: string;
   restaurantName: string;
   phone: string;
+  /** País del teléfono del local (phoneCountryCode); default México. */
+  phoneCountryCode?: string;
 }) {
   const [step, setStep] = useState<Step>("idle");
   /** users/{uid}.linkedPhone written → a wallet pass would actually credit. */
@@ -112,8 +110,8 @@ export function PhonePointsCard({
       // Session with a DIFFERENT phone linked can't link a second one
       // (auth/provider-already-linked) → sign in fresh instead.
       confirmRef.current = user.phoneNumber
-        ? await signInWithPhoneNumber(auth, toE164Mx(phone), verifierRef.current)
-        : await linkWithPhoneNumber(user, toE164Mx(phone), verifierRef.current);
+        ? await signInWithPhoneNumber(auth, toE164(phone, phoneCountryCode), verifierRef.current)
+        : await linkWithPhoneNumber(user, toE164(phone, phoneCountryCode), verifierRef.current);
       setStep("code");
     } catch (e) {
       console.error("[PhonePointsCard] sendCode", e);

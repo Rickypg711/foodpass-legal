@@ -56,6 +56,7 @@ import {
   tabLinesFromItems,
   type TabDiscountRecalc,
 } from "@/lib/loyalty/tabDiscountRecalc";
+import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1377,6 +1378,7 @@ export default function PosPage() {
               restaurantName,
               orderId: orderRef.id,
               customerPhone: phoneDigits,
+              phoneCountryCode: phoneCountryOf(restaurantData),
               customerName: customerName.trim() || null,
               items: items.map((i) => ({
                 name: String(i.name ?? ""),

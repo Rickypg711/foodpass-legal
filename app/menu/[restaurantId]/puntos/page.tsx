@@ -12,6 +12,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
+import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 
 export default function PuntosPage() {
   const params = useParams();
@@ -112,6 +113,7 @@ export default function PuntosPage() {
               restaurantId={restaurantId}
               restaurantName={restaurantName}
               phone={phone}
+              phoneCountryCode={phoneCountryOf(rdata)}
             />
             {/* App-as-wallet upsell — post-value moment, same pitch as the
                 receipt banner. Never a requirement, always an upgrade. */}

@@ -21,6 +21,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { ensureAnonymousUser, getFirebaseAuth, waitForAuthReady } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import type { OrderRedemptionRequest } from "@/lib/types/order";
+import { phoneCountryOf, toE164 } from "@/lib/phone/phoneCountry";
 
 type Tier = { id: string; name: string; points: number };
 
@@ -81,6 +82,16 @@ export function CheckoutRedemption({
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
   const recaptchaHostRef = useRef<HTMLDivElement | null>(null);
   const loadedForRef = useRef<string>("");
+  // País del teléfono del local (5-sep): el código por SMS marca como él,
+  // no siempre a México. Se lee una vez por montaje.
+  const phoneCountryRef = useRef<string | null>(null);
+  async function resolvePhoneCountry(): Promise<string> {
+    if (phoneCountryRef.current) return phoneCountryRef.current;
+    const rSnap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId));
+    const cc = phoneCountryOf(rSnap.data());
+    phoneCountryRef.current = cc;
+    return cc;
+  }
 
   // When the typed number matches an already-verified session → load balance
   // silently. Waits for auth restore (currentUser is null for ~1s on fresh
@@ -151,9 +162,10 @@ export function CheckoutRedemption({
       if (!verifierRef.current) throw new Error("recaptcha_unavailable");
       // Session with a DIFFERENT phone already linked can't link a second
       // one (auth/provider-already-linked) → sign in fresh instead.
+      const e164 = toE164(phone10, await resolvePhoneCountry());
       confirmRef.current = user.phoneNumber
-        ? await signInWithPhoneNumber(auth, `+52${phone10}`, verifierRef.current)
-        : await linkWithPhoneNumber(user, `+52${phone10}`, verifierRef.current);
+        ? await signInWithPhoneNumber(auth, e164, verifierRef.current)
+        : await linkWithPhoneNumber(user, e164, verifierRef.current);
       setState("otp_code");
     } catch (e) {
       console.error("[CheckoutRedemption] startOtp", e);

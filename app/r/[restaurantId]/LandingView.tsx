@@ -32,9 +32,10 @@ import {
   weeklySchedule,
   type ScheduleStatus,
 } from "@/lib/schedule";
-import { buildFaq, buildSeoParagraph } from "@/lib/landingContent";
+import { buildFaq, buildSeoParagraph, cityForRestaurant, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
+import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 
 export type LandingMenuPhoto = {
   name: string;
@@ -78,11 +79,12 @@ function mapRestaurant(data: Record<string, unknown>): LandingRestaurant {
       firstVisitReward = str(m.menuItemName) ?? str(m.description);
     }
   }
-  const categories = Array.isArray(data.categories)
-    ? (data.categories as unknown[])
-        .map((c) => (typeof c === "string" ? c.trim() : ""))
-        .filter(Boolean)
-    : [];
+  // Sin comodines ("Otro"): ni en chips, ni en FAQ, ni en el párrafo SEO.
+  const categories = seoCategories(
+    Array.isArray(data.categories)
+      ? (data.categories as unknown[]).map((c) => (typeof c === "string" ? c.trim() : ""))
+      : [],
+  );
   return {
     name: str(data.name) ?? "Restaurante",
     description: str(data.description),
@@ -297,6 +299,7 @@ export default function LandingView({
       name: restaurant.name,
       categories: restaurant.categories,
       address: restaurant.address,
+      city: cityForRestaurant(rdata),
       hoursText: weekly ? weekly.map((r) => `${r.day} ${r.hours}`).join(" · ") : null,
       topItems: menuPhotos.slice(0, 3).map((p) => p.name),
       firstVisitReward: restaurant.firstVisitReward,
@@ -307,7 +310,7 @@ export default function LandingView({
     });
   }, [restaurant, rdata, weekly, menuPhotos]);
   const seoParagraph = restaurant
-    ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address, restaurantPromisesPoints(rdata ?? undefined))
+    ? buildSeoParagraph(restaurant.name, restaurant.categories, restaurant.address, restaurantPromisesPoints(rdata ?? undefined), cityForRestaurant(rdata))
     : null;
 
   // Vista registrada una vez que hay datos (server o client).
@@ -323,6 +326,7 @@ export default function LandingView({
     ? buildWhatsappUrl(
         restaurant.whatsapp,
         `Hola ${name}, vi su página en Comeleal y quiero hacer un pedido 🙌`,
+        phoneCountryOf(rdata),
       )
     : null;
 

@@ -30,6 +30,7 @@ import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
 import type { CartLine } from "@/lib/cart/types";
 import type { StoredOrderSnapshot } from "@/lib/types/order";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 
 type OrderDoc = {
   status?: string;
@@ -141,6 +142,8 @@ function OrderStatusPageContent() {
   const mounted = useIsClient();
   const [order, setOrder] = useState<OrderDoc | null>(null);
   const [whatsapp, setWhatsapp] = useState<string | null>(null);
+  /** País del teléfono del local (5-sep): wa.me y SMS marcan como él. */
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [googleReviewUrl, setGoogleReviewUrl] = useState<string | null>(null);
   // Throttle una-vez-por-local (espejo del ask en la app): quien ya tocó el
   // botón de reseña no lo vuelve a ver. localStorage a propósito — un contador
@@ -246,6 +249,7 @@ function OrderStatusPageContent() {
         const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
         if (rSnap.exists()) {
           const d = rSnap.data() as Record<string, unknown>;
+          setPhoneCountry(phoneCountryOf(d));
           const wa = d.whatsapp;
           if (typeof wa === "string" && wa.trim()) {
             setWhatsapp(wa.trim());
@@ -406,7 +410,7 @@ function OrderStatusPageContent() {
       total: displayTotal,
     });
     trackWhatsappOrderMessageSent({ restaurantId, orderId });
-    window.open(buildWhatsappUrl(whatsapp, text), "_blank", "noopener,noreferrer");
+    window.open(buildWhatsappUrl(whatsapp, text, phoneCountry), "_blank", "noopener,noreferrer");
   }
 
   const downloadHref = `/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`;
@@ -632,6 +636,7 @@ function OrderStatusPageContent() {
                 restaurantId={restaurantId}
                 restaurantName={displayRestaurant}
                 phone={order.customerPhone}
+                phoneCountryCode={phoneCountry}
               />
             ) : null}
 
