@@ -18,6 +18,17 @@ import { waitForAuthReady } from "@/lib/auth";
 import { businessDayStart, businessDayStartDaysAgo, businessDayKey } from "@/lib/businessDay";
 import { tipStaysWithStaff } from "@/lib/pos/paidOrderFields";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import {
+  entitlementOf,
+  entitlementsOf,
+  historyAllowed,
+  HISTORY_DAYS_FREE,
+  FREE_ENTITLEMENTS,
+  type Entitlement,
+  type Entitlements,
+} from "@/lib/subscription/entitlement";
+import { ProWall } from "@/components/vendor/ProWall";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,6 +87,20 @@ interface ReportsData {
   } | null;
 }
 
+/** Historial de ventas por rango (pared 1 de la Caja, 8-sep). */
+type HistoryRange = 30 | 90 | null; // null = todo el historial
+const HISTORY_RANGES: { days: HistoryRange; label: string }[] = [
+  { days: 30, label: "30 días" },
+  { days: 90, label: "90 días" },
+  { days: null, label: "Todo" },
+];
+interface SalesHistory {
+  days: HistoryRange;
+  count: number;
+  revenue: number;
+  byMonth: { key: string; label: string; count: number; revenue: number }[];
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
@@ -99,6 +124,80 @@ export default function ReportesPage() {
   const router = useRouter();
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [data, setData] = useState<ReportsData | null>(null);
+
+  // ── Pared 1: historial >30 días es Pro (docs/PRICING.md v2.0) ──────────────
+  // El plan se lee FUNDIDO con private/billing (fetchWithBilling): el doc
+  // público ya no trae la suscripción desde la migración del 24-ago.
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [ents, setEnts] = useState<Entitlements>(FREE_ENTITLEMENTS);
+  const [rangeDays, setRangeDays] = useState<HistoryRange>(HISTORY_DAYS_FREE as HistoryRange);
+  const [pendingRange, setPendingRange] = useState<HistoryRange>(30);
+  const [wallOpen, setWallOpen] = useState(false);
+  const [history, setHistory] = useState<SalesHistory | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  /** Ventas pagadas del rango, agrupadas por mes. `null` = sin cota (Pro). */
+  async function loadHistory(rid: string, days: HistoryRange) {
+    setHistoryLoading(true);
+    try {
+      const db = getFirebaseDb();
+      const base = collection(db, "restaurants", rid, "orders");
+      const q =
+        days == null
+          ? query(base, where("paymentStatus", "==", "paid"))
+          : query(
+              base,
+              where("createdAt", ">=", Timestamp.fromDate(businessDayStartDaysAgo(days))),
+              where("paymentStatus", "==", "paid"),
+            );
+      const snap = await getDocs(q);
+      const byMonth: Record<string, { key: string; label: string; count: number; revenue: number }> = {};
+      let count = 0;
+      let revenue = 0;
+      snap.forEach((d) => {
+        const o = d.data();
+        const ts = o.createdAt as Timestamp | undefined;
+        if (!ts?.toDate) return;
+        const dt = ts.toDate();
+        const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+        const total = (o.total as number) ?? 0;
+        count++;
+        revenue += total;
+        const b =
+          byMonth[key] ??
+          (byMonth[key] = {
+            key,
+            label: dt.toLocaleDateString("es-MX", { month: "long", year: "numeric" }),
+            count: 0,
+            revenue: 0,
+          });
+        b.count++;
+        b.revenue += total;
+      });
+      setHistory({
+        days,
+        count,
+        revenue,
+        byMonth: Object.values(byMonth).sort((a, b) => (a.key < b.key ? 1 : -1)),
+      });
+    } catch (e) {
+      console.error("[reportes/history]", e);
+      setHistory(null);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  /** El selector: dentro de la ventana gratis carga; fuera, enseña la pared. */
+  function pickRange(days: HistoryRange) {
+    if (!historyAllowed(ents, days)) {
+      setPendingRange(days);
+      setWallOpen(true);
+      return;
+    }
+    setRangeDays(days);
+    if (data?.restaurantId) void loadHistory(data.restaurantId, days);
+  }
 
   useEffect(() => {
     async function init() {
@@ -166,6 +265,12 @@ export default function ReportesPage() {
 
         const restData = restaurantSnap.data() ?? {};
         const insightsData = insightsSnap.exists() ? insightsSnap.data() : null;
+
+        // Plan (pared 1): fundido con private/billing — la regla única.
+        const merged = await fetchWithBilling(db, rid, restData as Record<string, unknown>);
+        setEnt(entitlementOf(merged));
+        setEnts(entitlementsOf(merged, rid));
+        void loadHistory(rid, HISTORY_DAYS_FREE);
 
         // Today's revenue & average ticket
         let todayRevenue = 0;
@@ -571,6 +676,84 @@ export default function ReportesPage() {
 
         </div>
 
+        {/* ── Historial de ventas por rango — pared 1 de la Caja (8-sep) ──
+            30 días gratis (la ventana de siempre); 90 días y Todo son Pro. */}
+        <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+            <p className="text-[14px] font-bold text-[#1C2526]">📚 Historial de ventas</p>
+            <div className="flex gap-1.5" role="tablist" aria-label="Rango del historial">
+              {HISTORY_RANGES.map((r) => {
+                const active = rangeDays === r.days;
+                const locked = !historyAllowed(ents, r.days);
+                return (
+                  <button
+                    key={r.label}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => pickRange(r.days)}
+                    className="rounded-xl px-3 py-1.5 text-[12px] font-bold transition"
+                    style={
+                      active
+                        ? { background: "#F28C38", color: "#1C2526" }
+                        : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }
+                    }
+                    title={locked ? "Esto es Pro" : undefined}
+                  >
+                    {locked ? "⭐ " : ""}{r.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {historyLoading ? (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          ) : history ? (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ventas</p>
+                  <p className="text-[18px] font-black text-[#1C2526]">{history.count}</p>
+                </div>
+                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ingresos</p>
+                  <p className="text-[18px] font-black text-[#1C2526]">{fmt(history.revenue)}</p>
+                </div>
+                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ticket prom.</p>
+                  <p className="text-[18px] font-black text-[#1C2526]">
+                    {fmt(history.count > 0 ? history.revenue / history.count : 0)}
+                  </p>
+                </div>
+              </div>
+              {history.byMonth.length === 0 ? (
+                <p className="py-6 text-center text-[13px] text-gray-400">
+                  Sin ventas cobradas en este rango.
+                </p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {history.byMonth.map((m) => (
+                    <div key={m.key} className="flex items-center justify-between py-2.5">
+                      <span className="text-[13px] font-bold capitalize text-[#1C2526]">{m.label}</span>
+                      <div className="text-right">
+                        <p className="text-[13px] font-black text-[#1C2526]">{fmt(m.revenue)}</p>
+                        <p className="text-[10px] text-gray-400">{m.count} venta{m.count !== 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {ents.historyDays != null && (
+                <p className="text-[11px] text-gray-400">
+                  Gratis ves los últimos {ents.historyDays} días. Todo tu historial es Pro.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="py-6 text-center text-[13px] text-gray-400">No pudimos cargar el historial.</p>
+          )}
+        </div>
+
         {/* Lower Grid: Top products and 30d lealtad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
@@ -725,6 +908,23 @@ export default function ReportesPage() {
         </div>
 
       </main>
+
+      {/* ── Pared 1: historial >30 días ── */}
+      {wallOpen && ent && data && (
+        <ProWall
+          wall="history"
+          restaurantId={data.restaurantId}
+          entitlement={ent}
+          onClose={() => setWallOpen(false)}
+          onUnlocked={(next, nextEnt) => {
+            setEnts(next);
+            setEnt(nextEnt);
+            setWallOpen(false);
+            setRangeDays(pendingRange);
+            void loadHistory(data.restaurantId, pendingRange);
+          }}
+        />
+      )}
     </div>
   );
 }
