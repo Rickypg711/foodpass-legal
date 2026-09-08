@@ -390,6 +390,10 @@ export default function DemoPreviewPage() {
       </div>
 
       <header className="px-5 pt-6 pb-4" style={{ background: "#1C2526" }}>
+        {/* Misma columna centrada que la lista de platillos (max-w-md): en
+            escritorio el nombre quedaba pegado al borde izquierdo mientras el
+            menú flotaba al centro (cazado por Ricardo, 8-sep). */}
+        <div className="mx-auto w-full max-w-md">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.4)" }}>
           Así se vería tu menú
         </p>
@@ -431,6 +435,7 @@ export default function DemoPreviewPage() {
               📍 {job.info.address}
             </span>
           )}
+        </div>
         </div>
       </header>
 
