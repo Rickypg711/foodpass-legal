@@ -67,11 +67,22 @@ export type BrandTheme = {
   custom: boolean;
 };
 
+/**
+ * El color de marca NO se pinta (decisión de Ricardo, 8-sep-2026, noche):
+ * el naranja de Los Pesados y el guinda de Birria Lalo en el encabezado se
+ * veían feos — un color sacado del fondo de un flyer no es una paleta. El
+ * dato sigue llegando del demo y guardándose en el doc (`brandColor`) para
+ * cuando se use bien (acento, no fondo); mientras, todo encabezado es el
+ * gris de siempre con tinta blanca. `PAINT_BRAND_COLOR` es el único
+ * interruptor: la app tiene el suyo en lib/utils/brand_color.dart.
+ */
+export const PAINT_BRAND_COLOR = false;
+
 /** Lee `brandColor` del doc del restaurante y arma el tema del encabezado. */
 export function brandThemeFromRestaurant(
   data: Record<string, unknown> | null | undefined,
 ): BrandTheme {
-  const bg = normalizeBrandColor(data?.brandColor);
+  const bg = PAINT_BRAND_COLOR ? normalizeBrandColor(data?.brandColor) : null;
   if (!bg) return { bg: BRAND_DEFAULT_BG, ink: INK_LIGHT, custom: false };
   return { bg, ink: onBrandColor(bg), custom: true };
 }

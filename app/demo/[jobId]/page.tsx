@@ -24,7 +24,7 @@ import {
   type DemoJob,
 } from "@/lib/demo/demoJobs";
 import { ensureAnonymousUser } from "@/lib/auth";
-import { normalizeBrandColor, onBrandColor, inkAlpha, INK_LIGHT } from "@/lib/brand/brandColor";
+import { normalizeBrandColor, onBrandColor, inkAlpha, INK_LIGHT, PAINT_BRAND_COLOR } from "@/lib/brand/brandColor";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { PUBLIC_WHATSAPP_WA_ME } from "@/lib/contactEmail";
@@ -381,9 +381,11 @@ export default function DemoPreviewPage() {
 
   // ── LISTO: el aparador ───────────────────────────────────────────────────
   const nombre = job.info?.restaurantName || "Tu restaurante";
-  // Su color y su lema, leídos de la foto (8-sep): el aparador ya no es gris.
-  const brandBg = normalizeBrandColor(job.info?.brandColor) ?? "#1C2526";
-  const brandInk = normalizeBrandColor(job.info?.brandColor) ? onBrandColor(brandBg) : INK_LIGHT;
+  // Su lema, leído de la foto (8-sep). El color de marca NO se pinta
+  // (Ricardo, 8-sep noche: se veía feo) — ver PAINT_BRAND_COLOR.
+  const paintedColor = PAINT_BRAND_COLOR ? normalizeBrandColor(job.info?.brandColor) : null;
+  const brandBg = paintedColor ?? "#1C2526";
+  const brandInk = paintedColor ? onBrandColor(brandBg) : INK_LIGHT;
   const tagline = typeof job.info?.tagline === "string" && job.info.tagline.trim() ? job.info.tagline.trim() : null;
   return (
     <main className="min-h-screen pb-44" style={{ background: "#faf9f5" }}>

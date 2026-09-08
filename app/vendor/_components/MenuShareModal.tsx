@@ -24,7 +24,7 @@ import { toPng } from "html-to-image";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
-import { normalizeBrandColor, onBrandColor } from "@/lib/brand/brandColor";
+import { normalizeBrandColor, onBrandColor, PAINT_BRAND_COLOR } from "@/lib/brand/brandColor";
 
 const ORANGE = "#F28C38";
 // Naranja profundo SOLO para texto dentro de la tarjeta imprimible. El
@@ -65,7 +65,8 @@ export default function MenuShareModal({
         const d = (snap.data() as Record<string, unknown>) ?? {};
         if (cancelled) return;
         setName(typeof d.name === "string" ? d.name : "");
-        setBrandColor(normalizeBrandColor(d.brandColor));
+        // Se guarda, no se pinta (Ricardo, 8-sep noche) — ver PAINT_BRAND_COLOR.
+        setBrandColor(PAINT_BRAND_COLOR ? normalizeBrandColor(d.brandColor) : null);
         setLogoUrl(getRestaurantImageUrl(d));
         const s = d.slug;
         setSlug(

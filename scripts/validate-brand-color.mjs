@@ -11,6 +11,8 @@
  * la app y toBrandHex en functions/menu_logo_ai.js):
  *  1. Un solo formato: "#rrggbb" minúsculas. Cualquier otra cosa → null.
  *  2. Sin brandColor → gris de siempre (#141414), tinta blanca, custom=false.
+ *     Y CON brandColor también, mientras PAINT_BRAND_COLOR sea false
+ *     (Ricardo, 8-sep noche: pintado se veía feo; el dato se guarda).
  *  3. Fondo claro (luminancia > 0.45) → tinta oscura; oscuro → blanca.
  *     Naranja Pesados #f0a61f → oscura. Guinda Birria Lalo #3d0210 → blanca.
  *  4. El lema solo se pinta si es frase corta (3–60); nunca se redacta aquí.
@@ -28,7 +30,7 @@ const mod = await import(join(root, "lib/brand/brandColor.ts"));
 const {
   normalizeBrandColor, onBrandColor, relativeLuminance,
   brandThemeFromRestaurant, taglineFromRestaurant, inkAlpha,
-  BRAND_DEFAULT_BG, INK_LIGHT, INK_DARK, LIGHT_BG_LUMINANCE,
+  BRAND_DEFAULT_BG, INK_LIGHT, INK_DARK, LIGHT_BG_LUMINANCE, PAINT_BRAND_COLOR,
 } = mod;
 
 // 1. Formato
@@ -54,7 +56,10 @@ assert.ok(relativeLuminance("#3d0210") < 0.05, "guinda es oscuro");
 assert.equal(onBrandColor("#3d0210"), INK_LIGHT);
 assert.equal(onBrandColor("#ffffff"), INK_DARK);
 assert.equal(onBrandColor("#000000"), INK_LIGHT);
-assert.deepEqual(brandThemeFromRestaurant({ brandColor: "#3D0210" }), { bg: "#3d0210", ink: INK_LIGHT, custom: true });
+// Decisión de Ricardo (8-sep noche): el color se GUARDA pero NO se pinta —
+// el encabezado es el gris de siempre aunque el doc traiga brandColor.
+assert.equal(PAINT_BRAND_COLOR, false, "el color de marca no se pinta (Ricardo, 8-sep)");
+assert.deepEqual(brandThemeFromRestaurant({ brandColor: "#3D0210" }), { bg: BRAND_DEFAULT_BG, ink: INK_LIGHT, custom: false });
 
 // 4. Lema
 assert.equal(taglineFromRestaurant({ tagline: " Desde   1960 " }), "Desde 1960");
