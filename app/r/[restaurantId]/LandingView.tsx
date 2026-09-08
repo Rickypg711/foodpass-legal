@@ -391,9 +391,12 @@ export default function LandingView({
           </div>
           {restaurant ? (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
-                🔥 Recompensas en Comeleal
-              </p>
+              {/* Regla del 5-sep: sin premio no se promete nada (8-sep). */}
+              {restaurantPromisesPoints(rdata ?? undefined) ? (
+                <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
+                  🔥 Recompensas en Comeleal
+                </p>
+              ) : null}
               {schedule ? <ScheduleChip schedule={schedule} /> : null}
             </div>
           ) : null}

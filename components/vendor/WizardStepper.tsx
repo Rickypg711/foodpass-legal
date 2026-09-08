@@ -28,6 +28,7 @@ export function WizardStepper({
   current,
   doneKeys,
   onPanelClick,
+  hidePanelExit,
 }: {
   current: CurrentKey;
   /**
@@ -44,6 +45,14 @@ export function WizardStepper({
    * salir (muro #1 del embudo, 1-sep) — pero la decisión de irse se respeta.
    */
   onPanelClick?: () => void;
+  /**
+   * Sin salida al panel. Solo para el paso ÚNICO que sigue al claim del
+   * demo (horario, born=demo): el dueño acaba de reclamar su menú y le
+   * falta un clic; "← Panel" ahí era un letrero de salida antes de la meta
+   * (cazado por Ricardo, 8-sep-2026, montando Los Pesados). Guardar es la
+   * única puerta — y es un clic con el horario ya puesto.
+   */
+  hidePanelExit?: boolean;
 }) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
@@ -52,7 +61,7 @@ export function WizardStepper({
       <div className="mx-auto flex max-w-lg items-center gap-3">
         {/* Salida al panel — mismo patrón que el "← Volver" de las páginas
             sin wizard (tinta 45% → tinta al hover). */}
-        {onPanelClick ? (
+        {hidePanelExit ? null : onPanelClick ? (
           <button
             type="button"
             onClick={onPanelClick}
@@ -68,7 +77,7 @@ export function WizardStepper({
           ← Panel
         </Link>
         )}
-        <span className="text-[#1C2526]/15">/</span>
+        {hidePanelExit ? null : <span className="text-[#1C2526]/15">/</span>}
         <div className="flex flex-1 items-center">
           {STEPS.map((step, i) => {
             const done    = doneKeys ? doneKeys.includes(step.key) : i < currentIdx;

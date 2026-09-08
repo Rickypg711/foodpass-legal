@@ -164,6 +164,7 @@ function MenuRestaurantHeader({
   secondarySubtitle,
   schedule,
   address,
+  loyaltyLive,
 }: {
   loading: boolean;
   restaurantName: string;
@@ -173,6 +174,13 @@ function MenuRestaurantHeader({
   schedule?: ScheduleStatus | null;
   /** Dirección del negocio — con link directo a Google Maps. */
   address?: string | null;
+  /**
+   * Regla del 5-sep: nadie promete puntos al comensal sin premios. El
+   * chip "Recompensas en Comeleal" era el único texto de la página que
+   * no leía `restaurantPromisesPoints` (cazado 8-sep montando Los Pesados,
+   * local recién nacido sin premio y con el chip prendido).
+   */
+  loyaltyLive?: boolean;
 }) {
   return (
     <header className="relative overflow-hidden bg-[#141414] shadow-md">
@@ -206,9 +214,11 @@ function MenuRestaurantHeader({
             {!loading && restaurantName ? (
               <div className="mt-2 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
-                    🔥 Recompensas en Comeleal
-                  </p>
+                  {loyaltyLive !== false ? (
+                    <p className="inline-flex max-w-full items-center rounded-full border border-[#F28C38]/35 bg-[#F28C38]/15 px-2.5 py-1 text-xs font-semibold text-[#FFB366]">
+                      🔥 Recompensas en Comeleal
+                    </p>
+                  ) : null}
                   {schedule ? (
                     <p
                       className={
@@ -564,6 +574,7 @@ function PublicMenuPageWithOrdering({
         secondarySubtitle={headerSecondary}
         schedule={schedule}
         address={address}
+        loyaltyLive={loyaltyLive}
       />
 
       {/* §6.10: si quien mira es EL DUEÑO y no hay horario, la ausencia se
@@ -892,6 +903,7 @@ function PublicMenuPageBrowseOnly({
         logoUrl={logoUrl}
         schedule={schedule}
         address={address}
+        loyaltyLive={loyaltyLive}
       />
 
       <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">

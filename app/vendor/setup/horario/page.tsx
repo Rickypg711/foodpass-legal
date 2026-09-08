@@ -106,6 +106,9 @@ function HorarioSetupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isWizard = searchParams.get("wizard") === "1";
+  // Nacido del demo: es el único paso entre el claim y el festejo. Sin
+  // salida al panel (ver WizardStepper.hidePanelExit).
+  const bornDemo = searchParams.get("born") === "demo";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu"> | undefined>(undefined);
@@ -238,7 +241,7 @@ function HorarioSetupPageInner() {
     <div className="min-h-screen" style={{ background: "#faf9f5" }}>
       <div className="sticky top-0 z-20 bg-white shadow-sm">
         {isWizard ? (
-          <WizardStepper current="horario" doneKeys={stepperDone} />
+          <WizardStepper current="horario" doneKeys={stepperDone} hidePanelExit={bornDemo} />
         ) : (
           <div className="border-b px-4 py-4 sm:px-6" style={{ borderColor: "rgba(20,20,19,0.08)" }}>
             <div className="mx-auto flex max-w-lg items-center gap-3">

@@ -144,6 +144,19 @@ export default function SetupDonePage() {
                 📲 Mandármelo a mi WhatsApp
               </a>
             )}
+            {/* Verlo con sus propios ojos — la pantalla ofrecía el QR y el
+                WhatsApp pero ningún camino al menú mismo (cazado por
+                Ricardo, 8-sep-2026). Abre lo MISMO que codifica el QR. */}
+            {qrUrl && (
+              <a
+                href={qrUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block text-sm font-semibold text-[#1C2526]/60 underline-offset-2 hover:text-[#1C2526] hover:underline"
+              >
+                Ver mi menú como lo ve tu cliente →
+              </a>
+            )}
           </div>
         )}
 
