@@ -27,15 +27,17 @@ const STEPS = [
     href: "/vendor/setup/menu",
     doneLabel: "Menú listo",
   },
-  {
-    key: "rewards" as const,
-    icon: "🎁",
-    title: "Recompensas",
-    description: "Diseña tu programa de lealtad con IA",
-    href: "/vendor/setup/recompensas",
-    doneLabel: "Recompensas activas",
-  },
 ] as const;
+
+// 7-sep-2026: Recompensas SALIÓ de los pasos obligatorios (decisión de
+// Ricardo): 10 de 24 locales en setup estaban atorados solo ahí. Sigue
+// viviendo como tarjeta opcional abajo — el NBA la empuja con números.
+const OPTIONAL_REWARDS = {
+  icon: "🎁",
+  title: "Premios (opcional)",
+  description: "La IA ya te armó una propuesta. Sin premio, tus clientes no juntan puntos.",
+  href: "/vendor/setup/recompensas",
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +60,7 @@ export default function SetupPage() {
       const data = rSnap.data();
       if (data?.isSetupComplete) { router.push("/vendor"); return; }
       setRestaurantId(rid);
-      setReasons((data?.setupIncompleteReasons as string[]) ?? ["business_hours","menu_items","reward_tiers","first_purchase_reward"]);
+      setReasons((data?.setupIncompleteReasons as string[]) ?? ["business_hours","menu_items"]);
       setRestaurantName((data?.name as string) ?? "Tu restaurante");
       setLoading(false);
     }
@@ -68,7 +70,7 @@ export default function SetupPage() {
   if (loading) return <LoadingScreen />;
 
   const pending = stepGroupFromReasons(reasons);
-  const total = 3; // hours, menu, rewards (business captured at signup)
+  const total = 2; // hours, menu (business captured at signup; rewards optional since 7-sep)
   // OJO: `completedStepCount` cuenta sobre 4 grupos (incluye `business`, que
   // aquí no se pinta porque se captura al registrarse). Usarlo contra
   // total=3 pintaba "3 de 3 · 100%" con un paso todavía sin palomita —
@@ -142,6 +144,23 @@ export default function SetupPage() {
               </Link>
             );
           })}
+
+          {/* Premios: opcional, nunca bloquea. */}
+          <Link
+            href={OPTIONAL_REWARDS.href}
+            className="group flex items-center gap-4 rounded-2xl border border-dashed border-[#141413]/12 bg-white/60 p-5 transition-all hover:border-[#F28C38]/40 hover:bg-white hover:shadow-sm"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#141413]/5 text-xl group-hover:bg-[#F28C38]/10">
+              {OPTIONAL_REWARDS.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[#141413]">{OPTIONAL_REWARDS.title}</p>
+              <p className="mt-0.5 text-xs text-[#141413]/45">{OPTIONAL_REWARDS.description}</p>
+            </div>
+            <svg className="h-5 w-5 shrink-0 text-[#141413]/25 group-hover:text-[#F28C38] transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         {/* Salida al panel — copy del flujo viejo cazado por Ricardo 26-ago:

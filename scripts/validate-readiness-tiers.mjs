@@ -64,7 +64,8 @@ const base = (overrides = {}) => ({
 // ── 3. Tier sin menuItemId y sin bandera sigue INVALIDO ─────────────────────
 {
   const r = evaluateReadiness(base({ rewardTiers: [{ id: "t", visitsRequired: 5 }] }), 10);
-  assert.ok(r.reasons.includes("reward_tiers"), "tier sin menuItemId ni bandera debe ser invalido");
+  assert.ok(!r.reasons.includes("reward_tiers"), "7-sep: los premios ya no bloquean active");
+  assert.ok(r.loyaltyGaps.includes("reward_tiers"), "tier sin menuItemId ni bandera: sigue siendo hueco de lealtad");
 }
 
 // ── 4. UN solo tier malo invalida el conjunto (regla .every de la app) ──────
@@ -75,19 +76,22 @@ const base = (overrides = {}) => ({
       { id: "t2", visitsRequired: 10 },
     ],
   }), 10);
-  assert.ok(r.reasons.includes("reward_tiers"), "basta un tier sin premio para invalidar");
+  assert.ok(!r.reasons.includes("reward_tiers"), "7-sep: un tier invalido no degrada a setup");
+  assert.ok(r.loyaltyGaps.includes("reward_tiers"), "basta un tier sin premio para que los tiers sigan siendo hueco");
 }
 
 // ── 5. menuItemId vacio o con espacios NO cuenta como premio ────────────────
 {
   const r = evaluateReadiness(base({ rewardTiers: [{ id: "t", visitsRequired: 5, menuItemId: "  " }] }), 10);
-  assert.ok(r.reasons.includes("reward_tiers"), "menuItemId en blanco debe ser invalido");
+  assert.ok(!r.reasons.includes("reward_tiers"), "7-sep: menuItemId en blanco no degrada a setup");
+  assert.ok(r.loyaltyGaps.includes("reward_tiers"), "menuItemId en blanco: sigue siendo hueco");
 }
 
 // ── 6. Lista vacia sigue invalida (mientras el dueño no haya decidido) ─────
 {
   const r = evaluateReadiness(base({ rewardTiers: [] }), 10);
-  assert.ok(r.reasons.includes("reward_tiers"), "sin tiers debe ser invalido");
+  assert.ok(!r.reasons.includes("reward_tiers"), "7-sep: sin tiers el local sigue siendo active");
+  assert.ok(r.loyaltyGaps.includes("reward_tiers"), "pero se reporta como hueco de lealtad");
   // Con la pantalla de premios guardada, apagar es decisión: ver
   // validate-readiness-opt-out.mjs (5-sep).
 }

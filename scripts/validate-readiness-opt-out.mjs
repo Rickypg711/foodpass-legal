@@ -91,10 +91,13 @@ const base = (overrides = {}) => ({
     firstPurchaseReward: { enabled: false },
     rewardTiers: [],
   }), 10);
-  assert.deepEqual(r.reasons, ["reward_tiers"], "el muro #1 no se abre solo");
-  assert.equal(r.isComplete, false);
+  // 7-sep: los premios SALIERON del embudo. Sin tiers y sin decidir el local
+  // es active igual; lo que queda en pausa es la lealtad (loyaltyReady).
+  assert.deepEqual(r.reasons, [], "7-sep: reward_tiers ya no es razon de setup");
+  assert.equal(r.isComplete, true);
   assert.equal(r.loyaltyOptedOut, false);
-  assert.equal(readinessFieldsForFirestore(r).status, "setup");
+  assert.equal(r.loyaltyReady, false, "nada que ganar todavia");
+  assert.equal(readinessFieldsForFirestore(r).status, "active");
 }
 
 // ── 4. Algo prendido (solo bienvenida) no es opt-out: tiers siguen pendientes ─
@@ -102,7 +105,7 @@ const base = (overrides = {}) => ({
   const r = evaluateReadiness(base({ rewardsConfigured: true, rewardTiers: [] }), 10);
   assert.equal(r.loyaltyReady, true);
   assert.equal(r.loyaltyOptedOut, false);
-  assert.deepEqual(r.reasons, ["reward_tiers"]);
+  assert.deepEqual(r.reasons, [], "7-sep: con la bienvenida prendida y sin tiers, active y con algo que ganar");
 }
 
 // ── 5. El opt-out no perdona lo demás ───────────────────────────────────────

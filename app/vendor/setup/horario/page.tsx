@@ -108,7 +108,7 @@ function HorarioSetupPageInner() {
   const isWizard = searchParams.get("wizard") === "1";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu"> | undefined>(undefined);
   const [patron, setPatron] = useState<DayHours>(PATRON_INICIAL);
   const [cerrados, setCerrados] = useState<Set<string>>(new Set());
   const [propios, setPropios] = useState<Record<string, DayHours>>({});
@@ -212,10 +212,10 @@ function HorarioSetupPageInner() {
       // a Recompensas (cazado por Ricardo, 26-ago). Y si con este horario
       // TODO quedó completo (el demo-born que puso premios primero y volvió
       // por su horario), el siguiente paso es el festejo — ganado (1-sep).
+      // 7-sep: sin Recompensas en el embudo, después del horario solo puede
+      // faltar el menú; si ya está, el festejo (ganado).
       const nextWizardStep = readiness?.isComplete
         ? "/vendor/setup/done"
-        : stepperDone?.includes("menu")
-        ? "/vendor/setup/recompensas?wizard=1"
         : "/vendor/setup/menu?wizard=1";
       setTimeout(
         () => router.push(isWizard ? nextWizardStep : "/vendor/configuracion"),

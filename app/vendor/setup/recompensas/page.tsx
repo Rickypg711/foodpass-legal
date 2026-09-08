@@ -110,7 +110,7 @@ function RecompensasSetupPageInner() {
   const bornFromDemo = searchParams.get("born") === "demo";
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu"> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [spendStepAmount, setSpendStepAmount] = useState<number>(30);

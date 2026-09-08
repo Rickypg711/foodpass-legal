@@ -2,7 +2,9 @@
 
 // ─── Wizard Stepper ───────────────────────────────────────────────────────────
 // Shown at the top of each setup page when ?wizard=1 is in the URL.
-// Displays a 3-step progress bar: Horario → Menú → Recompensas.
+// Displays a 2-step progress bar: Horario → Menú. (Recompensas salió del
+// embudo el 7-sep-2026: es opcional y vive en /vendor/setup/recompensas y en
+// el panel; el stepper de esa página se pinta con las dos estaciones hechas.)
 //
 // Es NAVEGACIÓN, no adorno (cazado por Ricardo, 26-ago: en modo wizard las
 // páginas no tenían NINGUNA salida — ni entre pasos ni al panel): cada paso
@@ -16,17 +18,18 @@ import Link from "next/link";
 const STEPS = [
   { key: "horario", label: "Horario", href: "/vendor/setup/horario?wizard=1" },
   { key: "menu",    label: "Menú", href: "/vendor/setup/menu?wizard=1" },
-  { key: "rewards", label: "Recompensas", href: "/vendor/setup/recompensas?wizard=1" },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]["key"];
+/** "rewards" se acepta como `current` por compatibilidad: no es estación. */
+type CurrentKey = StepKey | "rewards";
 
 export function WizardStepper({
   current,
   doneKeys,
   onPanelClick,
 }: {
-  current: StepKey;
+  current: CurrentKey;
   /**
    * Pasos REALMENTE completados (del readiness). Sin esto la palomita es
    * posicional (pasos "anteriores" al actual) — y el camino del demo brinca

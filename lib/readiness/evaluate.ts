@@ -34,8 +34,9 @@ export interface ReadinessResult {
   /** Terminó de nacer: `reasons` vacío. */
   isComplete: boolean;
   /**
-   * Razones que BLOQUEAN `active`. Nunca incluye `first_purchase_reward`
-   * (desde 5-sep) ni `reward_tiers` cuando `loyaltyOptedOut`.
+   * Razones que BLOQUEAN `active`: solo nombre, dirección, teléfono,
+   * categoría, horario y menú. Nunca incluye `first_purchase_reward`
+   * (desde 5-sep) ni `reward_tiers` (desde 7-sep: premios fuera del embudo).
    */
   reasons: string[];
   /** Hay algo que ganar: tiers válidos o bienvenida prendida. */
@@ -220,7 +221,12 @@ export function evaluateReadiness(
   if (!hasWelcome) loyaltyGaps.push("first_purchase_reward");
   if (!hasTiers) loyaltyGaps.push("reward_tiers");
 
-  if (!hasTiers && !loyaltyOptedOut) reasons.push("reward_tiers");
+  // 7-sep-2026: los premios SALEN del embudo. `reward_tiers` ya no bloquea
+  // `active` nunca — ni sin decidir. 10 de 24 locales en setup estaban
+  // atorados SOLO por este código, con nombre, horario y menú puestos, y el
+  // primer paso tras reclamar el demo era la página de premios. Los premios
+  // viven en `loyaltyReady` / `loyaltyGaps` (escáner, app de puntos, NBA con
+  // números), no en el status. Decisión de Ricardo, 7-sep.
 
   return {
     isComplete: reasons.length === 0,
@@ -256,12 +262,11 @@ export function completedStepCount(reasons: string[]): number {
  */
 export function wizardDoneKeys(
   reasons: unknown,
-): Array<"horario" | "menu" | "rewards"> | undefined {
+): Array<"horario" | "menu"> | undefined {
   if (!Array.isArray(reasons)) return undefined;
   const pending = stepGroupFromReasons(reasons as string[]);
-  const out: Array<"horario" | "menu" | "rewards"> = [];
+  const out: Array<"horario" | "menu"> = [];
   if (!pending.hours) out.push("horario");
   if (!pending.menu) out.push("menu");
-  if (!pending.rewards) out.push("rewards");
   return out;
 }

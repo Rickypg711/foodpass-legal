@@ -796,18 +796,19 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
             {demo
-              ? "Tus platillos, precios y tamaños ya viven en tu cuenta. Solo falta elegir tus premios — la IA ya te preparó una propuesta."
-              : "Solo faltan 3 pasos rápidos: horario, menú y recompensas. Tardas menos de 5 minutos."}
+              ? "Tus platillos, precios y tamaños ya viven en tu cuenta. Solo falta confirmar tu horario."
+              : "Solo faltan 2 pasos rápidos: horario y menú. Tardas menos de 5 minutos."}
           </p>
           <button
-            // born=demo: la pantalla de premios sabe que la IA viene EN CAMINO
-            // (el claim la disparó hace segundos) y espera escuchando en vez
-            // de enseñar el formulario vacío — el race que fabricaba
-            // atorados (cazado en el recorrido en vivo del 1-sep).
-            onClick={() => router.push(demo ? "/vendor/setup/recompensas?wizard=1&born=demo" : "/vendor/setup/horario?wizard=1")}
+            // 7-sep-2026: los premios SALEN del embudo (decisión de Ricardo).
+            // El demo-born va a su horario, que es lo único que le falta; la
+            // propuesta de premios de la IA lo espera en el panel (NBA) y en
+            // /vendor/setup/recompensas, sin bloquear nada. Se conserva
+            // born=demo por si la página de horario quiere saberlo.
+            onClick={() => router.push(demo ? "/vendor/setup/horario?wizard=1&born=demo" : "/vendor/setup/horario?wizard=1")}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
-            {demo ? "Elegir mis premios →" : "Configurar mi restaurante →"}
+            {demo ? "Confirmar mi horario →" : "Configurar mi restaurante →"}
           </button>
         </div>
       )}

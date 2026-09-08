@@ -90,9 +90,12 @@ assert.ok(
 //     pantalla DEBE entrar al estado de escucha en vez de enseñar el
 //     formulario vacío tras la promesa del festejo (cazado en vivo, 1-sep).
 const activar = read("components/home/ActivarModal.tsx");
+// 7-sep: los premios salieron del embudo — el claim aterriza en HORARIO,
+// pero sigue mandando born=demo; la página de premios conserva la escucha
+// para cuando el dueño llegue por su cuenta (tarjeta opcional / NBA).
 assert.ok(
-  activar.includes("/vendor/setup/recompensas?wizard=1&born=demo"),
-  "el claim debe mandar born=demo — sin él, el paso de premios no sabe que la IA viene en camino",
+  activar.includes("/vendor/setup/horario?wizard=1&born=demo"),
+  "el claim debe mandar born=demo (ahora al horario) — el demo-born no pierde la marca",
 );
 assert.ok(
   /born.{0,20}=== "demo"/.test(wizard),

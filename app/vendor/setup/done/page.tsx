@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
@@ -98,8 +100,11 @@ export default function SetupDonePage() {
           ¡{restaurantName} está listo!
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[#141413]/55">
-          Ya tienes horario, menú y recompensas configurados.
-          Tus clientes pueden escanearte y ganar puntos desde ahora.
+          Ya tienes horario y menú. Tus clientes ya pueden ver tu menú y ordenar.
+          {" "}
+          <Link href="/vendor/setup/recompensas" className="font-semibold text-[#F28C38] hover:underline">
+            ¿Quieres que junten puntos? Pon un premio (opcional) →
+          </Link>
         </p>
 
         {/* Momento QR — MISMO modal de marca que el panel (paridad, cazada

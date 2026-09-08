@@ -160,7 +160,7 @@ function MenuSetupPageInner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu" | "rewards"> | undefined>(undefined);
+  const [stepperDone, setStepperDone] = useState<Array<"horario" | "menu"> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   // Existing menu
@@ -481,7 +481,9 @@ function MenuSetupPageInner() {
     try {
       await persistReadiness(restaurantId);
       setSaved(true);
-      setTimeout(() => router.push(isWizard ? "/vendor/setup/recompensas?wizard=1" : "/vendor/setup"), 800);
+      // 7-sep: Recompensas salió del embudo; con horario y menú el local
+      // está completo y el siguiente paso es el festejo.
+      setTimeout(() => router.push(isWizard ? "/vendor/setup/done" : "/vendor/setup"), 800);
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
