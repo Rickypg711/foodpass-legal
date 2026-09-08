@@ -46,6 +46,10 @@ export default function SetupDonePage() {
   const [restaurantWhatsapp, setRestaurantWhatsapp] = useState<string | null>(null);
   const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [slug, setSlug] = useState<string | null>(null);
+  // 7-sep: sin premio no se promete "ganan puntos" (regla del 5-sep:
+  // nadie promete puntos al comensal sin algo que ganar). Doc viejo sin
+  // el campo = completo con premios (grandfather).
+  const [promisesPoints, setPromisesPoints] = useState(true);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -63,6 +67,7 @@ export default function SetupDonePage() {
       const wa = String(rSnap.data()?.whatsapp ?? "").replace(/\D/g, "");
       if (wa.length >= 10) setRestaurantWhatsapp(wa.slice(-10));
       setPhoneCountry(phoneCountryOf(rSnap.data()));
+      setPromisesPoints(rSnap.data()?.loyaltyReady !== false);
       setRestaurantId(rid);
       setLoading(false);
       fireOnboardingCompletedOnce(rid);
@@ -117,7 +122,9 @@ export default function SetupDonePage() {
               Tu código QR de menú
             </p>
             <p className="mb-4 text-xs text-[#141413]/50">
-              Ponlo en tu mesa o en tu caja — tus clientes escanean, ven tu menú y ganan puntos
+              {promisesPoints
+                ? "Ponlo en tu mesa o en tu caja — tus clientes escanean, ven tu menú y ganan puntos"
+                : "Ponlo en tu mesa o en tu caja — tus clientes escanean, ven tu menú y ordenan"}
             </p>
             <button
               onClick={() => setShareOpen(true)}
