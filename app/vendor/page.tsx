@@ -1554,6 +1554,9 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "configure_rewards": return "Publica tus premios";
     case "enable_first_purchase_reward": return "Prende tu premio de bienvenida";
     case "get_first_scan": return "Tu primera visita con puntos";
+    // 7-sep: premios sin ser pared — el cerebro pide en orden venta → número → premio.
+    case "ring_first_sale": return "Cobra tu primera venta";
+    case "grow_phone_capture": return "Pide el número en cada venta";
     case "set_map_pin": return "Ponte en el mapa";
     case "check_ai_draft": return "Tus premios ya están armados";
     default: return "Siguiente mejor acción";
@@ -1573,16 +1576,22 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
     case "configure_rewards": return "Tus clientes ya pueden juntar puntos contigo, pero hoy no ganan nada. Ponles un premio: la IA te lo arma con tu menú en 30 segundos.";
     case "enable_first_purchase_reward": return "Tu bienvenida está apagada. Es el regalo que se gana en la primera visita y se cobra en la segunda: la razón para volver. Préndela en Recompensas, toma un minuto.";
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
+    case "ring_first_sale": return "Tu menú, tu horario y tu QR ya están listos. Cobra tu siguiente venta en la Caja: llevas tus ventas del día y, si pides el número, empiezas tu lista de clientes. Toma 10 segundos.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
     case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
-    case "grow_phone_capture": return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
+    case "grow_phone_capture":
+      // Sin premio no se prometen puntos: el número es para SU lista.
+      if (!loyaltyReady) return "Ya cobras en la Caja, pero sin pedir el número tu lista de clientes está vacía. Pídelo en cada cobro (\"¿tu número, para avisarte de promos?\"): cada número es un cliente al que puedes escribirle cuando quieras.";
+      return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
     case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
     case "check_ai_draft": return "Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque — es lo único que falta para prender tu escáner de puntos.";
     case "healthy":
     case "keep_going":
-    case "stable": return "Tu negocio va avanzando. Pide el número en cada cobro y mantén tu recompensa clara.";
+    case "stable":
+      if (!loyaltyReady) return "Tu negocio va avanzando. Sigue cobrando en la Caja y pidiendo el número; cuando quieras que tus clientes vuelvan por algo, ponles un premio.";
+      return "Tu negocio va avanzando. Pide el número en cada cobro y mantén tu recompensa clara.";
     default: return "Estamos preparando tus recomendaciones. Cuando tengas más actividad, Comeleal te mostrará el siguiente mejor paso.";
   }
 }
@@ -1596,6 +1605,7 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "check_ai_draft": return "Revisar borrador de recompensa";
     case "enable_first_purchase_reward": return "Prender recompensa de bienvenida";
     case "grow_phone_capture": return "Cobrar con número en la Caja";
+    case "ring_first_sale": return "Abrir la Caja";
     case "share_with_customers": return "Compartir mi menú";
     case "stable": return "Ver reportes";
     case "complete_profile": return "Completar perfil";
@@ -1618,6 +1628,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "set_map_pin": return "/vendor/configuracion";
     case "check_ai_draft": return "/vendor/recompensas";
     case "grow_phone_capture": return "/vendor/pos";
+    case "ring_first_sale": return "/vendor/pos";
     case "share_with_customers": return "#compartir-qr";
     case "stable": return "/vendor/reportes";
     case "add_menu_items": return "/vendor/menu";

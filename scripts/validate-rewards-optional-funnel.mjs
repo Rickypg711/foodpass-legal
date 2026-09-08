@@ -77,4 +77,13 @@ const base = {
   assert.ok(rewards.length > 1000, "la página de premios vive");
 }
 
+// 7. El panel sabe pintar el empujón nuevo del cerebro (7-sep): "Cobra tu primera venta".
+{
+  const panel = read("app/vendor/page.tsx");
+  for (const needle of ['case "ring_first_sale": return "Cobra tu primera venta"', 'case "ring_first_sale": return "/vendor/pos"', 'case "ring_first_sale": return "Abrir la Caja"']) {
+    assert.ok(panel.includes(needle), "falta en el panel: " + needle);
+  }
+  assert.ok(/case "stable":\s*\n\s*if \(!loyaltyReady\)/.test(panel), "stable sin premio no dice 'recompensa clara'");
+}
+
 console.log("validate-rewards-optional-funnel: OK");
