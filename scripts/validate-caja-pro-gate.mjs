@@ -155,6 +155,57 @@ check("wallClosed tableTabs pro", wallClosed(PRO_ENTITLEMENTS, "tableTabs"), fal
 // ── 9. Precio: $499 nuevos, un solo constante ──
 check("PRO_AMOUNT_MXN = 499", PRO_AMOUNT_MXN, 499);
 check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
+{
+  const route = read("../app/api/mercado-pago/subscribe/route.ts");
+  check("la ruta de cobro importa PRO_AMOUNT_MXN de pricing.ts",
+    route.includes('import { PRO_AMOUNT_MXN } from "@/lib/subscription/pricing";'), true);
+  check("la ruta de cobro NO define su propio monto", /const PRO_AMOUNT_MXN\s*=/.test(route), false);
+  check("la ruta manda el monto al preapproval", route.includes("PRO_AMOUNT_MXN"), true);
+  // Ningún "$299" a mano en superficies (billingDoc.ts y pricing.ts narran el
+  // legado a propósito). Ningún "$499" a mano tampoco: se importa PRO_PRICE_LABEL.
+  const { execSync } = await import("node:child_process");
+  const root = new URL("..", import.meta.url).pathname;
+  let hits = "";
+  try {
+    hits = execSync(
+      `grep -rnE '\\$(299|499)' --include='*.ts' --include='*.tsx' app lib components | grep -v 'lib/subscription/billingDoc.ts\\|lib/subscription/pricing.ts'`,
+      { cwd: root, encoding: "utf8" },
+    );
+  } catch {
+    hits = "";
+  }
+  check(`sin precio a mano en app/lib/components${hits ? ":\n" + hits : ""}`, hits.trim(), "");
+}
+
+// ── 10b. Las tres paredes existen, leen private/billing y usan LA pared ──
+{
+  const wall = read("../components/vendor/ProWall.tsx");
+  check("ProWall: copy canónico", wall.includes("Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LABEL} al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas. Pruébalo ${TRIAL_DAYS} días, sin tarjeta."), true);
+  check("ProWall: la cosa humana", wall.includes("Y tienes mi WhatsApp directo."), true);
+  check("ProWall: jamás 'carta'", /\bcarta\b/i.test(wall), false);
+  check("ProWall: jamás 'upgrade'", /upgrade/i.test(wall), false);
+  check("ProWall: jamás 'desbloquea'", /desbloque/i.test(wall), false);
+  check("ProWall: arranca la prueba sola si puede (canStartTrial)", wall.includes("entitlement.canStartTrial"), true);
+  check("ProWall: si no, liga a /vendor/plan con el precio", wall.includes('href="/vendor/plan"') && wall.includes("{PRO_PRICE_LABEL}/mes"), true);
+  check("ProWall: tinta oscura sobre naranja (INK_DARK)", wall.includes("INK_DARK") && !/color:\s*"#fff"/.test(wall), true);
+  check("ProWall: en móvil no se mete bajo el nav (pb-[72px])", wall.includes("pb-[72px]"), true);
+  const hook = read("../lib/subscription/useProTrial.ts");
+  check("hook: callable startProTrial", hook.includes('"startProTrial"'), true);
+  check("hook: source web", hook.includes('source: "web"'), true);
+
+  for (const [name, path, needles] of [
+    ["pared 1 — reportes", "../app/vendor/reportes/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "historyAllowed(", 'wall="history"']],
+    ["pared 2 — configuración", "../app/vendor/configuracion/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "canAddPosStaff(", 'wall="posStaff"']],
+    ["pared 3 — caja", "../app/vendor/pos/page.tsx", ["fetchWithBilling(", "entitlementsOf(", 'mode === "tab" && !entsRef.current.tableTabsAccess', 'wall="tableTabs"']],
+  ]) {
+    const src = read(path);
+    for (const n of needles) check(`${name}: ${n}`, src.includes(n), true);
+  }
+  // Cobrar/cerrar una cuenta existente NUNCA se bloquea: el cierre no consulta la pared.
+  const pos = read("../app/vendor/pos/page.tsx");
+  const closeFn = pos.slice(pos.indexOf("async function closeTabGroup"), pos.indexOf("async function voidTabGroup"));
+  check("caja: cerrar cuenta no consulta tableTabsAccess", closeFn.includes("tableTabsAccess"), false);
+}
 
 // ── 10. Paridad con la app: los CUATRO nombres existen en el Dart ──
 {

@@ -12,7 +12,7 @@
  * abre la puerta ahí mismo — 14 días, sin tarjeta, una vez por restaurante.
  * Si ya la usó, enseña el precio y la liga a /vendor/plan.
  *
- * Copy (nivel secundaria, sin "upgrade", sin "carta"): ver WALL_COPY. La
+ * Copy (nivel secundaria, sin anglicismos, siempre "menú"): ver WALL_COPY. La
  * cosa humana de Pro es el WhatsApp directo de Ricardo (PUBLIC_WHATSAPP_WA_ME).
  *
  * Contraste: los botones naranja llevan tinta oscura (INK_DARK), como el resto

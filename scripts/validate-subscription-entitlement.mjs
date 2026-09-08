@@ -112,13 +112,14 @@ check("la prueba dura 14 días", TRIAL_DAYS, 14);
     ["configuración", "../app/vendor/configuracion/page.tsx", "fetchWithBilling("],
     ["caja (gate descuentos ×2)", "../app/vendor/pos/page.tsx", "fetchWithBilling("],
     ["clientes (gate descuentos)", "../app/vendor/clientes/page.tsx", "fetchWithBilling("],
-    ["phonePoints (tope Free en tx)", "../lib/loyalty/phonePoints.ts", "tryTxGetBillingData("],
+    ["reportes (pared 1: historial >30d, 8-sep)", "../app/vendor/reportes/page.tsx", "fetchWithBilling("],
+    ["phonePoints (doc fundido en tx; sin tope desde 8-sep)", "../lib/loyalty/phonePoints.ts", "tryTxGetBillingData("],
   ]) {
     check(`lector migrado: ${name}`, read(path).includes(marker), true);
   }
   check(
-    "caja: los DOS gates migrados",
-    (read("../app/vendor/pos/page.tsx").match(/fetchWithBilling\(/g) ?? []).length >= 2,
+    "caja: los DOS gates de descuentos + el plan de la pared 3 migrados",
+    (read("../app/vendor/pos/page.tsx").match(/fetchWithBilling\(/g) ?? []).length >= 3,
     true,
   );
 
