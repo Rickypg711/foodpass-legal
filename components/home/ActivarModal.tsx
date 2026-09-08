@@ -306,6 +306,12 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         // venían IMPRESAS y confirmadas (abajo). El alta genérica conserva
         // su default porque su wizard de horario siempre lo confirma.
         ...(demo ? {} : { businessHours: DEFAULT_BUSINESS_HOURS }),
+        // El logo que la función recortó de la foto del menú (8-sep): la
+        // página nace con su marca, no con el plato genérico. Mismos dos
+        // campos que escribe Configuración al subir un logo.
+        ...(demo?.info?.logoUrl
+          ? { logoUrl: demo.info.logoUrl, imageUrl: demo.info.logoUrl }
+          : {}),
         hoursConfirmed: false,
         subscriptionPlan: "free",
         subscriptionAccessStatus: "inactive",

@@ -48,6 +48,13 @@ export type DemoInfo = {
   businessHours: Record<string, unknown> | null;
   /** Tipo de restaurante clasificado por Gemini del menú completo (o null). */
   category?: string | null;
+  /**
+   * Logo recortado de la PRIMERA foto por la función (8-sep): PNG cuadrado
+   * en menu_demos/{jobId}/logo.png con URL de descarga. null = el menú no
+   * traía logo creíble; el dueño lo sube después en Configuración.
+   */
+  logoUrl?: string | null;
+  logoKind?: "mascot" | "emblem" | "wordmark" | string | null;
 };
 
 export type DemoJob = {
@@ -60,7 +67,7 @@ export type DemoJob = {
   errorMessage?: string;
   expiresAt?: Timestamp;
   convertedToRestaurantId?: string;
-  stats?: { itemCount: number; rowCount: number; sizeFamilies: number };
+  stats?: { itemCount: number; rowCount: number; sizeFamilies: number; logoFound?: boolean };
 };
 
 // ── Núcleo puro (testeable): ¿el demo sigue vivo? ──────────────────────────

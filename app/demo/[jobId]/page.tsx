@@ -393,7 +393,21 @@ export default function DemoPreviewPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.4)" }}>
           Así se vería tu menú
         </p>
-        <h1 className="mt-1 text-[26px] font-extrabold text-white">{nombre}</h1>
+        <div className="mt-1 flex items-center gap-3">
+          {/* El logo que la función recortó de su foto (8-sep): el aparador
+              ya trae SU marca — el wow de "también leyó mi logo". */}
+          {job.info?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={job.info.logoUrl}
+              alt=""
+              width={56}
+              height={56}
+              className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-lg ring-2 ring-white/15"
+            />
+          ) : null}
+          <h1 className="text-[26px] font-extrabold text-white">{nombre}</h1>
+        </div>
         {job.stats && (
           <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(248,178,106,0.9)" }}>
             ✨ {job.stats.itemCount} platillo{job.stats.itemCount === 1 ? "" : "s"}
