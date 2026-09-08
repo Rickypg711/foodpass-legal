@@ -10,15 +10,23 @@ import { getAuth, signOut } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
-import { entitlementOf } from "@/lib/subscription/entitlement";
+import {
+  entitlementOf,
+  entitlementsOf,
+  FREE_ENTITLEMENTS,
+  PRO_ENTITLEMENTS,
+  type Entitlement,
+  type Entitlements,
+} from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { ProWall } from "@/components/vendor/ProWall";
 import { parseLocationLink, cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import { isGoogleReviewUrl } from "@/lib/googleReviewUrl";
-import { parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
+import { canAddPosStaff, parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
 import type { User } from "firebase/auth";
@@ -41,6 +49,10 @@ export default function ConfiguracionPage() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState<"free" | "pro">("free");
+  // Pared 2 de la Caja (8-sep): el 2° PIN del equipo es Pro. Entitlements
+  // sobre el doc fundido con private/billing (fetchWithBilling).
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [ents, setEnts] = useState<Entitlements>(FREE_ENTITLEMENTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -219,10 +231,15 @@ export default function ConfiguracionPage() {
       // encima el doc viejo de subscriptions, que entitlementOf no conoce.
       const subData = subSnap?.data();
       // La verdad canónica vive en private/billing (migración 24-ago).
-      const isPro =
-        entitlementOf(await fetchWithBilling(db, rid, data)).isPro ||
-        (subData?.status === "active" && subData?.plan === "pro");
+      const merged = await fetchWithBilling(db, rid, data);
+      const entNow = entitlementOf(merged);
+      const legacySub = subData?.status === "active" && subData?.plan === "pro";
+      const isPro = entNow.isPro || legacySub;
       setPlan(isPro ? "pro" : "free");
+      setEnt(entNow);
+      // entitlementsOf ya trae el bypass de fundador (Luzz); el doc viejo de
+      // subscriptions (legado) también abre todo.
+      setEnts(legacySub ? PRO_ENTITLEMENTS : entitlementsOf(merged, rid));
 
       setLoading(false);
     }
@@ -1224,6 +1241,13 @@ export default function ConfiguracionPage() {
                 onStaffChange={setPosStaff}
                 accounts={teamAccounts}
                 isPro={plan === "pro" || isFounderTestRestaurant(restaurantId)}
+                entitlement={ent}
+                entitlements={ents}
+                onUnlocked={(next, nextEnt) => {
+                  setEnts(next);
+                  setEnt(nextEnt);
+                  setPlan("pro");
+                }}
               />
             )}
 
@@ -1903,6 +1927,9 @@ function PosStaffSection({
   onStaffChange,
   accounts,
   isPro,
+  entitlement,
+  entitlements,
+  onUnlocked,
 }: {
   restaurantId: string;
   staff: PosStaffMember[];
@@ -1910,8 +1937,25 @@ function PosStaffSection({
   /** Cuentas del equipo (members) — solo lectura en web; invitaciones desde la app. */
   accounts: TeamAccountRow[];
   isPro: boolean;
+  /** Pared 2 (8-sep): gratis = 1 PIN (el dueño); el 2° es Pro. */
+  entitlement: Entitlement | null;
+  entitlements: Entitlements;
+  onUnlocked: (next: Entitlements, ent: Entitlement) => void;
 }) {
   const [formOpen, setFormOpen] = useState(false);
+  const [wallOpen, setWallOpen] = useState(false);
+  const canAdd = canAddPosStaff(entitlements, staff.length);
+
+  /** El botón "+ Agregar persona": dentro del plan abre el formulario; fuera,
+   * la pared (que arranca la prueba sola si todavía se puede). */
+  function requestAdd() {
+    setErr(null);
+    if (!canAdd) {
+      setWallOpen(true);
+      return;
+    }
+    setFormOpen(true);
+  }
   const [fName, setFName] = useState("");
   const [fPin, setFPin] = useState("");
   const [fRole, setFRole] = useState<PosStaffRole>("cajero");
@@ -1923,6 +1967,9 @@ function PosStaffSection({
   async function handleAdd() {
     const name = fName.trim();
     const pin = fPin.replace(/\D/g, "");
+    // Cinturón: el formulario nunca debería estar abierto sin permiso, pero un
+    // segundo PIN jamás se guarda desde free (paridad con las rules de la app).
+    if (!canAdd) { setWallOpen(true); return; }
     if (!name) { setErr("Ponle nombre (ej. Juan)."); return; }
     if (pin.length !== 4) { setErr("El PIN debe ser de 4 dígitos."); return; }
     if (staff.some((m) => m.pin === pin)) { setErr("Ese PIN ya lo usa alguien más."); return; }
@@ -1975,12 +2022,15 @@ function PosStaffSection({
         className="text-[10px] font-bold uppercase tracking-widest"
         style={{ color: "rgba(28,37,38,0.35)" }}
       >
-        PINs de la caja · gratis
+        PINs de la caja
       </p>
       <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
         Agrega a tu equipo con un PIN de 4 dígitos. En la caja eligen quién
         cobra con su PIN — cada venta queda registrada a su nombre (sin
         necesidad de cuenta ni email).
+        {entitlements.posStaffAccess
+          ? ""
+          : " El primer PIN es gratis; el segundo y los que siguen son Pro."}
       </p>
 
       {staff.length > 0 && (
@@ -2117,12 +2167,27 @@ function PosStaffSection({
       ) : (
         <button
           type="button"
-          onClick={() => { setFormOpen(true); setErr(null); }}
+          onClick={requestAdd}
           className="w-full rounded-xl px-3.5 py-3 text-[12px] font-bold transition hover:opacity-80"
           style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
         >
-          + Agregar persona
+          {canAdd ? "+ Agregar persona" : "⭐ + Agregar persona (Pro)"}
         </button>
+      )}
+
+      {/* ── Pared 2: el 2° PIN es Pro ── */}
+      {wallOpen && entitlement && (
+        <ProWall
+          wall="posStaff"
+          restaurantId={restaurantId}
+          entitlement={entitlement}
+          onClose={() => setWallOpen(false)}
+          onUnlocked={(next, nextEnt) => {
+            onUnlocked(next, nextEnt);
+            setWallOpen(false);
+            setFormOpen(true);
+          }}
+        />
       )}
 
       {/* ── Cuentas con acceso propio (Pro) — espejo del hub Equipo de la app ── */}
