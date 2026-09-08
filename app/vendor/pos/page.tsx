@@ -776,7 +776,7 @@ function SuccessOverlay({ mode, total, receiptUrl, onDone, loyaltyLive = true }:
         <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
           {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
         </p>
-        {/* Sin tope de lealtad (8-sep): aquí ya no hay aviso de "se llenó" —
+        {/* Sin tope de lealtad (8-sep): aquí ya no hay aviso de lealtad llena —
             cada venta con número suma sus puntos, gratis y sin límite. */}
         {receiptUrl && (
           <div className="flex w-full flex-col gap-2">

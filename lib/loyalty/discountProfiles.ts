@@ -12,6 +12,7 @@
 // - Parity: same Firestore schema read by web POS and app POS.
 
 import { isProActive } from "../subscription/entitlement.ts";
+import { isFounderTestRestaurant } from "../subscription/founderBypass.ts";
 
 export type DiscountProfile = {
   id: string;
@@ -119,14 +120,10 @@ export function computeDiscount(
   return { amount };
 }
 
-/** TEMP founder testing: estos restaurantes usan descuentos sin Pro.
- * Solo Luzz Pizza (cuenta del fundador) para probar el flujo end-to-end.
- * TODO: quitar antes de vender la feature como Pro-only. */
-const FOUNDER_TEST_RESTAURANT_IDS = ["kdjJsNwriU4AL4528a4d"];
-
-export function isFounderTestRestaurant(restaurantId: string | null | undefined): boolean {
-  return !!restaurantId && FOUNDER_TEST_RESTAURANT_IDS.includes(restaurantId);
-}
+// El bypass de fundador (Luzz) vive en lib/subscription/founderBypass.ts
+// desde el 8-sep: lo comparten descuentos y las paredes de la Caja. Re-export
+// para no mover a los importadores existentes.
+export { isFounderTestRestaurant };
 
 /** Pro gate — delegado a la REGLA ÚNICA (lib/subscription/entitlement.ts),
  * gemela de FOODPASS/functions/subscription_entitlement.js y de

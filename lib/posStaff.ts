@@ -6,6 +6,8 @@
 // "¿Quién cobra?" y cada orden se estampa con soldBy = {staffId, name}.
 // Lectura: associates del venue. Escritura: owner/manager (rules).
 
+import { POS_STAFF_FREE_LIMIT, type Entitlements } from "./subscription/entitlement.ts";
+
 export type PosStaffRole = "cajero" | "gerente";
 
 export type PosStaffMember = {
@@ -46,4 +48,15 @@ export function findStaffByPin(
   const pin = pinDigits.replace(/\D/g, "");
   if (pin.length !== 4) return null;
   return roster.find((s) => s.active && s.pin === pin) ?? null;
+}
+
+/**
+ * Pared 2 de la Caja (8-sep): el plan gratis trae UN PIN (el dueño); agregar
+ * al segundo miembro del roster exige Pro. Un roster que YA tenía más gente
+ * antes del 8-sep sigue cobrando igual — la pared solo detiene ALTAS nuevas,
+ * nunca la operación de hoy (never-lie con quien ya lo usaba).
+ */
+export function canAddPosStaff(e: Entitlements, rosterSize: number): boolean {
+  if (e.posStaffAccess) return true;
+  return rosterSize < POS_STAFF_FREE_LIMIT;
 }

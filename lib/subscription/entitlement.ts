@@ -139,3 +139,87 @@ export function isProActive(
 ): boolean {
   return entitlementOf(rdata, now).isPro;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LA TABLA DE ENTITLEMENTS — la reja de Pro vive en la Caja (8-sep-2026).
+//
+// Decisión de Ricardo (7-sep noche, FOODPASS/docs/PLAN_REJA_CAJA_8_SEP.md):
+// free = menú, QR, pedidos, puntos SIN tope, clientes, win-back, export.
+// Pro ($499) = historial >30 días, 2° cajero con PIN, mesas, reportes >30 días.
+//
+// Espejo exacto de `EffectiveEntitlements` en
+// FOODPASS/lib/subscription/services/subscription_tier_service.dart — los
+// CUATRO nombres de abajo existen allá con el mismo significado, y el candado
+// scripts/validate-caja-pro-gate.mjs lee el Dart para afirmarlo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { isFounderTestRestaurant } from "./founderBypass.ts";
+
+/** Ventana de historial del plan gratis (días). Más que esto = pared 1. */
+export const HISTORY_DAYS_FREE = 30;
+/** PINs de la caja en el plan gratis: 1 (el dueño). El 2° = pared 2. */
+export const POS_STAFF_FREE_LIMIT = 1;
+
+/** Las tres paredes de la Caja. `reports` usa la misma pared que `history`. */
+export type CajaWall = "history" | "posStaff" | "tableTabs";
+
+export type Entitlements = {
+  plan: "free" | "pro";
+  /** Días de historial visibles. `null` = sin límite (Pro). */
+  historyDays: number | null;
+  /** Segundo cajero y siguientes en el roster `posStaff`. */
+  posStaffAccess: boolean;
+  /** Abrir cuentas de mesa desde la Caja y agregarles rondas. */
+  tableTabsAccess: boolean;
+  /** Reportes más allá de `historyDays` (7/30 días siguen gratis). */
+  reportsAccess: boolean;
+};
+
+export const FREE_ENTITLEMENTS: Entitlements = Object.freeze({
+  plan: "free",
+  historyDays: HISTORY_DAYS_FREE,
+  posStaffAccess: false,
+  tableTabsAccess: false,
+  reportsAccess: false,
+});
+
+export const PRO_ENTITLEMENTS: Entitlements = Object.freeze({
+  plan: "pro",
+  historyDays: null,
+  posStaffAccess: true,
+  tableTabsAccess: true,
+  reportsAccess: true,
+});
+
+/**
+ * Qué puede hacer ESTE restaurante en la Caja. `rdata` debe venir fundido con
+ * private/billing (fetchWithBilling) — la regla única de Pro es la de arriba.
+ * El bypass de fundador (Luzz) abre todo: jamás ve una pared en operación.
+ */
+export function entitlementsOf(
+  rdata: Record<string, unknown> | undefined | null,
+  restaurantId?: string | null,
+  now: number = Date.now(),
+): Entitlements {
+  if (isFounderTestRestaurant(restaurantId)) return PRO_ENTITLEMENTS;
+  return isProActive(rdata, now) ? PRO_ENTITLEMENTS : FREE_ENTITLEMENTS;
+}
+
+/** ¿Se puede pedir una ventana de `days` días? `null` = todo el historial. */
+export function historyAllowed(e: Entitlements, days: number | null): boolean {
+  if (e.historyDays == null) return true;
+  if (days == null) return false;
+  return days <= e.historyDays;
+}
+
+/** true cuando la pared está CERRADA para este plan (hay que enseñarla). */
+export function wallClosed(e: Entitlements, wall: CajaWall): boolean {
+  switch (wall) {
+    case "history":
+      return e.historyDays != null;
+    case "posStaff":
+      return !e.posStaffAccess;
+    case "tableTabs":
+      return !e.tableTabsAccess;
+  }
+}
