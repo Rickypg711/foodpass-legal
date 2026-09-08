@@ -24,6 +24,8 @@ import { toPng } from "html-to-image";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
+import { normalizeBrandColor, onBrandColor } from "@/lib/brand/brandColor";
+
 const ORANGE = "#F28C38";
 // Naranja profundo SOLO para texto dentro de la tarjeta imprimible. El
 // #F28C38 sobre el crema de la tarjeta da 2.29:1 y el piso es 4.5:1 — en
@@ -46,6 +48,9 @@ export default function MenuShareModal({
 }) {
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // Color de marca del local (8-sep): la tarjeta lleva SU color en borde,
+  // barra y monograma; sin color propio, el naranja de siempre.
+  const [brandColor, setBrandColor] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,6 +65,7 @@ export default function MenuShareModal({
         const d = (snap.data() as Record<string, unknown>) ?? {};
         if (cancelled) return;
         setName(typeof d.name === "string" ? d.name : "");
+        setBrandColor(normalizeBrandColor(d.brandColor));
         setLogoUrl(getRestaurantImageUrl(d));
         const s = d.slug;
         setSlug(
@@ -207,7 +213,7 @@ export default function MenuShareModal({
           className="flex flex-col items-center text-center"
           style={{
             background: CREAM,
-            border: `3px solid ${ORANGE}`,
+            border: `3px solid ${brandColor ?? ORANGE}`,
             borderRadius: 20,
             padding: "20px 18px 16px",
           }}
@@ -231,7 +237,7 @@ export default function MenuShareModal({
             // por Ricardo, 26-ago).
             <div
               className="flex h-14 w-14 items-center justify-center rounded-full text-[24px] font-extrabold"
-              style={{ background: ORANGE, color: "#1C2526" }}
+              style={{ background: brandColor ?? ORANGE, color: brandColor ? onBrandColor(brandColor) : "#1C2526" }}
             >
               {(name || "C").trim().charAt(0).toUpperCase()}
             </div>
@@ -239,7 +245,7 @@ export default function MenuShareModal({
           <p className="mt-2 text-[20px] font-extrabold leading-tight" style={{ color: INK }}>
             {name || " "}
           </p>
-          <div className="mt-1.5 h-1 w-14 rounded-full" style={{ background: ORANGE }} />
+          <div className="mt-1.5 h-1 w-14 rounded-full" style={{ background: brandColor ?? ORANGE }} />
           <p className="mt-2.5 text-[14px] font-bold" style={{ color: INK }}>
             Pide en línea y junta puntos
           </p>

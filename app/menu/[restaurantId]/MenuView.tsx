@@ -1,6 +1,12 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
+import {
+  brandThemeFromRestaurant,
+  taglineFromRestaurant,
+  inkAlpha,
+  type BrandTheme,
+} from "@/lib/brand/brandColor";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -165,10 +171,20 @@ function MenuRestaurantHeader({
   schedule,
   address,
   loyaltyLive,
+  brand,
+  tagline,
 }: {
   loading: boolean;
   restaurantName: string;
   logoUrl: string | null;
+  /**
+   * Color de marca del local (8-sep): el fondo del logo que el demo recortó
+   * de su foto. Sin color propio → el gris de siempre. La tinta se decide
+   * por luminancia (lib/brand/brandColor.ts, espejo de la app).
+   */
+  brand: BrandTheme;
+  /** Lema IMPRESO en el menú ("Desde 1960"), bajo el nombre. */
+  tagline?: string | null;
   secondarySubtitle?: string | null;
   /** Horario de hoy ("Abierto · cierra 8:00 pm" / "Cerrado · abre mañana…"). */
   schedule?: ScheduleStatus | null;
@@ -183,11 +199,13 @@ function MenuRestaurantHeader({
   loyaltyLive?: boolean;
 }) {
   return (
-    <header className="relative overflow-hidden bg-[#141414] shadow-md">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
-        aria-hidden
-      />
+    <header className="relative overflow-hidden shadow-md" style={{ background: brand.bg }}>
+      {brand.custom ? null : (
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
+          aria-hidden
+        />
+      )}
       <div className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="flex items-start gap-4">
           {logoUrl ? (
@@ -208,9 +226,14 @@ function MenuRestaurantHeader({
             </div>
           )}
           <div className="min-w-0 flex-1 pt-0.5">
-            <h1 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
+            <h1 className="text-xl font-bold leading-tight tracking-tight sm:text-2xl" style={{ color: brand.ink }}>
               {loading ? "…" : restaurantName || "Menú"}
             </h1>
+            {!loading && tagline ? (
+              <p className="mt-0.5 text-sm font-semibold italic" style={{ color: inkAlpha(brand.ink, 0.75) }}>
+                {tagline}
+              </p>
+            ) : null}
             {!loading && restaurantName ? (
               <div className="mt-2 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -237,13 +260,14 @@ function MenuRestaurantHeader({
                     href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-full items-center gap-1 text-xs leading-snug text-white/55 underline-offset-2 hover:text-white/80 hover:underline"
+                    className="inline-flex max-w-full items-center gap-1 text-xs leading-snug underline-offset-2 hover:underline"
+                    style={{ color: inkAlpha(brand.ink, 0.6) }}
                   >
                     📍 <span className="truncate">{address}</span>
                   </a>
                 ) : null}
                 {secondarySubtitle ? (
-                  <p className="text-xs leading-snug text-white/55">{secondarySubtitle}</p>
+                  <p className="text-xs leading-snug" style={{ color: inkAlpha(brand.ink, 0.6) }}>{secondarySubtitle}</p>
                 ) : null}
               </div>
             ) : null}
@@ -428,6 +452,9 @@ function PublicMenuPageWithOrdering({
   const [logoUrl, setLogoUrl] = useState<string | null>(
     initial ? getRestaurantImageUrl(initial.raw) : null,
   );
+  /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
+  const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
+  const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
   );
@@ -507,6 +534,8 @@ function PublicMenuPageWithOrdering({
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setBrand(brandThemeFromRestaurant(rData));
+        setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
@@ -575,6 +604,8 @@ function PublicMenuPageWithOrdering({
         schedule={schedule}
         address={address}
         loyaltyLive={loyaltyLive}
+        brand={brand}
+        tagline={tagline}
       />
 
       {/* §6.10: si quien mira es EL DUEÑO y no hay horario, la ausencia se
@@ -774,6 +805,9 @@ function PublicMenuPageBrowseOnly({
   const [logoUrl, setLogoUrl] = useState<string | null>(
     initial ? getRestaurantImageUrl(initial.raw) : null,
   );
+  /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
+  const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
+  const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
   );
@@ -842,6 +876,8 @@ function PublicMenuPageBrowseOnly({
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setBrand(brandThemeFromRestaurant(rData));
+        setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
@@ -904,6 +940,8 @@ function PublicMenuPageBrowseOnly({
         schedule={schedule}
         address={address}
         loyaltyLive={loyaltyLive}
+        brand={brand}
+        tagline={tagline}
       />
 
       <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">

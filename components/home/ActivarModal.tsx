@@ -312,6 +312,10 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         ...(demo?.info?.logoUrl
           ? { logoUrl: demo.info.logoUrl, imageUrl: demo.info.logoUrl }
           : {}),
+        // Color de marca y lema impreso (8-sep): la página nace con SU color
+        // y SU frase, no con el gris y el silencio de la plantilla.
+        ...(demo?.info?.brandColor ? { brandColor: demo.info.brandColor } : {}),
+        ...(demo?.info?.tagline ? { tagline: demo.info.tagline } : {}),
         hoursConfirmed: false,
         subscriptionPlan: "free",
         subscriptionAccessStatus: "inactive",

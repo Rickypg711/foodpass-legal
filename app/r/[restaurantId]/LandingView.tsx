@@ -11,6 +11,7 @@
 // corre en UTC; evaluarlo ahí mentiría ~6 horas al día).
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
+import { brandThemeFromRestaurant, taglineFromRestaurant, inkAlpha } from "@/lib/brand/brandColor";
 import { collection, getDocs } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
@@ -334,10 +335,16 @@ export default function LandingView({
   // nunca se vea vacía).
   const heroUrl = restaurant?.bannerUrl ?? menuPhotos[0]?.imageUrl ?? null;
 
+  // Color de marca y lema impreso (8-sep). Con foto de portada el hero sigue
+  // oscuro (la foto manda); sin portada, el color del local pinta el hero.
+  const brand = brandThemeFromRestaurant(rdata ?? undefined);
+  const tagline = taglineFromRestaurant(rdata ?? undefined);
+  const heroBg = heroUrl ? "#141414" : brand.bg;
+  const heroInk = heroUrl ? "#FFFFFF" : brand.ink;
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F5EDE2] to-[#F0E3D2] text-[#1C2526]">
       {/* ---- HERO ---- */}
-      <header className="relative overflow-hidden bg-[#141414]">
+      <header className="relative overflow-hidden" style={{ background: heroBg }}>
         {heroUrl ? (
           <>
             <Image
@@ -353,7 +360,7 @@ export default function LandingView({
               aria-hidden
             />
           </>
-        ) : (
+        ) : brand.custom ? null : (
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
             aria-hidden
@@ -379,11 +386,16 @@ export default function LandingView({
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl">
+              <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl" style={{ color: heroInk }}>
                 {loading ? "…" : name || "Restaurante"}
               </h1>
+              {tagline ? (
+                <p className="mt-0.5 text-sm font-semibold italic" style={{ color: inkAlpha(heroInk, 0.8) }}>
+                  {tagline}
+                </p>
+              ) : null}
               {restaurant && restaurant.categories.length > 0 ? (
-                <p className="mt-1 truncate text-sm capitalize text-white/60">
+                <p className="mt-1 truncate text-sm capitalize" style={{ color: inkAlpha(heroInk, 0.6) }}>
                   {restaurant.categories.slice(0, 3).join(" · ").toLowerCase()}
                 </p>
               ) : null}

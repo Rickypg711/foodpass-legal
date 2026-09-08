@@ -24,6 +24,7 @@ import {
   type DemoJob,
 } from "@/lib/demo/demoJobs";
 import { ensureAnonymousUser } from "@/lib/auth";
+import { normalizeBrandColor, onBrandColor, inkAlpha, INK_LIGHT } from "@/lib/brand/brandColor";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { PUBLIC_WHATSAPP_WA_ME } from "@/lib/contactEmail";
@@ -380,6 +381,10 @@ export default function DemoPreviewPage() {
 
   // ── LISTO: el aparador ───────────────────────────────────────────────────
   const nombre = job.info?.restaurantName || "Tu restaurante";
+  // Su color y su lema, leídos de la foto (8-sep): el aparador ya no es gris.
+  const brandBg = normalizeBrandColor(job.info?.brandColor) ?? "#1C2526";
+  const brandInk = normalizeBrandColor(job.info?.brandColor) ? onBrandColor(brandBg) : INK_LIGHT;
+  const tagline = typeof job.info?.tagline === "string" && job.info.tagline.trim() ? job.info.tagline.trim() : null;
   return (
     <main className="min-h-screen pb-44" style={{ background: "#faf9f5" }}>
       {/* Banner de vista previa — §6.7: el demo se ve, no opera. */}
@@ -389,12 +394,12 @@ export default function DemoPreviewPage() {
         {borradoLabel(dias) && <span style={{ color: "#F8B26A" }}> · {borradoLabel(dias)}</span>}
       </div>
 
-      <header className="px-5 pt-6 pb-4" style={{ background: "#1C2526" }}>
+      <header className="px-5 pt-6 pb-4" style={{ background: brandBg }}>
         {/* Misma columna centrada que la lista de platillos (max-w-md): en
             escritorio el nombre quedaba pegado al borde izquierdo mientras el
             menú flotaba al centro (cazado por Ricardo, 8-sep). */}
         <div className="mx-auto w-full max-w-md">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: inkAlpha(brandInk, 0.5) }}>
           Así se vería tu menú
         </p>
         <div className="mt-1 flex items-center gap-3">
@@ -410,7 +415,14 @@ export default function DemoPreviewPage() {
               className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-lg ring-2 ring-white/15"
             />
           ) : null}
-          <h1 className="text-[26px] font-extrabold text-white">{nombre}</h1>
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-extrabold leading-tight" style={{ color: brandInk }}>{nombre}</h1>
+            {tagline ? (
+              <p className="mt-0.5 text-[13px] font-semibold italic" style={{ color: inkAlpha(brandInk, 0.75) }}>
+                {tagline}
+              </p>
+            ) : null}
+          </div>
         </div>
         {job.stats && (
           <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(248,178,106,0.9)" }}>

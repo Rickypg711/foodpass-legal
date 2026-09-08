@@ -55,6 +55,10 @@ export type DemoInfo = {
    */
   logoUrl?: string | null;
   logoKind?: "mascot" | "emblem" | "wordmark" | string | null;
+  /** Color de marca "#rrggbb": el fondo del logo recortado (8-sep). */
+  brandColor?: string | null;
+  /** Lema IMPRESO en el menú ("Desde 1960"), copiado tal cual. */
+  tagline?: string | null;
 };
 
 export type DemoJob = {

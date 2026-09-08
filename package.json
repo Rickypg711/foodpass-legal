@@ -31,7 +31,8 @@
     "test:rewards-optional-funnel": "node scripts/validate-rewards-optional-funnel.mjs",
     "test:no-automatic-whatsapp": "node scripts/validate-no-automatic-whatsapp.mjs",
     "test:earn-preview": "node scripts/validate-earn-preview.mjs",
-    "test:landing-seo": "node scripts/validate-landing-seo.mjs"
+    "test:landing-seo": "node scripts/validate-landing-seo.mjs",
+    "test:brand-color": "node --experimental-strip-types scripts/validate-brand-color.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",
