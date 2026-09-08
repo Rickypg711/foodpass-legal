@@ -557,7 +557,7 @@ export default function ConfiguracionPage() {
                     Plan Pro activo ⭐
                   </p>
                   <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    Lealtad ilimitada, recuperación por WhatsApp, descuentos especiales, Comeleal AI y soporte directo
+                    Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales, Comeleal AI y soporte directo
                   </p>
                 </div>
               ) : (
@@ -566,18 +566,19 @@ export default function ConfiguracionPage() {
                     Plan Gratis — para operar
                   </p>
                   <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
-                    Menú QR, Caja/POS, pedidos, tus clientes y reportes: gratis siempre.
-                    Incluye 50 visitas de lealtad al mes.
+                    Menú QR, Caja/POS, pedidos, puntos sin tope, tus clientes y reportes: gratis siempre.
                   </p>
                   <div
                     className="mt-3 rounded-xl p-3.5"
                     style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
                   >
                     <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-                      Pro · $299/mes — para que tus clientes regresen
+                      Pro · $299/mes — para cuando tu Caja crece
                     </p>
                     <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
-                      <li>✓ Lealtad ilimitada (sin tope de 50 visitas)</li>
+                      <li>✓ Todo tu historial de ventas (más de 30 días)</li>
+                      <li>✓ Tu equipo cobra con su PIN</li>
+                      <li>✓ Cuentas por mesa</li>
                       <li>✓ Cuentas con acceso propio para tu equipo, cada quien con su rol</li>
                       <li>✓ Comeleal AI sin límite</li>
                       <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>

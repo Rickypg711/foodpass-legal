@@ -748,15 +748,14 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
+function SuccessOverlay({ mode, total, receiptUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
-    // when to close (no timer racing their tap). Otherwise, auto-dismiss;
-    // give the owner time to read the cap warning when it's shown.
+    // when to close (no timer racing their tap). Otherwise, auto-dismiss.
     if (receiptUrl) return;
-    const t = setTimeout(onDone, capReached ? 5000 : 2000);
+    const t = setTimeout(onDone, 2000);
     return () => clearTimeout(t);
-  }, [onDone, capReached, receiptUrl]);
+  }, [onDone, receiptUrl]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(28,37,38,0.55)", backdropFilter: "blur(6px)" }}>
@@ -777,22 +776,8 @@ function SuccessOverlay({ mode, total, capReached, receiptUrl, onDone, loyaltyLi
         <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
           {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
         </p>
-        {/* Premios apagados (5-sep): el tope de 50 solo limita PUNTOS, y aquí
-            los puntos no se prometen — el aviso sería ruido. */}
-        {capReached && loyaltyLive && (
-          <div
-            className="rounded-2xl px-4 py-3 text-left"
-            style={{ background: "rgba(242,140,56,0.1)", border: "1px solid rgba(242,140,56,0.3)" }}
-          >
-            <p className="text-[13px] font-bold" style={{ color: "#F28C38" }}>
-              ⚠️ Guardamos a este cliente, pero ya no sumó puntos
-            </p>
-            <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
-              Tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en
-              Configuración para que ningún cliente se quede sin sus puntos.
-            </p>
-          </div>
-        )}
+        {/* Sin tope de lealtad (8-sep): aquí ya no hay aviso de "se llenó" —
+            cada venta con número suma sus puntos, gratis y sin límite. */}
         {receiptUrl && (
           <div className="flex w-full flex-col gap-2">
             {/* El empujón (paridad con la app): el recibo es el gancho de
@@ -870,7 +855,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; capReached?: boolean; receiptUrl?: string } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1095,14 +1080,11 @@ export default function PosPage() {
         recalc,
       });
 
-      const capMsg = result.capReached && loyaltyLive
-        ? "\n\n⚠️ Guardamos al cliente, pero ya no sumó puntos — tu lealtad gratis se llenó este mes (50 visitas). Actívale Pro en Configuración."
-        : "";
       alert(
-        (result.rondas > 1
+        result.rondas > 1
           ? `¡Cuenta pagada y cerrada! (${result.rondas} rondas de la mesa` +
             (result.creditedCount > 0 ? `, ${result.creditedCount} con puntos)` : ")")
-          : "¡Cuenta pagada y cerrada!") + capMsg,
+          : "¡Cuenta pagada y cerrada!",
       );
       loadOpenTabs(restaurantId);
     } catch (err: any) {
@@ -1347,7 +1329,6 @@ export default function PosPage() {
 
       // Phone Points v1: "cobrar ahora" = confirmed payment → credit loyalty
       // to the phone if the cashier captured it. (Open tabs credit at close.)
-      let capReached = false;
       let pointsAwarded = 0;
       let redemptionWasApplied = false;
       if (mode === "now" && phoneDigits.length >= 10) {
@@ -1359,7 +1340,6 @@ export default function PosPage() {
           });
           if (res.credited) {
             console.log(`[phonePoints] +${res.points} pts → ${res.phone}`);
-            capReached = res.capReached === true;
             pointsAwarded = res.points;
             redemptionWasApplied = res.redemptionApplied === true;
           }
@@ -1396,7 +1376,7 @@ export default function PosPage() {
             })
           : undefined;
 
-      setSuccess({ mode, total: subtotal, capReached, receiptUrl });
+      setSuccess({ mode, total: subtotal, receiptUrl });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -1911,7 +1891,6 @@ export default function PosPage() {
           loyaltyLive={loyaltyLive}
           mode={success.mode}
           total={success.total}
-          capReached={success.capReached}
           receiptUrl={success.receiptUrl}
           onDone={() => setSuccess(null)}
         />

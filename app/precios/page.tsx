@@ -8,30 +8,33 @@ import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 export const metadata: Metadata = {
   title: "Precios — Comeleal para restaurantes",
   description:
-    "Gratis para operar: menú QR, punto de venta, pedidos y tus clientes. Pro $299/mes: para que tus clientes regresen — lealtad ilimitada, recuperación por WhatsApp y AI.",
+    "Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro $299/mes: todo tu historial, tu equipo cobra con su PIN y llevas mesas.",
   alternates: { canonical: "/precios" },
   openGraph: {
     title: "Precios — Comeleal para restaurantes",
     description:
-      "Gratis para operar: menú QR, punto de venta, pedidos y tus clientes. Pro $299/mes: lealtad ilimitada, recuperación por WhatsApp y AI.",
+      "Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro $299/mes: historial completo, equipo con PIN y mesas.",
     locale: "es_MX",
     type: "website",
   },
 };
 
 const FREE_FEATURES = [
-  "Menú digital QR — tus clientes escanean y ven tu carta",
-  "Caja / punto de venta: cobra en segundos, cuentas abiertas por mesa",
+  "Menú digital QR — tus clientes escanean y ven tu menú",
+  "Caja / punto de venta: cobra en segundos, sin tope de ventas",
   "Pedidos en línea y por WhatsApp",
   "Tus clientes guardados: visitas, gasto y quién dejó de venir",
   "Recupera al que dejó de venir: Comeleal te dice quién y te arma el WhatsApp — tú lo mandas, sin tope",
-  "Reportes de ventas y de clientes",
+  "Reportes de hoy, de la semana y de 30 días",
   "Tu página en Google — te ponemos en los resultados de búsqueda",
-  "Lealtad: hasta 50 visitas de clientes al mes",
+  "Puntos para tus clientes — sin tope de visitas, nunca",
 ];
 
 const PRO_FEATURES = [
-  "Lealtad ilimitada — ningún cliente se queda sin sus puntos",
+  "Todo tu historial de ventas — más de 30 días, para siempre",
+  "Tu equipo cobra con su PIN — cada venta con el nombre de quien la hizo",
+  "Cuentas por mesa — las rondas juntas, un solo cobro",
+  "Reportes de más de 30 días",
   "Comeleal AI sin límite: pregúntale por tus ventas, tus VIP y cuándo lanzar promos",
   "Descuentos especiales para staff y familia — la caja los aplica sola al cobrar",
   "Soporte directo — te contesta una persona, no un bot",
@@ -43,12 +46,12 @@ const FAQ = [
     a: "Sí. Menú QR, Caja, pedidos, tus clientes y reportes no cuestan nada, sin límite de tiempo y sin tarjeta. Solo los pagos digitales en línea (Mercado Pago) llevan un 3% — efectivo y tu terminal de siempre: 0%.",
   },
   {
-    q: "¿Qué pasa cuando llego a las 50 visitas de lealtad del mes?",
-    a: "Tu operación sigue igual: cobras, vendes y tus clientes se siguen guardando con su número. Lo único que se pausa es que las visitas nuevas ya no suman puntos hasta el próximo mes — o desde $299 al mes con Pro, ilimitado.",
+    q: "¿Los puntos de mis clientes tienen tope?",
+    a: "No. Cada venta con número suma puntos, gratis y sin límite de visitas. Nunca se pausan, ni en tu mes más lleno.",
   },
   {
-    q: "¿Por qué Pro cuesta $299?",
-    a: "Porque lo que incluye nos cuesta de verdad: cada mensaje de WhatsApp que mandamos para recuperar a un cliente tuyo se paga, y el AI también. Cobramos por lo que cuesta, no por candados artificiales.",
+    q: "¿Qué es Pro y por qué cuesta $299?",
+    a: "Pro es para cuando tu Caja crece: ves todo tu historial de ventas (más de 30 días), tu equipo cobra con su PIN y llevas cuentas por mesa. Cobramos por eso. Lo que necesitas para operar — menú, Caja, pedidos, puntos y tus clientes — sigue gratis.",
   },
   {
     q: "¿Cómo funciona la prueba de 14 días?",
@@ -88,12 +91,12 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Opera <span className="text-[#F28C38]">gratis</span>. Paga solo para que tus clientes regresen.
+            Opera <span className="text-[#F28C38]">gratis</span>. Paga solo cuando tu Caja crece.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Tu menú, tu Caja y tus pedidos no cuestan nada — hoy ni nunca. Pro es
-            para cuando quieres que Comeleal trabaje solo trayendo a tus clientes
-            de vuelta.
+            Tu menú, tu Caja, tus pedidos y los puntos de tus clientes no cuestan
+            nada — hoy ni nunca. Pro es para cuando tu Caja crece: todo tu
+            historial, tu equipo con su PIN y mesas.
           </p>
         </div>
       </section>
@@ -136,7 +139,7 @@ export default function Page() {
             <p className="mt-2 text-4xl font-black text-white">
               $299 <span className="text-[15px] font-semibold text-white/50">MXN/mes</span>
             </p>
-            <p className="mt-1 text-[13px] text-white/55">Para que tus clientes regresen.</p>
+            <p className="mt-1 text-[13px] text-white/55">Para cuando tu Caja crece.</p>
             <p className="mt-3 inline-block rounded-full bg-[#F28C38]/15 px-3 py-1 text-[12px] font-bold text-[#F28C38]">
               14 días gratis · sin tarjeta
             </p>

@@ -8,12 +8,14 @@
 //     { phone, name, points, visits, totalSpend, firstVisitRewardUnlocked,
 //       createdAt, lastVisitAt }
 //
-// Every credit burns the restaurant's monthly counter (scanCount — same field
-// the app's scan limit uses) so web loyalty can't tunnel around the 50/mes
-// free tier. At the cap: the customer is STILL saved to the CRM (phone, visit,
-// spend — captured numbers are never thrown away) but earns 0 points, and the
-// result carries capReached so the UI warns the owner (docs/PRICING.md,
-// "cap honesto"). Redemptions are never blocked by the cap.
+// SIN TOPE (8-sep-2026, docs/PRICING.md v2.0): los puntos NUNCA se ponen en
+// cero por un conteo. Hasta el 7-sep la lealtad gratis se llenaba a las 50
+// visitas del mes (el crédito regresaba points = 0); esa reja murió — la de
+// Pro vive ahora en la Caja (historial >30 días, 2° cajero, mesas). El
+// contador mensual (private/usage.scanCount) se sigue quemando como
+// ESTADÍSTICA ("visitas con puntos" del panel), jamás como límite. Espejo de
+// FOODPASS/lib/loyalty/phone_points_service.dart. Candado:
+// scripts/validate-caja-pro-gate.mjs. Redemptions are never blocked either.
 //
 // Idempotency: order.loyaltyAwarded flag, checked and set inside the
 // transaction — an order can never credit twice.
@@ -31,7 +33,6 @@ import {
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
 import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
-import { isProActive } from "@/lib/subscription/entitlement";
 import {
   mergeBillingOverPublic,
   mergeUsageOverPublic,
@@ -49,8 +50,6 @@ import {
 // existentes (checkout / order page).
 export { earnPolicyFromRestaurant };
 export type { EarnPolicy };
-
-const DEFAULT_MONTHLY_LIMIT = 50;
 
 type OrderItemLike = {
   isUpsell?: boolean;
@@ -82,23 +81,12 @@ function sameCalendarMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-/** Pro = la REGLA ÚNICA (entitlement.ts). Antes miraba solo el legado
- * `plan` — tras la migración a private/billing eso dejaba a TODO Pro con el
- * tope de Free. El rdata que llega aquí ya viene fundido con private/billing. */
-function hasUnlimitedLoyalty(rdata: Record<string, unknown>): boolean {
-  return isProActive(rdata);
-}
-
 export type PhoneCreditResult =
   | {
       credited: true;
       phone: string;
       points: number;
       firstVisit: boolean;
-      /** Monthly free-tier cap hit: customer WAS saved to the CRM but earned 0
-       * points. Surface this to the owner (POS aviso / Panel banner) — never
-       * let the cap fail silently. */
-      capReached?: boolean;
       /** The order's redemptionRequest passed the live balance re-check and
        * was executed (order.redemptionResult === "applied"). Lets the POS
        * receipt say "🎁 Premio canjeado" truthfully without re-reading the
@@ -153,10 +141,12 @@ export async function creditPhonePointsForOrder(params: {
     }
 
     const restSnap = await tx.get(restaurantRef);
-    // La verdad de suscripción vive en private/billing y la cuota
-    // (scanCount/lastReset) en private/usage (migración 24-ago); try-read:
-    // un lector sin permiso (cliente anónimo) cae al doc público. En
-    // transacción TODAS las lecturas van antes de cualquier escritura.
+    // El doc fundido (público + private/billing + private/usage) es LA verdad
+    // del local — misma lectura que phone_points_service.dart en la app. El
+    // plan ya NO decide puntos (sin tope desde el 8-sep); la estadística
+    // scanCount/lastReset sí vive en private/usage (migración 24-ago).
+    // try-read: un lector sin permiso (cliente anónimo) cae al doc público.
+    // En transacción TODAS las lecturas van antes de cualquier escritura.
     const rdata = mergeUsageOverPublic(
       mergeBillingOverPublic(
         (restSnap.data() ?? {}) as Record<string, unknown>,
@@ -165,24 +155,20 @@ export async function creditPhonePointsForOrder(params: {
       await tryTxGetUsageData(tx, db, restaurantId),
     );
 
-    // ── Monthly counter (same scanCount the app's limit enforces) ──────────
-    const unlimited = hasUnlimitedLoyalty(rdata);
-    const rawLimit = Number(rdata.monthlyLimit);
-    const limit =
-      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_MONTHLY_LIMIT;
+    // ── Contador mensual: ESTADÍSTICA, no límite (8-sep) ──────────────────
+    // Se conserva para "visitas con puntos" del panel y el espejo con la app;
+    // ningún valor de scanCount cambia cuántos puntos gana el cliente.
     const lastReset =
       rdata.lastReset instanceof Timestamp ? rdata.lastReset.toDate() : null;
     const now = new Date();
     const inSameMonth = lastReset !== null && sameCalendarMonth(lastReset, now);
     const effectiveCount = inSameMonth ? Number(rdata.scanCount ?? 0) || 0 : 0;
-    const capReached = !unlimited && effectiveCount >= limit;
 
-    // Earning is gated by the cap; REDEEMING is not (deduction ≠ earn, and
-    // blocking it would break a promise the customer already holds).
+    // Free sin tope: los puntos se calculan SIEMPRE con la política de earn.
     const earn = earnPolicyFromRestaurant(rdata);
     const total = Number(order.total ?? 0) || 0;
     const items = (order.items as OrderItemLike[] | undefined) ?? [];
-    const points = capReached ? 0 : computeOrderPoints(total, items, earn);
+    const points = computeOrderPoints(total, items, earn);
 
     // Redemption request (checkout: customer-written / POS: cashier-written) —
     // executed here with a live balance re-check. Faked/double requests fail
@@ -198,13 +184,9 @@ export async function creditPhonePointsForOrder(params: {
     const welcomeRequested =
       rr != null && String(rr.tierId ?? "") === "first_visit";
 
-    if (points <= 0 && redemptionCost <= 0 && !welcomeRequested && !capReached) {
+    if (points <= 0 && redemptionCost <= 0 && !welcomeRequested) {
       return { credited: false, reason: "zero_points" } as const;
     }
-    // At the cap we do NOT bail out: the customer must still be saved to the
-    // CRM (phone, visit, spend) — losing captured numbers at the cap was a
-    // bug against the owner. Only the points earn (0) stops; the caller gets
-    // capReached to warn the owner loudly (PRICING.md "cap honesto").
 
     const phoneRef = doc(db, "restaurants", restaurantId, "phoneCustomers", phone);
     const phoneSnap = await tx.get(phoneRef);
@@ -328,7 +310,6 @@ export async function creditPhonePointsForOrder(params: {
       phone,
       points: earnedPoints,
       firstVisit,
-      ...(capReached ? { capReached: true } : {}),
       ...(redemptionApplied ? { redemptionApplied: true } : {}),
     } as const;
   });

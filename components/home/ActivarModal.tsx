@@ -317,13 +317,11 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
         ...(demo?.info?.brandColor ? { brandColor: demo.info.brandColor } : {}),
         ...(demo?.info?.tagline ? { tagline: demo.info.tagline } : {}),
         hoursConfirmed: false,
-        subscriptionPlan: "free",
-        subscriptionAccessStatus: "inactive",
-        subscriptionAccessExpiresAt: null,
-        subscriptionTrialEndsAt: null,
-        subscriptionUpdatedAt: serverTimestamp(),
-        scanCount: 0,
-        lastReset: serverTimestamp(),
+        // Sin campos subscription*/scanCount/lastReset aquí (8-sep): desde la
+        // migración del 24-ago la suscripción vive en private/billing y la
+        // estadística en private/usage; sembrarlos en el doc PÚBLICO era el
+        // legado que el cleanup borraba. Un local nuevo es free por ausencia
+        // (entitlementOf fail-closed) — no hace falta escribir nada.
         status: "setup",
         isSetupComplete: false,
         // Pay-at-pickup ON by default so a new vendor can take orders and start

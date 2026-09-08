@@ -19,15 +19,18 @@ import type { User } from "firebase/auth";
 
 const FREE_INCLUDES = [
   "Menú digital QR + tu página en Google",
-  "Caja / POS completa: cobro, cuentas, equipo con PIN y propinas",
+  "Caja / POS: cobra en segundos, propinas y recibo por WhatsApp — sin tope de ventas",
   "Pedidos en línea sin comisiones de reparto",
-  "Tus clientes guardados con su número — CRM y reportes",
+  "Tus clientes guardados con su número — y reportes de hoy, la semana y 30 días",
   "Recupera al que dejó de venir: Comeleal te dice quién y te arma el WhatsApp — tú lo mandas, sin tope",
-  "Lealtad: hasta 50 visitas de clientes al mes",
+  "Puntos para tus clientes, sin tope de visitas",
 ];
 
 const PRO_INCLUDES = [
-  "Lealtad ilimitada — ningún cliente se queda sin sus puntos",
+  "Todo tu historial de ventas — más de 30 días, para siempre",
+  "Tu equipo cobra con su PIN — cada venta con el nombre de quien la hizo",
+  "Cuentas por mesa — las rondas juntas, un solo cobro",
+  "Reportes de más de 30 días",
   "Descuentos especiales (staff y familia) — la caja los aplica sola",
   "Cuentas con acceso propio para tu equipo, cada quien con su rol",
   "Comeleal AI sin límite: tus ventas, tus VIP, cuándo lanzar promos",
@@ -166,9 +169,9 @@ export default function PlanPage() {
           </span>
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.55)" }}>
-          Todo lo que necesitas para operar tu restaurante es gratis, siempre.
-          Pro es la máquina que trabaja de noche: encuentra a los clientes que
-          están dejando de venir y los trae de vuelta — solita.
+          Todo lo que necesitas para operar tu restaurante es gratis, siempre —
+          los puntos de tus clientes también, sin tope. Pro es para cuando tu
+          Caja crece: todo tu historial, tu equipo con su PIN y mesas.
         </p>
       </div>
 
@@ -224,7 +227,7 @@ export default function PlanPage() {
             </span>
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#F28C38" }}>
-                ⭐ Pro — para que tus clientes regresen
+                ⭐ Pro — para cuando tu Caja crece
               </p>
               {isPro && (
                 <span
@@ -359,11 +362,11 @@ export default function PlanPage() {
               {[
                 {
                   q: "¿Lo gratis es gratis de verdad?",
-                  a: "Sí. Menú, caja, pedidos, clientes, equipo con PIN y reportes no cuestan nada, sin límite de tiempo y sin tarjeta.",
+                  a: "Sí. Menú, Caja, pedidos, puntos sin tope, tus clientes y reportes de 30 días no cuestan nada, sin límite de tiempo y sin tarjeta.",
                 },
                 {
                   q: "¿Qué pasa si cancelo Pro?",
-                  a: "Nada se rompe: sigues operando gratis con todo tu historial. Solo se pausa la máquina — lealtad ilimitada, descuentos especiales, equipo con roles y AI sin límite.",
+                  a: "Nada se rompe: sigues cobrando gratis y tus clientes siguen juntando puntos. Solo se cierra lo de Pro — el historial de más de 30 días, los PINs del equipo, las mesas, los descuentos especiales y el AI sin límite.",
                 },
                 {
                   q: "¿Cómo se paga?",

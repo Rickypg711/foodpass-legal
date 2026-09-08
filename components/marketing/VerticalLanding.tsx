@@ -194,9 +194,9 @@ export function VerticalLanding({ v }: { v: Vertical }) {
             Te lo dejamos funcionando hoy
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-[#1C2526]/60">
-            Operar es gratis para siempre. Si quieres la máquina completa —
-            lealtad ilimitada, recuperación por WhatsApp y AI sin límite —
-            pruébala <b>14 días gratis, sin tarjeta</b>.
+            Operar es gratis para siempre, puntos incluidos. Cuando tu Caja
+            crece — todo tu historial, tu equipo con su PIN y mesas — eso es
+            Pro: pruébalo <b>14 días gratis, sin tarjeta</b>.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />

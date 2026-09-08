@@ -90,8 +90,8 @@ export default function Page() {
             Cobrar, tu menú, tus pedidos, tus clientes y tus reportes no cuestan
             nada y nunca van a costar: son lo que necesitas para operar. Solo los
             pagos digitales en línea llevan 3% — en efectivo y con tu terminal de
-            siempre, 0%. Cobramos $299 al mes por lo que sí nos cuesta a nosotros:
-            los mensajes de WhatsApp que recuperan a tus clientes y la AI.
+            siempre, 0%. Pro cuesta $299 al mes y es para cuando tu Caja crece:
+            todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.
           </p>
           <div className="mt-7 flex justify-center">
             <Link

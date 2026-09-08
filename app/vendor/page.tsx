@@ -108,8 +108,6 @@ interface DashboardData {
   topProducts: { name: string; qty: number }[];
   // Free-tier loyalty quota (docs/PRICING.md "cap honesto")
   isPro: boolean;
-  loyaltyUsed: number;
-  loyaltyLimit: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -426,24 +424,13 @@ export default function VendorDashboard() {
           .sort((a, b) => b.qty - a.qty)
           .slice(0, 3);
 
-        // ── Free-tier loyalty quota (PRICING.md "cap honesto") ───────────────
-        // Same fields phonePoints.ts / the app enforce: scanCount resets each
-        // calendar month via lastReset; Pro (either canonical field) = no cap.
-        // private/billing (plan) y private/usage (scanCount/lastReset) mandan
-        // desde la migración 24-ago — el doc público ya no trae ni el plan ni
-        // la cuota; leerlos ahí pintaba Free con contador en cero.
+        // ── Plan (sin tope de lealtad desde el 8-sep) ─────────────────────────
+        // private/billing (plan) y private/usage (scanCount) mandan desde la
+        // migración 24-ago — el doc público ya no trae ni el plan ni la
+        // estadística. El contador de visitas ya NO es una cuota: la reja de
+        // Pro vive en la Caja (historial, 2° cajero, mesas) — PRICING.md v2.0.
         const rTruth = await fetchWithBilling(db, rid, r as Record<string, unknown>);
         const isPro = entitlementOf(rTruth).isPro;
-        const rawLimit = Number(rTruth.monthlyLimit);
-        const loyaltyLimit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50;
-        const lastResetTs = rTruth.lastReset as Timestamp | undefined;
-        const lastResetDt = lastResetTs?.toDate?.();
-        const nowDt = new Date();
-        const inSameMonth =
-          !!lastResetDt &&
-          lastResetDt.getFullYear() === nowDt.getFullYear() &&
-          lastResetDt.getMonth() === nowDt.getMonth();
-        const loyaltyUsed = inSameMonth ? Number(rTruth.scanCount ?? 0) || 0 : 0;
 
         const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
 
@@ -536,8 +523,6 @@ export default function VendorDashboard() {
           captureRate,
           topProducts,
           isPro,
-          loyaltyUsed,
-          loyaltyLimit,
         });
         setLoadState("ready");
       } catch (err) {
@@ -866,11 +851,6 @@ export default function VendorDashboard() {
             metrics={data.nbaMetrics}
             weeklyBriefText={data.weeklyBriefText}
           />
-
-          {/* ── Lealtad quota (free tier) — PRICING.md "cap honesto" ── */}
-          {!firstDay && !data.isPro && (
-            <LoyaltyQuotaCard used={data.loyaltyUsed} limit={data.loyaltyLimit} />
-          )}
 
           {/* ── Del Top productos a la Actividad: nada de esto existe el
               primer día — se abre al graduarse del setup ── */}
@@ -1739,59 +1719,6 @@ function AICoachPreviewCard({
           </div>
         )}
 
-      </div>
-    </div>
-  );
-}
-
-/**
- * Free-tier loyalty quota card (docs/PRICING.md "cap honesto").
- * Below the cap: quiet progress counter. At the cap: it's a CELEBRATION with
- * an upgrade CTA — hitting 50 means the loyalty machine is working.
- */
-function LoyaltyQuotaCard({ used, limit }: { used: number; limit: number }) {
-  const full = used >= limit;
-  const pct = Math.min(Math.round((used / Math.max(limit, 1)) * 100), 100);
-  return (
-    <div
-      className="mb-6 rounded-2xl p-5"
-      style={{
-        background: full ? "rgba(242,140,56,0.08)" : "#ffffff",
-        border: full ? "1px solid rgba(242,140,56,0.4)" : "1px solid rgba(28,37,38,0.06)",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
-      }}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>
-            {full
-              ? `🎉 Lealtad llena — ${limit} visitas este mes`
-              : `Lealtad este mes: ${used}/${limit} visitas`}
-          </p>
-          <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-            {full
-              ? "Tus clientes siguen guardándose en tu CRM, pero ya no suman puntos. Actívale ilimitado para que ninguno se quede sin premio."
-              : "Cada venta con número o escaneo de app usa una visita. Con Pro son ilimitadas."}
-          </p>
-        </div>
-        {full && (
-          <Link
-            href="/vendor/configuracion"
-            className="shrink-0 rounded-xl px-4 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90"
-            style={{ background: "#F28C38" }}
-          >
-            Activar Pro · $299/mes →
-          </Link>
-        )}
-      </div>
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full" style={{ background: "rgba(28,37,38,0.07)" }}>
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
-            width: `${pct}%`,
-            background: full ? "#F28C38" : "linear-gradient(90deg, #FF9A45, #F28C38)",
-          }}
-        />
       </div>
     </div>
   );

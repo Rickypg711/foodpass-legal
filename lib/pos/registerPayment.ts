@@ -27,9 +27,10 @@ import type { TabDiscountRecalc } from "@/lib/loyalty/tabDiscountRecalc";
 export { paidOrderFields, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { paidOrderFields, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 
+/** Sin tope de lealtad desde el 8-sep (PRICING.md v2.0): ya no hay
+ * `capReached` que reportar — cada ronda con número suma sus puntos. */
 export type CreditSummary = {
   creditedCount: number;
-  capReached: boolean;
 };
 
 async function creditRounds(
@@ -38,19 +39,15 @@ async function creditRounds(
   orderIds: string[],
 ): Promise<CreditSummary> {
   let creditedCount = 0;
-  let capReached = false;
   for (const orderId of orderIds) {
     try {
       const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
-      if (res.credited) {
-        creditedCount += 1;
-        if (res.capReached === true) capReached = true;
-      }
+      if (res.credited) creditedCount += 1;
     } catch (e) {
       console.error("[registerPayment] credit failed", orderId, e);
     }
   }
-  return { creditedCount, capReached };
+  return { creditedCount };
 }
 
 /**
