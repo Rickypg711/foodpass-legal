@@ -9,6 +9,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { ServiceRequestsBell } from "@/components/pos/ServiceRequestsBell";
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { entitlementOf } from "@/lib/subscription/entitlement";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, canAccessVendorPath, type VendorRole } from "@/lib/vendorContext";
@@ -520,7 +521,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 color: "#FF9A45",
                 border: "1px solid rgba(242,140,56,0.35)",
               }}
-              title="Pro $299/mes — todo tu historial, tu equipo con su PIN y mesas"
+              title={`Pro ${PRO_PRICE_LABEL}/mes — todo tu historial, tu equipo con su PIN y mesas`}
             >
               ⭐{open ? " Hazte Pro" : ""}
             </Link>

@@ -1,3 +1,4 @@
+import { PRO_PRICE_LABEL } from "../subscription/pricing.ts";
 /**
  * Landings por VERTICAL (tipo de negocio) — el play que Maspedidos hace y
  * nosotros no teníamos (teardown 6 ago 2026).
@@ -39,7 +40,7 @@ export type Vertical = {
 export const FAQ_COMUN: { q: string; a: string }[] = [
   {
     q: "¿De verdad es gratis o hay letras chiquitas?",
-    a: "El menú QR, el punto de venta, los pedidos, los puntos de tus clientes (sin tope), tus clientes y los reportes son gratis para siempre, sin tarjeta y sin límite de tiempo. Solo los pagos digitales en línea llevan 3% — en efectivo y con tu terminal de siempre, 0%. Pro es para cuando tu Caja crece: todo tu historial, tu equipo cobra con su PIN y llevas mesas — $299 al mes, y puedes probarlo 14 días gratis sin dejar tarjeta.",
+    a: `El menú QR, el punto de venta, los pedidos, los puntos de tus clientes (sin tope), tus clientes y los reportes son gratis para siempre, sin tarjeta y sin límite de tiempo. Solo los pagos digitales en línea llevan 3% — en efectivo y con tu terminal de siempre, 0%. Pro es para cuando tu Caja crece: todo tu historial, tu equipo cobra con su PIN y llevas mesas — ${PRO_PRICE_LABEL} al mes, y puedes probarlo 14 días gratis sin dejar tarjeta.`,
   },
   {
     q: "¿Necesito comprar equipo nuevo?",

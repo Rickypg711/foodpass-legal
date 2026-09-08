@@ -19,6 +19,7 @@ import {
   type Entitlements,
 } from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { ProWall } from "@/components/vendor/ProWall";
 import { parseLocationLink, cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
@@ -246,7 +247,7 @@ export default function ConfiguracionPage() {
     init().catch(() => setLoading(false));
   }, [router]);
 
-  /** Pro checkout: create MP preapproval ($299/mes) and redirect to its init_point.
+  /** Pro checkout: create MP preapproval (PRO_AMOUNT_MXN/mes) and redirect to its init_point.
    * The subscription webhook grants Pro on restaurants/{id}; app + web read the same fields. */
   async function handleActivatePro() {
     if (!restaurantId || !user || activatingPro) return;
@@ -590,7 +591,7 @@ export default function ConfiguracionPage() {
                     style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
                   >
                     <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-                      Pro · $299/mes — para cuando tu Caja crece
+                      Pro · {PRO_PRICE_LABEL}/mes — para cuando tu Caja crece
                     </p>
                     <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
                       <li>✓ Todo tu historial de ventas (más de 30 días)</li>

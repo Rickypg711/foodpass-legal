@@ -4,16 +4,17 @@ import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 
 export const metadata: Metadata = {
   title: "Precios — Comeleal para restaurantes",
   description:
-    "Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro $299/mes: todo tu historial, tu equipo cobra con su PIN y llevas mesas.",
+    `Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro ${PRO_PRICE_LABEL}/mes: todo tu historial, tu equipo cobra con su PIN y llevas mesas.`,
   alternates: { canonical: "/precios" },
   openGraph: {
     title: "Precios — Comeleal para restaurantes",
     description:
-      "Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro $299/mes: historial completo, equipo con PIN y mesas.",
+      `Gratis para operar: menú QR, Caja, pedidos, puntos sin tope y tus clientes. Pro ${PRO_PRICE_LABEL}/mes: historial completo, equipo con PIN y mesas.`,
     locale: "es_MX",
     type: "website",
   },
@@ -50,7 +51,7 @@ const FAQ = [
     a: "No. Cada venta con número suma puntos, gratis y sin límite de visitas. Nunca se pausan, ni en tu mes más lleno.",
   },
   {
-    q: "¿Qué es Pro y por qué cuesta $299?",
+    q: `¿Qué es Pro y por qué cuesta ${PRO_PRICE_LABEL}?`,
     a: "Pro es para cuando tu Caja crece: ves todo tu historial de ventas (más de 30 días), tu equipo cobra con su PIN y llevas cuentas por mesa. Cobramos por eso. Lo que necesitas para operar — menú, Caja, pedidos, puntos y tus clientes — sigue gratis.",
   },
   {
@@ -137,7 +138,7 @@ export default function Page() {
           >
             <p className="text-[13px] font-bold uppercase tracking-wider text-[#F28C38]">Pro</p>
             <p className="mt-2 text-4xl font-black text-white">
-              $299 <span className="text-[15px] font-semibold text-white/50">MXN/mes</span>
+              {PRO_PRICE_LABEL} <span className="text-[15px] font-semibold text-white/50">MXN/mes</span>
             </p>
             <p className="mt-1 text-[13px] text-white/55">Para cuando tu Caja crece.</p>
             <p className="mt-3 inline-block rounded-full bg-[#F28C38]/15 px-3 py-1 text-[12px] font-bold text-[#F28C38]">

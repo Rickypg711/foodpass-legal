@@ -1,3 +1,4 @@
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import type { Metadata } from "next";
 import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney";
 import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
@@ -90,7 +91,7 @@ export default function Page() {
             Cobrar, tu menú, tus pedidos, tus clientes y tus reportes no cuestan
             nada y nunca van a costar: son lo que necesitas para operar. Solo los
             pagos digitales en línea llevan 3% — en efectivo y con tu terminal de
-            siempre, 0%. Pro cuesta $299 al mes y es para cuando tu Caja crece:
+            siempre, 0%. Pro cuesta {PRO_PRICE_LABEL} al mes y es para cuando tu Caja crece:
             todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.
           </p>
           <div className="mt-7 flex justify-center">

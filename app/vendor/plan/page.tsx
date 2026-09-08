@@ -13,6 +13,7 @@ import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { entitlementOf, type Entitlement } from "@/lib/subscription/entitlement";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
@@ -241,7 +242,7 @@ export default function PlanPage() {
               )}
             </div>
             <p className="mt-1 text-[28px] font-black" style={{ color: "#1C2526" }}>
-              $299 <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>MXN / mes</span>
+              {PRO_PRICE_LABEL} <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>MXN / mes</span>
             </p>
             <ul className="mt-4 space-y-2.5">
               {PRO_INCLUDES.map((f) => (
@@ -273,7 +274,7 @@ export default function PlanPage() {
                   className="mt-3 w-full rounded-2xl px-4 py-3.5 text-[14px] font-extrabold text-white transition hover:opacity-90 disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" }}
                 >
-                  {activating ? "Abriendo pago…" : "Quédate con Pro — $299/mes →"}
+                  {activating ? "Abriendo pago…" : `Quédate con Pro — ${PRO_PRICE_LABEL}/mes →`}
                 </button>
                 <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
                   Pago seguro con Mercado Pago · sin plazos forzosos · cancela cuando quieras
@@ -305,7 +306,7 @@ export default function PlanPage() {
                   className="mt-3 w-full text-[12px] font-semibold underline underline-offset-4 transition hover:opacity-70 disabled:opacity-50"
                   style={{ color: "rgba(28,37,38,0.45)" }}
                 >
-                  {activating ? "Abriendo pago…" : "o activar Pro ahora — $299/mes"}
+                  {activating ? "Abriendo pago…" : `o activar Pro ahora — ${PRO_PRICE_LABEL}/mes`}
                 </button>
               </>
             ) : (

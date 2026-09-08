@@ -145,7 +145,7 @@ export function isProActive(
 //
 // Decisión de Ricardo (7-sep noche, FOODPASS/docs/PLAN_REJA_CAJA_8_SEP.md):
 // free = menú, QR, pedidos, puntos SIN tope, clientes, win-back, export.
-// Pro ($499) = historial >30 días, 2° cajero con PIN, mesas, reportes >30 días.
+// Pro (499 MXN) = historial >30 días, 2° cajero con PIN, mesas, reportes >30 días.
 //
 // Espejo exacto de `EffectiveEntitlements` en
 // FOODPASS/lib/subscription/services/subscription_tier_service.dart — los

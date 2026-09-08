@@ -1,3 +1,4 @@
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HomeCta } from "@/components/home/HomeCta";
@@ -97,7 +98,7 @@ const BENEFITS = [
 const FAQ_ITEMS = [
   {
     q: "¿Cuánto cuesta?",
-    a: "Operar es gratis: menú digital, Caja/POS, pedidos, puntos para tus clientes sin tope, tus clientes y reportes. Pro ($299/mes) es para cuando tu Caja crece: todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.",
+    a: `Operar es gratis: menú digital, Caja/POS, pedidos, puntos para tus clientes sin tope, tus clientes y reportes. Pro (${PRO_PRICE_LABEL}/mes) es para cuando tu Caja crece: todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.`,
   },
   {
     q: "¿Qué es Apple Wallet / Google Wallet y cómo lo usan mis clientes?",

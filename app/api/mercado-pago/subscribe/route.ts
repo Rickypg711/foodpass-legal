@@ -5,11 +5,13 @@ import {
   getFirebaseAdminDb,
   hasFirebaseAdminCredentials,
 } from "@/lib/firebaseAdmin";
+import { PRO_AMOUNT_MXN } from "@/lib/subscription/pricing";
 
 /**
  * Comeleal Pro — web subscription checkout (MP Suscripciones / preapproval).
  *
- * Creates a pending preapproval ($299 MXN/mes) with external_reference = restaurantId
+ * Creates a pending preapproval (PRO_AMOUNT_MXN/mes — 499 MXN desde el 8-sep-2026;
+ * los preapprovals viejos conservan su monto: grandfathering) con external_reference = restaurantId
  * and returns its init_point. The vendor pays on MP; the Cloud Function
  * mercadopagoSubscriptionWebhook then writes the canonical Pro fields on
  * restaurants/{id} (same fields the app IAP writes), unlocking Pro everywhere.
@@ -23,7 +25,6 @@ import {
  */
 
 const MP_PREAPPROVAL_URL = "https://api.mercadopago.com/preapproval";
-const PRO_AMOUNT_MXN = 299;
 
 function siteBaseUrl(request: Request): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
