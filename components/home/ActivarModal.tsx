@@ -779,9 +779,13 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               }
               className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {/* Demo: lo que se activa con este clic es el MENÚ (la promesa
+                  del embudo, "Es tuyo"); el local queda active hasta confirmar
+                  el horario en la siguiente pantalla. "Activar mi restaurante"
+                  prometía de más (cazado por Ricardo en el recorrido, 7-sep). */}
               {stage === "creating"
-                ? <><Spinner className="text-white" />Creando tu restaurante…</>
-                : "Activar mi restaurante →"}
+                ? <><Spinner className="text-white" />{demo ? "Guardando tu menú…" : "Creando tu restaurante…"}</>
+                : demo ? "Activar mi menú →" : "Activar mi restaurante →"}
             </button>
           </form>
         </div>
