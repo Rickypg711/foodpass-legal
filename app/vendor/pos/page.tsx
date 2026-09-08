@@ -2,7 +2,7 @@
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { buildEarnPreview, cashierEarnLine, cashierWelcomeLine } from "@/lib/loyalty/earnPreview";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -20,6 +20,14 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import {
+  entitlementOf,
+  entitlementsOf,
+  FREE_ENTITLEMENTS,
+  type Entitlement,
+  type Entitlements,
+} from "@/lib/subscription/entitlement";
+import { ProWall } from "@/components/vendor/ProWall";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
@@ -375,6 +383,7 @@ function CheckoutDialog({
   paymentOptions,
   loyaltyLive = true,
   restaurantData = null,
+  tableTabsLocked = false,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
@@ -401,6 +410,8 @@ function CheckoutDialog({
   /** Doc del local, para decir ANTES cuántos puntos junta ESTA venta
    *  (robo 5-sep: Fluxsales "Acumulas 37 Boras con este pedido"). */
   restaurantData?: Record<string, unknown> | null;
+  /** Pared 3 (8-sep): abrir cuentas de mesa es Pro — el botón lo dice antes. */
+  tableTabsLocked?: boolean;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
   const [method, setMethod] = useState<PaymentMethod>(paymentOptions[0]?.key ?? "cash");
@@ -493,7 +504,7 @@ function CheckoutDialog({
             <div className="grid grid-cols-2 gap-2">
               {([
                 { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: paymentMethodsSentence(paymentOptions.map((o) => o.key)) },
-                { key: "tab", emoji: "📋", label: "Cuenta abierta", sub: "Cobrar después" },
+                { key: "tab", emoji: "📋", label: "Cuenta abierta", sub: tableTabsLocked ? "⭐ Pro · cobrar después" : "Cobrar después" },
               ] as { key: CheckoutMode; emoji: string; label: string; sub: string }[]).map((opt) => (
                 <button
                   key={opt.key}
@@ -825,6 +836,16 @@ export default function PosPage() {
   const [loyaltyLive, setLoyaltyLive] = useState(true);
   /** Doc del local (para el preview de puntos en el cobro). */
   const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
+  // Pared 3 de la Caja (8-sep): abrir una cuenta de mesa / agregarle rondas es
+  // Pro. Cobrar o cerrar una cuenta que YA existe jamás se bloquea (el dinero
+  // siempre entra; el pedido del comensal no tiene la culpa). El plan se lee
+  // fundido con private/billing (fetchWithBilling) al arrancar.
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [ents, setEnts] = useState<Entitlements>(FREE_ENTITLEMENTS);
+  const entsRef = useRef<Entitlements>(FREE_ENTITLEMENTS);
+  const [wallOpen, setWallOpen] = useState(false);
+  /** La acción que la pared detuvo — se repite al abrirse la puerta. */
+  const pendingAction = useRef<(() => void) | null>(null);
   // 🎚️ Formas de pago que el dueño dejó prendidas en Configuración. Hasta
   // que cargue el doc, las tres (nunca una Caja sin botones).
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
@@ -900,6 +921,13 @@ export default function PosPage() {
       setLoyaltyLive(restaurantPromisesPoints(rData));
       setRestaurantData(rData as Record<string, unknown>);
       setPaymentOptions(acceptedPaymentOptions(rData));
+      try {
+        const merged = await fetchWithBilling(db, rid, rData as Record<string, unknown>);
+        setEnt(entitlementOf(merged));
+        const es = entitlementsOf(merged, rid);
+        setEnts(es);
+        entsRef.current = es;
+      } catch { /* sin lectura del plan: free (fail-closed), la Caja cobra igual */ }
       setRestaurantId(rid);
       setUid(u.uid);
       // Equipo de la caja: roster de PINs (associate-readable). Restaura el
@@ -978,6 +1006,12 @@ export default function PosPage() {
 
   async function addItemsToTabTransaction(orderId: string, itemsToAdd: CartItem[]) {
     if (!restaurantId) return;
+    // Pared 3: agregar rondas a una mesa = llevar mesas = Pro.
+    if (!entsRef.current.tableTabsAccess) {
+      pendingAction.current = () => { void addItemsToTabTransaction(orderId, itemsToAdd); };
+      setWallOpen(true);
+      return;
+    }
     setProcessing(true);
     try {
       const db = getFirebaseDb();
@@ -1226,6 +1260,15 @@ export default function PosPage() {
     tipMethod: PaymentMethod = "cash",
   ) {
     if (!restaurantId || !uid) return;
+    // Pared 3: abrir una cuenta de mesa desde la Caja es Pro. Cobrar ahora
+    // sigue gratis y sin tope. Si la puerta se abre (prueba), se repite igual.
+    if (mode === "tab" && !entsRef.current.tableTabsAccess) {
+      pendingAction.current = () => {
+        void confirmOrder(mode, method, customerName, customerPhone, notes, redemption, discount, tip, tipMethod);
+      };
+      setWallOpen(true);
+      return;
+    }
     // Last-10 (MX local): con el 52 tecleado, la orden y los puntos deben caer
     // en el MISMO phoneCustomers/{last10} que el lookup de descuentos.
     let phoneDigits = customerPhone.replace(/\D/g, "");
@@ -1882,6 +1925,29 @@ export default function PosPage() {
           onConfirm={confirmOrder}
           processing={processing}
           canAssignDiscount={vendorRole === "owner"}
+          tableTabsLocked={!ents.tableTabsAccess}
+        />
+      )}
+
+      {/* ── Pared 3: mesas ── */}
+      {wallOpen && ent && restaurantId && (
+        <ProWall
+          wall="tableTabs"
+          restaurantId={restaurantId}
+          entitlement={ent}
+          onClose={() => {
+            setWallOpen(false);
+            pendingAction.current = null;
+          }}
+          onUnlocked={(next, nextEnt) => {
+            setEnts(next);
+            entsRef.current = next;
+            setEnt(nextEnt);
+            setWallOpen(false);
+            const again = pendingAction.current;
+            pendingAction.current = null;
+            again?.();
+          }}
         />
       )}
 
