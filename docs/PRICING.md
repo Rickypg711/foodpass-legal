@@ -1,4 +1,4 @@
-# Comeleal — Pricing canónico (v2.0, 8 sep 2026)
+# Comeleal — Pricing canónico (v2.1, 9 sep 2026)
 
 **Esta es la ley de qué es gratis y qué se cobra.** Cualquier feature nuevo se clasifica con esta regla ANTES de construirse. Si un cambio contradice este doc, se discute aquí primero.
 
@@ -66,9 +66,21 @@ También Pro: reportes de más de 30 días (misma pared 1), inventario y turnos 
 - **Sin cambio:** 3% solo en pagos digitales en línea (Mercado Pago); efectivo y terminal propia 0%.
 - **Setup $1,500 "te lo dejo hoy": sigue BLOQUEADO** hasta que la página del local deje de ser genérica (`docs/SETUP_DE_PAGA_NO_GENERICO.md`).
 
-## La prueba de Pro — 14 días, sin tarjeta, una por restaurante, **se arranca sola en la pared**
+## La prueba de Pro — 14 días, sin tarjeta, una por restaurante, **con un toque en la pared**
 
-**Qué cambió en v2.0:** ya no hay que ir a `/vendor/plan` a pedirla. La primera vez que un dueño toca una pared (pide 90 días, agrega el segundo PIN, abre una mesa), **la pared arranca la prueba ahí mismo** y abre la puerta (reverse trial). Si el restaurante ya usó su prueba, la pared enseña el precio y la liga a `/vendor/plan`. El botón de `/vendor/plan` sigue existiendo para quien llegue por ahí.
+**Qué cambió en v2.0:** ya no hay que ir a `/vendor/plan` a pedirla. La primera vez que un dueño toca una pared (pide 90 días, agrega el segundo PIN, abre una mesa), **la pared le ofrece la prueba ahí mismo** y abre la puerta (reverse trial). Si el restaurante ya usó su prueba, la pared enseña el precio y la liga a `/vendor/plan`. El botón de `/vendor/plan` sigue existiendo para quien llegue por ahí.
+
+### v2.1 (9-sep-2026): un toque, un reloj, un aviso a 3 días
+
+Lo que Verna / Poyar / Hormozi piden de un reverse trial, de punta a punta, espejo en la app:
+
+1. **La prueba necesita UN toque.** La pared (`ProWall`) ya **no** la arranca sola: enseña el copy canónico y el botón **"Empezar mis 14 días gratis"** (y "Ahora no"). Al tocarlo se pide al servidor (`startProTrial`, `source: "web"`); al recibir el sí, la pared confirma **"Listo. Tienes Pro hasta el martes 23 de septiembre. Sin tarjeta, sin cobros."** y un solo botón **"Seguir"** repite la acción que detuvo. Si falla: reintento en palabras llanas. Si ya usó su prueba: precio (`PRO_PRICE_LABEL`) y "Ver planes". Sin efectos al montar — nada se dispara solo.
+2. **El reloj en el panel** (`components/vendor/TrialClock.tsx`, matemática en `lib/subscription/trialClock.ts`, `trialClockState`): una franja bajo el header de `/vendor`, nunca modal, leyendo `private/billing` vía `fetchWithBilling`. Tres estados, los mismos nombres en la app (`trial_clock.dart`):
+   - `counting` (días 14→4): "Pro de prueba · te quedan N días" → `/vendor/plan`.
+   - `endingSoon` (≤3 días): "Tu prueba termina el {día}. Sigue con Pro por $499 al mes." + **"Seguir con Pro"**.
+   - `ended` (7 días después de vencer, si cayó a gratis): "Tu prueba terminó. Sigues gratis: cobras igual, sin mesas ni segundo PIN." + **"Volver a Pro"**. Luego `hidden`.
+   Nunca para quien paga Pro ni para el bypass de fundador. Se puede cerrar por estado (localStorage por restaurante + estado).
+3. **Candado:** `scripts/validate-trial-clock.mjs` (en `npm test`) — tabla de verdad (3 días exactos, último día, vencida + 7 d + 1 min, paga Pro, fundador), la pared sin `useEffect` y con el botón de consentimiento, el reloj en el panel leyendo `fetchWithBilling`, y los tres copys tal cual.
 
 **Términos.** 14 días · Pro completo · sin tarjeta ni datos de pago · **una sola vez por restaurante, para siempre** · al terminar cae solo al plan gratis con menú, Caja, clientes, puntos e historial de 30 días intactos. No hay cobro sorpresa porque nunca hubo tarjeta.
 
@@ -76,7 +88,7 @@ También Pro: reportes de más de 30 días (misma pared 1), inventario y turnos 
 
 ### Cómo está construido (la ley técnica)
 
-- **Se otorga SÓLO desde el servidor:** callable `startProTrial` (FOODPASS/functions/subscription_trial.js). El reloj es del servidor; jamás se acepta una fecha del cliente. En la web lo llama `lib/subscription/useProTrial.ts` con `source: "web"` — desde `/vendor/plan` y desde `components/vendor/ProWall.tsx` (la pared).
+- **Se otorga SÓLO desde el servidor:** callable `startProTrial` (FOODPASS/functions/subscription_trial.js). El reloj es del servidor; jamás se acepta una fecha del cliente. En la web lo llama `lib/subscription/useProTrial.ts` con `source: "web"` — desde `/vendor/plan` y desde `components/vendor/ProWall.tsx` (la pared), siempre tras un toque del dueño.
 - **El candado anti-repetición es `restaurants/{rid}/private/trial`**, un doc que las reglas niegan a todo cliente (`allow write: if false`).
 - **Anti doble dip:** al otorgar se escribe `subscriptionTrialEndsAt`, que es justo lo que `entitlementOf().canStartTrial` y la app consultan para dejar de ofrecer la prueba. Nadie junta 14 días nuestros + 14 de Google/Apple.
 - **Vence sola.** Todos los gates comparan contra `subscriptionAccessExpiresAt` **en cada lectura**. El barrido diario es higiene, no el candado.
@@ -147,7 +159,7 @@ Comeleal AI (chat del panel): free = 20 preguntas/mes, Pro = ilimitado (`brain_q
 
 ## Menú completo de monetización (roadmap)
 
-1. **Vivo hoy:** 3% comisión pagos digitales MP · Pro $499/mes (tres paredes de la Caja) · prueba de 14 días que se arranca sola en la pared.
+1. **Vivo hoy:** 3% comisión pagos digitales MP · Pro $499/mes (tres paredes de la Caja) · prueba de 14 días con un toque en la pared + reloj en el panel.
 2. **Después de la reja (must-do de Ricardo, 7-sep):** el teléfono lo pone el comensal, no el cajero — camino C (reclamar la venta con el QR del mostrador, callable en servidor) y camino B (pantalla volteada). **Gratis siempre** (escalan). Medir la captura de Pecado en septiembre (~1-oct) antes de construir.
 3. **Setup $1,500 "te lo dejo hoy":** BLOQUEADO hasta página no-genérica.
 4. **After-10-vendors:** campañas de WhatsApp por créditos.
@@ -160,6 +172,7 @@ Comeleal AI (chat del panel): free = 20 preguntas/mes, Pro = ilimitado (`brain_q
 - [x] **Las tres paredes** — web viva en código (8-sep): reportes (`historyAllowed`), configuración (`canAddPosStaff`), caja (`tableTabsAccess`); todas leen `fetchWithBilling` y pintan `ProWall`. Paridad app en el +53 (mismo día, agente paralelo).
 - [x] **Precio 499** — `PRO_AMOUNT_MXN` + barrido "sin precio a mano" en `validate-caja-pro-gate.mjs` §9.
 - [x] **Paridad de nombres con la app** — §10 del mismo candado lee el Dart.
+- [x] **Consentimiento + reloj de la prueba (v2.1)** — `validate-trial-clock.mjs`; paridad de estados con `trial_clock.dart` cuando exista.
 - [x] **Descuentos especiales Pro-gated** — `discountsEnabled()`; bypass Luzz compartido.
 - [x] **Comeleal AI chat: free 20 preguntas/mes, Pro ilimitado** — `brain_query_ai.js`.
 - [ ] **Reja del lado servidor** — hoy las tres paredes son de cliente (como todo lo demás). Las rules mínimas para `posStaff` (2° miembro exige plan pro/trialing en `private/billing`) viven en el repo de la app; mesas solo cliente por ahora.
@@ -169,7 +182,7 @@ Comeleal AI (chat del panel): free = 20 preguntas/mes, Pro = ilimitado (`brain_q
 
 - No inventar tope a lo que escala: puntos, ventas, escaneos, menú, pedidos, clientes. **El 50 no vuelve.**
 - No gate-ear el cobro. Cobrar ahora y cerrar una cuenta que ya existe son gratis SIEMPRE — la pared detiene el "llevar mesas", no el dinero.
-- No mandar a `/vendor/plan` desde una pared si el restaurante todavía puede probar: la pared arranca la prueba ahí mismo.
+- No mandar a `/vendor/plan` desde una pared si el restaurante todavía puede probar: la pared ofrece la prueba ahí mismo — y **jamás la arranca sin el toque del dueño**.
 - No escribir "$499" ni "$299" a mano en una página — se importa `PRO_PRICE_LABEL`.
 - No subirle el precio a quien ya paga. Pecado se queda en $299.
 - No prometer "todo gratis para siempre" en copy nuevo — free = operar sin tope; Pro = la Caja que recuerda y tiene manos.

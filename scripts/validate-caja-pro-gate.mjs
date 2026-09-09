@@ -185,7 +185,9 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   check("ProWall: jamás 'carta'", /\bcarta\b/i.test(wall), false);
   check("ProWall: jamás 'upgrade'", /upgrade/i.test(wall), false);
   check("ProWall: jamás 'desbloquea'", /desbloque/i.test(wall), false);
-  check("ProWall: arranca la prueba sola si puede (canStartTrial)", wall.includes("entitlement.canStartTrial"), true);
+  // Desde el 9-sep la pared OFRECE la prueba con un botón (no la arranca sola):
+  // el consentimiento y el reloj se afirman en validate-trial-clock.mjs.
+  check("ProWall: ofrece la prueba si puede (canStartTrial)", wall.includes("entitlement.canStartTrial"), true);
   check("ProWall: si no, liga a /vendor/plan con el precio", wall.includes('href="/vendor/plan"') && wall.includes("{PRO_PRICE_LABEL}/mes"), true);
   check("ProWall: tinta oscura sobre naranja (INK_DARK)", wall.includes("INK_DARK") && !/color:\s*"#fff"/.test(wall), true);
   check("ProWall: en móvil no se mete bajo el nav (pb-[72px])", wall.includes("pb-[72px]"), true);
