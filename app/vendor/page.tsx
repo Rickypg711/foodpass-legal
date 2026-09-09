@@ -11,8 +11,6 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
-  limit,
   Timestamp,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -25,27 +23,23 @@ import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
-import { completedStepCount } from "@/lib/vendorReadiness";
 import ManualCloseToggle from "./_components/ManualCloseToggle";
 import MenuShareModal from "./_components/MenuShareModal";
+
+// ─── Panel en 7 bloques (Ricardo, 9-sep-2026) ─────────────────────────────────
+// Mismo orden de ideas que la app (owner_dashboard_screen.dart): "lo diario
+// arriba, luego el marcador, luego el consejo, luego lo de vez en cuando".
+//   Header + reloj de la prueba + brújula del setup (sin cambios)
+//   1 Hoy · 2 Ventas con teléfono · 3 Tu siguiente movimiento ·
+//   4 Clientes · últimos 30 días · 5 Pregúntale a Comeleal · 6 Herramientas
+// Fuera: "Requieren tu atención" (ahora es UNA línea dentro de Hoy), "Top
+// productos" (vive en Reportes), "Acciones rápidas", la gráfica de 7 días,
+// "Actividad reciente" (solo listaba escaneos), "Capturas el número",
+// Recuperados y los Atajos. Candado: scripts/validate-panel-order.mjs.
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type LoadState = "loading" | "ready" | "error";
-
-interface RecentScan {
-  id: string;
-  userId: string;
-  customerName: string;
-  pointsAwarded: number;
-  timestamp: Timestamp | null;
-}
-
-interface WeekDay {
-  label: string;
-  count: number;
-  isToday: boolean;
-}
 
 interface NbaMetrics {
   atRiskCount: number;
@@ -58,22 +52,30 @@ interface NbaMetrics {
   rewardCount: number;
 }
 
+/** Bloque 4 · Clientes · últimos 30 días. Espejo de OwnerLookbackService
+ *  (app): cada cliente es un userId de visitHistory O un teléfono de 10
+ *  dígitos de una venta pagada (`phone:<últimos 10>`). */
+interface LookbackStats {
+  /** Clientes distintos (app + teléfono). */
+  withPhone: number;
+  /** Con 2 o más visitas / ventas pagadas. */
+  returned: number;
+  returnRatePercent: number;
+  redemptions: number;
+  /** Visitas totales (escaneos + ventas con número). */
+  visits: number;
+}
+
 interface DashboardData {
   restaurantId: string;
   restaurantName: string;
-  scanCountTotal: number;
   scansToday: number;
   // Marcador del dueño (métrica dominante 8-sep): ventas pagadas de la semana
   // de negocio (7 jornadas, corte 4 AM) y cuántas traen teléfono.
   weekPaidSales: number;
   weekIdentifiedSales: number;
-  pointsToday: number;
-  weeklyScans: WeekDay[];
-  weekTotal: number;
   weeklyBriefText?: string;
   atRiskCount?: number;
-  restaurantStatus: string;
-  recentScans: RecentScan[];
   isSetupComplete: boolean;
   setupIncompleteReasons: string[];
   /** `loyaltyReady` (5-sep): completo pero sin nada que ganar → false. */
@@ -83,10 +85,18 @@ interface DashboardData {
   nbaTitle: string;
   nbaBody: string;
   nbaMetrics: NbaMetrics;
+  lookback: LookbackStats;
   // Revenue goal
   dailyGoal: number | null;
   ventasHoy: number;
   pedidosCola: number;
+  /** Pedidos esperando (pending/preparing, jamás payment_pending) y la edad
+   *  del más viejo — la línea de alerta dentro de Hoy. Espejo de la app. */
+  pendingOrdersCount: number;
+  oldestPendingMinutes: number;
+  readyOrdersCount: number;
+  /** Ticket promedio de HOY (ventas pagadas / pedidos pagados); null sin ventas. */
+  avgTicketToday: number | null;
   /** Robo inverso de la app (27-ago): pulso de la última hora, del MISMO
    *  snapshot de hoy — cero queries extra. */
   pulseLastHourCount: number;
@@ -98,21 +108,6 @@ interface DashboardData {
   pulsePrevHourCount: number;
   dailyRevenueGoal: number | null;
   cuentasAbiertas: number;
-  // Win-back proof — combined: automatic (reEngagementStats, Cloud Functions)
-  // + manual taps (phoneCustomers.lastWinbackAt vs lastVisitAt, closed loop)
-  winbackSent: number;
-  winbackReturned: number;
-  manualWinbackSent: number;
-  manualWinbackReturned: number;
-  expiryRemindersSent: number;
-  // Phone customers whose welcome reward expires in ≤2 days (day 5-7 of 7)
-  expiringRewards: { name: string; phone: string; daysLeft: number }[];
-  /** Estimated MXN recovered = returned × 30d avg paid ticket. Null when no ticket data. */
-  winbackPesos: number | null;
-  /** % of 30d paid orders with a customer phone — phone-points fuel gauge. Null < 3 paid orders. */
-  captureRate: number | null;
-  // Top 3 products by quantity sold (30d, excludes synthetic quick-sell line).
-  topProducts: { name: string; qty: number }[];
   isPro: boolean;
   /** El reloj de la prueba (TrialClock): campos canónicos de private/billing
    * leídos vía fetchWithBilling — jamás del doc público. */
@@ -124,27 +119,39 @@ interface DashboardData {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
-function timeAgo(ts: Timestamp | null): string {
-  if (!ts) return "";
-  const diff = Math.floor((Date.now() - ts.toMillis()) / 1000);
-  if (diff < 60) return "ahora";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
+/** Edad de un pedido en palabras llanas — espejo de formatOrderAge (app). */
+function formatOrderAge(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h < 24) return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh === 0 ? `${d} d` : `${d} d ${rh} h`;
 }
 
-function resolveCustomerName(
-  uid: string,
-  displayName?: string | null,
-  email?: string | null
-): string {
-  if (displayName?.trim()) return displayName.trim().split(" ")[0];
-  if (email?.trim()) return email.split("@")[0];
-  return `#${uid.slice(-4).toUpperCase()}`;
+/** Últimos 10 dígitos del teléfono: "+52 614…" y "614…" son el MISMO
+ *  cliente (canon de países de 10 dígitos). null si trae menos de 10. */
+function phoneKeyOf(raw: unknown): string | null {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  return `phone:${digits.slice(-10)}`;
 }
 
+/** Suma cada venta PAGADA con teléfono (≥10 dígitos) como una visita del
+ *  cliente `phone:<últimos 10 dígitos>` — espejo de addPhoneSaleVisits en la
+ *  app (owner_lookback_service.dart). Sin pagar o sin teléfono no cuenta. */
+function addPhoneSaleVisits(
+  visitCounts: Map<string, number>,
+  paidOrders: Iterable<Record<string, unknown>>,
+): void {
+  for (const o of paidOrders) {
+    if (o.paymentStatus !== "paid") continue;
+    const key = phoneKeyOf(o.customerPhone);
+    if (!key) continue;
+    visitCounts.set(key, (visitCounts.get(key) ?? 0) + 1);
+  }
+}
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function VendorDashboard() {
@@ -173,76 +180,64 @@ export default function VendorDashboard() {
           return Timestamp.fromDate(d);
         })();
 
-        const sevenDaysAgo = (() => {
-          const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0);
-          return Timestamp.fromDate(d);
-        })();
-
         const thirtyDaysAgo = (() => {
           const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0);
           return Timestamp.fromDate(d);
         })();
 
-        const [restaurantSnap, insightsSnap, visitsSnap, weekSnap, recentSnap, todayOrdersSnap, winbackSnap, monthOrdersSnap, welcomeSnap, winbackTapsSnap] =
+        // Cuatro lecturas y ya (9-sep): restaurante, consejo, pedidos de hoy y
+        // pedidos de 30 días, más visitHistory de 30 días (de ahí salen los
+        // escaneos de hoy Y el bloque de Clientes — antes eran tres queries a
+        // visitHistory). Se fueron con sus secciones: reEngagementStats,
+        // phoneCustomers (bienvenidas por vencer / win-back manual) y la
+        // búsqueda de nombres en `users` para "Actividad reciente".
+        const [restaurantSnap, insightsSnap, visits30dSnap, todayOrdersSnap, monthOrdersSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
             getDocs(query(
               collection(db, "restaurants", rid, "visitHistory"),
-              where("timestamp", ">=", todayStart)
-            )),
-            getDocs(query(
-              collection(db, "restaurants", rid, "visitHistory"),
-              where("timestamp", ">=", sevenDaysAgo),
-              orderBy("timestamp", "asc")
-            )),
-            getDocs(query(
-              collection(db, "restaurants", rid, "visitHistory"),
-              orderBy("timestamp", "desc"),
-              limit(6)
+              where("timestamp", ">=", thirtyDaysAgo)
             )),
             getDocs(query(
               collection(db, "restaurants", rid, "orders"),
               where("createdAt", ">=", todayStart)
             )),
-            // Win-back counters. Wrapped in catch: if Firestore rules for
-            // reEngagementStats aren't deployed yet, the dashboard still loads.
-            getDoc(doc(db, "restaurants", rid, "reEngagementStats", "current")).catch(() => null),
-            // 30d orders → avg paid ticket for the "pesos recuperados" estimate.
+            // 30d orders → marcador de la semana + Clientes 30 días.
             getDocs(query(
               collection(db, "restaurants", rid, "orders"),
               where("createdAt", ">=", thirtyDaysAgo)
-            )).catch(() => null),
-            // Welcome rewards still unclaimed → the day-5 "remind them" nudge.
-            getDocs(query(
-              collection(db, "restaurants", rid, "phoneCustomers"),
-              where("firstVisitRewardUnlocked", "==", true),
-              limit(25)
-            )).catch(() => null),
-            // Manual win-back taps (30d): lastWinbackAt is written when the
-            // owner taps "Abrir WhatsApp" in Clientes. Returned = the customer
-            // visited again AFTER the tap (lastVisitAt > lastWinbackAt). This
-            // closes the measure loop for the owner's-own-number channel.
-            getDocs(query(
-              collection(db, "restaurants", rid, "phoneCustomers"),
-              where("lastWinbackAt", ">=", thirtyDaysAgo)
             )).catch(() => null),
           ]);
 
         const r = restaurantSnap.data() ?? {};
         const ins = insightsSnap.exists() ? insightsSnap.data() : {};
 
-        // Today's counts
-        let scansToday = 0, pointsToday = 0;
-        visitsSnap.forEach((d) => {
-          scansToday++;
-          pointsToday += (d.data().pointsAwarded as number) ?? 0;
+        // ── Escaneos: hoy (badge "En vivo") y por cliente (Clientes 30 días) ──
+        const todayStartMs = todayStart.toMillis();
+        let scansToday = 0;
+        const visitCounts = new Map<string, number>();
+        visits30dSnap.forEach((d) => {
+          const v = d.data();
+          const ms = (v.timestamp as Timestamp | undefined)?.toMillis?.() ?? 0;
+          if (ms >= todayStartMs) scansToday++;
+          const userId = v.userId as string | undefined;
+          if (!userId) return;
+          visitCounts.set(userId, (visitCounts.get(userId) ?? 0) + 1);
         });
 
         // Calculate operational stats
         let ventasHoy = 0;
         let pedidosCola = 0;
         let cuentasAbiertas = 0;
+        let paidCountToday = 0;
+        let phoneSalesToday = 0;
+        // Alerta de UNA línea dentro de Hoy (espejo de la app): pedidos
+        // esperando = pending/preparing (nunca payment_pending); listos sin
+        // entregar = ready.
+        let pendingOrdersCount = 0;
+        let oldestPendingMinutes = 0;
+        let readyOrdersCount = 0;
         // Pulso (joya robada de la app): pedidos PAGADOS de la última hora y
         // la anterior — ritmo del changarro en vivo.
         let pulseLastHourCount = 0;
@@ -257,11 +252,13 @@ export default function VendorDashboard() {
           const status = o.status as string;
           const isOpenTab = o.isOpenTab as boolean | undefined;
           const paymentStatus = o.paymentStatus as string | undefined;
+          const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
 
           // 1. Ventas hoy: only paid orders from today
           if (paymentStatus === "paid") {
             ventasHoy += total;
-            const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
+            paidCountToday++;
+            if (phoneKeyOf(o.customerPhone)) phoneSalesToday++;
             if (createdMs >= ahora - unaHora) {
               pulseLastHourCount++;
               pulseLastHourRevenue += total;
@@ -274,65 +271,20 @@ export default function VendorDashboard() {
           if (["pending", "preparing", "ready"].includes(status)) {
             pedidosCola++;
           }
+          if (status === "pending" || status === "preparing") {
+            pendingOrdersCount++;
+            const age = createdMs > 0 ? Math.max(0, Math.floor((ahora - createdMs) / 60000)) : 0;
+            if (age > oldestPendingMinutes) oldestPendingMinutes = age;
+          } else if (status === "ready") {
+            readyOrdersCount++;
+          }
 
           // 3. Cuentas abiertas: isOpenTab === true, status in ['pending', 'preparing', 'ready'], and paymentStatus !== 'paid'
           if (isOpenTab === true && ["pending", "preparing", "ready"].includes(status) && paymentStatus !== "paid") {
             cuentasAbiertas++;
           }
         });
-
-        // Win-back proof: recovered customers × 30d avg paid ticket
-        const wb = winbackSnap?.exists() ? winbackSnap.data() ?? {} : {};
-        const autoWinbackSent = typeof wb.totalSent === "number" ? wb.totalSent : 0;
-        const autoWinbackReturned = typeof wb.returned === "number" ? wb.returned : 0;
-        const expiryRemindersSent = typeof wb.expiryRemindersSent === "number" ? wb.expiryRemindersSent : 0;
-
-        // Manual channel (owner's own WhatsApp, logged via lastWinbackAt):
-        // sent = customers tapped in the last 30d; returned = they visited
-        // again after the tap. One customer counts once per window.
-        let manualWinbackSent = 0;
-        let manualWinbackReturned = 0;
-        winbackTapsSnap?.forEach((d) => {
-          const p = d.data() as Record<string, unknown>;
-          const sentMs = (p.lastWinbackAt as Timestamp | undefined)?.toMillis?.();
-          if (!sentMs) return;
-          manualWinbackSent++;
-          const visitMs = (p.lastVisitAt as Timestamp | undefined)?.toMillis?.();
-          if (visitMs && visitMs > sentMs) manualWinbackReturned++;
-        });
-
-        const winbackSent = autoWinbackSent + manualWinbackSent;
-        const winbackReturned = autoWinbackReturned + manualWinbackReturned;
-
-        // Welcome rewards in the day-5-of-7 danger zone (≤2 days left) — the
-        // named "remind them by WhatsApp" nudge for phone customers.
-        const expiringRewards: { name: string; phone: string; daysLeft: number }[] = [];
-        welcomeSnap?.forEach((d) => {
-          const pd = d.data() as Record<string, unknown>;
-          const createdMs = (pd.createdAt as Timestamp | undefined)?.toMillis?.();
-          if (!createdMs) return;
-          const daysLeft = 7 - Math.floor((Date.now() - createdMs) / 86400000);
-          if (daysLeft < 0 || daysLeft > 2) return;
-          const nm = typeof pd.name === "string" && pd.name.trim()
-            ? pd.name.trim().split(" ")[0]
-            : `··${d.id.slice(-4)}`;
-          expiringRewards.push({ name: nm, phone: d.id, daysLeft });
-        });
-        expiringRewards.sort((a, b) => a.daysLeft - b.daysLeft);
-
-        let paidTotal = 0, paidCount = 0, paidWithPhone = 0;
-        monthOrdersSnap?.forEach((d) => {
-          const o = d.data();
-          if (o.paymentStatus === "paid" && typeof o.total === "number" && o.total > 0) {
-            paidTotal += o.total;
-            paidCount++;
-            if (typeof o.customerPhone === "string" && o.customerPhone.length >= 10) {
-              paidWithPhone++;
-            }
-          }
-        });
-        // Need at least 3 paid orders for a meaningful avg ticket.
-        const avgTicket = paidCount >= 3 ? paidTotal / paidCount : null;
+        const avgTicketToday = paidCountToday > 0 ? ventasHoy / paidCountToday : null;
 
         // ── Marcador del dueño: ventas con teléfono ESTA SEMANA ──────────────
         // Misma regla que scripts/ventasIdentificadasReadOnly.js (FOODPASS) y
@@ -350,108 +302,26 @@ export default function VendorDashboard() {
           if (ph.length >= 10) weekIdentifiedSales++;
         });
 
-        // ── Phone-sale visits (Caja/checkout con número) ─────────────────────
-        // phoneLoyaltyAt is written ONLY by creditPhonePointsForOrder, so every
-        // order carrying it is a real "venta con número". These customers have
-        // no app → they never appear in visitHistory. Counting them here keeps
-        // the chart's promise ("cada venta con número suma aquí") honest, with
-        // zero double-counting vs app scans.
-        const phoneDailyCounts: Record<string, number> = {};
-        let phoneVisitsToday = 0;
-        let phoneVisits30d = 0;
+        // ── Clientes · últimos 30 días (espejo de OwnerLookbackService) ──────
+        // Cada venta PAGADA con teléfono de 10 dígitos es una visita del
+        // cliente `phone:<últimos 10>`; los escaneos de la app ya están en
+        // visitCounts por userId. Sin doble conteo: un cliente con app no
+        // deja su número en la Caja y viceversa.
+        const monthOrders: Record<string, unknown>[] = [];
         let phoneRedemptions30d = 0;
-        const uniquePhones30d = new Set<string>();
-        const sevenDaysAgoMs = sevenDaysAgo.toMillis();
-        const todayStartMs = todayStart.toMillis();
         monthOrdersSnap?.forEach((d) => {
-          const o = d.data();
-          const ts = o.phoneLoyaltyAt as Timestamp | undefined;
-          if (!ts?.toMillis) return;
-          const ms = ts.toMillis();
-          phoneVisits30d++;
-          let ph = String(o.customerPhone ?? "").replace(/\D/g, "");
-          if (ph.length > 10) ph = ph.slice(-10);
-          if (ph.length === 10) uniquePhones30d.add(ph);
+          const o = d.data() as Record<string, unknown>;
+          monthOrders.push(o);
           if (o.redemptionResult === "applied") phoneRedemptions30d++;
-          if (ms >= todayStartMs) phoneVisitsToday++;
-          if (ms >= sevenDaysAgoMs) {
-            const dt = ts.toDate();
-            const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
-            phoneDailyCounts[key] = (phoneDailyCounts[key] ?? 0) + 1;
-          }
         });
-        // Capture rate: % of paid orders with a customer phone — the fuel
-        // gauge of the phone-points system (every capture = future winback).
-        const captureRate =
-          paidCount >= 3 ? Math.round((paidWithPhone / paidCount) * 100) : null;
-        const winbackPesos =
-          winbackReturned > 0 && avgTicket !== null
-            ? Math.round(winbackReturned * avgTicket)
-            : null;
-
-        // 7-day chart data: app scans (visitHistory) + phone sales, per day.
-        const dailyCounts: Record<string, number> = {};
-        weekSnap.forEach((d) => {
-          const ts = d.data().timestamp as Timestamp;
-          if (!ts) return;
-          const dt = ts.toDate();
-          const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
-          dailyCounts[key] = (dailyCounts[key] ?? 0) + 1;
+        addPhoneSaleVisits(visitCounts, monthOrders);
+        let returnedCustomers = 0;
+        let visits30d = 0;
+        visitCounts.forEach((count) => {
+          visits30d += count;
+          if (count >= 2) returnedCustomers++;
         });
-
-        const today = new Date();
-        const weeklyScans: WeekDay[] = Array.from({ length: 7 }, (_, i) => {
-          const d = new Date();
-          d.setDate(today.getDate() - (6 - i));
-          const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-          return {
-            label: DAY_LABELS[d.getDay()],
-            count: (dailyCounts[key] ?? 0) + (phoneDailyCounts[key] ?? 0),
-            isToday: i === 6,
-          };
-        });
-
-        const weekTotal = weeklyScans.reduce((s, d) => s + d.count, 0);
-
-        // Resolve customer names
-        const recentDocs = recentSnap.docs;
-        const uniqueUids = [...new Set(recentDocs.map((d) => d.data().userId as string))];
-        const userDocsArr = await Promise.all(
-          uniqueUids.map((uid) => getDoc(doc(db, "users", uid)).catch(() => null))
-        );
-        const nameMap: Record<string, string> = {};
-        uniqueUids.forEach((uid, i) => {
-          const uData = userDocsArr[i]?.data();
-          nameMap[uid] = resolveCustomerName(uid, uData?.displayName, uData?.email);
-        });
-
-        const recentScans: RecentScan[] = recentDocs.map((d) => ({
-          id: d.id,
-          userId: d.data().userId as string,
-          customerName: nameMap[d.data().userId as string] ??
-            `#${(d.data().userId as string).slice(-4).toUpperCase()}`,
-          pointsAwarded: (d.data().pointsAwarded as number) ?? 1,
-          timestamp: (d.data().timestamp as Timestamp) ?? null,
-        }));
-
-        // Top products (30d) by quantity — excludes the synthetic quick-sell line,
-        // matching the app dashboard's top-products behavior.
-        const productQtyMap: Record<string, number> = {};
-        monthOrdersSnap?.forEach((d) => {
-          const items = (d.data().items as any[]) ?? [];
-          items.forEach((item) => {
-            if (item?.menuItemId === "__quick_sell__") return;
-            const name = item?.name as string | undefined;
-            const quantity = (item?.quantity as number) ?? 0;
-            if (!name || quantity <= 0) return;
-            productQtyMap[name] = (productQtyMap[name] ?? 0) + quantity;
-          });
-        });
-        const topProducts = Object.entries(productQtyMap)
-          .map(([name, qty]) => ({ name, qty }))
-          .sort((a, b) => b.qty - a.qty)
-          .slice(0, 3);
-
+        const uniqueCustomers30d = visitCounts.size;
         // ── Plan (sin tope de lealtad desde el 8-sep) ─────────────────────────
         // private/billing (plan) y private/usage (scanCount) mandan desde la
         // migración 24-ago — el doc público ya no trae ni el plan ni la
@@ -481,21 +351,23 @@ export default function VendorDashboard() {
         );
         const nbaOverridden = nbaCode !== brainActionCode;
 
+        const lookback: LookbackStats = {
+          withPhone: uniqueCustomers30d,
+          returned: returnedCustomers,
+          returnRatePercent: uniqueCustomers30d > 0 ? (returnedCustomers / uniqueCustomers30d) * 100 : 0,
+          redemptions: ((insMetrics.redemptions30d as number) ?? 0) + phoneRedemptions30d,
+          visits: visits30d,
+        };
+
         setData({
           restaurantId: rid,
           restaurantName: (r.name as string) ?? "Mi restaurante",
-          scanCountTotal: (rTruth.scanCount as number) ?? 0,
-          // Visitas hoy = app scans + ventas con número (same rule as the chart).
-          scansToday: scansToday + phoneVisitsToday,
+          // Visitas hoy = app scans + ventas pagadas con número (badge "En vivo").
+          scansToday: scansToday + phoneSalesToday,
           weekPaidSales,
           weekIdentifiedSales,
-          pointsToday,
-          weeklyScans,
-          weekTotal,
           weeklyBriefText: ins?.weeklyBriefText as string | undefined,
           atRiskCount: (insMetrics.atRiskCount as number | undefined) ?? (ins?.atRiskCount as number | undefined),
-          restaurantStatus: (r.status as string) ?? "active",
-          recentScans,
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
           loyaltyReady: r.loyaltyReady !== false,
@@ -514,15 +386,15 @@ export default function VendorDashboard() {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
             atRiskReachableCount: (insMetrics.atRiskReachableCount as number | null | undefined) ?? null,
             atRiskTotalCount: (insMetrics.atRiskTotalCount as number | null | undefined) ?? null,
-            // App metrics (from the brain) + phone-sale metrics (computed here):
-            // phone customers have no app, so the brain's visitHistory numbers
-            // never include them. Sum = every real visit, no double-counting.
-            scans30d: ((insMetrics.scans30d as number) ?? 0) + phoneVisits30d,
-            redemptions30d: ((insMetrics.redemptions30d as number) ?? 0) + phoneRedemptions30d,
-            uniqueCustomers30d: ((insMetrics.uniqueCustomers30d as number) ?? 0) + uniquePhones30d.size,
+            // Los mismos números que el bloque de Clientes (escaneos + ventas
+            // con número, contados aquí, no por el cerebro): una sola verdad.
+            scans30d: lookback.visits,
+            redemptions30d: lookback.redemptions,
+            uniqueCustomers30d: lookback.withPhone,
             menuItemCount: (insMetrics.menuItemCount as number) ?? 0,
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
+          lookback,
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
           // Veredicto de meta contra el horario REAL (espejo de la app,
@@ -546,16 +418,11 @@ export default function VendorDashboard() {
           pulsePrevHourCount,
           dailyRevenueGoal: typeof r.dailyRevenueGoal === "number" ? r.dailyRevenueGoal : null,
           pedidosCola,
+          pendingOrdersCount,
+          oldestPendingMinutes,
+          readyOrdersCount,
+          avgTicketToday,
           cuentasAbiertas,
-          winbackSent,
-          expiryRemindersSent,
-          expiringRewards,
-          winbackReturned,
-          manualWinbackSent,
-          manualWinbackReturned,
-          winbackPesos,
-          captureRate,
-          topProducts,
           isPro,
           billingStatus,
           billingPlan,
@@ -599,7 +466,6 @@ export default function VendorDashboard() {
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
   const firstName = user?.displayName?.split(" ")[0] ?? "";
   const isLive = data.scansToday > 0;
-  const riskCount = data.atRiskCount ?? 0;
   // Modo primer día (veredicto de Ricardo, 26-ago): a un restaurante que no
   // termina de nacer NO se le enseña el cementerio de ceros ($0, tablas
   // vacías) — solo brújula, venta, guía AI y su QR. Al completar el setup
@@ -721,7 +587,9 @@ export default function VendorDashboard() {
             <SetupBanner reasons={data.setupIncompleteReasons} />
           )}
 
-          {/* Mobile primary CTA — the sale IS the loop (points + premios en la Caja) */}
+          {/* Mobile primary CTA — la venta ES el loop. En teléfono el header
+              solo trae el pill "Cobrar"; este es el "Nueva venta" del header
+              en versión móvil. */}
           <Link href="/vendor/pos"
             className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
             style={{
@@ -740,166 +608,28 @@ export default function VendorDashboard() {
             </div>
           </Link>
 
-          {/* ── Requieren tu atención ── */}
-          {(riskCount > 0 || data.pedidosCola > 0 || data.expiringRewards.length > 0) && (
-            <div className="mb-6">
-              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-                style={{ color: "rgba(28,37,38,0.35)" }}>
-                Requieren tu atención
-              </p>
-              <div className="space-y-2">
-                {data.pedidosCola > 0 && (
-                  <Link href="/vendor/pedidos"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
-                    style={{ background: "#ffffff", border: "1px solid rgba(217,119,87,0.35)" }}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
-                      style={{ background: "rgba(217,119,87,0.1)" }}>
-                      ⏳
-                    </div>
-                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                      {data.pedidosCola} pedido{data.pedidosCola !== 1 ? "s" : ""} en cola esperando
-                    </p>
-                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
-                  </Link>
-                )}
-                {/* Named day-5 nudges: welcome reward about to expire → one
-                    WhatsApp from the owner saves the first-visit hook. */}
-                {data.expiringRewards.slice(0, 2).map((er) => (
-                  <Link key={er.phone} href="/vendor/clientes"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
-                    style={{ background: "#fffbeb", border: "1px solid rgba(255,180,0,0.35)" }}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
-                      style={{ background: "rgba(255,180,0,0.12)" }}>
-                      🎁
-                    </div>
-                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                      {er.name} — su premio de bienvenida vence{" "}
-                      {er.daysLeft <= 0 ? "HOY" : er.daysLeft === 1 ? "mañana" : "en 2 días"} · mándale un WhatsApp
-                    </p>
-                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
-                  </Link>
-                ))}
-                {riskCount > 0 && (
-                  <Link href="/vendor/clientes"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:shadow-md"
-                    style={{ background: "#fff5f5", border: "1px solid rgba(220,38,38,0.25)" }}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
-                      style={{ background: "rgba(220,38,38,0.08)" }}>
-                      ⚠️
-                    </div>
-                    <p className="flex-1 text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                      {data.nbaMetrics.atRiskReachableCount !== null ? (
-                        data.nbaMetrics.atRiskReachableCount > 0 ? (
-                          <>
-                            {data.nbaMetrics.atRiskTotalCount ?? riskCount} clientes sin regresar —{" "}
-                            <b>{data.nbaMetrics.atRiskReachableCount} con WhatsApp para contactar tú</b>; al resto la app ya los trabaja 🤖
-                          </>
-                        ) : (
-                          <>
-                            {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo — la app ya los está trabajando con notificaciones automáticas 🤖
-                          </>
-                        )
-                      ) : (
-                        <>
-                          {riskCount} cliente{riskCount !== 1 ? "s" : ""} en riesgo de no volver — mándale{riskCount !== 1 ? "s" : ""} un mensaje
-                        </>
-                      )}
-                    </p>
-                    <span style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── Resumen de hoy (oculto el primer día: puro cero) ── */}
+          {/* ── 1 · Hoy (oculto el primer día: puro cero) ── */}
           {!firstDay && (
-          <div className="mb-6">
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
-                Resumen de hoy
-              </h2>
-              {/* Pulso en vivo — joya robada de la app: última hora + tendencia */}
-              <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>
-                ⚡ Última hora: {data.pulseLastHourCount} pedido{data.pulseLastHourCount === 1 ? "" : "s"}
-                {data.pulseLastHourCount > 0 ? ` · $${data.pulseLastHourRevenue.toLocaleString("es-MX")}` : ""}
-                {data.pulseLastHourCount > data.pulsePrevHourCount ? " ↑" : data.pulseLastHourCount < data.pulsePrevHourCount ? " ↓" : ""}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              
-              <Link href="/vendor/reportes" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas hoy</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
-                    💵
-                  </div>
-                </div>
-                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-                  ${data.ventasHoy.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ver reportes →</p>
-              </Link>
-
-              <Link href="/vendor/pedidos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Pedidos en cola</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
-                    ⏳
-                  </div>
-                </div>
-                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-                  {data.pedidosCola}
-                </p>
-                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ver cocina →</p>
-              </Link>
-
-              <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Cuentas abiertas</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
-                    📖
-                  </div>
-                </div>
-                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-                  {data.cuentasAbiertas}
-                </p>
-                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Ir a POS →</p>
-              </Link>
-
-              <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas con teléfono</span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
-                    style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
-                    📱
-                  </div>
-                </div>
-                {/* El marcador del dueño (métrica dominante, 8-sep): cuántas ventas
-                    de la semana sabe quién las hizo. Espejo de la app. */}
-                <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-                  {data.weekIdentifiedSales}
-                </p>
-                <p className="mt-1 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
-                  {data.weekPaidSales > 0
-                    ? `esta semana · ${data.weekIdentifiedSales} de ${data.weekPaidSales}${data.weekIdentifiedSales > 0 ? ` · ${Math.round((100 * data.weekIdentifiedSales) / data.weekPaidSales)}%` : ""}`
-                    : "Aún ninguna esta semana · pídelo al cobrar"}
-                </p>
-                <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Cobrar con número →</p>
-              </Link>
-
-            </div>
-          </div>
+            <TodayCard
+              ventasHoy={data.ventasHoy}
+              dailyRevenueGoal={data.dailyRevenueGoal}
+              metaPaceLabel={data.metaPaceLabel}
+              pedidosCola={data.pedidosCola}
+              cuentasAbiertas={data.cuentasAbiertas}
+              avgTicketToday={data.avgTicketToday}
+              pulseLastHourCount={data.pulseLastHourCount}
+              pulseLastHourRevenue={data.pulseLastHourRevenue}
+              pulsePrevHourCount={data.pulsePrevHourCount}
+              pendingOrdersCount={data.pendingOrdersCount}
+              oldestPendingMinutes={data.oldestPendingMinutes}
+              readyOrdersCount={data.readyOrdersCount}
+            />
           )}
 
-          {/* ── Coach Comeleal AI Card ── */}
+          {/* ── 2 · Ventas con teléfono — el marcador (métrica dominante 8-sep) ── */}
+          {!firstDay && <IdentifiedSalesCard data={data} />}
+
+          {/* ── 3 · Tu siguiente movimiento ── */}
           <AICoachPreviewCard
             actionCode={data.nbaActionCode}
             nbaTitle={data.nbaTitle}
@@ -908,415 +638,20 @@ export default function VendorDashboard() {
             weeklyBriefText={data.weeklyBriefText}
           />
 
-          {/* ── Del Top productos a la Actividad: nada de esto existe el
-              primer día — se abre al graduarse del setup ── */}
-          {!firstDay && (<>
-          {/* ── Top productos ── */}
-          <div className="mb-6">
-            <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
-              Top productos
-            </h2>
-            <div className="rounded-2xl p-5" style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-              <p className="mb-3 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>Más vendidos · últimos 30 días</p>
-              {data.topProducts.length === 0 ? (
-                <p className="py-1 text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                  Aún no hay productos vendidos. Cobra desde el POS para ver tus más vendidos aquí.
-                </p>
-              ) : (
-                <div className="flex flex-col divide-y" style={{ borderColor: "rgba(28,37,38,0.06)" }}>
-                  {data.topProducts.map((p, idx) => (
-                    <div key={p.name} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[11px] font-black text-[#F28C38]">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate text-[14px] font-semibold" style={{ color: "#1C2526" }}>{p.name}</span>
-                      </div>
-                      <span className="ml-3 shrink-0 text-[13px] font-bold tabular-nums" style={{ color: "rgba(28,37,38,0.6)" }}>
-                        {p.qty} {p.qty === 1 ? "vendida" : "vendidas"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <Link href="/vendor/reportes" className="mt-3 inline-block text-[11px] font-semibold text-[#F28C38] hover:underline">
-                Ver reporte completo →
-              </Link>
-            </div>
-          </div>
-
-          {/* ── Win-back proof banner ── */}
-          {/* Capture rate — coaches the "¿me das tu número?" habit. */}
-          {data.captureRate !== null && (
-            // Puerta, no póster (Ricardo, 25-ago): el marcador te deja donde
-            // viven los números — la página de Clientes.
-            <div className="mb-6 rounded-2xl p-5 flex flex-wrap items-center gap-x-5 gap-y-2 cursor-pointer transition-shadow hover:shadow-md"
-              role="button" tabIndex={0}
-              onClick={() => router.push("/vendor/clientes")}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/vendor/clientes"); } }}
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.07)",
-                boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-              }}>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
-                style={{ background: "rgba(242,140,56,0.12)" }}>
-                📱
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
-                  Capturas el número en{" "}
-                  <span style={{ color: "#F28C38" }}>{data.captureRate}%</span>{" "}
-                  de tus ventas
-                </p>
-                <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                  {data.captureRate >= 60
-                    ? "Excelente — cada número es un cliente al que puedes traer de vuelta. 💪"
-                    : "Cada número capturado es un cliente recuperable. Pide el teléfono al cobrar: “¿Tu número para tus puntos?”"}
-                </p>
-              </div>
-              <span className="shrink-0 text-[12px] font-bold" style={{ color: "#B45309" }}>
-                Ver clientes ›
-              </span>
-            </div>
+          {/* ── 4 · Clientes · últimos 30 días ── */}
+          {!firstDay && (
+            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} />
           )}
 
-          {(data.winbackSent > 0 || data.expiryRemindersSent > 0) && (
-            // Puerta, no póster: el marcador de recuperación te deja en
-            // Clientes ya filtrado a "en riesgo" — donde vive el botón de
-            // WhatsApp que esta tarjeta promete.
-            <div className="mb-6 rounded-2xl p-5 cursor-pointer transition-shadow hover:shadow-md"
-              role="button" tabIndex={0}
-              onClick={() => router.push("/vendor/clientes?segmento=riesgo")}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/vendor/clientes?segmento=riesgo"); } }}
-              style={{
-                background: data.winbackReturned > 0
-                  ? "linear-gradient(135deg, #0d3321 0%, #14532d 100%)"
-                  : "#ffffff",
-                border: data.winbackReturned > 0
-                  ? "1px solid rgba(34,197,94,0.35)"
-                  : "1px solid rgba(28,37,38,0.07)",
-                boxShadow: data.winbackReturned > 0
-                  ? "0 4px 20px rgba(20,83,45,0.25)"
-                  : "0 1px 4px rgba(28,37,38,0.05)",
-              }}>
-              {data.winbackReturned > 0 ? (
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
-                    style={{ background: "rgba(34,197,94,0.18)" }}>
-                    💸
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[16px] font-extrabold text-white">
-                      Comeleal te trajo de vuelta{" "}
-                      <span style={{ color: "#4ade80" }}>
-                        {data.winbackReturned} cliente{data.winbackReturned !== 1 ? "s" : ""}
-                      </span>
-                      {data.winbackPesos !== null && (
-                        <>
-                          {" "}≈{" "}
-                          <span style={{ color: "#4ade80" }}>
-                            ${data.winbackPesos.toLocaleString("es-MX")} MXN
-                          </span>
-                        </>
-                      )}
-                    </p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: "rgba(255,255,255,0.55)" }}>
-                      De {data.winbackSent} mensaje{data.winbackSent !== 1 ? "s" : ""} de recuperación
-                      {data.manualWinbackSent > 0
-                        ? ` (${data.winbackSent - data.manualWinbackSent} automáticos · ${data.manualWinbackSent} que mandaste tú)`
-                        : ""}
-                      {data.winbackPesos !== null && " · estimado con tu ticket promedio de 30 días"}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[12px] font-bold" style={{ color: "#4ade80" }}>
-                    Ver en riesgo ›
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-                    style={{ background: "rgba(242,140,56,0.08)" }}>
-                    📨
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                      Recuperación en marcha:{" "}
-                      {[
-                        data.winbackSent - data.manualWinbackSent > 0 ? `${data.winbackSent - data.manualWinbackSent} mensaje${data.winbackSent - data.manualWinbackSent !== 1 ? "s" : ""} automático${data.winbackSent - data.manualWinbackSent !== 1 ? "s" : ""}` : null,
-                        data.manualWinbackSent > 0 ? `${data.manualWinbackSent} por tu WhatsApp` : null,
-                        data.expiryRemindersSent > 0 ? `${data.expiryRemindersSent} recordatorio${data.expiryRemindersSent !== 1 ? "s" : ""} de premio` : null,
-                      ].filter(Boolean).join(" · ")}
-                    </p>
-                    <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                      La máquina detecta y escribe; tú solo das el tap. Aquí verás cuántos regresaron — y cuánto dinero representa.
-                    </p>
-                  </div>
-                  <span className="ml-auto shrink-0 text-[12px] font-bold" style={{ color: "#B45309" }}>
-                    Ver en riesgo ›
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* ── 5 · Pregúntale a Comeleal (compacto) ── */}
+          <AskComelealCard setupIncomplete={!data.isSetupComplete} />
 
-          {/* ── Acciones rápidas ── */}
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-            style={{ color: "rgba(28,37,38,0.35)" }}>
-            Acciones rápidas
-          </p>
-          <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Link href="/vendor/pos"
-              className="flex items-center gap-4 rounded-2xl px-5 py-4 transition hover:opacity-90 active:scale-[0.98]"
-              style={{
-                background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
-                boxShadow: "0 4px 16px rgba(242,140,56,0.28)",
-              }}>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[20px] text-white"
-                style={{ background: "rgba(255,255,255,0.2)" }}>
-                💰
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-white">Nueva venta</p>
-                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Cobra y suma puntos en la Caja
-                </p>
-              </div>
-              <span className="ml-auto text-white/40">›</span>
-            </Link>
-            <Link href="/vendor/scanner"
-              className="flex items-center gap-4 rounded-2xl px-5 py-4 transition hover:opacity-90 active:scale-[0.98]"
-              style={{
-                background: "#1C2526",
-                boxShadow: "0 4px 16px rgba(28,37,38,0.18)",
-              }}>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
-                style={{ background: "rgba(242,140,56,0.25)" }}>
-                <IconQr size={18} />
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-white">Escanear cliente</p>
-                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Solo si trae la app — si no, cóbrale con su número
-                </p>
-              </div>
-              <span className="ml-auto text-white/30">›</span>
-            </Link>
-          </div>
-
-          {/* ── 7-day chart ── */}
-          <div className="mb-5 rounded-2xl p-5"
-            style={{
-              background: "#ffffff",
-              border: "1px solid rgba(28,37,38,0.07)",
-              boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-            }}>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                  Clientes Comeleal — últimos 7 días
-                </p>
-                <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-                  {data.weekTotal} visitas con app o número esta semana
-                </p>
-              </div>
-              <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.45)" }}>
-                7d
-              </span>
-            </div>
-            {data.weekTotal > 0 ? (
-              <WeekChart days={data.weeklyScans} />
-            ) : (
-              <div className="flex flex-col items-center py-6 text-center">
-                <span className="text-[26px]">📱</span>
-                <p className="mt-2 text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
-                  Aún sin clientes Comeleal esta semana
-                </p>
-                <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-                  Cada venta con número suma aquí — empieza en la Caja.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ── Loyalty proof (30d lookback) ── */}
-          <OwnerLookbackCard metrics={data.nbaMetrics} />
-
-          {/* ── Recent activity ── */}
-          <div className="mb-5 rounded-2xl p-5"
-            style={{
-              background: "#ffffff",
-              border: "1px solid rgba(28,37,38,0.07)",
-              boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-            }}>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                Actividad reciente
-              </p>
-              <Link href="/vendor/clientes"
-                className="text-[11px] font-semibold"
-                style={{ color: "#F28C38" }}>
-                Ver todos →
-              </Link>
-            </div>
-            {data.recentScans.length > 0 ? (
-              <div className="grid grid-cols-1 gap-0.5 md:grid-cols-2">
-                {data.recentScans.map((scan, i) => (
-                  <div key={scan.id}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                    style={{ background: i === 0 ? "rgba(242,140,56,0.06)" : "transparent" }}>
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                      style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}>
-                      {(scan.customerName[0] ?? "C").toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                        {scan.customerName}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
-                      style={{ background: "rgba(242,140,56,0.1)", color: "#E07830" }}>
-                      +{scan.pointsAwarded}pt
-                    </span>
-                    <span className="w-7 shrink-0 text-right text-[11px]"
-                      style={{ color: "rgba(28,37,38,0.22)" }}>
-                      {timeAgo(scan.timestamp)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center py-8 text-center">
-                <span className="text-[28px]">👋</span>
-                <p className="mt-2 text-[13px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                  Sin visitas aún — cobra con el número de tu cliente en la Caja.
-                </p>
-              </div>
-            )}
-          </div>
-          </>)}
-
-          {/* ── QR Card ── */}
-          <div id="compartir-qr">
-            <QrCard restaurantId={data.restaurantId} restaurantName={data.restaurantName} />
-          </div>
-
-          {/* ── Atajos — mobile only (sidebar handles desktop nav) ── */}
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.1em] md:hidden"
-            style={{ color: "rgba(28,37,38,0.35)" }}>
-            Atajos
-          </p>
-          <div className="grid grid-cols-3 gap-3 md:hidden">
-            {/* Orden phone-first (Ricardo, 26-ago): el escáner es "solo si
-                trae la app" — no encabeza el grid. */}
-            <Atajo href="/vendor/clientes" emoji="👥" label="Clientes" />
-            <Atajo href="/vendor/reportes" emoji="📊" label="Reportes" />
-            <Atajo href="/vendor?ai=1" emoji="🧠" label="Comeleal AI" />
-            <Atajo href="/vendor/scanner" emoji="⭐" label="Puntos" />
-            <Atajo href={`/menu/${data.restaurantId}`} emoji="👀" label="Mi menú" external />
-            <Atajo href="/vendor/configuracion" emoji="⚙️" label="Config" />
-            <Atajo
-              href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-              emoji="📱"
-              label="App"
-              external
-            />
-          </div>
+          {/* ── 6 · Herramientas — lo de vez en cuando ── */}
+          <ToolsGrid restaurantId={data.restaurantId} />
         </main>
     </>
   );
 }
-
-// ─── QR Card ──────────────────────────────────────────────────────────────────
-
-function QrCard({ restaurantId, restaurantName }: { restaurantId: string; restaurantName: string }) {
-  // Entrada al modal ÚNICO de compartir (MenuShareModal — tarjeta de marca,
-  // QR local, link bonito, imprimir). Antes: acordeón con QR de un servicio
-  // externo (api.qrserver.com), link de ID feo y un segundo botón "Compartir
-  // menú" duplicando el de la sidebar. En móvil esta fila es LA entrada
-  // (la sidebar está oculta).
-  const [shareOpen, setShareOpen] = useState(false);
-  void restaurantName; // el modal lee nombre/logo/slug frescos del doc
-
-  return (
-    <div className="mb-5 rounded-2xl"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-      }}>
-      <button
-        onClick={() => setShareOpen(true)}
-        className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-[#faf9f5] rounded-2xl"
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
-          style={{ background: "rgba(217,119,87,0.1)" }}>
-          📲
-        </div>
-        <div className="flex-1 text-left">
-          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Tu QR de menú</p>
-          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
-            Compártelo o imprímelo — tus clientes escanean y ordenan
-          </p>
-        </div>
-        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
-      </button>
-
-      {/* Ver el menú como lo ve el cliente. Antes solo se llegaba desde
-          Configuración — el dueño no tenia forma de abrir su propia pagina
-          publica desde el panel. */}
-      <a
-        href={`/menu/${restaurantId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex w-full items-center gap-3 border-t px-5 py-3 transition-colors hover:bg-[#faf9f5]"
-        style={{ borderColor: "rgba(28,37,38,0.07)" }}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
-          style={{ background: "rgba(28,37,38,0.05)" }}>
-          👀
-        </div>
-        <div className="flex-1 text-left">
-          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Ver mi menú</p>
-          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
-            Ábrelo como lo ve tu cliente al escanear
-          </p>
-        </div>
-        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>↗</span>
-      </a>
-
-      {/* Pagina publica /r/ — la que sale en Google. Acepta el ID y redirige
-          sola al slug bonito en cuanto el restaurante tiene uno. */}
-      <a
-        href={`/r/${restaurantId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex w-full items-center gap-3 border-t px-5 py-3 transition-colors hover:bg-[#faf9f5] rounded-b-2xl"
-        style={{ borderColor: "rgba(28,37,38,0.07)" }}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[17px]"
-          style={{ background: "rgba(28,37,38,0.05)" }}>
-          🌎
-        </div>
-        <div className="flex-1 text-left">
-          <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>Ver mi página</p>
-          <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
-            La que encuentran en Google
-          </p>
-        </div>
-        <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>↗</span>
-      </a>
-
-      <MenuShareModal
-        restaurantId={restaurantId}
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-      />
-    </div>
-  );
-}
-
 
 // ─── Setup Banner ─────────────────────────────────────────────────────────────
 
@@ -1407,120 +742,6 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
       </div>
     </div>
   );
-}
-
-// ─── WeekChart ────────────────────────────────────────────────────────────────
-
-function WeekChart({ days }: { days: WeekDay[] }) {
-  const maxCount = Math.max(...days.map((d) => d.count), 1);
-  const barH = 72;
-
-  return (
-    <div className="flex items-end justify-between gap-1.5" style={{ height: barH + 28 }}>
-      {days.map((day, i) => {
-        const barPx = Math.max(day.count > 0 ? Math.round((day.count / maxCount) * barH) : 4, day.count > 0 ? 12 : 4);
-        return (
-          <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-            {day.count > 0 && (
-              <span className="text-[10px] font-bold tabular-nums"
-                style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
-                {day.count}
-              </span>
-            )}
-            {day.count === 0 && <span className="text-[10px]" style={{ color: "transparent" }}>0</span>}
-            <div
-              className="w-full rounded-lg transition-all"
-              style={{
-                height: barPx,
-                background: day.isToday
-                  ? "linear-gradient(180deg, #FF9A45 0%, #F28C38 100%)"
-                  : day.count > 0
-                  ? "rgba(242,140,56,0.35)"
-                  : "rgba(28,37,38,0.07)",
-                marginTop: "auto",
-              }}
-            />
-            <span className="text-[10px] font-medium"
-              style={{ color: day.isToday ? "#F28C38" : "rgba(28,37,38,0.4)" }}>
-              {day.label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label, value, icon, accent = false, danger = false,
-}: {
-  label: string; value: number; icon: React.ReactNode; accent?: boolean; danger?: boolean;
-}) {
-  const dangerActive = danger && value > 0;
-  return (
-    <div className="rounded-2xl p-4"
-      style={{
-        background: "#ffffff",
-        border: `1px solid ${dangerActive ? "rgba(239,68,68,0.15)" : "rgba(28,37,38,0.07)"}`,
-        boxShadow: "0 1px 4px rgba(28,37,38,0.04)",
-      }}>
-      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl"
-        style={{
-          background: dangerActive ? "rgba(239,68,68,0.08)" : "rgba(242,140,56,0.09)",
-          color: dangerActive ? "#EF4444" : "#F28C38",
-        }}>
-        {icon}
-      </div>
-      <p className="font-mono text-[28px] font-bold leading-none tabular-nums md:text-[32px]"
-        style={{ color: dangerActive ? "#EF4444" : "#1C2526" }}>
-        {value}
-      </p>
-      <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.38)" }}>
-        {label}
-        {accent && value > 0 && (
-          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full align-middle px-1.5 py-0.5 text-[9px] font-bold text-green-700"
-            style={{ background: "#D1FAE5" }}>
-            <span className="inline-block h-1 w-1 rounded-full bg-green-500" />
-            hoy
-          </span>
-        )}
-      </p>
-    </div>
-  );
-}
-
-// ─── Atajo shortcut ───────────────────────────────────────────────────────────
-
-function Atajo({
-  href, emoji, label, external = false,
-}: {
-  href: string; emoji: string; label: string; external?: boolean;
-}) {
-  const inner = (
-    <div className="flex flex-col items-center gap-2 rounded-2xl px-2 py-4 transition hover:bg-[#EDEBE7] active:scale-[0.96]"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.04)",
-      }}>
-      <span className="text-[22px]">{emoji}</span>
-      <span className="text-[11px] font-semibold" style={{ color: "#1C2526" }}>
-        {label}
-      </span>
-    </div>
-  );
-
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        {inner}
-      </a>
-    );
-  }
-  return <Link href={href}>{inner}</Link>;
 }
 
 // ─── NextBestActionCard ───────────────────────────────────────────────────────
@@ -1786,48 +1007,338 @@ function AICoachPreviewCard({
   );
 }
 
-function OwnerLookbackCard({ metrics }: { metrics: NbaMetrics }) {
+// ─── Bloques del panel (9-sep-2026) ───────────────────────────────────────────
+
+const CARD_STYLE: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid rgba(28,37,38,0.07)",
+  boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
+};
+
+function SectionKicker({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-5 rounded-2xl p-5"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-      }}>
-      <p className="mb-4 text-[13px] font-bold" style={{ color: "rgba(28,37,38,0.8)" }}>
-        Lealtad — últimos 30 días
-      </p>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[
-          { label: "Clientes únicos", value: metrics.uniqueCustomers30d },
-          { label: "Visitas Comeleal", value: metrics.scans30d },
-          { label: "Canjes", value: metrics.redemptions30d },
-          { label: "Clientes en riesgo", value: metrics.atRiskCount },
-        ].map(({ label, value }) => (
-          <div key={label}>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
-            <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 flex gap-3">
-        <Link href="/vendor/recompensas"
-          className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-85"
-          style={{ borderColor: "rgba(217,119,87,0.35)", color: "#F28C38" }}>
-          Ver programa
-        </Link>
-        <Link href="/vendor/pos"
-          className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-[#1C2526] transition hover:opacity-90"
-          style={{ background: "#F28C38" }}>
-          Cobrar con número
-        </Link>
-      </div>
-    </div>
+    <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
+      {children}
+    </h2>
   );
 }
 
+/** 1 · Hoy — $ del día, meta, pedidos en cola, cuentas abiertas, ticket, y
+ *  UNA línea de alerta de pedidos esperando (→ Pedidos). Espejo de
+ *  TodayOverviewCard (app). */
+function TodayCard({
+  ventasHoy, dailyRevenueGoal, metaPaceLabel, pedidosCola, cuentasAbiertas, avgTicketToday,
+  pulseLastHourCount, pulseLastHourRevenue, pulsePrevHourCount,
+  pendingOrdersCount, oldestPendingMinutes, readyOrdersCount,
+}: {
+  ventasHoy: number;
+  dailyRevenueGoal: number | null;
+  metaPaceLabel: string | null;
+  pedidosCola: number;
+  cuentasAbiertas: number;
+  avgTicketToday: number | null;
+  pulseLastHourCount: number;
+  pulseLastHourRevenue: number;
+  pulsePrevHourCount: number;
+  pendingOrdersCount: number;
+  oldestPendingMinutes: number;
+  readyOrdersCount: number;
+}) {
+  const money = (n: number) =>
+    `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const metaPct = dailyRevenueGoal ? Math.round((ventasHoy / dailyRevenueGoal) * 100) : null;
 
+  // La alerta: pedidos esperando (o listos sin entregar cuando no hay
+  // pendientes). Rojo cuando el más viejo pasa de 20 min.
+  const alert = pendingOrdersCount > 0
+    ? {
+        text: `${pendingOrdersCount} pedido${pendingOrdersCount !== 1 ? "s" : ""} esperando · el más viejo ${formatOrderAge(oldestPendingMinutes)}`,
+        severe: oldestPendingMinutes > 20,
+      }
+    : readyOrdersCount > 0
+    ? { text: `${readyOrdersCount} listo${readyOrdersCount !== 1 ? "s" : ""} sin entregar`, severe: false }
+    : null;
 
+  return (
+    <section className="mb-6">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <SectionKicker>Hoy</SectionKicker>
+        {/* Pulso en vivo — joya robada de la app: última hora + tendencia */}
+        <p className="mb-3 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>
+          ⚡ Última hora: {pulseLastHourCount} pedido{pulseLastHourCount === 1 ? "" : "s"}
+          {pulseLastHourCount > 0 ? ` · $${pulseLastHourRevenue.toLocaleString("es-MX")}` : ""}
+          {pulseLastHourCount > pulsePrevHourCount ? " ↑" : pulseLastHourCount < pulsePrevHourCount ? " ↓" : ""}
+        </p>
+      </div>
+      <div className="rounded-2xl p-5" style={CARD_STYLE}>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <p className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas hoy</p>
+            <p className="mt-1 text-[30px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
+              {money(ventasHoy)}
+            </p>
+            {dailyRevenueGoal ? (
+              <p className="mt-2 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+                Meta: ${dailyRevenueGoal.toLocaleString("es-MX")} · <span style={{ color: "#1C2526" }}>{metaPct}%</span>
+                {metaPaceLabel ? (
+                  <>
+                    {" · "}
+                    <span style={{ color: metaPaceLabel === "Atrasado" ? "#DC2626" : metaPaceLabel === "En camino" ? "rgba(28,37,38,0.45)" : "#16A34A" }}>
+                      {metaPaceLabel}
+                    </span>
+                  </>
+                ) : null}
+              </p>
+            ) : (
+              <Link href="/vendor/reportes" className="mt-2 inline-block text-[11px] font-semibold text-[#F28C38] hover:underline">
+                Ver reportes →
+              </Link>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-x-5 gap-y-1">
+            <Link href="/vendor/pedidos" className="group">
+              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Pedidos en cola</p>
+              <p className="mt-1 text-[16px] font-bold tabular-nums group-hover:underline" style={{ color: "#1C2526" }}>{pedidosCola}</p>
+            </Link>
+            <Link href="/vendor/pos" className="group">
+              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Cuentas abiertas</p>
+              <p className="mt-1 text-[16px] font-bold tabular-nums group-hover:underline" style={{ color: "#1C2526" }}>{cuentasAbiertas}</p>
+            </Link>
+            <div>
+              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Ticket promedio</p>
+              <p className="mt-1 text-[16px] font-bold tabular-nums" style={{ color: "#1C2526" }}>
+                {avgTicketToday !== null ? money(avgTicketToday) : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {alert && (
+          <Link href="/vendor/pedidos"
+            className="mt-4 flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition hover:opacity-90"
+            style={{
+              background: alert.severe ? "rgba(220,38,38,0.08)" : "rgba(242,140,56,0.10)",
+              color: "#1C2526",
+            }}>
+            <span className="text-[15px]">⏳</span>
+            <span className="min-w-0 flex-1 text-[12.5px] font-semibold">{alert.text}</span>
+            <span className="shrink-0 text-[12.5px] font-bold" style={{ color: alert.severe ? "#B91C1C" : "#E07830" }}>
+              Ver →
+            </span>
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** 2 · Ventas con teléfono — el marcador (métrica dominante 8-sep): cuántas
+ *  ventas de la semana de negocio sabe quién las hizo. Espejo de
+ *  IdentifiedSalesCard (app). Candado: validate-identified-sales-card. */
+function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSales" | "weekIdentifiedSales"> }) {
+  const pct = data.weekPaidSales > 0 && data.weekIdentifiedSales > 0
+    ? Math.round((100 * data.weekIdentifiedSales) / data.weekPaidSales)
+    : null;
+  return (
+    <section className="mb-6">
+      <Link href="/vendor/pos"
+        className="group flex items-center gap-4 rounded-2xl p-5 transition-all hover:shadow-md"
+        style={{ ...CARD_STYLE, border: "1px solid rgba(242,140,56,0.35)" }}>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[22px]"
+          style={{ background: "rgba(242,140,56,0.12)" }}>
+          🎯
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.6)" }}>Ventas con teléfono</span>
+          <div className="mt-0.5 flex items-end gap-2">
+            <p className="text-[30px] font-extrabold leading-none tracking-tight tabular-nums"
+              style={{ color: data.weekIdentifiedSales > 0 ? "#F28C38" : "#1C2526" }}>
+              {data.weekIdentifiedSales}
+            </p>
+            {pct !== null && (
+              <span className="mb-0.5 rounded-lg px-2 py-0.5 text-[11px] font-bold"
+                style={{ background: "rgba(242,140,56,0.12)", color: "#E07830" }}>
+                {pct}%
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+            {data.weekPaidSales > 0
+              ? `esta semana · ${data.weekIdentifiedSales} de ${data.weekPaidSales}`
+              : "Aún ninguna esta semana · pídelo al cobrar"}
+          </p>
+        </div>
+        <span className="shrink-0 text-[12px] font-bold text-[#F28C38] group-hover:underline">Cobrar con número →</span>
+      </Link>
+    </section>
+  );
+}
+
+/** 4 · Clientes · últimos 30 días — espejo de OwnerLookbackCard (app):
+ *  Con teléfono · Volvieron · % que volvió · Premios canjeados. Sin escáner
+ *  ni promesa de puntos: "Cada venta con número suma aquí." */
+function OwnerLookbackCard({ stats, atRiskCount }: { stats: LookbackStats; atRiskCount: number }) {
+  const lowSample = stats.withPhone < 5;
+  return (
+    <section className="mb-6">
+      <SectionKicker>Clientes · últimos 30 días</SectionKicker>
+      <div className="rounded-2xl p-5" style={CARD_STYLE}>
+        {lowSample && (
+          <p className="mb-4 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+            Cada venta con número suma aquí.
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[
+            { label: "Con teléfono", value: `${stats.withPhone}` },
+            { label: "Volvieron", value: `${stats.returned}` },
+            { label: "% que volvió", value: stats.withPhone > 0 ? `${Math.round(stats.returnRatePercent)}%` : "—" },
+            { label: "Premios canjeados", value: `${stats.redemptions}` },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
+              <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
+            </div>
+          ))}
+        </div>
+        {/* En riesgo: solo cuando el consejo trae el dato (send_winback lo cubre). */}
+        {atRiskCount > 0 && (
+          <Link href="/vendor/clientes?segmento=riesgo"
+            className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-bold transition hover:opacity-90"
+            style={{ background: "rgba(242,140,56,0.06)", border: "1px solid rgba(242,140,56,0.12)", color: "#E07830" }}>
+            ⚠️ {atRiskCount} cliente{atRiskCount !== 1 ? "s" : ""} sin regresar en 14 días
+            <span className="ml-auto">›</span>
+          </Link>
+        )}
+        <div className="mt-4 flex gap-3">
+          <Link href="/vendor/clientes"
+            className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-[#1C2526] transition hover:opacity-90"
+            style={{ background: "#F28C38" }}>
+            Ver clientes
+          </Link>
+          <Link href="/vendor/recompensas"
+            className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-85"
+            style={{ borderColor: "rgba(217,119,87,0.35)", color: "#F28C38" }}>
+            Recompensas
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** 5 · Pregúntale a Comeleal — compacto: campo + 2 preguntas. No es un chat
+ *  nuevo: manda la pregunta a Comeleal AI (FloatingAI) por `?q=`, que ya
+ *  la responde con datos reales. */
+function AskComelealCard({ setupIncomplete }: { setupIncomplete: boolean }) {
+  const router = useRouter();
+  const [question, setQuestion] = useState("");
+  // Día cero: "mejores clientes" a un local sin ventas garantiza un "no
+  // tienes datos" (Ricardo, 26-ago) — se sugiere lo que la IA sí clava hoy.
+  const chips = setupIncomplete
+    ? ["¿Qué debo hacer esta semana?", "¿Cómo me llegan los pedidos?"]
+    : ["¿Qué debo hacer esta semana?", "¿Cuáles son mis mejores clientes?"];
+
+  const ask = (q: string) => {
+    const clean = q.trim();
+    if (!clean) return;
+    router.push(`${window.location.pathname}?q=${encodeURIComponent(clean)}`);
+  };
+
+  return (
+    <section className="mb-6">
+      <div className="rounded-2xl p-5" style={CARD_STYLE}>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[18px]">💬</span>
+          <div>
+            <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>Pregúntale a Comeleal</p>
+            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>Responde con datos reales de tu negocio</p>
+          </div>
+        </div>
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(e) => { e.preventDefault(); ask(question); }}>
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Escribe tu pregunta…"
+            aria-label="Pregúntale a Comeleal"
+            className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#F28C38]/40"
+            style={{ background: "#F5F3EF", color: "#1C2526", border: "1px solid rgba(28,37,38,0.08)" }}
+          />
+          <button type="submit"
+            className="shrink-0 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
+            style={{ background: "#F28C38" }}>
+            Preguntar
+          </button>
+        </form>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {chips.map((c) => (
+            <button key={c} type="button" onClick={() => ask(c)}
+              className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition hover:bg-[#F5F3EF]"
+              style={{ border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** 6 · Herramientas — 2×2 (4 en fila en escritorio): Menú · Reportes ·
+ *  Equipo · Tu QR. Debajo, en chico, "Ver mi menú" y "Ver mi página". */
+function ToolsGrid({ restaurantId }: { restaurantId: string }) {
+  // Tu QR abre el modal ÚNICO de compartir (MenuShareModal — tarjeta de
+  // marca, QR local, link bonito, imprimir). `#compartir-qr` es el destino
+  // de los consejos share_with_customers / healthy / keep_going.
+  const [shareOpen, setShareOpen] = useState(false);
+  const tileClass = "flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-5 text-center transition hover:bg-[#faf9f5] hover:shadow-md active:scale-[0.97]";
+  const tiles: { emoji: string; label: string; href?: string; onClick?: () => void }[] = [
+    { emoji: "🍽️", label: "Menú", href: "/vendor/menu" },
+    { emoji: "📊", label: "Reportes", href: "/vendor/reportes" },
+    { emoji: "👥", label: "Equipo", href: "/vendor/configuracion#equipo" },
+    { emoji: "📲", label: "Tu QR", onClick: () => setShareOpen(true) },
+  ];
+
+  return (
+    <section className="mb-6" id="compartir-qr">
+      <SectionKicker>Herramientas</SectionKicker>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {tiles.map((t) => {
+          const inner = (
+            <>
+              <span className="text-[24px]">{t.emoji}</span>
+              <span className="text-[12px] font-semibold" style={{ color: "#1C2526" }}>{t.label}</span>
+            </>
+          );
+          return t.href ? (
+            <Link key={t.label} href={t.href} className={tileClass} style={CARD_STYLE}>{inner}</Link>
+          ) : (
+            <button key={t.label} type="button" onClick={t.onClick} className={tileClass} style={CARD_STYLE}>{inner}</button>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 px-1">
+        {/* Ver el menú como lo ve el cliente, y la página pública /r/ (la
+            que sale en Google; acepta el ID y redirige sola al slug). */}
+        <a href={`/menu/${restaurantId}`} target="_blank" rel="noopener noreferrer"
+          className="text-[12px] font-semibold text-[#F28C38] hover:underline">
+          Ver mi menú ↗
+        </a>
+        <a href={`/r/${restaurantId}`} target="_blank" rel="noopener noreferrer"
+          className="text-[12px] font-semibold text-[#F28C38] hover:underline">
+          Ver mi página ↗
+        </a>
+      </div>
+      <MenuShareModal
+        restaurantId={restaurantId}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
+    </section>
+  );
+}
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 // (AtRiskCustomersCard removed — lives in /vendor/clientes AI CRM)
@@ -1839,25 +1350,4 @@ function Spinner() {
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
   );
-}
-
-function IconQr({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M3 11V3h8v8H3zm2-6v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm10 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2-4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-2h2v2h-2v-2zm2-2h2v2h-2v-2z" />
-    </svg>
-  );
-}
-
-function IconScan() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><line x1="7" y1="12" x2="17" y2="12" /></svg>;
-}
-function IconWaveform() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
-}
-function IconTrendUp() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
-}
-function IconAlert() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
 }
