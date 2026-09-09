@@ -1565,6 +1565,8 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "grow_phone_capture": return "Pide el número en cada venta";
     case "set_map_pin": return "Ponte en el mapa";
     case "check_ai_draft": return "Tus premios ya están armados";
+    case "trial_ending_soon": return "Tu prueba de Pro está por terminar";
+    case "trial_ended": return "Tu prueba de Pro terminó";
     default: return "Siguiente mejor acción";
   }
 }
@@ -1620,6 +1622,8 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "configure_rewards":
     case "review_rewards": return "Configurar recompensas";
     case "get_first_scan": return "Cobrar con número";
+    case "trial_ending_soon": return "Seguir con Pro";
+    case "trial_ended": return "Volver a Pro";
     case "healthy":
     case "keep_going": return "Compartir mi menú";
     default: return "Ver recompensas";
@@ -1646,6 +1650,8 @@ function getNbaCtaHref(actionCode: string): string {
     case "healthy":
     case "keep_going": return "#compartir-qr";
     case "send_winback": return "/vendor/clientes";
+    case "trial_ending_soon":
+    case "trial_ended": return "/vendor/plan";
     default: return "/vendor/recompensas";
   }
 }

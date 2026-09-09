@@ -141,6 +141,10 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
 // ── 5. El reloj en el panel, leyendo private/billing ──
 {
   const panel = read("../app/vendor/page.tsx");
+  // El cerebro emite trial_ending_soon / trial_ended (functions/restaurant_brain.js): el botón del NBA va a planes, no a recompensas.
+  check("NBA trial_ending_soon → 'Seguir con Pro'", /case "trial_ending_soon": return "Seguir con Pro";/.test(panel), true);
+  check("NBA trial_ended → 'Volver a Pro'", /case "trial_ended": return "Volver a Pro";/.test(panel), true);
+  check("NBA trial_* → /vendor/plan", /case "trial_ending_soon":\n\s*case "trial_ended": return "\/vendor\/plan";/.test(panel), true);
   check("panel: renderiza <TrialClock", panel.includes("<TrialClock"), true);
   check("panel: lee private/billing (fetchWithBilling)", panel.includes("fetchWithBilling("), true);
   check("panel: status del reloj sale del doc fundido", panel.includes("rTruth.subscriptionAccessStatus"), true);
