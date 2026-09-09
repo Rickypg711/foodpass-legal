@@ -5,9 +5,10 @@
  *
  * Antes la prueba de 14 días sin tarjeta se arrancaba en UN solo lugar: el
  * botón de /vendor/plan (handleStartTrial). Desde el 8-sep la pared de la Caja
- * la arranca sola cuando el restaurante todavía puede (plan §4.6): el dueño
- * pide ver su historial, agregar un PIN o abrir una mesa, y en vez de mandarlo
- * a otra página, la puerta se abre ahí mismo.
+ * también la ofrece cuando el restaurante todavía puede: el dueño pide ver su
+ * historial, agregar un PIN o abrir una mesa, y en vez de mandarlo a otra
+ * página, la puerta se abre ahí mismo. Desde el 9-sep con UN toque del dueño
+ * ("Empezar mis 14 días gratis"): la pared jamás llama a `start()` sola.
  *
  * Mismas reglas que /vendor/plan: el otorgamiento es 100% del servidor
  * (callable startProTrial, FOODPASS/functions/subscription_trial.js) — el
