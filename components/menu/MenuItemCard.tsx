@@ -24,6 +24,8 @@ export type MenuItemCardProps = {
    * antes de tocar nada — "🌶️ Elige tu salsa" / "Se arma a tu gusto". La
    * calcula el caller desde los optionGroups del platillo. */
   optionsHint?: string | null;
+  /** Tocar el texto o la foto abre la hoja de detalle (9-sep, paridad app). */
+  onOpen?: () => void;
 };
 
 function AddButton({ name, onAdd }: { name: string; onAdd: () => void }) {
@@ -86,6 +88,7 @@ export function MenuItemCard({
   onDecrement,
   orderingEnabled = true,
   optionsHint = null,
+  onOpen,
 }: MenuItemCardProps) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <QuantityStepper
@@ -101,8 +104,13 @@ export function MenuItemCard({
   return (
     <li className="rounded-2xl border border-[#1C2526]/[0.06] bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:p-3.5">
       <div className="flex items-stretch gap-3">
-        {/* Text block */}
-        <div className="flex min-w-0 flex-1 flex-col py-0.5">
+        {/* Text block — tocar abre el detalle (foto grande + descripción). */}
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Ver ${name}`}
+          className="flex min-w-0 flex-1 cursor-pointer flex-col py-0.5 text-left"
+        >
           <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#1C2526] sm:text-base">
             {name}
           </p>
@@ -119,19 +127,26 @@ export function MenuItemCard({
           <p className="mt-auto pt-2 text-[15px] font-bold tabular-nums text-[#1C2526]">
             {formatPrice(price)}
           </p>
-        </div>
+        </button>
 
         {/* Image block with the add control anchored to its corner */}
         {imageUrl ? (
           <div className="relative h-[104px] w-[104px] shrink-0 sm:h-28 sm:w-28">
-            <Image
-              src={imageUrl}
-              alt=""
-              width={112}
-              height={112}
-              unoptimized
-              className="h-full w-full rounded-xl object-cover"
-            />
+            <button
+              type="button"
+              onClick={onOpen}
+              aria-label={`Ver foto de ${name}`}
+              className="block h-full w-full cursor-zoom-in"
+            >
+              <Image
+                src={imageUrl}
+                alt=""
+                width={112}
+                height={112}
+                unoptimized
+                className="h-full w-full rounded-xl object-cover"
+              />
+            </button>
             {control ? (
               <div className="absolute -bottom-1.5 -right-1.5">{control}</div>
             ) : null}

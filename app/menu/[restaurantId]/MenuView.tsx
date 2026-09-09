@@ -27,7 +27,8 @@ import { warmUpsellSuggestion } from "@/lib/upsellSuggestionCache";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
-import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
+import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
 import {
   isPositivelyClosedNow,
   scheduleStatus,
@@ -303,6 +304,24 @@ function MenuStatusMessage({
   );
 }
 
+/** La portada del local en /menu (9-sep): la app y /r ya la pintaban; el
+ *  QR abre /menu y ahí no salía. Solo cuando el doc trae coverImageUrl. */
+function MenuCoverBanner({ url, name }: { url: string; name: string }) {
+  return (
+    <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
+      <Image
+        src={url}
+        alt={`Portada de ${name}`}
+        width={1600}
+        height={900}
+        unoptimized
+        priority
+        className="h-40 w-full object-cover sm:h-56"
+      />
+    </div>
+  );
+}
+
 function MenuCategoryList({
   groups,
   orderingEnabled,
@@ -310,6 +329,7 @@ function MenuCategoryList({
   getItemQuantity,
   onIncrementItem,
   onDecrementItem,
+  onOpenItem,
 }: {
   groups: { category: string; items: MenuRow[] }[];
   orderingEnabled: boolean;
@@ -317,6 +337,8 @@ function MenuCategoryList({
   getItemQuantity?: (itemId: string) => number;
   onIncrementItem?: (item: MenuRow) => void;
   onDecrementItem?: (item: MenuRow) => void;
+  /** Tocar la tarjeta/foto → hoja de detalle (9-sep, paridad app). */
+  onOpenItem?: (item: MenuRow) => void;
 }) {
   return (
     <div className="space-y-8">
@@ -344,6 +366,7 @@ function MenuCategoryList({
                 onAdd={() => onAddItem(item)}
                 onIncrement={() => onIncrementItem?.(item)}
                 onDecrement={() => onDecrementItem?.(item)}
+                onOpen={() => onOpenItem?.(item)}
               />
             ))}
           </ul>
@@ -452,6 +475,12 @@ function PublicMenuPageWithOrdering({
   const [logoUrl, setLogoUrl] = useState<string | null>(
     initial ? getRestaurantImageUrl(initial.raw) : null,
   );
+  /** Portada (coverImageUrl) — la misma que la app y /r (9-sep). */
+  const [bannerUrl, setBannerUrl] = useState<string | null>(
+    initial ? getRestaurantBannerUrl(initial.raw) : null,
+  );
+  /** Platillo abierto en la hoja de detalle (tocar tarjeta/foto). */
+  const [detailItem, setDetailItem] = useState<MenuRow | null>(null);
   /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
   const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
   const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
@@ -534,6 +563,7 @@ function PublicMenuPageWithOrdering({
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setBannerUrl(getRestaurantBannerUrl(rData));
         setBrand(brandThemeFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
@@ -589,6 +619,28 @@ function PublicMenuPageWithOrdering({
 
   const showMpUnavailableDock =
     webOrderingReady && !webOrderingAvailable && !loading && !error;
+
+  /** El "+" de la tarjeta y el "Agregar" de la hoja de detalle: con opciones
+   *  abre la hoja de opciones; sin opciones agrega directo. */
+  const handleAddItem = (item: MenuRow) => {
+    const groups = resolveOptionGroups(item);
+    if (groups.length > 0) {
+      setPendingItem({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        imageUrl: item.imageUrl,
+        groups,
+      });
+      return;
+    }
+    addItem({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      imageUrl: item.imageUrl,
+    });
+  };
 
   const categoryGroups = groupMenuByCategory(items);
   // Cerrado (positivo) = el menú se VE, pero no se puede ordenar.
@@ -649,6 +701,7 @@ function PublicMenuPageWithOrdering({
           (webOrderingReady ? "pb-[220px] sm:pb-[200px]" : "pb-28")
         }
       >
+        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} /> : null}
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
 
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
@@ -679,25 +732,8 @@ function PublicMenuPageWithOrdering({
             groups={categoryGroups}
             orderingEnabled={orderingEnabled}
             getItemQuantity={(itemId) => quantityByItemId.get(itemId) ?? 0}
-            onAddItem={(item) => {
-              const groups = resolveOptionGroups(item);
-              if (groups.length > 0) {
-                setPendingItem({
-                  id: item.id,
-                  name: item.name,
-                  price: item.price,
-                  imageUrl: item.imageUrl,
-                  groups,
-                });
-                return;
-              }
-              addItem({
-                menuItemId: item.id,
-                name: item.name,
-                price: item.price,
-                imageUrl: item.imageUrl,
-              });
-            }}
+            onOpenItem={(item) => setDetailItem(item)}
+            onAddItem={handleAddItem}
             onIncrementItem={(item) => {
               // Con opciones, "+" vuelve a preguntar: cada unidad puede
               // llevar salsa distinta. Sin opciones, sube la línea de siempre.
@@ -729,6 +765,23 @@ function PublicMenuPageWithOrdering({
           />
         ) : null}
       </main>
+
+      <MenuItemDetailSheet
+        open={detailItem !== null}
+        name={detailItem?.name ?? ""}
+        description={detailItem?.description ?? null}
+        price={detailItem?.price ?? 0}
+        imageUrl={detailItem?.imageUrl ?? null}
+        optionsHint={detailItem ? optionsHintFor(detailItem) : null}
+        orderingEnabled={orderingEnabled}
+        onClose={() => setDetailItem(null)}
+        onAdd={() => {
+          if (!detailItem) return;
+          const it = detailItem;
+          setDetailItem(null);
+          handleAddItem(it);
+        }}
+      />
 
       <ItemOptionsSheet
           open={pendingItem !== null}
@@ -805,6 +858,12 @@ function PublicMenuPageBrowseOnly({
   const [logoUrl, setLogoUrl] = useState<string | null>(
     initial ? getRestaurantImageUrl(initial.raw) : null,
   );
+  /** Portada (coverImageUrl) — la misma que la app y /r (9-sep). */
+  const [bannerUrl, setBannerUrl] = useState<string | null>(
+    initial ? getRestaurantBannerUrl(initial.raw) : null,
+  );
+  /** Platillo abierto en la hoja de detalle (tocar tarjeta/foto). */
+  const [detailItem, setDetailItem] = useState<MenuRow | null>(null);
   /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
   const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
   const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
@@ -876,6 +935,7 @@ function PublicMenuPageBrowseOnly({
           typeof rData.name === "string" && rData.name.trim() ? rData.name : "Restaurante";
         setRestaurantName(resolvedName);
         setLogoUrl(getRestaurantImageUrl(rData));
+        setBannerUrl(getRestaurantBannerUrl(rData));
         setBrand(brandThemeFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
@@ -945,6 +1005,7 @@ function PublicMenuPageBrowseOnly({
       />
 
       <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
+        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} /> : null}
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
         {!loading && !error && items.length === 0 && (
@@ -955,6 +1016,7 @@ function PublicMenuPageBrowseOnly({
             groups={categoryGroups}
             orderingEnabled={false}
             onAddItem={() => {}}
+            onOpenItem={(item) => setDetailItem(item)}
           />
         )}
 
@@ -966,6 +1028,18 @@ function PublicMenuPageBrowseOnly({
           />
         ) : null}
       </main>
+
+      <MenuItemDetailSheet
+        open={detailItem !== null}
+        name={detailItem?.name ?? ""}
+        description={detailItem?.description ?? null}
+        price={detailItem?.price ?? 0}
+        imageUrl={detailItem?.imageUrl ?? null}
+        optionsHint={detailItem ? optionsHintFor(detailItem) : null}
+        orderingEnabled={false}
+        onClose={() => setDetailItem(null)}
+        onAdd={() => setDetailItem(null)}
+      />
 
       <MenuBottomDock>
         <MenuAppRewardsCta
