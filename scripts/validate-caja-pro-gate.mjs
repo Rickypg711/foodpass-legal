@@ -186,6 +186,10 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   check("ProWall: resultado 2° PIN", wall.includes("Para que cada venta quede con el nombre de quien cobró."), true);
   check("ProWall: resultado mesas", wall.includes("Para que la mesa 4 no se te pierda entre rondas en la noche llena."), true);
   check("ProWall: el resultado se pinta", wall.includes("{WALL_OUTCOME[wall]}"), true);
+  // Sin prueba disponible, la pared NO promete 14 días (espejo de cajaProWallBodyNoTrial en la app).
+  check("ProWall: copy sin prueba existe", wall.includes("export const WALL_COPY_NO_TRIAL"), true);
+  check("ProWall: copy sin prueba no promete días", !/WALL_COPY_NO_TRIAL = `[^`]*días/.test(wall), true);
+  check("ProWall: elige el copy según canStartTrial", wall.includes('trial.error !== "already_used" ? WALL_COPY : WALL_COPY_NO_TRIAL'), true);
   check("ProWall: la cosa humana", wall.includes("Y tienes mi WhatsApp directo."), true);
   check("ProWall: jamás 'carta'", /\bcarta\b/i.test(wall), false);
   check("ProWall: jamás 'upgrade'", /upgrade/i.test(wall), false);

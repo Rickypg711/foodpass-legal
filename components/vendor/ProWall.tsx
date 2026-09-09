@@ -44,6 +44,9 @@ import { proTrialErrorMessage, useProTrial } from "@/lib/subscription/useProTria
 
 /** El texto de la pared — el mismo en las tres puertas y en la app. */
 export const WALL_COPY = `Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LABEL} al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas. Pruébalo ${TRIAL_DAYS} días, sin tarjeta.`;
+// Sin prueba que ofrecer (ya la usó): el mismo copy SIN prometer 14 días.
+// Regla "jamás prometer lo que no existe"; espejo de cajaProWallBodyNoTrial (app).
+export const WALL_COPY_NO_TRIAL = `Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LABEL} al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas.`;
 export const WALL_HUMAN_LINE = "Y tienes mi WhatsApp directo.";
 /** El botón de consentimiento — el mismo texto en la app. */
 export const WALL_TRIAL_CTA = `Empezar mis ${TRIAL_DAYS} días gratis`;
@@ -264,7 +267,7 @@ export function ProWall({
         </p>
 
         <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>
-          {WALL_COPY}
+          {entitlement.canStartTrial && trial.error !== "already_used" ? WALL_COPY : WALL_COPY_NO_TRIAL}
         </p>
         <p className="mt-2 text-[13px] font-semibold" style={{ color: INK_DARK }}>
           {WALL_HUMAN_LINE}{" "}
