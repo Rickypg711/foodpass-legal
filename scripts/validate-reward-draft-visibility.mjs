@@ -215,5 +215,8 @@ assert.ok(
   assert.ok(!/dismissedAt:|supersededAt:/.test(editor), "el cliente NO escribe dismissedAt/supersededAt en el borrador (las rules lo niegan)");
   assert.ok(editor.includes('status: "dismissed",\n        updatedAt:'), "Descartar escribe status + updatedAt");
   assert.ok(editor.includes('if (closed) return; // esperar al borrador nuevo'), "el listener ignora borradores cerrados (superseded/dismissed/applied) y espera el nuevo");
+  // 9-sep: el tope alto del rango sano se redondea hacia ABAJO (espejo del servidor); ceil caía fuera del 10%.
+  assert.ok(editor.includes("const muchosPuntos = Math.max(pocosPuntos, Math.floor(item.price / (HEALTHY_MIN_RATIO * spendStepAmount)));"), "muchosPuntos usa floor y nunca queda debajo de pocosPuntos");
+  assert.ok(!editor.includes("const muchosPuntos = Math.ceil("), "muchosPuntos ya no usa ceil");
 }
 console.log("validate-reward-draft-visibility: OK — el borrador de la IA es visible, con botón propio y salida honesta");

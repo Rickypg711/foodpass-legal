@@ -479,7 +479,10 @@ function RecompensasSetupPageInner() {
     // Rango de puntos que deja el premio dentro del rango sano.
     // Menos puntos = regalas mas; mas puntos = regalas menos.
     const pocosPuntos = Math.ceil(item.price / (BUMP_START_RATIO * spendStepAmount));
-    const muchosPuntos = Math.ceil(item.price / (HEALTHY_MIN_RATIO * spendStepAmount));
+    // floor, no ceil: con ceil el tope alto caía 1 punto FUERA del 10% (un
+    // refresco de $28 daba 10 pts = 9.3%) y el propio consejo se contradecía.
+    // Misma regla que applyHealthyBandFinalPass en el servidor (9-sep).
+    const muchosPuntos = Math.max(pocosPuntos, Math.floor(item.price / (HEALTHY_MIN_RATIO * spendStepAmount)));
     // El consejo trae su arreglo: el punto medio del rango sano, en número
     // redondo. Antes la advertencia le dejaba la matemática al dueño ("ponlo
     // entre 23 y 34") y NADIE la hacía — hasta Luzz tenía 2 premios fuera de
