@@ -81,7 +81,7 @@ export function HomeHeader() {
             </>
           ) : (
             <>
-              <Link href="/vendor"
+              <Link href="/activar?modo=entrar"
                 className="shrink-0 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white">
                 Entrar
               </Link>
@@ -118,7 +118,7 @@ export function HomeHeader() {
                 </>
               ) : (
                 <>
-                  <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
+                  <Link href="/activar?modo=entrar" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
                   <button onClick={() => openSignupModal("header_mobile")} className="block w-full rounded-full bg-[#F28C38] px-3 py-2 text-center text-sm font-semibold text-[#1C2526]">Empieza gratis</button>
                 </>
               )}

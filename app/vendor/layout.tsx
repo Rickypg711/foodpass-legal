@@ -502,7 +502,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 onClick={async () => {
                   setUserMenuOpen(false);
                   await signOut(getAuth());
-                  router.push("/activar");
+                  router.push("/activar?modo=entrar");
                 }}
                 className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-black/5"
                 style={{ color: "#b91c1c" }}

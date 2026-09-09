@@ -603,12 +603,12 @@ export default function ClientesPage() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
       const db = getFirebaseDb();
       // Staff-aware: CRM es de dueño/manager (canViewAnalytics del app);
       // empleado va a la caja. Asignar descuentos sigue siendo SOLO dueño.
       const ctx = await resolveVendorContext(db, u.uid);
-      if (!ctx) { router.push("/activar"); return; }
+      if (!ctx) { router.push("/activar?modo=entrar"); return; }
       if (ctx.role === "employee") { router.push(vendorHomeForRole(ctx.role)); return; }
       const rid = ctx.restaurantId;
       const isOwner = ctx.role === "owner";

@@ -165,11 +165,11 @@ function RecompensasSetupPageInner() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
       const db = getFirebaseDb();
       const uSnap = await getDoc(doc(db, "users", u.uid));
       const rid = uSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      if (!rid) { router.push("/activar?modo=entrar"); return; }
 
       // Load existing menu items
       const menuSnap = await getDocs(collection(db, "restaurants", rid, "menu"));

@@ -55,12 +55,12 @@ export default function RecompensasPage() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
 
       const db = getFirebaseDb();
       const userSnap = await getDoc(doc(db, "users", u.uid));
       const rid = userSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      if (!rid) { router.push("/activar?modo=entrar"); return; }
       setRestaurantId(rid);
 
       const restSnap = await getDoc(doc(db, "restaurants", rid));

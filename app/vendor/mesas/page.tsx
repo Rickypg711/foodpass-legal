@@ -45,13 +45,13 @@ export default function MesasPage() {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
       const db = getFirebaseDb();
       const ctx = await resolveVendorContext(db, u.uid);
       if (!ctx) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
       // Imprimir los QR de las mesas es configuración del negocio: dueño o gerente.

@@ -56,11 +56,11 @@ export default function SetupDonePage() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
       const db = getFirebaseDb();
       const uSnap = await getDoc(doc(db, "users", u.uid));
       const rid = uSnap.data()?.ownedRestaurantId as string | undefined;
-      if (!rid) { router.push("/activar"); return; }
+      if (!rid) { router.push("/activar?modo=entrar"); return; }
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const name = (rSnap.data()?.name as string | undefined)?.trim();
       if (name) setRestaurantName(name);

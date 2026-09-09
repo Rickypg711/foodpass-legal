@@ -65,9 +65,13 @@ interface ActivarModalProps {
   asModal?: boolean;
   onClose?: () => void;
   demo?: DemoClaim;
+  /** "signin" cuando el que llega YA tiene cuenta (Entrar, rebote de /vendor,
+   *  cerrar sesión). Antes todo aterrizaba en "Crear mi cuenta" y el dueño
+   *  tenía que adivinar el link chiquito (Ricardo, 9-sep). */
+  initialMode?: "signup" | "signin";
 }
 
-export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProps) {
+export function ActivarModal({ asModal = true, onClose, demo, initialMode = "signup" }: ActivarModalProps) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("idle");
   const [user, setUser] = useState<User | null>(null);
@@ -101,7 +105,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
   const [hoursOk, setHoursOk] = useState(true);
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
-  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
+  const [authMode, setAuthMode] = useState<"signup" | "signin">(initialMode);
 
   // Escape cierra — pero jamás a media conexión/creación (in-flight). El
   // backdrop a propósito NO cierra: en teléfono un roce afuera de la tarjeta
@@ -496,12 +500,18 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
               "lo quiero" (E4) → aquí se CIERRA con "hazlo tuyo". El genérico
               se queda para quien llega sin demo. */}
           <h2 className="mt-3 text-2xl font-bold leading-tight text-[#141413] sm:text-3xl">
-            {demo ? "Tu menú ya está montado — hazlo tuyo." : "Registra tu restaurante en minutos."}
+            {demo
+              ? "Tu menú ya está montado — hazlo tuyo."
+              : authMode === "signin"
+                ? "Entra a tu restaurante."
+                : "Registra tu restaurante en minutos."}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
             {demo
               ? "Crea tu cuenta y te lo entregamos adentro: platillos, precios y tamaños."
-              : "Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos."}
+              : authMode === "signin"
+                ? "Con el correo y la contraseña de tu cuenta. Los tuyos pueden entrar desde su celular con los mismos datos."
+                : "Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos."}
           </p>
 
           {/* Stats */}

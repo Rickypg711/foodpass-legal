@@ -130,7 +130,7 @@ export default function PedidosPage() {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
 
@@ -138,7 +138,7 @@ export default function PedidosPage() {
       // Staff-aware: todo rol activo procesa pedidos (canProcessOrders).
       const ctx = await resolveVendorContext(db, u.uid);
       if (!ctx) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
       const rid = ctx.restaurantId;

@@ -2,7 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { ActivarModal } from "@/components/home/ActivarModal";
 
-export default function ActivarPage() {
+export default async function ActivarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ modo?: string }>;
+}) {
+  // ?modo=entrar: quien llega por "Entrar", por el rebote de /vendor sin
+  // sesión o por "Cerrar sesión" YA tiene cuenta → formulario en iniciar sesión.
+  const { modo } = await searchParams;
+  const initialMode = modo === "entrar" ? "signin" : "signup";
   return (
     <div className="min-h-screen bg-[#141414]">
       {/* Minimal nav */}
@@ -26,7 +34,7 @@ export default function ActivarPage() {
 
       {/* Inline (non-modal) signup flow */}
       <main className="px-4 py-12">
-        <ActivarModal asModal={false} />
+        <ActivarModal asModal={false} initialMode={initialMode} />
       </main>
     </div>
   );

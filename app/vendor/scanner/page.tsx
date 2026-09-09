@@ -75,7 +75,7 @@ export default function VendorScanner() {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
 
@@ -84,7 +84,7 @@ export default function VendorScanner() {
         // Staff-aware: escanear/canjear es operación de todo rol activo.
         const ctx = await resolveVendorContext(db, u.uid);
         if (!ctx) {
-          router.push("/activar");
+          router.push("/activar?modo=entrar");
           return;
         }
         const rid = ctx.restaurantId;

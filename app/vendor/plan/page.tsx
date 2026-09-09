@@ -52,12 +52,12 @@ export default function PlanPage() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
       setUser(u);
       const db = getFirebaseDb();
       // Plan page = billing → solo dueño (matrix del app: canManageBilling).
       const ctx = await resolveVendorContext(db, u.uid);
-      if (!ctx) { router.push("/activar"); return; }
+      if (!ctx) { router.push("/activar?modo=entrar"); return; }
       if (ctx.role !== "owner") { router.push(vendorHomeForRole(ctx.role)); return; }
       const rid = ctx.restaurantId;
       setRestaurantId(rid);

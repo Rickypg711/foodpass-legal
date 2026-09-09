@@ -905,13 +905,13 @@ export default function PosPage() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
 
       const db = getFirebaseDb();
       // Staff-aware: dueño, manager y empleado operan la caja (mismo matrix
       // que el app; las rules ya autorizan associates).
       const ctx = await resolveVendorContext(db, u.uid);
-      if (!ctx) { router.push("/activar"); return; }
+      if (!ctx) { router.push("/activar?modo=entrar"); return; }
       const rid = ctx.restaurantId;
       setVendorRole(ctx.role);
 

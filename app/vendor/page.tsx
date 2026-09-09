@@ -151,14 +151,14 @@ export default function VendorDashboard() {
   useEffect(() => {
     async function init() {
       const u = await waitForAuthReady();
-      if (!u || u.isAnonymous) { router.push("/activar"); return; }
+      if (!u || u.isAnonymous) { router.push("/activar?modo=entrar"); return; }
       setUser(u);
 
       try {
         const db = getFirebaseDb();
         // Staff-aware: panel es de dueño/manager; empleado aterriza en la caja.
         const ctx = await resolveVendorContext(db, u.uid);
-        if (!ctx) { router.push("/activar"); return; }
+        if (!ctx) { router.push("/activar?modo=entrar"); return; }
         if (ctx.role === "employee") { router.push(vendorHomeForRole(ctx.role)); return; }
 
         const rid = ctx.restaurantId;

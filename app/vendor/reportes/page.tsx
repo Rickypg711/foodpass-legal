@@ -203,7 +203,7 @@ export default function ReportesPage() {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) {
-        router.push("/activar");
+        router.push("/activar?modo=entrar");
         return;
       }
 
@@ -212,7 +212,7 @@ export default function ReportesPage() {
         // Staff-aware: reportes = analytics (dueño/manager, como en el app).
         const ctx = await resolveVendorContext(db, u.uid);
         if (!ctx) {
-          router.push("/activar");
+          router.push("/activar?modo=entrar");
           return;
         }
         if (ctx.role === "employee") {
