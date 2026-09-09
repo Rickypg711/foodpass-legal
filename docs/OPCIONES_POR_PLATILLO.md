@@ -280,3 +280,28 @@ descripción del platillo.**
 Verificado en vivo: #3 JUST US → elegir Boneless + 2 salsas → el botón pasa de
 "Elige boneless o alitas" a **"Agregar — $380"**. El carrito no se bloquea y el precio no
 se mueve.
+
+## "Agotado hoy" por opción — 9 sep 2026
+
+**El caso.** Tacos de Suadero La Familia se quedó sin carne asada a media noche. El platillo
+sigue (tacos, torta, torito…), lo que falta es UNA opción del selector "Carne". Antes la única
+salida era borrar la opción de los 6 platillos y acordarse de regresarla al otro día — y el
+dueño tenía que pedírselo a alguien. Un puesto se queda sin una carne todos los días.
+
+**Qué existe ahora.**
+- `MenuItemOption.available?: boolean`. **Ausente = disponible** (los menús ya guardados no
+  traen el campo). `false` = agotado hoy. Al prender se QUITA el campo, para que el doc quede
+  como lo escribe el editor. Helpers puros en `lib/menu/optionGroups.ts`:
+  `isOptionAvailable`, `groupHasAvailableOption`, `setOptionAvailability`. Espejo exacto en
+  `lib/menu/option_groups.dart` (+ `optionGroupsToFirestore` para que la Caja del app guarde).
+- **Caja (web y app):** la misma hoja de opciones con la que el cajero ordena trae el botón
+  **"Marcar agotados"**. Tocas la opción y se apaga (tachada, "Agotado hoy") o se prende. Se
+  guarda al momento en `optionGroups` del platillo; no hay "guardar". El dueño lo hace solo,
+  a media venta, sin salir de la Caja.
+- **Menú del cliente:** la opción apagada se ve tachada con "Agotado hoy" y no se puede elegir.
+  Si un grupo obligatorio queda TODO agotado, el botón dice "Sin carne hoy" y no deja agregar.
+- **Editor (`/vendor/menu`):** casilla "Agotado" por opción, por si lo prefiere desde ahí.
+- Candados: `scripts/validate-cart-options.mjs` (web) y `test/menu/option_groups_test.dart` (app).
+
+**Lo que NO hace:** no apaga sola al llegar la noche ni avisa; no toca `isAvailable` del
+platillo (ese sigue siendo el apagador del platillo completo).

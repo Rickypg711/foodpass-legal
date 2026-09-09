@@ -45,7 +45,11 @@ import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
 // no hay, el parser lee la descripción.
-import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import {
+  resolveOptionGroups,
+  setOptionAvailability,
+  type MenuItemOptionGroup,
+} from "@/lib/menu/optionGroups";
 import { buildLineId, optionsPriceDelta, describeSelectedOptions } from "@/lib/cart/lineId";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
@@ -1205,6 +1209,28 @@ export default function PosPage() {
     });
   }
 
+  /**
+   * "Marcar agotados" desde la hoja de opciones: el cajero apaga o prende una
+   * opción (se quedaron sin asada) sin borrarla del menú ni salir de la Caja.
+   * Se guarda en `optionGroups` del platillo al momento; si el grupo venía del
+   * parser de la descripción, este guardado lo vuelve la verdad (igual que el
+   * editor). El menú del cliente la pinta tachada en el siguiente refresh.
+   */
+  async function toggleOptionAvailability(groupId: string, optionId: string, available: boolean) {
+    if (!optionsFor || !restaurantId) return;
+    const itemId = optionsFor.item.id;
+    const next = setOptionAvailability(optionsFor.groups, groupId, optionId, available);
+    setOptionsFor({ item: { ...optionsFor.item, optionGroups: next }, groups: next });
+    setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, optionGroups: next } : i)));
+    try {
+      await updateDoc(doc(getFirebaseDb(), "restaurants", restaurantId, "menu", itemId), {
+        optionGroups: next,
+      });
+    } catch {
+      // Sin red: el siguiente toque lo reintenta y la recarga del menú manda.
+    }
+  }
+
   /** El "+" del POS. Con opciones abre la hoja; sin opciones agrega directo
    *  (lineId === menuItemId, se comporta igual que antes). */
   function addToCart(item: MenuItem) {
@@ -1906,6 +1932,7 @@ export default function PosPage() {
           if (optionsFor) pushLine(optionsFor.item, selected);
           setOptionsFor(null);
         }}
+        onToggleAvailability={toggleOptionAvailability}
       />
 
       {/* ── Checkout dialog ── */}

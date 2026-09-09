@@ -142,6 +142,27 @@ export function OptionGroupsEditor({
                     className="w-16 rounded-lg border border-[#141413]/12 px-2 py-1.5 text-xs focus:border-[#F28C38] focus:outline-none"
                   />
                 </div>
+                <label
+                  className="flex shrink-0 items-center gap-1 text-[11px] text-[#141413]/50"
+                  title="Se ve tachada y no se puede elegir. También se prende y apaga desde la Caja."
+                >
+                  <input
+                    type="checkbox"
+                    checked={o.available === false}
+                    onChange={(e) => {
+                      const opts = [...g.options];
+                      if (e.target.checked) {
+                        opts[oi] = { ...o, available: false };
+                      } else {
+                        const { available: _omit, ...rest } = o;
+                        void _omit;
+                        opts[oi] = rest;
+                      }
+                      updateGroup(gi, { options: opts });
+                    }}
+                  />
+                  Agotado
+                </label>
                 <button
                   type="button"
                   onClick={() => updateGroup(gi, { options: g.options.filter((_, i) => i !== oi) })}

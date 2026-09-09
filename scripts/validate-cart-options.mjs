@@ -27,6 +27,9 @@ import {
 import {
   parseOptionGroupsFromDescription,
   resolveOptionGroups,
+  isOptionAvailable,
+  groupHasAvailableOption,
+  setOptionAvailability,
 } from "../lib/menu/optionGroups.ts";
 
 let failed = 0;
@@ -222,6 +225,32 @@ if (failed) process.exit(1);
 {
   const g = parseOptionGroupsFromDescription("Elige tus extras: Queso +$20, Tocino +$25.");
   check("un extra con precio sigue siendo OPCIONAL", g[0]?.required, false);
+}
+
+// ------------------------------------------------------- agotado hoy
+// Tacos de Suadero La Familia (9-sep-2026) se quedo sin asada a media noche y la
+// unica salida era BORRAR la opcion del selector y acordarse de regresarla.
+// Ahora la opcion se apaga sin borrarse; ausente = disponible para los menus
+// ya guardados, que no traen el campo.
+{
+  const carne = [{
+    id: "carne", name: "Carne", required: true, min: 1, max: 1,
+    options: [
+      { id: "suadero", name: "Suadero", priceDelta: 0 },
+      { id: "bistec", name: "Bistec", priceDelta: 0 },
+    ],
+  }];
+  check("sin campo => disponible", isOptionAvailable(carne[0].options[1]), true);
+  const apagado = setOptionAvailability(carne, "carne", "bistec", false);
+  check("apagar escribe available:false", apagado[0].options[1].available, false);
+  check("apagar no toca las demas", apagado[0].options[0], { id: "suadero", name: "Suadero", priceDelta: 0 });
+  check("apagar es puro: el original no cambia", carne[0].options[1].available, undefined);
+  check("el grupo sigue teniendo opcion disponible", groupHasAvailableOption(apagado[0]), true);
+  const prendido = setOptionAvailability(apagado, "carne", "bistec", true);
+  check("prender QUITA el campo (queda como lo escribe el editor)", "available" in prendido[0].options[1], false);
+  const todoApagado = setOptionAvailability(apagado, "carne", "suadero", false);
+  check("todo agotado => el grupo obligatorio bloquea el platillo", groupHasAvailableOption(todoApagado[0]), false);
+  check("un grupo que no existe se deja igual", setOptionAvailability(carne, "salsa", "x", false), carne);
 }
 
 console.log("validate-cart-options: OK");

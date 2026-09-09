@@ -13,6 +13,14 @@ export type MenuItemOption = {
   name: string;
   /** Sobreprecio en pesos. 0 = sin costo (salsas, término). */
   priceDelta: number;
+  /**
+   * `false` = "agotado hoy": se ve tachada y no se puede elegir. Ausente = disponible
+   * (los menús ya guardados no traen el campo). Lo prende y apaga el dueño desde la
+   * Caja (web y app) sin borrar la opción: un puesto se queda sin una carne a media
+   * noche y mañana la vuelve a tener. Nació el 9-sep-2026 con Tacos de Suadero La
+   * Familia, que se quedó sin asada y la única salida era borrarla del selector.
+   */
+  available?: boolean;
 };
 
 export type MenuItemOptionGroup = {
@@ -137,4 +145,40 @@ export function resolveOptionGroups(item: {
 }): MenuItemOptionGroup[] {
   if (item.optionGroups && item.optionGroups.length > 0) return item.optionGroups;
   return parseOptionGroupsFromDescription(item.description);
+}
+
+/** ¿Se puede elegir hoy? Ausente = sí (los menús viejos no traen el campo). */
+export function isOptionAvailable(o: { available?: boolean }): boolean {
+  return o.available !== false;
+}
+
+/** Un grupo OBLIGATORIO sin ninguna opción disponible bloquea el platillo ("Sin carne hoy"). */
+export function groupHasAvailableOption(g: MenuItemOptionGroup): boolean {
+  return g.options.some(isOptionAvailable);
+}
+
+/**
+ * Prende o apaga una opción ("agotado hoy") sin tocar nada más. Pura: devuelve
+ * grupos nuevos. Al prender se QUITA el campo (ausente = disponible) para que el
+ * documento quede como lo escribe el editor.
+ */
+export function setOptionAvailability(
+  groups: MenuItemOptionGroup[],
+  groupId: string,
+  optionId: string,
+  available: boolean,
+): MenuItemOptionGroup[] {
+  return groups.map((g) => {
+    if (g.id !== groupId) return g;
+    return {
+      ...g,
+      options: g.options.map((o) => {
+        if (o.id !== optionId) return o;
+        if (!available) return { ...o, available: false };
+        const { available: _omit, ...rest } = o;
+        void _omit;
+        return rest;
+      }),
+    };
+  });
 }
