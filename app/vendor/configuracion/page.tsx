@@ -1432,10 +1432,11 @@ function PublicLinksCard({
   );
 }
 
-function SectionCard({ label, children }: { label: string; children: React.ReactNode }) {
+function SectionCard({ label, children, id }: { label: string; children: React.ReactNode; id?: string }) {
   return (
     <div
-      className="rounded-2xl p-5"
+      id={id}
+      className="rounded-2xl p-5 scroll-mt-24"
       style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
     >
       <p
@@ -2013,7 +2014,7 @@ function PosStaffSection({
   }
 
   return (
-    <SectionCard label="Equipo 👥">
+    <SectionCard label="Equipo 👥" id="equipo">
       <p
         className="text-[10px] font-bold uppercase tracking-widest"
         style={{ color: "rgba(28,37,38,0.35)" }}
