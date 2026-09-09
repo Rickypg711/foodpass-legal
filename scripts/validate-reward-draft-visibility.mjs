@@ -40,10 +40,67 @@ assert.ok(
   recompensas.includes("proposedFirstPurchaseReward"),
   "/vendor/recompensas debe leer proposedFirstPurchaseReward del borrador (los campos van con prefijo proposed)",
 );
+// 9-sep (Ricardo, recorriendo /vendor/recompensas con el restaurante de
+// prueba): el editor vive DENTRO del panel y hay UNA sola puerta mientras el
+// borrador espera.
+//  a. El CTA de la tarjeta ("Verlos y activarlos →") lleva a
+//     /vendor/recompensas/editar — el editor con barra lateral, no el wizard.
 assert.ok(
-  recompensas.includes("/vendor/setup/recompensas"),
-  "el banner del borrador debe llevar al wizard donde un tap lo aplica",
+  recompensas.includes('href="/vendor/recompensas/editar"'),
+  "el banner del borrador debe llevar a /vendor/recompensas/editar (el editor dentro del panel) donde un tap lo aplica",
 );
+assert.ok(
+  !recompensas.includes("/vendor/setup/recompensas"),
+  "/vendor/recompensas ya no manda al wizard /vendor/setup/recompensas — eso sacaba al dueño del panel",
+);
+//  b. "Editar" NO se pinta mientras hay borrador pendiente (dos botones al
+//     mismo lugar = dos puertas); solo con premios publicados y sin borrador.
+assert.ok(
+  recompensas.includes("{!loading && restaurantId && hasAnyReward && !pendingDraft && ("),
+  'el link "✏️ Editar" del encabezado debe condicionarse a hasAnyReward && !pendingDraft — una sola puerta mientras el borrador espera',
+);
+{
+  const editarIdx = recompensas.indexOf("✏️ Editar\n");
+  const condIdx = recompensas.indexOf("hasAnyReward && !pendingDraft && (");
+  assert.ok(editarIdx > condIdx && condIdx > 0 && editarIdx - condIdx < 400, 'la condicional envuelve justo el "✏️ Editar" del encabezado');
+}
+//  c. La ruta /vendor/recompensas/editar existe y re-exporta el paso del setup.
+{
+  const editarPath = "app/vendor/recompensas/editar/page.tsx";
+  assert.ok(existsSync(join(root, editarPath)), "/vendor/recompensas/editar existe como ruta");
+  const editar = read(editarPath);
+  assert.ok(
+    /export \{ default \} from "\.\.\/\.\.\/setup\/recompensas\/page";/.test(editar),
+    "/vendor/recompensas/editar re-exporta app/vendor/setup/recompensas/page.tsx (un solo editor, dos rutas)",
+  );
+}
+//  d. El paso del setup sabe cuándo vive en el panel y regresa a Recompensas.
+{
+  const setupRewards = read("app/vendor/setup/recompensas/page.tsx");
+  assert.ok(
+    setupRewards.includes('const inPanel = usePathname() === "/vendor/recompensas/editar";'),
+    "el editor de premios sabe cuándo vive en el panel (inPanel)",
+  );
+  assert.ok(
+    setupRewards.includes('const cameFromPanel = inPanel || searchParams.get("from") === "recompensas";') &&
+      setupRewards.includes('const backHref = cameFromPanel ? "/vendor/recompensas" : "/vendor/setup";'),
+    "inPanel → backHref /vendor/recompensas: Guardar regresa a la página de Recompensas, no al setup",
+  );
+  assert.ok(
+    setupRewards.includes('if (inPanel) router.push("/vendor/recompensas");'),
+    "inPanel → Descartar sugerencia regresa a /vendor/recompensas",
+  );
+  assert.ok(
+    setupRewards.includes('className={inPanel ? "bg-[#faf9f5]" : "min-h-screen bg-[#faf9f5]"}') &&
+      setupRewards.includes("{inPanel ? null : ("),
+    "inPanel → sin encabezado propio (← Volver) ni min-h-screen: el panel pone la barra",
+  );
+  // El wizard (?wizard=1) sigue intacto: stepper con salida ← Panel.
+  assert.ok(
+    setupRewards.includes('<WizardStepper current="rewards" doneKeys={stepperDone} onPanelClick={handlePanelExit} />'),
+    "el camino del wizard /vendor/setup/recompensas?wizard=1 conserva el stepper",
+  );
+}
 
 // 2. El NBA habla del borrador con voz propia
 const panel = read("app/vendor/page.tsx");

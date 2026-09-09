@@ -147,7 +147,7 @@ export default function RecompensasPage() {
         ))}
       </div>
       <Link
-        href="/vendor/setup/recompensas?from=recompensas"
+        href="/vendor/recompensas/editar"
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-[#1C2526]"
         style={{ background: "#F28C38" }}>
         Verlos y activarlos →
@@ -170,9 +170,12 @@ export default function RecompensasPage() {
               Programa de lealtad de tu restaurante
             </p>
           </div>
-          {!loading && restaurantId && (
+          {/* Una sola puerta mientras hay borrador (Ricardo, 9-sep): con la
+              propuesta de la IA esperando, la tarjeta ES la puerta; "Editar"
+              solo aparece cuando ya hay premios publicados. */}
+          {!loading && restaurantId && hasAnyReward && !pendingDraft && (
             <Link
-              href={`/vendor/setup/recompensas?from=recompensas`}
+              href="/vendor/recompensas/editar"
               className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-bold"
               style={{ background: "#1C2526", color: "#ffffff" }}>
               ✏️ Editar
@@ -198,7 +201,7 @@ export default function RecompensasPage() {
               Configura las recompensas de tu programa de lealtad. Tus clientes las verán cuando ganen puntos.
             </p>
             <Link
-              href="/vendor/setup/recompensas?from=recompensas"
+              href="/vendor/recompensas/editar"
               className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
               Configurar recompensas →
@@ -308,7 +311,7 @@ export default function RecompensasPage() {
 
             {/* Edit CTA */}
             <Link
-              href="/vendor/setup/recompensas?from=recompensas"
+              href="/vendor/recompensas/editar"
               className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[14px] font-bold"
               style={{ background: "#1C2526", color: "#ffffff" }}>
               ✏️ Editar mis premios

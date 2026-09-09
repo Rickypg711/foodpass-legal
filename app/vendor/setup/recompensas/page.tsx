@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { WizardStepper } from "@/components/vendor/WizardStepper";
 import {
   doc,
@@ -100,7 +100,11 @@ function RecompensasSetupPageInner() {
   // Volver y Guardar lo aventaban a /vendor/setup, otro mundo (cazado por
   // Ricardo, 1-sep). El botón Editar ya mandaba ?from=recompensas; ahora sí
   // se escucha.
-  const cameFromPanel = searchParams.get("from") === "recompensas";
+  // 9-sep: en /vendor/recompensas/editar el editor vive DENTRO del panel
+  // (sidebar): sin su propio encabezado "← Volver" y al guardar o descartar
+  // regresa a /vendor/recompensas, no al setup (mismo patrón que /vendor/menu).
+  const inPanel = usePathname() === "/vendor/recompensas/editar";
+  const cameFromPanel = inPanel || searchParams.get("from") === "recompensas";
   const backHref = cameFromPanel ? "/vendor/recompensas" : "/vendor/setup";
   // born=demo: el claim disparó la generación de la IA hace SEGUNDOS y el
   // dueño llega aquí más rápido que el borrador. Sin esto veía el formulario
@@ -418,6 +422,9 @@ function RecompensasSetupPageInner() {
       setAiReasoning(null);
       setActiveDraftId(null);
       setAiApplied(false);
+      // Dentro del panel, descartar cierra la puerta: de vuelta a la página
+      // de Recompensas (ahí ya no hay borrador y se ofrece armarlos a mano).
+      if (inPanel) router.push("/vendor/recompensas");
     } catch (e) {
       console.error(e);
     }
@@ -716,8 +723,9 @@ function RecompensasSetupPageInner() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="min-h-screen bg-[#faf9f5]">
+    <div className={inPanel ? "bg-[#faf9f5]" : "min-h-screen bg-[#faf9f5]"}>
       {/* Nav */}
+      {inPanel ? null : (
       <div className="sticky top-0 z-10 bg-white shadow-sm">
         {isWizard ? (
           <WizardStepper current="rewards" doneKeys={stepperDone} onPanelClick={handlePanelExit} />
@@ -731,6 +739,7 @@ function RecompensasSetupPageInner() {
           </div>
         )}
       </div>
+      )}
 
       {showExitOffer && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
