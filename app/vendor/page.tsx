@@ -20,6 +20,7 @@ import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { expectedDayProgressPercent } from "@/lib/schedule";
 import { entitlementOf, accessExpiresAtMs } from "@/lib/subscription/entitlement";
 import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
+import { businessDayStartDaysAgo } from "@/lib/businessDay";
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
@@ -62,6 +63,10 @@ interface DashboardData {
   restaurantName: string;
   scanCountTotal: number;
   scansToday: number;
+  // Marcador del dueño (métrica dominante 8-sep): ventas pagadas de la semana
+  // de negocio (7 jornadas, corte 4 AM) y cuántas traen teléfono.
+  weekPaidSales: number;
+  weekIdentifiedSales: number;
   pointsToday: number;
   weeklyScans: WeekDay[];
   weekTotal: number;
@@ -329,6 +334,22 @@ export default function VendorDashboard() {
         // Need at least 3 paid orders for a meaningful avg ticket.
         const avgTicket = paidCount >= 3 ? paidTotal / paidCount : null;
 
+        // ── Marcador del dueño: ventas con teléfono ESTA SEMANA ──────────────
+        // Misma regla que scripts/ventasIdentificadasReadOnly.js (FOODPASS) y
+        // que la tarjeta espejo de la app: pagada + customerPhone de 10 dígitos,
+        // dentro de las últimas 7 jornadas (corte 4 AM, businessDayStartDaysAgo).
+        const weekStartMs = businessDayStartDaysAgo(6).getTime();
+        let weekPaidSales = 0, weekIdentifiedSales = 0;
+        monthOrdersSnap?.forEach((d) => {
+          const o = d.data();
+          if (o.paymentStatus !== "paid") return;
+          const t = o.createdAt?.toMillis?.() ?? 0;
+          if (t < weekStartMs) return;
+          weekPaidSales++;
+          const ph = String(o.customerPhone ?? "").replace(/\D/g, "");
+          if (ph.length >= 10) weekIdentifiedSales++;
+        });
+
         // ── Phone-sale visits (Caja/checkout con número) ─────────────────────
         // phoneLoyaltyAt is written ONLY by creditPhonePointsForOrder, so every
         // order carrying it is a real "venta con número". These customers have
@@ -466,6 +487,8 @@ export default function VendorDashboard() {
           scanCountTotal: (rTruth.scanCount as number) ?? 0,
           // Visitas hoy = app scans + ventas con número (same rule as the chart).
           scansToday: scansToday + phoneVisitsToday,
+          weekPaidSales,
+          weekIdentifiedSales,
           pointsToday,
           weeklyScans,
           weekTotal,
@@ -853,14 +876,21 @@ export default function VendorDashboard() {
               <Link href="/vendor/pos" className="group rounded-2xl p-5 transition-all hover:shadow-md hover:scale-[1.01]"
                 style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Clientes Comeleal hoy</span>
+                  <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas con teléfono</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors group-hover:bg-[#F28C38]/10"
                     style={{ background: "rgba(242,140,56,0.08)", color: "#F28C38" }}>
                     📱
                   </div>
                 </div>
+                {/* El marcador del dueño (métrica dominante, 8-sep): cuántas ventas
+                    de la semana sabe quién las hizo. Espejo de la app. */}
                 <p className="text-[26px] font-extrabold tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-                  {data.scansToday}
+                  {data.weekIdentifiedSales}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+                  {data.weekPaidSales > 0
+                    ? `esta semana · ${data.weekIdentifiedSales} de ${data.weekPaidSales}${data.weekIdentifiedSales > 0 ? ` · ${Math.round((100 * data.weekIdentifiedSales) / data.weekPaidSales)}%` : ""}`
+                    : "Aún ninguna esta semana · pídelo al cobrar"}
                 </p>
                 <p className="mt-1 text-[11px] text-[#F28C38] font-semibold group-hover:underline">Cobrar con número →</p>
               </Link>
