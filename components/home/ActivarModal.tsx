@@ -514,7 +514,8 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
                 : "Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos."}
           </p>
 
-          {/* Stats */}
+          {/* Stats — pitch de registro: en "Iniciar sesión" no va (9-sep). */}
+          {authMode !== "signin" && (
           <div className="mt-5 flex items-center justify-center gap-5 text-xs text-[#141413]/45">
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-base font-bold text-[#141413]">Gratis</span>
@@ -535,6 +536,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               <span>para activar</span>
             </div>
           </div>
+          )}
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
