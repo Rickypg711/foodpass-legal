@@ -59,7 +59,15 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
   check("día 14 → endsAt", r.endsAt, now + 14 * DAY);
 
   check("día 4 → counting", S(trialing(now + 4 * DAY)).state, "counting");
-  check("3 días y 1 min → counting (ceil = 4)", S(trialing(now + 3 * DAY + MIN)).state, "counting");
+  // JORNADAS, no calendario (paridad con trial_clock.dart): 3 días y 1 min cae en
+  // la misma jornada que 3 días exactos → endingSoon; 4 días menos 1 min → counting.
+  check("3 días y 1 min → endingSoon (misma jornada)", S(trialing(now + 3 * DAY + MIN)).state, "endingSoon");
+  check("4 días menos 1 min → counting", S(trialing(now + 4 * DAY - MIN)).state, "counting");
+  // Corte 4 AM: a las 3 AM del día D+3 sigue siendo la jornada D+2.
+  check("termina a las 3 AM → cuenta como la jornada anterior",
+    S(trialing(new Date(2026, 8, 12, 3, 0).getTime())).daysLeft, 2);
+  check("termina a las 4 AM → jornada nueva",
+    S(trialing(new Date(2026, 8, 12, 4, 0).getTime())).daysLeft, 3);
 
   // Exactamente 3 días → endingSoon.
   const three = S(trialing(now + 3 * DAY));
@@ -67,11 +75,15 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
   check("exactamente 3 días → daysLeft 3", three.daysLeft, 3);
   check("2 días → endingSoon", S(trialing(now + 2 * DAY)).state, "endingSoon");
 
-  // El último día (quedan 5 horas): daysLeft 1, endingSoon.
+  // El último día (quedan 5 horas): daysLeft 0 (la jornada de hoy), endingSoon.
   const last = S(trialing(now + 5 * 60 * MIN));
   check("último día → endingSoon", last.state, "endingSoon");
-  check("último día → daysLeft 1 (ceil)", last.daysLeft, 1);
+  check("último día → daysLeft 0 (misma jornada, como la app)", last.daysLeft, 0);
   check("último día → termina hoy", trialEndsWhenEs(last.endsAt, now), "hoy");
+  check("mañana → 'mañana'", trialEndsWhenEs(now + DAY, now), "mañana");
+  check("en 3 días → 'el sábado'", trialEndsWhenEs(now + 3 * DAY, now), "el sábado");
+  check("termina a la 1 AM del día siguiente → sigue siendo 'hoy' (jornada)",
+    trialEndsWhenEs(new Date(2026, 8, 10, 1, 0).getTime(), now), "hoy");
 
   // Vencida hace un minuto: ended, aunque el sweeper todavía diga trialing.
   const justEnded = S(trialing(now - MIN));
@@ -108,7 +120,9 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
   const t = new Date(2026, 8, 23, 12).getTime(); // 23 sep 2026 = miércoles
   check("weekdayEs", weekdayEs(t), "miércoles");
   check("longDateEs sin coma", longDateEs(t), "miércoles 23 de septiembre");
-  check("termina mañana", trialEndsWhenEs(new Date(2026, 8, 10, 3).getTime(), now), "mañana");
+  // Jornadas (corte 4 AM), como la app: las 3 AM del día 10 siguen siendo la jornada del 9.
+  check("termina a las 3 AM de mañana → 'hoy' (misma jornada)", trialEndsWhenEs(new Date(2026, 8, 10, 3).getTime(), now), "hoy");
+  check("termina a las 4 AM de mañana → 'mañana'", trialEndsWhenEs(new Date(2026, 8, 10, 4).getTime(), now), "mañana");
   check("termina el sábado", trialEndsWhenEs(new Date(2026, 8, 12, 12).getTime(), now), "el sábado");
 }
 
@@ -178,11 +192,16 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
   const dartPath = "/Users/ricardoparedes/projects/FOODPASS/lib/subscription/trial_clock.dart";
   if (existsSync(dartPath)) {
     const dart = readFileSync(dartPath, "utf8");
+    const lib = read("../lib/subscription/trialClock.ts");
     for (const name of ["counting", "endingSoon", "ended", "hidden", "trialClockState"]) {
       check(`Dart: ${name}`, dart.includes(name), true);
     }
-    check("Dart: umbral 3 días", /3\b/.test(dart), true);
-    check("Dart: ventana 7 días", /7\b/.test(dart), true);
+    check("Dart: umbral 3 días", /kTrialEndingSoonDays = 3;/.test(dart), true);
+    check("Dart: ventana 7 días", /kTrialEndedWindowDays = 7;/.test(dart), true);
+    check("Dart: cuenta en jornadas (businessDayStart)", dart.includes("businessDayStart("), true);
+    check("Dart: redondea, no ceil", dart.includes(".round()"), true);
+    check("web: cuenta en jornadas (businessDayStart)", lib.includes("businessDayStart("), true);
+    check("web: redondea, no ceil", lib.includes("Math.round(") && !lib.includes("Math.ceil("), true);
   } else {
     console.log("validate-trial-clock: trial_clock.dart aún no existe (la app va en paralelo); paridad pendiente");
   }

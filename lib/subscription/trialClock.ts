@@ -22,6 +22,8 @@ export const TRIAL_ENDING_SOON_DAYS = 3;
 export const TRIAL_ENDED_WINDOW_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+import { BUSINESS_DAY_CUTOFF_HOUR, businessDayStart } from "../businessDay.ts";
+
 export type TrialClockStateName = "counting" | "endingSoon" | "ended" | "hidden";
 
 export type TrialClockInput = {
@@ -34,11 +36,15 @@ export type TrialClockInput = {
   now: number;
   /** Bypass de fundador (Luzz): jamás ve el reloj. */
   founder?: boolean;
+  /** Corte de jornada del local (default 4 AM). Espejo de la app:
+   * los días se cuentan en JORNADAS, no en calendario, para que "te quedan
+   * 3 días" diga lo mismo en el teléfono y en la web. */
+  cutoffHour?: number;
 };
 
 export type TrialClockState = {
   state: TrialClockStateName;
-  /** Días que quedan (ceil). 0 cuando ya venció o no aplica. */
+  /** Jornadas que quedan (0 = el último día, o ya venció / no aplica). */
   daysLeft: number;
   /** Fin de la prueba en ms, o null si no hay prueba. */
   endsAt: number | null;
@@ -47,8 +53,16 @@ export type TrialClockState = {
 const HIDDEN: TrialClockState = { state: "hidden", daysLeft: 0, endsAt: null };
 
 /** Días enteros hacia arriba entre `now` y `endsAt` (nunca negativo). */
-export function trialDaysLeft(endsAt: number, now: number): number {
-  return Math.max(0, Math.ceil((endsAt - now) / DAY_MS));
+/** Jornadas que faltan: jornada del fin − jornada de hoy (redondeado).
+ * El último día de la prueba es 0. PARIDAD: lib/subscription/trial_clock.dart. */
+export function trialDaysLeft(
+  endsAt: number,
+  now: number,
+  cutoffHour: number = BUSINESS_DAY_CUTOFF_HOUR,
+): number {
+  const endDay = businessDayStart(new Date(endsAt), cutoffHour).getTime();
+  const today = businessDayStart(new Date(now), cutoffHour).getTime();
+  return Math.max(0, Math.round((endDay - today) / DAY_MS));
 }
 
 export function trialClockState({
@@ -57,6 +71,7 @@ export function trialClockState({
   trialEndsAt,
   now,
   founder = false,
+  cutoffHour = BUSINESS_DAY_CUTOFF_HOUR,
 }: TrialClockInput): TrialClockState {
   if (founder) return HIDDEN;
   if (trialEndsAt == null || !Number.isFinite(trialEndsAt)) return HIDDEN;
@@ -66,7 +81,7 @@ export function trialClockState({
   if (paying) return HIDDEN;
 
   if (status === "trialing" && trialEndsAt > now) {
-    const daysLeft = trialDaysLeft(trialEndsAt, now);
+    const daysLeft = trialDaysLeft(trialEndsAt, now, cutoffHour);
     return {
       state: daysLeft <= TRIAL_ENDING_SOON_DAYS ? "endingSoon" : "counting",
       daysLeft,
@@ -103,13 +118,14 @@ export function longDateEs(ms: number): string {
 }
 
 /** "hoy" | "mañana" | "el martes" — para "Tu prueba termina …". */
-export function trialEndsWhenEs(endsAt: number, now: number): string {
-  const a = new Date(endsAt);
-  const b = new Date(now);
-  const sameDay = (x: Date, y: Date) =>
-    x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
-  if (sameDay(a, b)) return "hoy";
-  const tomorrow = new Date(b.getFullYear(), b.getMonth(), b.getDate() + 1);
-  if (sameDay(a, tomorrow)) return "mañana";
-  return `el ${weekdayEs(endsAt)}`;
+export function trialEndsWhenEs(
+  endsAt: number,
+  now: number,
+  cutoffHour: number = BUSINESS_DAY_CUTOFF_HOUR,
+): string {
+  // En jornadas (corte 4 AM), como la app: a la 1 AM sigue siendo "hoy".
+  const left = trialDaysLeft(endsAt, now, cutoffHour);
+  if (left === 0) return "hoy";
+  if (left === 1) return "mañana";
+  return `el ${weekdayEs(businessDayStart(new Date(endsAt), cutoffHour).getTime())}`;
 }
