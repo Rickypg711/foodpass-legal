@@ -71,6 +71,22 @@ assert.ok(
   /href: "\/vendor\/recompensas",\s*label: "Recompensas"/.test(layout),
   "el sidebar debe tener el botón propio de Recompensas (orden de Ricardo, 1-sep)",
 );
+// 9-sep (Ricardo): Menú con botón propio en el sidebar, apuntando al editor real
+// (/vendor/setup/menu — /vendor/menu NO existe); el NBA add_menu_items también.
+assert.ok(
+  /href: "\/vendor\/setup\/menu",\s*label: "Menú"/.test(layout),
+  "sidebar: Menú con botón propio → /vendor/setup/menu",
+);
+assert.ok(!/href: "\/vendor\/menu"/.test(layout), "sidebar: nada apunta a /vendor/menu (no existe)");
+// 9-sep (Ricardo): Escanear va DESPUÉS de Mesas / QR, en el grupo secundario.
+assert.ok(
+  layout.indexOf('label: "Mesas / QR"') < layout.indexOf('label: "Escanear"'),
+  "sidebar: Escanear debajo de Mesas / QR",
+);
+{
+  const panel = read("app/vendor/page.tsx");
+  assert.ok(!panel.includes('return "/vendor/menu"'), "NBA add_menu_items no manda a /vendor/menu (404)");
+}
 assert.ok(
   !/href: "\/vendor\/scanner",\s*label: "Puntos"/.test(layout),
   'el item del escáner no puede llamarse "Puntos" — es nombre mentiroso',

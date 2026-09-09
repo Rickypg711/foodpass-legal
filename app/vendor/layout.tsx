@@ -108,6 +108,14 @@ function IconBrain() {
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
+function IconMenu() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  );
+}
+
 function IconList() {
   return (
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -151,6 +159,11 @@ interface NavDef {
 
 const NAV_ITEMS: NavDef[] = [
   { href: "/vendor", label: "Panel", icon: <IconHome />, exact: true },
+  // Menú con botón propio (orden de Ricardo, 9-sep): es lo que venden y se
+  // toca cada semana (precios, agotados, el especial); vivía enterrado en
+  // Configuración → Gestionar, igual que Recompensas antes del 1-sep.
+  // Orden: lo que vendes → lo que te piden → cómo cobras.
+  { href: "/vendor/setup/menu", label: "Menú", icon: <IconMenu /> },
   { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
   { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
   { href: "/vendor/brain", label: "Comeleal AI", icon: <IconBrain /> },
@@ -161,7 +174,6 @@ const NAV_ITEMS: NavDef[] = [
   // programa de lealtad y vivía enterrado en Configuración — nadie lo hallaba
   // (muro #1 del embudo). Y "Puntos" era nombre mentiroso para el escáner.
   { href: "/vendor/recompensas", label: "Recompensas", icon: <IconGift /> },
-  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/reportes", label: "Reportes", icon: <IconBarChart /> },
 ];
 
@@ -169,6 +181,9 @@ const NAV_SECONDARY: NavDef[] = [
   // Mesas = imprimir el QR de cada mesa (pedido desde la mesa). Va en el
   // secundario porque se usa UNA vez al montar el negocio, no a diario.
   { href: "/vendor/mesas", label: "Mesas / QR", icon: <IconQr /> },
+  // Escanear debajo de Mesas / QR (orden de Ricardo, 9-sep): el escáner es
+  // "solo si trae la app"; phone-first manda y la Caja cobra con número.
+  { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },
   { href: "/vendor/configuracion", label: "Configuración", icon: <IconGear /> },
   // Ayuda = soporte real por WhatsApp ("te contesta una persona") — el viejo
   // /para-restaurantes hoy solo redirige al home (bug reportado 27 jul).
