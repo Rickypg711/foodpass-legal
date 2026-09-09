@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense, useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { WizardStepper } from "@/components/vendor/WizardStepper";
 import { wizardDoneKeys } from "@/lib/vendorReadiness";
 import {
@@ -157,6 +157,9 @@ function MenuSetupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isWizard = searchParams.get("wizard") === "1";
+  // 9-sep: en /vendor/menu el editor vive DENTRO del panel (sidebar): sin su
+  // propio encabezado "← Volver" y al guardar regresa al panel, no al setup.
+  const inPanel = usePathname() === "/vendor/menu";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -483,7 +486,7 @@ function MenuSetupPageInner() {
       setSaved(true);
       // 7-sep: Recompensas salió del embudo; con horario y menú el local
       // está completo y el siguiente paso es el festejo.
-      setTimeout(() => router.push(isWizard ? "/vendor/setup/done" : "/vendor/setup"), 800);
+      setTimeout(() => router.push(isWizard ? "/vendor/setup/done" : inPanel ? "/vendor" : "/vendor/setup"), 800);
     } catch (e) {
       console.error(e);
       setError("No pudimos guardar. Intenta de nuevo.");
@@ -509,8 +512,9 @@ function MenuSetupPageInner() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="min-h-screen bg-[#faf9f5]">
+    <div className={inPanel ? "bg-[#faf9f5]" : "min-h-screen bg-[#faf9f5]"}>
       {/* Nav */}
+      {inPanel ? null : (
       <div className="sticky top-0 z-10 bg-white shadow-sm">
         {isWizard ? (
           <WizardStepper current="menu" doneKeys={stepperDone} />
@@ -524,6 +528,7 @@ function MenuSetupPageInner() {
           </div>
         )}
       </div>
+      )}
 
       <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 space-y-6">
         <div>

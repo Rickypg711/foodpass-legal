@@ -1641,7 +1641,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "ring_first_sale": return "/vendor/pos";
     case "share_with_customers": return "#compartir-qr";
     case "stable": return "/vendor/reportes";
-    case "add_menu_items": return "/vendor/setup/menu"; // 9-sep: /vendor/menu no existe (404)
+    case "add_menu_items": return "/vendor/menu"; // 9-sep: el editor dentro del panel
     case "lower_reward_threshold":
     case "configure_rewards":
     case "enable_first_purchase_reward":

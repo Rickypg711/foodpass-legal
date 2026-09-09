@@ -159,13 +159,14 @@ interface NavDef {
 
 const NAV_ITEMS: NavDef[] = [
   { href: "/vendor", label: "Panel", icon: <IconHome />, exact: true },
+  { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
+  { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
   // Menú con botón propio (orden de Ricardo, 9-sep): es lo que venden y se
   // toca cada semana (precios, agotados, el especial); vivía enterrado en
   // Configuración → Gestionar, igual que Recompensas antes del 1-sep.
-  // Orden: lo que vendes → lo que te piden → cómo cobras.
-  { href: "/vendor/setup/menu", label: "Menú", icon: <IconMenu /> },
-  { href: "/vendor/pedidos", label: "Pedidos", icon: <IconList /> },
-  { href: "/vendor/pos", label: "Caja / POS", icon: <IconCash /> },
+  // Debajo de Pedidos y Caja porque esos son de TODOS los días; el menú es
+  // de cada semana. /vendor/menu = el editor dentro del panel.
+  { href: "/vendor/menu", label: "Menú", icon: <IconMenu /> },
   { href: "/vendor/brain", label: "Comeleal AI", icon: <IconBrain /> },
   // Clientes arriba de Escanear: phone-first — el CRM de números capturados
   // es el corazón; el escáner es "solo si trae la app".

@@ -23,7 +23,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -71,21 +71,28 @@ assert.ok(
   /href: "\/vendor\/recompensas",\s*label: "Recompensas"/.test(layout),
   "el sidebar debe tener el botón propio de Recompensas (orden de Ricardo, 1-sep)",
 );
-// 9-sep (Ricardo): Menú con botón propio en el sidebar, apuntando al editor real
-// (/vendor/setup/menu — /vendor/menu NO existe); el NBA add_menu_items también.
+// 9-sep (Ricardo): Menú con botón propio en el sidebar, DEBAJO de Caja / POS
+// (lo diario arriba), apuntando a /vendor/menu = el editor DENTRO del panel
+// (existe como ruta; el paso del wizard /vendor/setup/menu sigue sin barra).
 assert.ok(
-  /href: "\/vendor\/setup\/menu",\s*label: "Menú"/.test(layout),
-  "sidebar: Menú con botón propio → /vendor/setup/menu",
+  /href: "\/vendor\/menu",\s*label: "Menú"/.test(layout),
+  "sidebar: Menú con botón propio → /vendor/menu",
 );
-assert.ok(!/href: "\/vendor\/menu"/.test(layout), "sidebar: nada apunta a /vendor/menu (no existe)");
+assert.ok(
+  layout.indexOf('label: "Caja / POS"') < layout.indexOf('label: "Menú"'),
+  "sidebar: Menú debajo de Caja / POS (lo diario arriba)",
+);
+assert.ok(existsSync(new URL("../app/vendor/menu/page.tsx", import.meta.url)), "/vendor/menu existe como ruta");
 // 9-sep (Ricardo): Escanear va DESPUÉS de Mesas / QR, en el grupo secundario.
 assert.ok(
   layout.indexOf('label: "Mesas / QR"') < layout.indexOf('label: "Escanear"'),
   "sidebar: Escanear debajo de Mesas / QR",
 );
 {
+  const menuPage = read("app/vendor/setup/menu/page.tsx");
+  assert.ok(menuPage.includes('usePathname() === "/vendor/menu"'), "el editor sabe cuándo vive en el panel (inPanel)");
   const panel = read("app/vendor/page.tsx");
-  assert.ok(!panel.includes('return "/vendor/menu"'), "NBA add_menu_items no manda a /vendor/menu (404)");
+  assert.ok(panel.includes('case "add_menu_items": return "/vendor/menu"'), "NBA add_menu_items → /vendor/menu");
 }
 assert.ok(
   !/href: "\/vendor\/scanner",\s*label: "Puntos"/.test(layout),

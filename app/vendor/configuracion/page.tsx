@@ -785,25 +785,15 @@ export default function ConfiguracionPage() {
               </div>
             )}
 
-            {/* ── Gestionar ── */}
-            <SectionCard label="Gestionar">
+            {/* ── Horario ── (9-sep: Menú y Recompensas ya tienen botón propio
+                en la barra lateral; una sola puerta por tarea. Aquí queda solo
+                lo que ES configuración y no tiene otra casa: el horario.) */}
+            <SectionCard label="Horario">
               <ManageLink
                 href="/vendor/setup/horario"
                 emoji="🕐"
                 title="Horarios"
                 subtitle="Días y horas de atención"
-              />
-              <ManageLink
-                href="/vendor/setup/menu"
-                emoji="🍽️"
-                title="Menú"
-                subtitle="Platillos e importar con IA"
-              />
-              <ManageLink
-                href="/vendor/setup/recompensas"
-                emoji="🎁"
-                title="Recompensas"
-                subtitle="Programa de lealtad"
                 last
               />
             </SectionCard>
