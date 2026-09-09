@@ -115,6 +115,19 @@ export default function PedidosPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [chargingOrderId, setChargingOrderId] = useState<string | null>(null);
+  // 🤝 "¿Ya te pagó?" (9-sep): cuando Entregar cae sobre un pedido sin
+  // cobrar, el mismo diálogo de cobro se abre en modo entrega — tocar la
+  // forma de pago COBRA Y ENTREGA en un paso. Por qué: Central Fast Food
+  // entregó 3 de 10 pedidos reales tocando solo "Entregar"; quedaron
+  // "completados" pero sin pagar (2,085 DOP invisibles para la métrica de
+  // ventas identificadas y sin puntos). "Cobrar" y "Entregar" eran dos
+  // botones y el dueño toca uno.
+  const [deliverAfterCharge, setDeliverAfterCharge] = useState(false);
+
+  const closeChargeDialog = () => {
+    setChargingOrderId(null);
+    setDeliverAfterCharge(false);
+  };
 
   // La campana: ids de pedidos entrantes ya vistos por ESTE listener. null =
   // aún no llega el primer snapshot (la carga inicial jamás suena).
@@ -251,13 +264,29 @@ export default function PedidosPage() {
   };
 
   const deliverOrder = async (order: Order) => {
+    if (order.paymentStatus === "pending" && !order.isOpenTab) {
+      // Pedido suelto sin cobrar: preguntar "¿ya te pagó?" con las formas de
+      // pago a la mano. Nada de confirm() — ese "sí" es el que perdía el cobro.
+      setDeliverAfterCharge(true);
+      setChargingOrderId(order.id);
+      return;
+    }
     if (order.paymentStatus === "pending") {
+      // Cuenta abierta: la mesa paga al final en la Caja; entregar la ronda
+      // sin cobrarla es lo normal. Solo se confirma.
       const confirmDeliver = confirm(
-        "Este pedido no ha sido pagado. ¿Deseas entregarlo de todos modos?"
+        "Esta ronda es de una cuenta abierta y se cobra en la Caja al final. ¿Entregarla?"
       );
       if (!confirmDeliver) return;
     }
     await updateStatus(order.id, "completed");
+  };
+
+  /** "Todavía no me paga": entregar sin cobrar, a propósito. El botón Cobrar
+   *  sigue en la tarjeta de Entregados hoy para cuando pague. */
+  const deliverUnpaid = async (orderId: string) => {
+    closeChargeDialog();
+    await updateStatus(orderId, "completed");
   };
 
   const chargeOrder = async (orderId: string, method: PaymentMethod) => {
@@ -272,7 +301,10 @@ export default function PedidosPage() {
         orderId,
         method,
       });
-      setChargingOrderId(null);
+      const alsoDeliver = deliverAfterCharge;
+      closeChargeDialog();
+      // Cobrar y entregar en UN toque (modo "¿Ya te pagó?").
+      if (alsoDeliver) await updateStatus(orderId, "completed");
     } catch (err: unknown) {
       console.error("Error charging order", err);
       alert(`No se pudo registrar el pago. ${err instanceof Error ? err.message : ""}`);
@@ -687,10 +719,16 @@ export default function PedidosPage() {
 
       {/* ── Payment Dialog for Kitchen Fulfillment ── */}
       {chargingOrderId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setChargingOrderId(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={closeChargeDialog}>
           <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[16px] font-extrabold text-[#1C2526]">Registrar Pago</p>
-            <p className="text-[13px] text-gray-400 font-medium">Elige el método de pago del cliente</p>
+            <p className="text-[16px] font-extrabold text-[#1C2526]">
+              {deliverAfterCharge ? "¿Ya te pagó?" : "Registrar Pago"}
+            </p>
+            <p className="text-[13px] text-gray-400 font-medium">
+              {deliverAfterCharge
+                ? "Toca con qué te pagó y el pedido queda entregado"
+                : "Elige el método de pago del cliente"}
+            </p>
             {(() => {
               const said = orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod;
               const opt = said ? POS_PAYMENT_OPTIONS.find((o) => o.key === said) : undefined;
@@ -716,9 +754,21 @@ export default function PedidosPage() {
                 </button>
               ))}
             </div>
+            {deliverAfterCharge ? (
+              <button
+                onClick={() => deliverUnpaid(chargingOrderId)}
+                className="w-full py-2.5 rounded-xl text-[12px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+              >
+                Todavía no me paga · Entregar sin cobrar
+              </button>
+            ) : null}
             <button
-              onClick={() => setChargingOrderId(null)}
-              className="w-full py-2.5 rounded-xl text-[12px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+              onClick={closeChargeDialog}
+              className={`w-full py-2.5 rounded-xl text-[12px] font-bold transition-colors ${
+                deliverAfterCharge
+                  ? "text-gray-400 hover:text-gray-600"
+                  : "bg-gray-100 text-[#1C2526] hover:bg-gray-200"
+              }`}
             >
               Cancelar
             </button>

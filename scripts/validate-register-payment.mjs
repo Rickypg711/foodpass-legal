@@ -150,4 +150,22 @@ const payDart = readFileSync(
   "/Users/ricardoparedes/projects/FOODPASS/lib/mercado_pago/services/payment_service.dart", "utf8");
 assert.ok(payDart.includes("...paidOrderFields("), "app: processPayment usa el builder");
 
+// ── 1e. "¿Ya te pagó?" (9-sep-2026): Entregar sobre un pedido suelto sin
+// cobrar abre el diálogo de cobro en modo entrega — tocar la forma de pago
+// COBRA (registerOrderPayment) Y ENTREGA. Central Fast Food entregó 3 de 10
+// pedidos reales solo con "Entregar" y se quedaron sin pagar. El confirm()
+// viejo ("¿entregarlo de todos modos?") no puede volver.
+{
+  assert.ok(!pedidos.includes("¿Deseas entregarlo de todos modos?"),
+    "Pedidos: el confirm() que perdía el cobro ya no existe");
+  assert.ok(pedidos.includes('if (order.paymentStatus === "pending" && !order.isOpenTab) {'),
+    "Pedidos: Entregar sin cobrar abre el diálogo (solo pedidos sueltos, la cuenta abierta se cobra en la Caja)");
+  assert.ok(pedidos.includes("setDeliverAfterCharge(true);"), "Pedidos: Entregar arma el modo entrega");
+  assert.ok(pedidos.includes('if (alsoDeliver) await updateStatus(orderId, "completed");'),
+    "Pedidos: cobrar en modo entrega también entrega");
+  assert.ok(pedidos.includes("¿Ya te pagó?"), "Pedidos: la pregunta es '¿Ya te pagó?'");
+  assert.ok(pedidos.includes("Todavía no me paga · Entregar sin cobrar"),
+    "Pedidos: entregar sin cobrar sigue posible, pero a propósito");
+}
+
 console.log("validate-register-payment: OK");
