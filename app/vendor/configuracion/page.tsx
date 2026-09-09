@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc, serverTimestamp, deleteField, collection, getDocs, addDoc, deleteDoc, query, where, limit } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
+import CambiarContrasenaCard from "../_components/CambiarContrasenaCard";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
@@ -806,6 +807,11 @@ export default function ConfiguracionPage() {
                 subtitle="Programa de lealtad"
                 last
               />
+            </SectionCard>
+
+            {/* ── Tu cuenta: cambiar contraseña adentro, sin correo (9-sep) ── */}
+            <SectionCard label="Tu cuenta">
+              <CambiarContrasenaCard />
             </SectionCard>
 
             {/* ── Suscripción (docs/PRICING.md) ── */}

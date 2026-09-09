@@ -181,7 +181,9 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
     if (!correo) return;
     try {
       const { sendPasswordResetEmail } = await import("firebase/auth");
-      await sendPasswordResetEmail(getFirebaseAuth(), correo);
+      const a = getFirebaseAuth();
+      a.languageCode = "es";
+      await sendPasswordResetEmail(a, correo);
     } catch {
       // Se ignora a proposito: ver abajo.
     }
@@ -534,7 +536,7 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 <p className="mt-2">
                   {resetSent ? (
                     <span className="font-semibold text-[#1C2526]">
-                      Te mandamos un correo para cambiarla.
+                      Te mandamos un correo para cambiarla. Revisa también spam.
                     </span>
                   ) : (
                     <button
@@ -598,6 +600,35 @@ export function ActivarModal({ asModal = true, onClose, demo }: ActivarModalProp
                 : authMode === "signup" ? "Crear mi cuenta →" : "Iniciar sesión →"}
             </button>
           </form>
+
+          {/* Siempre a la vista en "Iniciar sesión" (9-sep): antes solo salía
+              DESPUÉS de fallar una vez, escondido en el error, y nadie lo
+              encontraba. Sin correo escrito, se le pide el correo, no se manda
+              nada al aire. */}
+          {authMode === "signin" && !showReset && (
+            <p className="mt-3 text-xs">
+              {resetSent ? (
+                <span className="font-semibold text-[#1C2526]">
+                  Te mandamos un correo para cambiarla. Revisa también spam.
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!emailInput.trim()) {
+                      setError("Escribe tu correo arriba y te mandamos el link para cambiarla.");
+                      return;
+                    }
+                    setError(null);
+                    handleReset();
+                  }}
+                  className="font-semibold text-[#F28C38] underline underline-offset-2"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+            </p>
+          )}
 
           <button
             type="button"
