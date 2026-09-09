@@ -20,7 +20,7 @@
  * scripts/validate-trial-clock.mjs lo afirma.
  *
  * Copy (nivel secundaria, sin anglicismos, siempre "menú"): ver WALL_COPY. La
- * cosa humana de Pro es el WhatsApp directo de Ricardo (PUBLIC_WHATSAPP_WA_ME).
+ * (9-sep noche, Ricardo: la pared NO trae su WhatsApp — "no quiero que me escriban".)
  *
  * Contraste: los botones naranja llevan tinta oscura (INK_DARK), como el resto
  * del panel — jamás blanco sobre naranja. Botones de 44px o más, foco en el
@@ -30,7 +30,6 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import Link from "next/link";
 import { INK_DARK } from "@/lib/brand/brandColor";
-import { PUBLIC_WHATSAPP_WA_ME } from "@/lib/contactEmail";
 import {
   PRO_ENTITLEMENTS,
   TRIAL_DAYS,
@@ -47,7 +46,6 @@ export const WALL_COPY = `Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LAB
 // Sin prueba que ofrecer (ya la usó): el mismo copy SIN prometer 14 días.
 // Regla "jamás prometer lo que no existe"; espejo de cajaProWallBodyNoTrial (app).
 export const WALL_COPY_NO_TRIAL = `Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LABEL} al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas.`;
-export const WALL_HUMAN_LINE = "Y tienes mi WhatsApp directo.";
 /** El botón de consentimiento — el mismo texto en la app. */
 export const WALL_TRIAL_CTA = `Empezar mis ${TRIAL_DAYS} días gratis`;
 
@@ -66,9 +64,6 @@ const WALL_TITLE: Record<CajaWall, string> = {
   tableTabs: "Cuentas por mesa",
 };
 
-const WHATSAPP_WALL_URL =
-  `${PUBLIC_WHATSAPP_WA_ME}?text=` +
-  encodeURIComponent("Hola Ricardo, tengo una duda de Pro en mi Caja de Comeleal 🙏");
 
 const PRIMARY_BTN =
   "flex min-h-[48px] w-full items-center justify-center rounded-2xl px-4 py-3 text-[14px] font-extrabold transition hover:opacity-90 disabled:opacity-60";
@@ -268,18 +263,6 @@ export function ProWall({
 
         <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>
           {entitlement.canStartTrial && trial.error !== "already_used" ? WALL_COPY : WALL_COPY_NO_TRIAL}
-        </p>
-        <p className="mt-2 text-[13px] font-semibold" style={{ color: INK_DARK }}>
-          {WALL_HUMAN_LINE}{" "}
-          <a
-            href={WHATSAPP_WALL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-            style={{ color: "#25D366" }}
-          >
-            Escríbeme →
-          </a>
         </p>
 
         {body}

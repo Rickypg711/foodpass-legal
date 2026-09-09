@@ -44,7 +44,7 @@ Todo lo que necesita un restaurante para OPERAR, sin límite de tiempo, sin tarj
 
 Se vende con UNA frase (nivel secundaria, sin anglicismos, siempre "menú"):
 
-> **Esto es Pro. Tu Caja sigue gratis. Por $499 al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas. Pruébalo 14 días, sin tarjeta.** Y tienes mi WhatsApp directo.
+> **Esto es Pro. Tu Caja sigue gratis. Por $499 al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas. Pruébalo 14 días, sin tarjeta.** (Sin WhatsApp de Ricardo en la pared — decisión 9-sep noche.)
 
 Las tres paredes (las mismas en app y web, con candados espejo):
 
@@ -56,7 +56,7 @@ Las tres paredes (las mismas en app y web, con candados espejo):
 
 También Pro: reportes de más de 30 días (misma pared 1), inventario y turnos (app), cuentas con login propio para el equipo, descuentos especiales (staff y familia), Comeleal AI sin límite, soporte directo.
 
-**La cosa humana de Pro:** el WhatsApp directo de Ricardo + hasta 15 min/mes de números (tope; copy nada más).
+**La cosa humana de Pro:** QUITADA de la pared el 9-sep noche (Ricardo: "no quiero que me escriban"). Soporte por WhatsApp sigue en Ayuda como siempre.
 
 ### Precio y grandfathering
 

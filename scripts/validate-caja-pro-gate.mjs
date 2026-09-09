@@ -190,7 +190,8 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   check("ProWall: copy sin prueba existe", wall.includes("export const WALL_COPY_NO_TRIAL"), true);
   check("ProWall: copy sin prueba no promete días", !/WALL_COPY_NO_TRIAL = `[^`]*días/.test(wall), true);
   check("ProWall: elige el copy según canStartTrial", wall.includes('trial.error !== "already_used" ? WALL_COPY : WALL_COPY_NO_TRIAL'), true);
-  check("ProWall: la cosa humana", wall.includes("Y tienes mi WhatsApp directo."), true);
+  // 9-sep noche (Ricardo): la pared NO trae su WhatsApp ni "Escríbeme".
+  check("ProWall: sin WhatsApp de Ricardo", wall.includes("WhatsApp directo") || wall.includes("Escríbeme"), false);
   check("ProWall: jamás 'carta'", /\bcarta\b/i.test(wall), false);
   check("ProWall: jamás 'upgrade'", /upgrade/i.test(wall), false);
   check("ProWall: jamás 'desbloquea'", /desbloque/i.test(wall), false);
