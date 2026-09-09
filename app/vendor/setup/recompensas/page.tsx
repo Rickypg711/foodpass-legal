@@ -312,8 +312,13 @@ function RecompensasSetupPageInner() {
         const d = snap.docs[0];
         const data = d.data();
 
-        // CF writes status as 'draft' or 'failed', keys are prefixed with 'proposed'
-        const isSuccess = data.status === "draft" || data.status === "ready" || data.firstPurchaseReward || data.proposedFirstPurchaseReward;
+        // CF writes status as 'draft' or 'failed', keys are prefixed with 'proposed'.
+        // Un borrador ya cerrado (superseded / dismissed / applied) NO es éxito:
+        // al "Regenerar", el primer snapshot trae el borrador viejo recién
+        // reemplazado y lo volvía a pintar como si fuera el nuevo (cazado 9-sep).
+        const closed = data.status === "superseded" || data.status === "dismissed" || data.status === "applied";
+        if (closed) return; // esperar al borrador nuevo
+        const isSuccess = data.status === "draft" || data.status === "ready" || (!data.status && (data.firstPurchaseReward || data.proposedFirstPurchaseReward));
         const isFailed = data.status === "failed" || data.status === "error";
 
         if (isSuccess) {
@@ -374,10 +379,29 @@ function RecompensasSetupPageInner() {
     setAiError(null);
     setAiStep("generating");
     try {
+      // "Regenerar" con un borrador abierto: el servidor contesta "existing"
+      // y NO genera (cazado 9-sep: botón muerto sin decir nada). El borrador
+      // viejo se marca reemplazado y se pide uno nuevo — el loop cerrado
+      // (applied / dismissed / superseded) sigue midiendo la aceptación.
+      if (activeDraftId) {
+        const db = getFirebaseDb();
+        const { updateDoc, serverTimestamp } = await import("firebase/firestore");
+        // Las rules solo dejan al cliente tocar status + updatedAt
+        // (rewardRecommendationDraftClientUpdateOnly): ni un campo más.
+        await updateDoc(doc(db, "restaurants", restaurantId, "rewardRecommendationDrafts", activeDraftId), {
+          status: "superseded",
+          updatedAt: serverTimestamp(),
+        });
+        setActiveDraftId(null);
+      }
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       const generateRewardDraft = httpsCallable(functions, "generateRewardDraft");
       const res = await generateRewardDraft({ restaurantId });
       const resultData = res.data as { status: string; reason?: string };
+      if (resultData?.status === "existing") {
+        setAiError("Ya hay una sugerencia abierta. Descártala para pedir otra.");
+        setAiStep("idle");
+      }
       if (resultData?.status === "skipped") {
         if (resultData.reason === "insufficient_menu_items") {
           setAiError("Necesitas agregar al menos 2 platillos en tu menú para usar la IA.");
@@ -400,11 +424,14 @@ function RecompensasSetupPageInner() {
     try {
       const db = getFirebaseDb();
       const { updateDoc } = await import("firebase/firestore");
+      // El "no me latió" también se mide (loop cerrado): con applied vs
+      // dismissed sale la tasa de aceptación de la IA de premios. Las rules
+      // solo dejan al cliente tocar status + updatedAt — `dismissedAt` hacía
+      // que ESTE botón fallara con "insufficient permissions" (cazado 9-sep);
+      // updatedAt ya es la fecha del descarte.
       await updateDoc(doc(db, "restaurants", restaurantId, "rewardRecommendationDrafts", activeDraftId), {
         status: "dismissed",
-        // El "no me latió" también se mide (loop cerrado): con applied vs
-        // dismissed sale la tasa de aceptación de la IA de premios.
-        dismissedAt: (await import("firebase/firestore")).serverTimestamp(),
+        updatedAt: (await import("firebase/firestore")).serverTimestamp(),
       });
       setCurrentFPR({
         enabled: true,

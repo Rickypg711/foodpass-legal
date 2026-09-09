@@ -204,4 +204,16 @@ assert.ok(
   "la salida debe ser interceptable (la atajada de premios del 1-sep)",
 );
 
+// 9-sep: "Regenerar" con borrador abierto reemplaza el viejo (status superseded)
+// antes de pedir otro; si el servidor aun así dice "existing", la pantalla lo dice.
+{
+  const editor = read("app/vendor/setup/recompensas/page.tsx");
+  assert.ok(editor.includes('status: "superseded"'), "Regenerar: el borrador abierto se marca superseded antes de pedir otro");
+  assert.ok(editor.includes('resultData?.status === "existing"'), "Regenerar: el estado 'existing' del servidor se muestra, no se traga");
+  assert.ok(!editor.includes("regen-debug"), "sin logs de depuración");
+  // Las rules (rewardRecommendationDraftClientUpdateOnly) solo permiten status + updatedAt.
+  assert.ok(!/dismissedAt:|supersededAt:/.test(editor), "el cliente NO escribe dismissedAt/supersededAt en el borrador (las rules lo niegan)");
+  assert.ok(editor.includes('status: "dismissed",\n        updatedAt:'), "Descartar escribe status + updatedAt");
+  assert.ok(editor.includes('if (closed) return; // esperar al borrador nuevo'), "el listener ignora borradores cerrados (superseded/dismissed/applied) y espera el nuevo");
+}
 console.log("validate-reward-draft-visibility: OK — el borrador de la IA es visible, con botón propio y salida honesta");
