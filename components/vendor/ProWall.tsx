@@ -48,6 +48,15 @@ export const WALL_HUMAN_LINE = "Y tienes mi WhatsApp directo.";
 /** El botón de consentimiento — el mismo texto en la app. */
 export const WALL_TRIAL_CTA = `Empezar mis ${TRIAL_DAYS} días gratis`;
 
+// Hormozi ($100M Offers, 9-sep): "vende las vacaciones, no el vuelo". El
+// título dice la función; ESTA línea dice lo que el dueño compra. Va arriba
+// del copy canónico. ESPEJO de cajaProWallHint* en la app (.arb).
+export const WALL_OUTCOME: Record<CajaWall, string> = {
+  history: "Para ver tu mes completo y saber si vas mejor que el pasado.",
+  posStaff: "Para que cada venta quede con el nombre de quien cobró. Se acaba el \"yo no fui\" en la caja.",
+  tableTabs: "Para que la mesa 4 no se te pierda entre rondas en la noche llena.",
+};
+
 const WALL_TITLE: Record<CajaWall, string> = {
   history: "Ver más de 30 días",
   posStaff: "Un PIN más para tu equipo",
@@ -250,6 +259,9 @@ export function ProWall({
         >
           {WALL_TITLE[wall]}
         </h2>
+        <p className="mt-2 text-[15px] font-bold leading-snug" style={{ color: INK_DARK }}>
+          {WALL_OUTCOME[wall]}
+        </p>
 
         <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>
           {WALL_COPY}

@@ -181,6 +181,11 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
 {
   const wall = read("../components/vendor/ProWall.tsx");
   check("ProWall: copy canónico", wall.includes("Esto es Pro. Tu Caja sigue gratis. Por ${PRO_PRICE_LABEL} al mes ves todo tu historial, tu equipo cobra con su PIN y llevas mesas. Pruébalo ${TRIAL_DAYS} días, sin tarjeta."), true);
+  // 9-sep (Hormozi): cada pared vende el RESULTADO arriba del copy de funciones.
+  check("ProWall: resultado historial", wall.includes("Para ver tu mes completo y saber si vas mejor que el pasado."), true);
+  check("ProWall: resultado 2° PIN", wall.includes("Para que cada venta quede con el nombre de quien cobró."), true);
+  check("ProWall: resultado mesas", wall.includes("Para que la mesa 4 no se te pierda entre rondas en la noche llena."), true);
+  check("ProWall: el resultado se pinta", wall.includes("{WALL_OUTCOME[wall]}"), true);
   check("ProWall: la cosa humana", wall.includes("Y tienes mi WhatsApp directo."), true);
   check("ProWall: jamás 'carta'", /\bcarta\b/i.test(wall), false);
   check("ProWall: jamás 'upgrade'", /upgrade/i.test(wall), false);
