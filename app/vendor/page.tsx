@@ -18,6 +18,8 @@ import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { expectedDayProgressPercent } from "@/lib/schedule";
 import { entitlementOf, accessExpiresAtMs } from "@/lib/subscription/entitlement";
 import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
+import { trialClockState } from "@/lib/subscription/trialClock";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { businessDayStartDaysAgo } from "@/lib/businessDay";
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
@@ -343,11 +345,22 @@ export default function VendorDashboard() {
         // horas, y el panel parece roto justo el dia que se dio de alta. Aqui
         // manda el doc VIVO del restaurante, que si esta al dia.
         const brainActionCode = (ins?.actionCode as string) ?? "unknown";
+        // La fecha VIVA de la prueba manda sobre el consejo guardado (9-sep):
+        // el cerebro escribe "termina el viernes" en el refresco de las 4 AM y
+        // la franja de arriba ya decía "terminó" — dos voces en un panel.
+        const trialState = trialClockState({
+          status: billingStatus,
+          plan: billingPlan,
+          trialEndsAt: trialEndsAtMs,
+          now: Date.now(),
+          founder: founderBypass,
+        }).state;
         const nbaCode = resolveNbaActionCode(
             brainActionCode,
             (r.isSetupComplete as boolean) ?? true,
             (r.setupIncompleteReasons as string[]) ?? [],
             r.loyaltyReady !== false,
+            trialState,
         );
         const nbaOverridden = nbaCode !== brainActionCode;
 
@@ -768,7 +781,16 @@ function resolveNbaActionCode(
   isSetupComplete: boolean,
   setupReasons: string[],
   loyaltyReady = true,
+  trialState: "counting" | "endingSoon" | "ended" | "hidden" = "hidden",
 ): string {
+  // Consejos de la prueba: el cerebro los guarda en el refresco DIARIO y la
+  // fecha de fin se lee en vivo. Si ya venció, "termina el viernes" es mentira
+  // → se vuelve "terminó"; si ya no hay prueba (compró Pro, o pasaron los 7
+  // días), el consejo de prueba se descarta. Espejo de la app (NBA card).
+  if (brainActionCode === "trial_ending_soon" && trialState !== "counting" && trialState !== "endingSoon") {
+    return trialState === "ended" ? "trial_ended" : "keep_going";
+  }
+  if (brainActionCode === "trial_ended" && trialState !== "ended") return "keep_going";
   // Completo pero SIN nada que ganar (premios apagados a propósito, 5-sep):
   // el escáner está en pausa, así que "tu primera visita con puntos" sería
   // mentira. El único siguiente paso de lealtad es ponerle un premio — y el
@@ -846,6 +868,8 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
       return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
     case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
     case "check_ai_draft": return "Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque — es lo único que falta para prender tu escáner de puntos.";
+    case "trial_ending_soon": return `Tu prueba de Pro termina pronto. Al terminar se cierran las mesas y el segundo PIN; cobras igual. Sigue con Pro por ${PRO_PRICE_LABEL} al mes para no perderlo.`;
+    case "trial_ended": return `Tu prueba terminó y se cerraron las mesas y el segundo PIN. Cobras igual. Volver a Pro son ${PRO_PRICE_LABEL} al mes.`;
     case "healthy":
     case "keep_going":
     case "stable":

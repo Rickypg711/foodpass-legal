@@ -159,6 +159,12 @@ check("ended dura 7 días", TRIAL_ENDED_WINDOW_DAYS, 7);
   check("NBA trial_ending_soon → 'Seguir con Pro'", /case "trial_ending_soon": return "Seguir con Pro";/.test(panel), true);
   check("NBA trial_ended → 'Volver a Pro'", /case "trial_ended": return "Volver a Pro";/.test(panel), true);
   check("NBA trial_* → /vendor/plan", /case "trial_ending_soon":\n\s*case "trial_ended": return "\/vendor\/plan";/.test(panel), true);
+  // 9-sep: la fecha viva manda sobre el consejo guardado (dos voces cazadas por Ricardo).
+  check("NBA: resolveNbaActionCode recibe trialState", panel.includes('trialState: "counting" | "endingSoon" | "ended" | "hidden" = "hidden"'), true);
+  check("NBA: trial_ending_soon vencida → trial_ended", panel.includes('return trialState === "ended" ? "trial_ended" : "keep_going";'), true);
+  check("NBA: trial_ended sin prueba → keep_going", panel.includes('if (brainActionCode === "trial_ended" && trialState !== "ended") return "keep_going";'), true);
+  check("NBA: el panel calcula trialState con trialClockState", panel.includes("const trialState = trialClockState({"), true);
+  check("NBA: cuerpo de respaldo trial_ended", panel.includes('case "trial_ended": return `Tu prueba terminó y se cerraron las mesas y el segundo PIN.'), true);
   check("panel: renderiza <TrialClock", panel.includes("<TrialClock"), true);
   check("panel: lee private/billing (fetchWithBilling)", panel.includes("fetchWithBilling("), true);
   check("panel: status del reloj sale del doc fundido", panel.includes("rTruth.subscriptionAccessStatus"), true);
