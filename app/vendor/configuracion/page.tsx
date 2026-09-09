@@ -576,7 +576,7 @@ export default function ConfiguracionPage() {
                     Plan Pro activo ⭐
                   </p>
                   <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales, Comeleal AI y soporte directo
+                    Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales y Comeleal AI
                   </p>
                 </div>
               ) : (
@@ -601,7 +601,6 @@ export default function ConfiguracionPage() {
                       <li>✓ Cuentas con acceso propio para tu equipo, cada quien con su rol</li>
                       <li>✓ Comeleal AI sin límite</li>
                       <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
-                      <li>✓ Soporte directo — te contesta una persona</li>
                     </ul>
                     <button
                       type="button"

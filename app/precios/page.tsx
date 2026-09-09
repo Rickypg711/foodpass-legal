@@ -38,7 +38,6 @@ const PRO_FEATURES = [
   "Reportes de más de 30 días",
   "Comeleal AI sin límite: pregúntale por tus ventas, tus VIP y cuándo lanzar promos",
   "Descuentos especiales para staff y familia — la caja los aplica sola al cobrar",
-  "Soporte directo — te contesta una persona, no un bot",
 ];
 
 const FAQ = [

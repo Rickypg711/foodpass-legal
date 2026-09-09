@@ -35,7 +35,6 @@ const PRO_INCLUDES = [
   "Descuentos especiales (staff y familia) — la caja los aplica sola",
   "Cuentas con acceso propio para tu equipo, cada quien con su rol",
   "Comeleal AI sin límite: tus ventas, tus VIP, cuándo lanzar promos",
-  "Soporte directo — te contesta una persona",
 ];
 
 export default function PlanPage() {
