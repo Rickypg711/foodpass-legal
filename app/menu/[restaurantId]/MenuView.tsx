@@ -29,6 +29,7 @@ import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
 import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
+import { menuPaymentLine } from "@/lib/order/menuPaymentLine";
 import {
   isPositivelyClosedNow,
   scheduleStatus,
@@ -609,13 +610,15 @@ function PublicMenuPageWithOrdering({
     };
   }, [restaurantId, initial]);
 
-  const headerSecondary = closedNow
-    ? "Menú en línea"
-    : webOrderingReady && webOrderingAvailable
-      ? "Ordena en línea · Pago seguro con Mercado Pago"
-      : webOrderingReady
-        ? "Menú en línea"
-        : null;
+  // Dice solo lo que el local ofrece de verdad (Mercado Pago, al recoger,
+  // o nada) — lib/order/menuPaymentLine.ts, con candado.
+  const headerSecondary = menuPaymentLine({
+    restaurantId,
+    rdata,
+    closedNow,
+    webOrderingReady,
+    webOrderingAvailable,
+  });
 
   const showMpUnavailableDock =
     webOrderingReady && !webOrderingAvailable && !loading && !error;

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:whatsapp-url": "node scripts/validate-whatsapp-url.mjs",
+    "test:menu-payment-line": "node scripts/validate-menu-payment-line.mjs",
     "test:order-payload": "node scripts/validate-order-payload.mjs",
     "test:web-checkout-policy": "node scripts/validate-web-checkout-policy.mjs",
     "test:mp-preference": "node scripts/test-mp-preference-build.mjs",
