@@ -8,6 +8,7 @@
 // (con opciones abre la hoja de opciones; sin opciones agrega directo).
 
 import Image from "next/image";
+import { useEffect } from "react";
 import { formatPrice } from "@/lib/priceFormat";
 
 export type MenuItemDetailSheetProps = {
@@ -35,6 +36,16 @@ export function MenuItemDetailSheet({
   onClose,
   onAdd,
 }: MenuItemDetailSheetProps) {
+  // Escape cierra, como cualquier hoja (el toque fuera y la ✕ también).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
