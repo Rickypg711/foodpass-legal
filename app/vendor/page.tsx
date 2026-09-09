@@ -18,7 +18,9 @@ import {
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { expectedDayProgressPercent } from "@/lib/schedule";
-import { entitlementOf } from "@/lib/subscription/entitlement";
+import { entitlementOf, accessExpiresAtMs } from "@/lib/subscription/entitlement";
+import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
+import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
@@ -106,8 +108,13 @@ interface DashboardData {
   captureRate: number | null;
   // Top 3 products by quantity sold (30d, excludes synthetic quick-sell line).
   topProducts: { name: string; qty: number }[];
-  // Free-tier loyalty quota (docs/PRICING.md "cap honesto")
   isPro: boolean;
+  /** El reloj de la prueba (TrialClock): campos canónicos de private/billing
+   * leídos vía fetchWithBilling — jamás del doc público. */
+  billingStatus: string | null;
+  billingPlan: string | null;
+  trialEndsAtMs: number | null;
+  founderBypass: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -431,6 +438,10 @@ export default function VendorDashboard() {
         // Pro vive en la Caja (historial, 2° cajero, mesas) — PRICING.md v2.0.
         const rTruth = await fetchWithBilling(db, rid, r as Record<string, unknown>);
         const isPro = entitlementOf(rTruth).isPro;
+        const billingStatus = (rTruth.subscriptionAccessStatus as string | undefined) ?? null;
+        const billingPlan = (rTruth.subscriptionPlan as string | undefined) ?? null;
+        const trialEndsAtMs = accessExpiresAtMs(rTruth.subscriptionTrialEndsAt);
+        const founderBypass = isFounderTestRestaurant(rid);
 
         const insMetrics = (ins?.metrics ?? {}) as Record<string, unknown>;
 
@@ -523,6 +534,10 @@ export default function VendorDashboard() {
           captureRate,
           topProducts,
           isPro,
+          billingStatus,
+          billingPlan,
+          trialEndsAtMs,
+          founderBypass,
         });
         setLoadState("ready");
       } catch (err) {
@@ -660,6 +675,17 @@ export default function VendorDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* ── El reloj de la prueba (9-sep): franja bajo el header, nunca modal.
+            Lee private/billing (fetchWithBilling) — counting / endingSoon /
+            ended; oculto para quien paga Pro y para el bypass de fundador. */}
+        <TrialClock
+          restaurantId={data.restaurantId}
+          status={data.billingStatus}
+          plan={data.billingPlan}
+          trialEndsAt={data.trialEndsAtMs}
+          founder={data.founderBypass}
+        />
 
         {/* ── Page content ── (día cero: columna con tope — en monitor ancho
             las tarjetas full-width se volvían salchichas de un metro) */}
