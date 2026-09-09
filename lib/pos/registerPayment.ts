@@ -138,6 +138,11 @@ export async function registerTabGroupPayment(params: {
       const isAnchor = orderIds[i] === anchorId;
       transaction.update(sn.ref, {
         ...paidOrderFields(method, { close: true }),
+        // Huella DURADERA de que esta venta fue cuenta de mesa: isOpenTab se
+        // apaga al cobrar (anti doble cobro) y el cerebro perdía la cuenta —
+        // "no usaste mesas" a quien sí las usó (cazado 9-sep con el local de
+        // prueba). ESPEJO de pos_service.dart. Lo lee restaurant_brain.js.
+        wasOpenTab: true,
         // Propina UNA vez, en el ancla — por ronda se multiplicaría en Reportes.
         ...(isAnchor && tip > 0
           ? { tipAmount: Math.round(tip * 100) / 100, tipMethod }

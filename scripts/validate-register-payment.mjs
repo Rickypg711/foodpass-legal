@@ -84,6 +84,14 @@ for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
 }
 assert.ok(pedidos.includes("registerOrderPayment("), "pedidos delega el cobro rápido");
 assert.ok(pos.includes("registerTabGroupPayment("), "la Caja delega el cierre de grupo");
+// 9-sep: al cobrar una cuenta queda la huella wasOpenTab (isOpenTab se apaga) —
+// sin ella el cerebro dice "no usaste mesas" a quien sí las usó.
+{
+  const reg = readFileSync(new URL("../lib/pos/registerPayment.ts", import.meta.url), "utf8");
+  const i = reg.indexOf("export async function registerTabGroupPayment(");
+  assert.ok(i > 0, "registerTabGroupPayment existe");
+  assert.ok(reg.slice(i).includes("wasOpenTab: true"), "el cierre de cuenta escribe wasOpenTab: true (huella durable para el cerebro)");
+}
 for (const [name, src] of [["pedidos", pedidos], ["pos", pos]]) {
   assert.ok(src.includes("paymentOptions.map("),
     `${name}: los botones de cobro se mapean de la lista canónica filtrada, no de una lista a mano`);
