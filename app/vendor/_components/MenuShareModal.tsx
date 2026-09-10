@@ -277,7 +277,7 @@ export default function MenuShareModal({
         <button
           type="button"
           onClick={handleCopy}
-          aria-label={`Copiar mi liga: ${shareUrl}`}
+          aria-label={`Copiar mi link: ${shareUrl}`}
           className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold"
           style={{ color: "rgba(28,37,38,0.65)" }}
         >

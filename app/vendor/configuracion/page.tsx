@@ -742,7 +742,7 @@ export default function ConfiguracionPage() {
                   <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
                     {resetEnviado
                       ? "Revisa tu correo y sigue el link."
-                      : "Te mandamos una liga a tu correo."}
+                      : "Te mandamos un link a tu correo."}
                   </span>
                 </span>
                 {!resetEnviado && (
