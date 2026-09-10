@@ -15,6 +15,7 @@ import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { MenuCategoryChips } from "@/components/menu/MenuCategoryChips";
+import { MenuPoweredByFooter } from "@/components/menu/MenuPoweredByFooter";
 import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import { OwnerHoursStrip } from "@/components/menu/OwnerHoursStrip";
@@ -935,6 +936,8 @@ function PublicMenuPageWithOrdering({
             skin={skin}
           />
         ) : null}
+
+        {!loading && !error ? <MenuPoweredByFooter skin={skin} /> : null}
       </main>
 
       <MenuItemDetailSheet
@@ -1222,6 +1225,8 @@ function PublicMenuPageBrowseOnly({
             skin={skin}
           />
         ) : null}
+
+        {!loading && !error ? <MenuPoweredByFooter skin={skin} /> : null}
       </main>
 
       <MenuItemDetailSheet
