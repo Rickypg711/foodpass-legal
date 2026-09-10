@@ -191,3 +191,26 @@ a.menu-cta-enter[aria-disabled="true"] {
   to   { opacity: 1; }
 }
 .animate-backdrop-in { animation: backdrop-in 0.2s ease-out; }
+
+/* ==========================================================================
+   Piel "Tercera" (components/menu/skins/tercera.tsx) — el papel de Café de la
+   Tercera en la web. Una sola entrada escalonada y el muñeco que se mece.
+   ========================================================================== */
+@keyframes tercera-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes tercera-bob {
+  0%, 100% { transform: rotate(-2deg) translateY(0); }
+  50% { transform: rotate(2deg) translateY(-4px); }
+}
+.tercera-skin .tercera-rise {
+  animation: tercera-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.tercera-skin .tercera-bob {
+  animation: tercera-bob 4.5s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tercera-skin .tercera-rise, .tercera-skin .tercera-bob { animation: none; }
+}

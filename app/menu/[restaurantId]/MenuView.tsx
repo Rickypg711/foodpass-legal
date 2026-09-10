@@ -31,6 +31,15 @@ import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
 import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
 import { menuPaymentLine } from "@/lib/order/menuPaymentLine";
+import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
+import {
+  TERCERA_ROOT_CLASS,
+  TerceraCategorySection,
+  TerceraCover,
+  TerceraHeader,
+  TerceraItemRow,
+  TerceraPanel,
+} from "@/components/menu/skins/tercera";
 import {
   isPositivelyClosedNow,
   scheduleStatus,
@@ -165,6 +174,11 @@ function groupMenuByCategory(items: MenuRow[]): { category: string; items: MenuR
 const MENU_PAGE_BG =
   "min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F5EDE2] to-[#F0E3D2] text-[#1C2526]";
 
+/** Piel por restaurante (lib/menu/menuSkin.ts): sin `menuSkin` en el doc, la de siempre. */
+function pageClassFor(skin: MenuSkinId | null): string {
+  return skin === "tercera" ? TERCERA_ROOT_CLASS : MENU_PAGE_BG;
+}
+
 function MenuRestaurantHeader({
   loading,
   restaurantName,
@@ -175,10 +189,13 @@ function MenuRestaurantHeader({
   loyaltyLive,
   brand,
   tagline,
+  skin = null,
 }: {
   loading: boolean;
   restaurantName: string;
   logoUrl: string | null;
+  /** Piel del local (10-sep): "tercera" pinta su papel; null = de siempre. */
+  skin?: MenuSkinId | null;
   /**
    * Color de marca del local (8-sep): el fondo del logo que el demo recortó
    * de su foto. Sin color propio → el gris de siempre. La tinta se decide
@@ -200,6 +217,19 @@ function MenuRestaurantHeader({
    */
   loyaltyLive?: boolean;
 }) {
+  if (skin === "tercera") {
+    return (
+      <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
   return (
     <header className="relative overflow-hidden shadow-md" style={{ background: brand.bg }}>
       {brand.custom ? null : (
@@ -307,7 +337,8 @@ function MenuStatusMessage({
 
 /** La portada del local en /menu (9-sep): la app y /r ya la pintaban; el
  *  QR abre /menu y ahí no salía. Solo cuando el doc trae coverImageUrl. */
-function MenuCoverBanner({ url, name }: { url: string; name: string }) {
+function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string; skin?: MenuSkinId | null }) {
+  if (skin === "tercera") return <TerceraCover url={url} name={name} />;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -331,9 +362,12 @@ function MenuCategoryList({
   onIncrementItem,
   onDecrementItem,
   onOpenItem,
+  skin = null,
 }: {
   groups: { category: string; items: MenuRow[] }[];
   orderingEnabled: boolean;
+  /** Piel del local (10-sep). */
+  skin?: MenuSkinId | null;
   onAddItem: (item: MenuRow) => void;
   getItemQuantity?: (itemId: string) => number;
   onIncrementItem?: (item: MenuRow) => void;
@@ -341,6 +375,33 @@ function MenuCategoryList({
   /** Tocar la tarjeta/foto → hoja de detalle (9-sep, paridad app). */
   onOpenItem?: (item: MenuRow) => void;
 }) {
+  if (skin === "tercera") {
+    return (
+      <div>
+        {groups.map((group, index) => (
+          <TerceraCategorySection key={`${group.category}-${index}`} category={group.category} index={index}>
+            {group.items.map((item) => (
+              <TerceraItemRow
+                key={item.id}
+                id={item.id}
+                name={item.name}
+                description={item.description}
+                price={item.price}
+                imageUrl={item.imageUrl}
+                orderingEnabled={orderingEnabled}
+                optionsHint={optionsHintFor(item)}
+                quantity={getItemQuantity?.(item.id) ?? 0}
+                onAdd={() => onAddItem(item)}
+                onIncrement={() => onIncrementItem?.(item)}
+                onDecrement={() => onDecrementItem?.(item)}
+                onOpen={() => onOpenItem?.(item)}
+              />
+            ))}
+          </TerceraCategorySection>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="space-y-8">
       {groups.map((group, index) => (
@@ -384,12 +445,29 @@ function MenuRewardsLadderSection({
   restaurantId,
   rdata,
   items,
+  skin = null,
 }: {
   restaurantId: string;
   rdata: Record<string, unknown>;
   items: MenuRow[];
+  skin?: MenuSkinId | null;
 }) {
   if (!hasRewardLadder(rdata)) return null;
+  if (skin === "tercera") {
+    return (
+      <TerceraPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold underline decoration-dotted underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </TerceraPanel>
+    );
+  }
   return (
     <section className="mt-10" aria-label="Premios por regresar">
       <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#1C2526]">
@@ -484,6 +562,8 @@ function PublicMenuPageWithOrdering({
   const [detailItem, setDetailItem] = useState<MenuRow | null>(null);
   /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
   const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
+  /** Piel del local (10-sep): el papel de Tercera o la de siempre. */
+  const [skin, setSkin] = useState<MenuSkinId | null>(menuSkinFromRestaurant(initial?.raw));
   const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
@@ -566,6 +646,7 @@ function PublicMenuPageWithOrdering({
         setLogoUrl(getRestaurantImageUrl(rData));
         setBannerUrl(getRestaurantBannerUrl(rData));
         setBrand(brandThemeFromRestaurant(rData));
+        setSkin(menuSkinFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
@@ -645,7 +726,7 @@ function PublicMenuPageWithOrdering({
   const orderingEnabled = webOrderingReady && webOrderingAvailable && !closedNow;
 
   return (
-    <div className={MENU_PAGE_BG}>
+    <div className={pageClassFor(skin)}>
       <MenuRestaurantHeader
         loading={loading}
         restaurantName={restaurantName}
@@ -656,6 +737,7 @@ function PublicMenuPageWithOrdering({
         loyaltyLive={loyaltyLive}
         brand={brand}
         tagline={tagline}
+        skin={skin}
       />
 
       {/* §6.10: si quien mira es EL DUEÑO y no hay horario, la ausencia se
@@ -699,7 +781,7 @@ function PublicMenuPageWithOrdering({
           (webOrderingReady ? "pb-[220px] sm:pb-[200px]" : "pb-28")
         }
       >
-        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} /> : null}
+        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} skin={skin} /> : null}
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
 
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
@@ -728,6 +810,7 @@ function PublicMenuPageWithOrdering({
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
+            skin={skin}
             orderingEnabled={orderingEnabled}
             getItemQuantity={(itemId) => quantityByItemId.get(itemId) ?? 0}
             onOpenItem={(item) => setDetailItem(item)}
@@ -760,6 +843,7 @@ function PublicMenuPageWithOrdering({
             restaurantId={restaurantId}
             rdata={rdata}
             items={items}
+            skin={skin}
           />
         ) : null}
       </main>
@@ -864,6 +948,8 @@ function PublicMenuPageBrowseOnly({
   const [detailItem, setDetailItem] = useState<MenuRow | null>(null);
   /** Color de marca y lema impreso (8-sep) — lib/brand/brandColor.ts. */
   const [brand, setBrand] = useState<BrandTheme>(brandThemeFromRestaurant(initial?.raw));
+  /** Piel del local (10-sep): el papel de Tercera o la de siempre. */
+  const [skin, setSkin] = useState<MenuSkinId | null>(menuSkinFromRestaurant(initial?.raw));
   const [tagline, setTagline] = useState<string | null>(taglineFromRestaurant(initial?.raw));
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
@@ -935,6 +1021,7 @@ function PublicMenuPageBrowseOnly({
         setLogoUrl(getRestaurantImageUrl(rData));
         setBannerUrl(getRestaurantBannerUrl(rData));
         setBrand(brandThemeFromRestaurant(rData));
+        setSkin(menuSkinFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
@@ -985,7 +1072,7 @@ function PublicMenuPageBrowseOnly({
   const categoryGroups = groupMenuByCategory(items);
 
   return (
-    <div className={MENU_PAGE_BG}>
+    <div className={pageClassFor(skin)}>
       <MenuRestaurantHeader
         loading={loading}
         restaurantName={restaurantName}
@@ -995,10 +1082,11 @@ function PublicMenuPageBrowseOnly({
         loyaltyLive={loyaltyLive}
         brand={brand}
         tagline={tagline}
+        skin={skin}
       />
 
       <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
-        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} /> : null}
+        {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} skin={skin} /> : null}
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
         {!loading && !error && items.length === 0 && (
@@ -1007,6 +1095,7 @@ function PublicMenuPageBrowseOnly({
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
+            skin={skin}
             orderingEnabled={false}
             onAddItem={() => {}}
             onOpenItem={(item) => setDetailItem(item)}
@@ -1018,6 +1107,7 @@ function PublicMenuPageBrowseOnly({
             restaurantId={restaurantId}
             rdata={rdata}
             items={items}
+            skin={skin}
           />
         ) : null}
       </main>
