@@ -1,0 +1,38 @@
+/* Piel "Pecado" (pecado.tsx): la carta de Pecado Escondido. Vive junto a la
+   piel (no en globals.css) para que el fondo y la entrada viajen con ella.
+   El patrón es un recorte de SU papel: public/skins/pecado/patron.png. */
+.pecado-skin {
+  background-color: #c03427;
+  background-image: url("/skins/pecado/patron.png");
+  background-repeat: repeat;
+  background-size: 112px auto;
+}
+@keyframes pecado-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.pecado-skin .pecado-rise {
+  animation: pecado-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes pecado-float {
+  0%, 100% { transform: rotate(-2deg) translateY(0); }
+  50% { transform: rotate(2deg) translateY(-5px); }
+}
+.pecado-skin .pecado-float {
+  animation: pecado-float 5s ease-in-out infinite;
+  transform-origin: 50% 95%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pecado-skin .pecado-rise, .pecado-skin .pecado-float { animation: none; }
+}
+
+/* Hoja verde PECADO MAÑANERO: la misma hoja crema, tinta verde musgo en vez de
+   roja. Se recolorea por clase para que píldoras, renglones y botones sigan
+   siendo los mismos componentes. */
+.pecado-skin .pecado-green .text-\[\#a61c21\],
+.pecado-skin .pecado-green .text-\[\#a61c21\]\/90,
+.pecado-skin .pecado-green .text-\[\#a61c21\]\/85,
+.pecado-skin .pecado-green .text-\[\#a61c21\]\/80 { color: #4d5f2a; }
+.pecado-skin .pecado-green .border-\[\#a61c21\] { border-color: #4d5f2a; }
+.pecado-skin .pecado-green .bg-\[\#a61c21\] { background-color: #48612c; box-shadow: 0 3px 0 #2f4219; }
+.pecado-skin .pecado-green img[src*="/skins/pecado/ic_"] { filter: hue-rotate(75deg) saturate(0.55) brightness(0.9); }

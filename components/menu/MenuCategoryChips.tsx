@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MenuSkinId } from "@/lib/menu/menuSkin";
+import { pecadoCategoryLabel } from "@/components/menu/skins/pecado";
 
 export type MenuChip = { category: string; index: number; closed?: boolean };
 
@@ -57,6 +58,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
 
   if (chips.length < 2) return null;
   const tercera = skin === "tercera";
+  const pecado = skin === "pecado";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -72,7 +74,9 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
         "sticky top-0 z-30 -mx-4 mb-4 px-4 py-2 sm:-mx-6 sm:px-6 " +
         (tercera
           ? "bg-[#f9b699]/95 backdrop-blur-sm"
-          : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
+          : pecado
+            ? "bg-[#c03427]/95 backdrop-blur-sm"
+            : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
       aria-label="Secciones del menú"
@@ -83,6 +87,9 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
           const base = tercera
             ? "[font-family:var(--tz-pixel),monospace] text-[11px] uppercase tracking-tight border-2 border-[#1a1a1a] " +
               (on ? "bg-[#1a1a1a] text-[#fbddd5]" : "bg-transparent text-[#1a1a1a] hover:bg-[#1a1a1a]/10")
+            : pecado
+              ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[13px] font-extrabold uppercase tracking-wide border-2 border-[#ffeecf] " +
+                (on ? "bg-[#ffeecf] text-[#a61c21]" : "bg-transparent text-[#ffeecf] hover:bg-[#ffeecf]/15")
             : "text-[13px] font-semibold border " +
               (on
                 ? "border-[#F28C38] bg-[#F28C38] text-white shadow-sm"
@@ -97,7 +104,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 capitalize transition-colors ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera ? c.category : c.category.toLowerCase()}
+              {tercera ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

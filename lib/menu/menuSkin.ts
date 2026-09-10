@@ -11,14 +11,22 @@
  * Sin el campo (o con basura) → la piel de siempre, byte por byte.
  * Solo web: la app pinta el menú de siempre (paridad-app-web: decisión
  * consciente, el QR abre la web).
+ *
+ * Pieles vivas:
+ *  - "tercera": Café de la Tercera (components/menu/skins/tercera.tsx).
+ *  - "pecado": Pecado Escondido, Puerto Escondido — su carta roja con papel
+ *    crema e iconos a línea (components/menu/skins/pecado.tsx). Segunda piel;
+ *    la regla sigue: piel en código hasta el 3er local, luego "tema" en el doc.
  */
-export type MenuSkinId = "tercera";
+export type MenuSkinId = "tercera" | "pecado";
 
 export const MENU_SKIN_FIELD = "menuSkin";
+
+const KNOWN: readonly string[] = ["tercera", "pecado"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,
 ): MenuSkinId | null {
   const v = raw?.[MENU_SKIN_FIELD];
-  return v === "tercera" ? "tercera" : null;
+  return typeof v === "string" && KNOWN.includes(v) ? (v as MenuSkinId) : null;
 }

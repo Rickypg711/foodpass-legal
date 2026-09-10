@@ -49,6 +49,16 @@ import {
   TerceraPanel,
 } from "@/components/menu/skins/tercera";
 import {
+  PECADO_ROOT_CLASS,
+  PecadoCategorySection,
+  PecadoCover,
+  PecadoHeader,
+  PecadoItemRow,
+  PecadoPanel,
+  PecadoSheet,
+  pecadoSheets,
+} from "@/components/menu/skins/pecado";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -184,7 +194,9 @@ const MENU_PAGE_BG =
 
 /** Piel por restaurante (lib/menu/menuSkin.ts): sin `menuSkin` en el doc, la de siempre. */
 function pageClassFor(skin: MenuSkinId | null): string {
-  return skin === "tercera" ? TERCERA_ROOT_CLASS : MENU_PAGE_BG;
+  if (skin === "tercera") return TERCERA_ROOT_CLASS;
+  if (skin === "pecado") return PECADO_ROOT_CLASS;
+  return MENU_PAGE_BG;
 }
 
 function MenuRestaurantHeader({
@@ -228,6 +240,19 @@ function MenuRestaurantHeader({
   if (skin === "tercera") {
     return (
       <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "pecado") {
+    return (
+      <PecadoHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -347,6 +372,7 @@ function MenuStatusMessage({
  *  QR abre /menu y ahí no salía. Solo cuando el doc trae coverImageUrl. */
 function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string; skin?: MenuSkinId | null }) {
   if (skin === "tercera") return <TerceraCover url={url} name={name} />;
+  if (skin === "pecado") return <PecadoCover url={url} name={name} />;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -401,6 +427,53 @@ function MenuCategoryList({
   const [opened, setOpened] = useState<Record<string, boolean>>({});
   const toggle = (category: string) =>
     setOpened((prev) => ({ ...prev, [category]: !prev[category] }));
+  if (skin === "pecado") {
+    // Las hojas del papel: PLATILLOS y BEBIDAS, cada categoría con su píldora.
+    // El índice de cada sección es el GLOBAL (los chips saltan por menu-cat-{i}).
+    const sheets = pecadoSheets(groups.map((g, index) => ({ ...g, index })));
+    return (
+      <div>
+        {sheets.map((sheet, sheetIndex) => (
+          <PecadoSheet key={`${sheet.title}-${sheetIndex}`} title={sheet.title} tone={sheet.tone} index={sheetIndex}>
+            {sheet.groups.map((group) => {
+              const index = group.index;
+              const { closed, note } = availabilityOf(group.category);
+              return (
+                <PecadoCategorySection
+                  key={`${group.category}-${index}`}
+                  category={group.category}
+                  index={index}
+                  note={note}
+                  closed={closed}
+                  collapsed={closed && !opened[group.category]}
+                  itemCount={group.items.length}
+                  onToggle={() => toggle(group.category)}
+                >
+                  {(!closed || opened[group.category]) && group.items.map((item) => (
+                    <PecadoItemRow
+                      key={item.id}
+                      id={item.id}
+                      name={item.name}
+                      description={item.description}
+                      price={item.price}
+                      imageUrl={item.imageUrl}
+                      orderingEnabled={orderingEnabled && !closed}
+                      optionsHint={optionsHintFor(item)}
+                      quantity={getItemQuantity?.(item.id) ?? 0}
+                      onAdd={() => onAddItem(item)}
+                      onIncrement={() => onIncrementItem?.(item)}
+                      onDecrement={() => onDecrementItem?.(item)}
+                      onOpen={() => onOpenItem?.(item)}
+                    />
+                  ))}
+                </PecadoCategorySection>
+              );
+            })}
+          </PecadoSheet>
+        ))}
+      </div>
+    );
+  }
   if (skin === "tercera") {
     return (
       <div>
@@ -514,6 +587,21 @@ function MenuRewardsLadderSection({
   skin?: MenuSkinId | null;
 }) {
   if (!hasRewardLadder(rdata)) return null;
+  if (skin === "pecado") {
+    return (
+      <PecadoPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#a61c21] underline decoration-[#a61c21]/40 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </PecadoPanel>
+    );
+  }
   if (skin === "tercera") {
     return (
       <TerceraPanel title="Premios por regresar">
@@ -551,10 +639,15 @@ function MenuRewardsLadderSection({
   );
 }
 
-function MenuBottomDock({ children }: { children: ReactNode }) {
+function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?: MenuSkinId | null }) {
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#1C2526]/10 bg-[#FAF7F2]/95 px-4 py-2.5 shadow-[0_-8px_32px_rgba(28,37,38,0.08)] backdrop-blur-md"
+      className={
+        "fixed bottom-0 left-0 right-0 z-40 border-t px-4 py-2.5 backdrop-blur-md " +
+        (skin === "pecado"
+          ? "border-[#a61c21]/20 bg-[#ffeecf]/95 shadow-[0_-8px_32px_rgba(60,10,5,0.25)]"
+          : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
+      }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto w-full max-w-3xl lg:max-w-4xl">{children}</div>
@@ -881,6 +974,7 @@ function PublicMenuPageWithOrdering({
               variant="banner"
               firstVisitRewardLabel={firstVisitReward}
               loyaltyLive={loyaltyLive}
+              skin={skin}
             />
           </div>
         )}
@@ -983,11 +1077,12 @@ function PublicMenuPageWithOrdering({
           restaurantName={restaurantName}
           firstVisitRewardLabel={firstVisitReward}
               loyaltyLive={loyaltyLive}
+              skin={skin}
         />
       )}
 
       {closedNow && !loading && !error ? (
-        <MenuBottomDock>
+        <MenuBottomDock skin={skin}>
           {/* COMPACTO a propósito: la variante banner hacía el dock tan alto
               que tapaba el final del menú (el scroll "rebotaba" sin dejar ver
               los últimos platillos). El upsell queda en una línea. */}
@@ -1000,16 +1095,18 @@ function PublicMenuPageWithOrdering({
             variant="compact"
             firstVisitRewardLabel={firstVisitReward}
               loyaltyLive={loyaltyLive}
+              skin={skin}
           />
         </MenuBottomDock>
       ) : showMpUnavailableDock ? (
-        <MenuBottomDock>
+        <MenuBottomDock skin={skin}>
           <MenuAppRewardsCta
             restaurantId={restaurantId}
             restaurantName={restaurantName}
             variant="banner"
             firstVisitRewardLabel={firstVisitReward}
               loyaltyLive={loyaltyLive}
+              skin={skin}
           />
         </MenuBottomDock>
       ) : null}
@@ -1241,7 +1338,7 @@ function PublicMenuPageBrowseOnly({
         onAdd={() => setDetailItem(null)}
       />
 
-      <MenuBottomDock>
+      <MenuBottomDock skin={skin}>
         <MenuAppRewardsCta
           restaurantId={restaurantId}
           restaurantName={restaurantName}
@@ -1249,6 +1346,7 @@ function PublicMenuPageBrowseOnly({
           disabled={!menuLinkResolved}
           firstVisitRewardLabel={firstVisitReward}
               loyaltyLive={loyaltyLive}
+              skin={skin}
         />
       </MenuBottomDock>
     </div>

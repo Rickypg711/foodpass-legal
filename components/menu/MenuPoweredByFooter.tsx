@@ -15,18 +15,21 @@ export const POWERED_BY_HREF =
 
 export function MenuPoweredByFooter({ skin = null }: { skin?: MenuSkinId | null }) {
   const tercera = skin === "tercera";
+  const pecado = skin === "pecado";
   return (
     <footer
       className={
         "mt-12 border-t pt-5 text-center text-[12px] leading-relaxed " +
         (tercera
           ? "border-dotted border-[#1a1a1a]/40 text-[#1a1a1a]/70"
-          : "border-[#1C2526]/10 text-[#1C2526]/55")
+          : pecado
+            ? "border-[#ffeecf]/35 text-[#ffeecf]/85"
+            : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
       <p>
         Hecho con{" "}
-        <span className={tercera ? "font-bold text-[#1a1a1a]" : "font-semibold text-[#1C2526]/75"}>Comeleal</span>
+        <span className={tercera ? "font-bold text-[#1a1a1a]" : pecado ? "font-bold text-[#ffeecf]" : "font-semibold text-[#1C2526]/75"}>Comeleal</span>
       </p>
       <p className="mt-1">
         ¿Tienes un restaurante?{" "}
@@ -34,7 +37,11 @@ export function MenuPoweredByFooter({ skin = null }: { skin?: MenuSkinId | null 
           href={POWERED_BY_HREF}
           className={
             "font-semibold underline underline-offset-4 " +
-            (tercera ? "text-[#e74b34] decoration-dotted" : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
+            (tercera
+              ? "text-[#e74b34] decoration-dotted"
+              : pecado
+                ? "text-[#fbaa19] decoration-[#fbaa19]/50 hover:decoration-[#fbaa19]"
+                : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >
           Crea tu menú gratis →
