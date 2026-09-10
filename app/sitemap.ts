@@ -26,6 +26,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      // 10-sep-2026: la comparación honesta (MenuBot y Poster tienen la suya).
+      url: `${SITE_URL}/mejores-apps-menu-digital-restaurantes`,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/pedidos-whatsapp-restaurantes`,
       changeFrequency: "weekly",
       priority: 0.9,

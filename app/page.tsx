@@ -6,7 +6,10 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { VendorPageAnalytics } from "@/components/vendor/VendorPageAnalytics";
 import { SITE_NAME, SITE_URL, siteIcons } from "@/lib/siteMetadata";
 
-const PAGE_TITLE = "Comeleal para restaurantes — Empieza gratis";
+// 10-sep-2026: título con lo que el dueño busca en Google ("menú digital",
+// "QR", "gratis", "restaurante"), no con el nombre de la marca. MenuBot y
+// Poster compiten por esa búsqueda; Tacos El Negro llegó por Google.
+const PAGE_TITLE = "Menú digital con QR gratis para tu restaurante, en 1 minuto";
 const PAGE_DESCRIPTION =
   "Tu menú de papel, digital y gratis en 1 minuto. Con QR, pedidos por WhatsApp y puntos para que tus clientes regresen, también cuando pagan en efectivo. Hecho en Chihuahua.";
 

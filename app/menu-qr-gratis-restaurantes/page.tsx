@@ -228,6 +228,7 @@ export default function Page() {
             <Link href="/lealtad-restaurantes-chihuahua" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Programa de lealtad en Chihuahua →</Link>
             <Link href="/pedidos-whatsapp-restaurantes" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Pedidos por WhatsApp sin comisiones →</Link>
             <Link href="/clientes-que-regresan" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">¿Cómo hacer que tus clientes regresen? →</Link>
+            <Link href="/mejores-apps-menu-digital-restaurantes" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Comparación: las mejores apps de menú digital →</Link>
           </div>
         </div>
       </section>
