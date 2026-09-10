@@ -59,6 +59,15 @@ import {
   pecadoSheets,
 } from "@/components/menu/skins/pecado";
 import {
+  NB_ROOT_CLASS,
+  NegroBlancoCategorySection,
+  NegroBlancoCover,
+  NegroBlancoHeader,
+  NegroBlancoItemRow,
+  NegroBlancoPanel,
+  nbTone,
+} from "@/components/menu/skins/negroblanco";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -196,6 +205,7 @@ const MENU_PAGE_BG =
 function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "tercera") return TERCERA_ROOT_CLASS;
   if (skin === "pecado") return PECADO_ROOT_CLASS;
+  if (skin === "negroblanco") return NB_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -240,6 +250,19 @@ function MenuRestaurantHeader({
   if (skin === "tercera") {
     return (
       <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "negroblanco") {
+    return (
+      <NegroBlancoHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -373,6 +396,7 @@ function MenuStatusMessage({
 function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string; skin?: MenuSkinId | null }) {
   if (skin === "tercera") return <TerceraCover url={url} name={name} />;
   if (skin === "pecado") return <PecadoCover url={url} name={name} />;
+  if (skin === "negroblanco") return <NegroBlancoCover url={url} name={name} />;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -471,6 +495,49 @@ function MenuCategoryList({
             })}
           </PecadoSheet>
         ))}
+      </div>
+    );
+  }
+  if (skin === "negroblanco") {
+    // Negro y blanco: cada sección alterna panel negro / panel blanco y sus
+    // renglones heredan el tono (el "+" se invierte).
+    return (
+      <div>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const tone = nbTone(index);
+          return (
+            <NegroBlancoCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && group.items.map((item) => (
+                <NegroBlancoItemRow
+                  key={item.id}
+                  id={item.id}
+                  tone={tone}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                />
+              ))}
+            </NegroBlancoCategorySection>
+          );
+        })}
       </div>
     );
   }
@@ -602,6 +669,21 @@ function MenuRewardsLadderSection({
       </PecadoPanel>
     );
   }
+  if (skin === "negroblanco") {
+    return (
+      <NegroBlancoPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-semibold underline decoration-[#0b0b0b]/30 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </NegroBlancoPanel>
+    );
+  }
   if (skin === "tercera") {
     return (
       <TerceraPanel title="Premios por regresar">
@@ -646,7 +728,9 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
         "fixed bottom-0 left-0 right-0 z-40 border-t px-4 py-2.5 backdrop-blur-md " +
         (skin === "pecado"
           ? "border-[#a61c21]/20 bg-[#ffeecf]/95 shadow-[0_-8px_32px_rgba(60,10,5,0.25)]"
-          : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
+          : skin === "negroblanco"
+            ? "border-[#0b0b0b]/10 bg-[#f4f3ef]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.3)]"
+            : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
@@ -658,9 +742,12 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
 function PublicMenuPageWithOrdering({
   restaurantId,
   initial,
+  preview = false,
 }: {
   restaurantId: string;
   initial: MenuInitialData | null;
+  /** Solo /dev/piel: pinta el sembrado sin leer Firestore (vista previa de una piel). */
+  preview?: boolean;
 }) {
   const { addItem, lines, incrementLine, decrementLine } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
@@ -775,6 +862,13 @@ function PublicMenuPageWithOrdering({
       return;
     }
 
+    // Vista previa local de una piel (/dev/piel): sin Firestore, solo el sembrado.
+    if (preview) {
+      if (initial) setSchedule(scheduleStatus(initial.raw));
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     (async () => {
@@ -854,7 +948,7 @@ function PublicMenuPageWithOrdering({
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, initial]);
+  }, [restaurantId, initial, preview]);
 
   // Dice solo lo que el local ofrece de verdad (Mercado Pago, al recoger,
   // o nada) — lib/order/menuPaymentLine.ts, con candado.
@@ -1117,9 +1211,12 @@ function PublicMenuPageWithOrdering({
 function PublicMenuPageBrowseOnly({
   restaurantId,
   initial,
+  preview = false,
 }: {
   restaurantId: string;
   initial: MenuInitialData | null;
+  /** Solo /dev/piel: pinta el sembrado sin leer Firestore (vista previa de una piel). */
+  preview?: boolean;
 }) {
   const [loading, setLoading] = useState(initial === null);
   const [error, setError] = useState<string | null>(null);
@@ -1175,6 +1272,14 @@ function PublicMenuPageBrowseOnly({
   useEffect(() => {
     if (!restaurantId) {
       setError("Falta el id del restaurante");
+      setLoading(false);
+      setMenuLinkResolved(true);
+      return;
+    }
+
+    // Vista previa local de una piel (/dev/piel): sin Firestore, solo el sembrado.
+    if (preview) {
+      if (initial) setSchedule(scheduleStatus(initial.raw));
       setLoading(false);
       setMenuLinkResolved(true);
       return;
@@ -1268,7 +1373,7 @@ function PublicMenuPageBrowseOnly({
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, initial]);
+  }, [restaurantId, initial, preview]);
 
   const categoryGroups = groupMenuByCategory(items);
 
@@ -1356,14 +1461,17 @@ function PublicMenuPageBrowseOnly({
 export default function MenuView({
   restaurantId,
   initial,
+  preview = false,
 }: {
   restaurantId: string;
   initial: MenuInitialData | null;
+  /** Solo /dev/piel: pinta el sembrado sin leer Firestore (vista previa de una piel). */
+  preview?: boolean;
 }) {
   if (isWebOrderingEnabled()) {
     return (
-      <PublicMenuPageWithOrdering restaurantId={restaurantId} initial={initial} />
+      <PublicMenuPageWithOrdering restaurantId={restaurantId} initial={initial} preview={preview} />
     );
   }
-  return <PublicMenuPageBrowseOnly restaurantId={restaurantId} initial={initial} />;
+  return <PublicMenuPageBrowseOnly restaurantId={restaurantId} initial={initial} preview={preview} />;
 }

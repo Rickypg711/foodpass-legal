@@ -59,6 +59,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   if (chips.length < 2) return null;
   const tercera = skin === "tercera";
   const pecado = skin === "pecado";
+  const nb = skin === "negroblanco";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -76,7 +77,9 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
           ? "bg-[#f9b699]/95 backdrop-blur-sm"
           : pecado
             ? "bg-[#c03427]/95 backdrop-blur-sm"
-            : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
+            : nb
+              ? "bg-[#f4f3ef]/88 py-2.5 backdrop-blur-md"
+              : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
       aria-label="Secciones del menú"
@@ -90,6 +93,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
             : pecado
               ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[13px] font-extrabold uppercase tracking-wide border-2 border-[#ffeecf] " +
                 (on ? "bg-[#ffeecf] text-[#a61c21]" : "bg-transparent text-[#ffeecf] hover:bg-[#ffeecf]/15")
+            : nb
+              ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] border " +
+                (on
+                  ? "border-[#0b0b0b] bg-[#0b0b0b] text-white"
+                  : "border-[#0b0b0b]/15 bg-white/70 text-[#0b0b0b]/70 hover:border-[#0b0b0b]/50 hover:text-[#0b0b0b]")
             : "text-[13px] font-semibold border " +
               (on
                 ? "border-[#F28C38] bg-[#F28C38] text-white shadow-sm"
@@ -101,7 +109,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 capitalize transition-colors ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
               {tercera ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}

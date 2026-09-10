@@ -18,10 +18,12 @@ export function CartBar({
   restaurantName: string;
   firstVisitRewardLabel?: string | null;
   loyaltyLive?: boolean;
-  /** Piel del local (10-sep): "pecado" pinta la barra crema con el botón rojo de su papel. */
+  /** Piel del local (10-sep): "pecado" pinta la barra crema con el botón rojo de su papel;
+   *  "negroblanco", papel con píldora negra. */
   skin?: MenuSkinId | null;
 }) {
   const pecado = skin === "pecado";
+  const nb = skin === "negroblanco";
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
@@ -52,7 +54,9 @@ export function CartBar({
         "fixed bottom-0 left-0 right-0 z-40 border-t px-4 py-2.5 backdrop-blur-md " +
         (pecado
           ? "border-[#a61c21]/20 bg-[#ffeecf]/95 shadow-[0_-8px_32px_rgba(60,10,5,0.25)]"
-          : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
+          : nb
+            ? "border-[#0b0b0b]/10 bg-[#f4f3ef]/92 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.35)]"
+            : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
@@ -62,13 +66,31 @@ export function CartBar({
           className={
             pecado
               ? "flex min-h-11 w-full items-center justify-between rounded-full bg-[#a61c21] px-5 py-2.5 text-[#ffeecf] shadow-[0_3px_0_#7a1014] transition-colors hover:bg-[#8f151a]"
-              : "flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
+              : nb
+                ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#0b0b0b] px-5 py-3 text-white transition-transform hover:scale-[1.005] active:scale-[0.995]"
+                : "flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
           }
         >
-          <span className={pecado ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase tracking-wide" : "text-sm font-semibold"}>
+          <span
+            className={
+              pecado
+                ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase tracking-wide"
+                : nb
+                  ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11.5px] uppercase tracking-[0.16em] text-white/75"
+                  : "text-sm font-semibold"
+            }
+          >
             {itemCount} {itemCount === 1 ? "artículo" : "artículos"}
           </span>
-          <span className={pecado ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase italic tabular-nums tracking-wide" : "text-sm font-bold tabular-nums"}>
+          <span
+            className={
+              pecado
+                ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase italic tabular-nums tracking-wide"
+                : nb
+                  ? "text-[15px] font-semibold tabular-nums tracking-[-0.01em]"
+                  : "text-sm font-bold tabular-nums"
+            }
+          >
             Ver carrito · {formatPrice(subtotal)}
           </span>
         </Link>

@@ -17,6 +17,7 @@ import type { MenuSkinId } from "@/lib/menu/menuSkin";
 import type { ScheduleStatus } from "@/lib/schedule";
 import { PECADO_ROOT_CLASS, PecadoHeader } from "@/components/menu/skins/pecado";
 import { TERCERA_ROOT_CLASS, TerceraHeader } from "@/components/menu/skins/tercera";
+import { NB_MONO, NB_ROOT_CLASS, NBDots, NegroBlancoHeader } from "@/components/menu/skins/negroblanco";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -153,8 +154,42 @@ const TERCERA: LandingTheme = {
   photoPrice: "text-[#e74b34]",
 };
 
+/** Negro Blanco Café: el encabezado negro con su disco, tarjetas blancas
+ *  sobre la retícula del pegboard, botón píldora negro, detalles en mono. */
+const NEGROBLANCO: LandingTheme = {
+  root: NB_ROOT_CLASS,
+  Header: (p) => <NegroBlancoHeader {...p} />,
+  cta: "block min-h-12 rounded-full bg-[#0b0b0b] py-3.5 text-center text-[16px] font-semibold tracking-[-0.01em] text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.7)] transition-transform hover:scale-[1.01] active:scale-[0.99]",
+  btnWhatsapp: `${NB_MONO} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[#0b0b0b] bg-white px-3 py-2.5 text-[11.5px] uppercase tracking-[0.12em] text-[#0b0b0b] transition-colors hover:bg-[#0b0b0b] hover:text-white`,
+  btnNeutral: `${NB_MONO} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[#0b0b0b]/25 bg-white/60 px-3 py-2.5 text-[11.5px] uppercase tracking-[0.12em] text-[#0b0b0b] transition-colors hover:border-[#0b0b0b]`,
+  descriptionCard: "rounded-[28px] bg-white p-5 text-[15px] leading-relaxed tracking-[-0.01em] text-[#0b0b0b]/80 ring-1 ring-[#0b0b0b]/[0.07] sm:p-6",
+  card: "rounded-[32px] bg-white px-5 pt-5 pb-5 ring-1 ring-[#0b0b0b]/[0.07] sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className="mb-4 flex items-center gap-3">
+      <NBDots />
+      <span className="text-[26px] font-semibold lowercase leading-none tracking-[-0.045em] text-[#0b0b0b]">{title}</span>
+    </h2>
+  ),
+  link: "font-semibold text-[#0b0b0b] underline decoration-[#0b0b0b]/30 underline-offset-4 hover:decoration-[#0b0b0b]",
+  text: "text-[#0b0b0b]/80",
+  textSoft: "text-[#0b0b0b]/65",
+  todayRow: "bg-[#0b0b0b] font-semibold text-white",
+  row: "text-[#0b0b0b]/70",
+  closedText: "text-[#0b0b0b]/40",
+  faqOpen: "open:bg-[#0b0b0b]/[0.04]",
+  faqChevron: "text-[#0b0b0b]",
+  faqAnswer: "text-[#0b0b0b]/75",
+  seoText: "text-[#0b0b0b]/55",
+  signature: `${NB_MONO} text-[11px] uppercase tracking-[0.14em] text-[#0b0b0b]/50`,
+  signatureLink: "font-semibold text-[#0b0b0b] underline decoration-[#0b0b0b]/30 underline-offset-4",
+  loading: "rounded-[28px] bg-white px-4 py-6 text-center text-sm text-[#0b0b0b]/60 ring-1 ring-[#0b0b0b]/[0.07]",
+  photoName: "text-[#0b0b0b]",
+  photoPrice: `${NB_MONO} text-[#0b0b0b]/60`,
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
   if (skin === "pecado") return PECADO;
   if (skin === "tercera") return TERCERA;
+  if (skin === "negroblanco") return NEGROBLANCO;
   return DEFAULT;
 }

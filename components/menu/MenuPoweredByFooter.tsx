@@ -33,6 +33,7 @@ export function MenuPoweredByFooter({
 }) {
   const tercera = skin === "tercera";
   const pecado = skin === "pecado";
+  const nb = skin === "negroblanco";
   const href = poweredByHref(restaurantId);
   return (
     <footer
@@ -42,12 +43,26 @@ export function MenuPoweredByFooter({
           ? "border-dotted border-[#1a1a1a]/40 text-[#1a1a1a]/70"
           : pecado
             ? "border-[#ffeecf]/35 text-[#ffeecf]/85"
-            : "border-[#1C2526]/10 text-[#1C2526]/55")
+            : nb
+              ? "border-[#0b0b0b]/10 [font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] text-[#0b0b0b]/50"
+              : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
       <p>
         Hecho con{" "}
-        <span className={tercera ? "font-bold text-[#1a1a1a]" : pecado ? "font-bold text-[#ffeecf]" : "font-semibold text-[#1C2526]/75"}>Comeleal</span>
+        <span
+          className={
+            tercera
+              ? "font-bold text-[#1a1a1a]"
+              : pecado
+                ? "font-bold text-[#ffeecf]"
+                : nb
+                  ? "font-semibold text-[#0b0b0b]"
+                  : "font-semibold text-[#1C2526]/75"
+          }
+        >
+          Comeleal
+        </span>
       </p>
       <p className="mt-1">
         ¿Tienes un restaurante?{" "}
@@ -59,7 +74,9 @@ export function MenuPoweredByFooter({
               ? "text-[#e74b34] decoration-dotted"
               : pecado
                 ? "text-[#fbaa19] decoration-[#fbaa19]/50 hover:decoration-[#fbaa19]"
-                : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
+                : nb
+                  ? "text-[#0b0b0b] decoration-[#0b0b0b]/30 hover:decoration-[#0b0b0b]"
+                  : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >
           Crea tu menú gratis →

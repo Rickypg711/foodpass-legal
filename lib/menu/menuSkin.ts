@@ -17,12 +17,15 @@
  *  - "pecado": Pecado Escondido, Puerto Escondido — su carta roja con papel
  *    crema e iconos a línea (components/menu/skins/pecado.tsx). Segunda piel;
  *    la regla sigue: piel en código hasta el 3er local, luego "tema" en el doc.
+ *  - "negroblanco": Negro Blanco Café, Chihuahua — negro y blanco, sus tres
+ *    puntos, su pegboard y su arte a línea (components/menu/skins/negroblanco.tsx).
+ *    Tercera piel = la última en código; la siguiente ya es "tema" en el doc.
  */
-export type MenuSkinId = "tercera" | "pecado";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

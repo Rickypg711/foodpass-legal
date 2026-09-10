@@ -85,6 +85,13 @@ export function useWebOrdering(): WebOrderingContextValue {
   return ctx;
 }
 
+/** Solo /dev/piel (vista previa local de una piel): pedidos prendidos sin doc
+ *  en Firestore, para ver el "+" y la barra del carrito. Nunca en producción. */
+export function WebOrderingPreviewProvider({ children }: { children: ReactNode }) {
+  const value = useMemo(() => ({ webOrderingReady: true, webOrderingAvailable: true }), []);
+  return <WebOrderingContext.Provider value={value}>{children}</WebOrderingContext.Provider>;
+}
+
 /** Safe when ordering layout is browse-only (no provider). */
 export function useWebOrderingOptional(): WebOrderingContextValue | null {
   return useContext(WebOrderingContext);
