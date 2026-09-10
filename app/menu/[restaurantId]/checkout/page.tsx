@@ -15,11 +15,17 @@ import {
   pickupPaymentLine,
   type PaymentMethod,
 } from "@/lib/pos/paidOrderFields";
-import { trackCheckoutStarted, trackOrderPlaced } from "@/lib/analytics/orderEvents";
+import {
+  trackCheckoutStarted,
+  trackOrderPlaced,
+  trackWhatsappOrderMessageSent,
+} from "@/lib/analytics/orderEvents";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
+import { buildWhatsappUrl, formatWhatsappOrderMessage } from "@/lib/order/formatWhatsappMessage";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { loadDinerIdentity } from "@/lib/order/dinerIdentity";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
@@ -142,6 +148,15 @@ export default function CheckoutPage() {
    *  (robo 5-sep: Fluxsales "Acumulas 37 Boras con este pedido"). */
   const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
+  /**
+   * 📲 WhatsApp del local, para abrirle el chat al comensal EN EL MISMO TOQUE
+   * de ordenar (10-sep-2026). Antes el WhatsApp era un segundo botón opcional
+   * en la página del pedido, y el dueño sin la app (Tarudo's) no se enteraba
+   * de nada. El pedido se guarda igual (panel, puntos, teléfono); WhatsApp es
+   * la campana. Sin número guardado → no se abre nada y todo sigue como antes.
+   */
+  const [restaurantWhatsapp, setRestaurantWhatsapp] = useState<string | null>(null);
+  const [phoneCountry, setPhoneCountry] = useState<string>(DEFAULT_PHONE_COUNTRY);
   const [mercadoPagoAvailable, setMercadoPagoAvailable] = useState(false);
   /** Vendor opt-in: "Pagar al recoger" (payAtPickupEnabled on the restaurant doc). */
   const [payAtPickupAvailable, setPayAtPickupAvailable] = useState(false);
@@ -254,6 +269,10 @@ export default function CheckoutPage() {
           setEarnPolicy(earnPolicyFromRestaurant(data));
           setLoyaltyLive(restaurantPromisesPoints(data));
           setRestaurantData(data);
+          setPhoneCountry(phoneCountryOf(data));
+          setRestaurantWhatsapp(
+            typeof data.whatsapp === "string" && data.whatsapp.trim() ? data.whatsapp.trim() : null,
+          );
           setClosedNow(isPositivelyClosedNow(data));
           setClosedLabel(scheduleStatus(data)?.label ?? null);
           const mpOk = restaurantSupportsWebCheckout(restaurantId, data);
@@ -412,6 +431,14 @@ export default function CheckoutPage() {
         paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
         mercadoPagoAvailable,
       });
+      // 📲 La pestaña de WhatsApp se abre AQUÍ, en el mismo click, ANTES del
+      // await: después de un await el navegador (Safari iOS sobre todo) la
+      // bloquea como popup. Se abre en blanco y se le pone el wa.me cuando el
+      // pedido ya existe; si el pedido falla, se cierra. En la mesa no aplica:
+      // el comensal está sentado y la cocina ya lo ve. "noopener" NO va en los
+      // features: con él window.open devuelve null y perdemos la pestaña.
+      const abreWhatsapp = Boolean(restaurantWhatsapp) && !enMesa;
+      const waWindow: Window | null = abreWhatsapp ? window.open("about:blank", "_blank") : null;
       try {
         const result = await createCustomerWebOrder({
           restaurantId,
@@ -442,12 +469,41 @@ export default function CheckoutPage() {
           orderSource: ORDER_SOURCE_CUSTOMER_WEB,
           total: result.total,
         });
+        const orderPath = `/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(result.orderId)}`;
+        if (abreWhatsapp && restaurantWhatsapp) {
+          // Mismo ticket que el botón verde de la página del pedido (con link
+          // del recibo y PIN): al dueño le llega TODO para cobrar en un toque.
+          const text = formatWhatsappOrderMessage({
+            restaurantName,
+            orderId: result.orderId,
+            pickupPin: result.pickupPin,
+            customerName: name,
+            cartLines: lines,
+            total: result.total,
+            paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
+            redemptionName: redemption?.name ?? null,
+            orderUrl: `${window.location.origin}${orderPath}`,
+            deliveryAddress: esDomicilio ? deliveryAddress : null,
+            deliveryFee: esDomicilio ? envio : null,
+          });
+          const waUrl = buildWhatsappUrl(restaurantWhatsapp, text, phoneCountry);
+          if (waWindow && !waWindow.closed) {
+            try {
+              waWindow.opener = null;
+              waWindow.location.href = waUrl;
+              trackWhatsappOrderMessageSent({ restaurantId, orderId: result.orderId });
+            } catch {
+              /* la pestaña se cerró o el navegador la bloqueó: queda el botón verde */
+            }
+          }
+        }
         clear();
-        router.push(
-          `/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(result.orderId)}`,
-        );
+        router.push(orderPath);
         return;
       } catch (err) {
+        if (waWindow && !waWindow.closed) {
+          try { waWindow.close(); } catch { /* ya cerrada */ }
+        }
         const message = err instanceof Error ? err.message : "No pudimos crear tu pedido.";
         mpWebDebugClient("order_create_error", {
           restaurantId,
@@ -955,7 +1011,9 @@ export default function CheckoutPage() {
                         : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
                     }`}
                   >
-                    <span className="text-xl" aria-hidden>💳</span>
+                    {/* 🌐 y no 💳: "Tarjeta al recoger" también lleva 💳 y
+                        las dos opciones se veían iguales (Ricardo, 10-sep). */}
+                    <span className="text-xl" aria-hidden>🌐</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">Pagar en línea</span>
                       <span className="block text-xs text-[#1C2526]/55">
