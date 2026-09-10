@@ -10,6 +10,7 @@
     "test:whatsapp-url": "node scripts/validate-whatsapp-url.mjs",
     "test:menu-payment-line": "node scripts/validate-menu-payment-line.mjs",
     "test:order-payload": "node scripts/validate-order-payload.mjs",
+    "test:brand-color": "node --experimental-strip-types scripts/validate-brand-color.mjs",
     "test:delivery": "node --experimental-strip-types scripts/validate-delivery.mjs",
     "test:caja-mode-exit": "node scripts/validate-caja-mode-exit.mjs",
     "test:print-ticket": "node --experimental-strip-types scripts/validate-print-ticket.mjs",

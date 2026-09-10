@@ -30,6 +30,7 @@ const mod = await import(join(root, "lib/brand/brandColor.ts"));
 const {
   normalizeBrandColor, onBrandColor, relativeLuminance,
   brandThemeFromRestaurant, taglineFromRestaurant, inkAlpha,
+  normalizeTaglineInput, TAGLINE_MAX,
   BRAND_DEFAULT_BG, INK_LIGHT, INK_DARK, LIGHT_BG_LUMINANCE, PAINT_BRAND_COLOR,
 } = mod;
 
@@ -84,4 +85,18 @@ for (const [file, needle] of must) {
   const src = readFileSync(join(root, file), "utf8");
   assert.ok(src.includes(needle), `${file} debe leer el color de marca (${needle})`);
 }
+// 6. El lema que escribe el dueño (10-sep-2026): se limpia, no se redacta
+assert.equal(TAGLINE_MAX, 60);
+assert.equal(normalizeTaglineInput("  Desde   1998, el mismo sazón. "), "Desde 1998, el mismo sazón");
+assert.equal(normalizeTaglineInput("«Los tacos de siempre»"), "Los tacos de siempre");
+assert.equal(normalizeTaglineInput("ok"), "", "menos de 3 letras → vacío (borra el campo)");
+assert.equal(normalizeTaglineInput(""), "");
+assert.equal(normalizeTaglineInput(null), "");
+assert.equal(normalizeTaglineInput("x".repeat(80)).length, TAGLINE_MAX, "se recorta al tope");
+// Lo que guarda el dueño lo pinta la portada y el menú (mismo lector)
+assert.equal(taglineFromRestaurant({ tagline: normalizeTaglineInput(" Ricos tacos ") }), "Ricos tacos");
+// Candado de fuente: Configuración guarda por el normalizador y carga con el lector
+const cfg = readFileSync(join(root, "app/vendor/configuracion/page.tsx"), "utf8");
+assert.ok(cfg.includes("tagline: normalizeTaglineInput(tagline) || deleteField()"), "configuracion guarda el lema limpio o lo borra");
+assert.ok(cfg.includes("setTagline(taglineFromRestaurant(data) ?? \"\")"), "configuracion carga el lema con el mismo lector que la portada");
 console.log("✅ brand color: contrato OK");

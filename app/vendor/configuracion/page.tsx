@@ -30,6 +30,7 @@ import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
 import { isGoogleReviewUrl } from "@/lib/googleReviewUrl";
+import { TAGLINE_MAX, normalizeTaglineInput, taglineFromRestaurant } from "@/lib/brand/brandColor";
 import { canAddPosStaff, parsePosStaff, type PosStaffMember, type PosStaffRole } from "@/lib/posStaff";
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
@@ -110,6 +111,9 @@ export default function ConfiguracionPage() {
   /** "Nuestra historia" (patrón Our Story de Owner/Metro Pizza) — se pinta
    * en la página pública /r/{id} cuando el dueño la escribe. Opcional. */
   const [story, setStory] = useState("");
+  // El lema bajo el nombre. La IA lo saca de la foto del menú; el dueño lo
+  // puede cambiar aquí (10-sep-2026).
+  const [tagline, setTagline] = useState("");
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   /** Slug público (comeleal.com/r/{slug}) — se auto-reclama al guardar. */
   const [slug, setSlug] = useState<string | null>(null);
@@ -188,6 +192,7 @@ export default function ConfiguracionPage() {
         setLoadedCurrency(cur);
       }
       setStory((data.story as string) ?? "");
+      setTagline(taglineFromRestaurant(data) ?? "");
       setGoogleReviewUrl((data.googleReviewUrl as string) ?? "");
       setSlug(slugFromRestaurantData(data));
       setCategories((data.categories as string[]) ?? []);
@@ -474,6 +479,8 @@ export default function ConfiguracionPage() {
         phoneCountryCode: phoneCountry,
         currencyCode: currency,
         story: story.trim(),
+        // Vacío = borrar el campo (así la IA no se pelea con una cadena "").
+        tagline: normalizeTaglineInput(tagline) || deleteField(),
         googleReviewUrl: googleReviewUrl.trim(),
         categories,
         payAtPickupEnabled: payAtPickup,
@@ -880,6 +887,18 @@ export default function ConfiguracionPage() {
                   Si tu local no está en México, cambia el país aquí. Así tu botón de WhatsApp y los códigos por SMS de tus clientes marcan bien.
                   {" "}Tus precios quedan en {currency} y tus clientes ganan {earnRuleLine({ base: 1, step: defaultSpendStepForCurrency(currency) })}.
                   {currency !== loadedCurrency ? " Al guardar, la regla de puntos se ajusta a la nueva moneda." : ""}
+                </p>
+              </Field>
+              <Field label="Tu frase (opcional)">
+                <TextInput
+                  value={tagline}
+                  onChange={(v) => { setTagline(v); setSaved(false); }}
+                  placeholder="Ej. Desde 1998, el mismo sazón"
+                  maxLength={TAGLINE_MAX}
+                />
+                <p className="mt-1.5 text-[11px] text-[#1C2526]/55">
+                  Una línea corta, con tu voz. Sale debajo de tu nombre en tu menú y en tu página.
+                  {" "}{tagline.length}/{TAGLINE_MAX}
                 </p>
               </Field>
               <Field label="Tu historia (opcional)">
@@ -1628,16 +1647,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function TextInput({
-  value, onChange, placeholder, type = "text",
+  value, onChange, placeholder, type = "text", maxLength,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  maxLength?: number;
 }) {
   return (
     <input
       type={type}
+      maxLength={maxLength}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}

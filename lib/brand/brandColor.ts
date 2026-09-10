@@ -108,3 +108,26 @@ export function inkAlpha(ink: string, alpha: number): string {
   const b = parseInt(n.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
+
+/** Largo máximo del lema (mismo tope que el saneado de la función). */
+export const TAGLINE_MAX = 60;
+
+/**
+ * El lema que el DUEÑO escribe en Configuración (10-sep-2026, robado de
+ * animabyedo.com: una línea con voz propia bajo el nombre vende más que
+ * un encabezado limpio). Aquí NO se redacta ni se juzga: solo se quitan
+ * espacios dobles, comillas envolventes y el punto final, y se recorta a
+ * TAGLINE_MAX. Devuelve "" cuando no queda frase (< 3 letras) para que el
+ * guardado borre el campo en vez de dejar basura.
+ */
+export function normalizeTaglineInput(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const t = raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["'“”«»]+|["'“”«».]+$/g, "")
+    .trim()
+    .slice(0, TAGLINE_MAX)
+    .trim();
+  return t.length >= 3 ? t : "";
+}
