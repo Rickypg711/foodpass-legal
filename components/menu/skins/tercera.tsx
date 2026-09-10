@@ -86,7 +86,7 @@ type CategoryStyle = {
 const CATEGORY_STYLES: Record<string, CategoryStyle> = {
   desayunos: { font: "chunky", color: TERCERA.red, panel: TERCERA.peach, art: "disco_guy" },
   "con pan": { font: "pixel", color: TERCERA.olive, panel: TERCERA.sage, art: "mano" },
-  ensaladas: { font: "bubble", color: TERCERA.green, panel: "transparent" },
+  ensaladas: { font: "bubble", color: TERCERA.green, panel: TERCERA.blush },
   entradas: { font: "bubble", color: TERCERA.olive, panel: "transparent", dashed: TERCERA.olive },
   "pa papear": { font: "pixel", color: "#e85c1e", panel: "transparent", dashed: TERCERA.olive },
   sandos: { font: "bubble", color: TERCERA.orange, panel: TERCERA.peach },
