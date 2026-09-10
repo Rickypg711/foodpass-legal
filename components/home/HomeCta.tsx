@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirebaseApp } from "@/lib/firebase";
-import { ActivarModal } from "@/components/home/ActivarModal";
 import { trackVendorCtaClick } from "@/lib/analytics/vendorAcquisition";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 
 export function HomeCta() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     getFirebaseApp();
@@ -35,8 +33,9 @@ export function HomeCta() {
   }
 
   // La puerta de entrada v2 (STRATEGY_MENU_FIRST §6): dar ANTES de pedir.
-  // El CTA primario lleva al demo (foto → SU carta, sin cuenta); el camino
-  // directo de siempre queda como secundario discreto para quien ya decidió.
+  // Un solo CTA: el demo (foto → SU menú, sin cuenta). El "o crea tu cuenta
+  // directo" se quitó el 10-sep-2026 (Ricardo): partía la atención y se
+  // brincaba la foto. Quien ya tiene cuenta entra por "Entrar" en el header.
   return (
     <div className="mt-8">
       <Link
@@ -49,16 +48,6 @@ export function HomeCta() {
         📸 Sube la foto de tu menú
         <span aria-hidden>→</span>
       </Link>
-      <button
-        onClick={() => {
-          const utms = readAndPersistUtms(window.location.search);
-          trackVendorCtaClick({ cta: "empieza_gratis", section: "home_hero", ...utms });
-          setModalOpen(true);
-        }}
-        className="mt-3 block text-sm font-semibold text-white/50 underline-offset-4 hover:text-white/80 hover:underline">
-        o crea tu cuenta directo
-      </button>
-      {modalOpen && <ActivarModal asModal onClose={() => setModalOpen(false)} />}
     </div>
   );
 }

@@ -5,9 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirebaseApp } from "@/lib/firebase";
-import { ActivarModal } from "@/components/home/ActivarModal";
-import { trackVendorCtaClick } from "@/lib/analytics/vendorAcquisition";
-import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 
 const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
@@ -20,7 +17,6 @@ const NAV_LINKS = [
 
 export function HomeHeader() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     getFirebaseApp();
@@ -35,12 +31,9 @@ export function HomeHeader() {
     setLoggedIn(false);
   }
 
-  function openSignupModal(section: string) {
-    // Funnel step 2: landing → CTA click (UTMs persisted for attribution).
-    const utms = readAndPersistUtms(window.location.search);
-    trackVendorCtaClick({ cta: "empieza_gratis", section, ...utms });
-    setModalOpen(true);
-  }
+  // 10-sep-2026 (Ricardo): el header ya no trae "Empieza gratis". El único
+  // CTA de alta es el botón naranja del hero (foto → menú); el header solo
+  // deja "Entrar" para el dueño que ya tiene cuenta.
 
   return (
     <>
@@ -85,11 +78,6 @@ export function HomeHeader() {
                 className="shrink-0 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white">
                 Entrar
               </Link>
-              <button
-                onClick={() => openSignupModal("header_desktop")}
-                className="shrink-0 rounded-full bg-[#F28C38] px-4 py-2 text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#c46644]">
-                Empieza gratis
-              </button>
             </>
           )}
         </div>
@@ -119,7 +107,6 @@ export function HomeHeader() {
               ) : (
                 <>
                   <Link href="/activar?modo=entrar" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
-                  <button onClick={() => openSignupModal("header_mobile")} className="block w-full rounded-full bg-[#F28C38] px-3 py-2 text-center text-sm font-semibold text-[#1C2526]">Empieza gratis</button>
                 </>
               )}
             </div>
@@ -127,7 +114,6 @@ export function HomeHeader() {
         </details>
       </div>
     </header>
-    {modalOpen && <ActivarModal asModal onClose={() => setModalOpen(false)} />}
     </>
   );
 }
