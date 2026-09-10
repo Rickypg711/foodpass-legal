@@ -53,7 +53,7 @@ export default async function RestaurantLandingPage({
 
   const restaurantId = resolved.id;
   const docResult = { data: resolved.data };
-  const menu = await fetchRestaurantMenuFull(restaurantId);
+  const menu = await fetchRestaurantMenuFull(restaurantId, resolved.data);
 
   // Patrón Metro Pizza: si hay datos de ventas (orderCount, contador futuro),
   // el carrusel se vuelve "Los más pedidos" — la prueba social vende sola.

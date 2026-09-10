@@ -10,6 +10,7 @@
 // poder leer businessHours, firstPurchaseReward y el menú.
 
 import { slugFromRestaurantData } from "@/lib/slug";
+import { sortMenuRows } from "@/lib/menu/categoryOrder";
 
 const PROJECT_ID = "foodpass-18b33";
 const API_KEY = "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk"; // public web config (misma que lib/firebase.ts)
@@ -91,8 +92,10 @@ export type LandingMenuItem = {
 };
 
 /** Menú disponible del restaurante (server-side, para SSR + JSON-LD Menu). */
+/** `restaurantData` (el doc del local) decide el orden de categorías — ver lib/menu/categoryOrder.ts. */
 export async function fetchRestaurantMenuFull(
   restaurantId: string,
+  restaurantData?: Record<string, unknown> | null,
 ): Promise<LandingMenuItem[]> {
   const id = restaurantId.trim();
   if (!id) return [];
@@ -139,11 +142,7 @@ export async function fetchRestaurantMenuFull(
         orderCount: typeof data.orderCount === "number" ? data.orderCount : 0,
       });
     }
-    items.sort((a, b) => {
-      const c = a.category.localeCompare(b.category, "es");
-      return c !== 0 ? c : a.name.localeCompare(b.name, "es");
-    });
-    return items;
+    return sortMenuRows(items, restaurantData);
   } catch {
     return [];
   }

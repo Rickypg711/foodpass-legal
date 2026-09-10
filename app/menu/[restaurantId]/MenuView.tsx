@@ -1,6 +1,7 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
+import { sortMenuRows } from "@/lib/menu/categoryOrder";
 import {
   brandThemeFromRestaurant,
   taglineFromRestaurant,
@@ -121,15 +122,14 @@ function seedAddress(raw: Record<string, unknown>): string | null {
   return typeof raw.address === "string" && raw.address.trim() ? raw.address.trim() : null;
 }
 
-/** Mismo mapeo + filtro + orden que aplica el fetch client (paridad exacta). */
-function seedItems(menu: MenuInitialData["menu"]): MenuRow[] {
-  return menu
-    .map((d) => mapMenuDoc(d.id, d.data))
-    .filter((r) => r.isAvailable)
-    .sort((a, b) => {
-      const c = a.category.localeCompare(b.category, "es");
-      return c !== 0 ? c : a.name.localeCompare(b.name, "es");
-    });
+/** Mismo mapeo + filtro + orden que aplica el fetch client (paridad exacta).
+ *  El orden de categorías lo decide lib/menu/categoryOrder.ts (10-sep): el del
+ *  papel si el doc lo trae, si no la regla "como se lee un menú". */
+function seedItems(menu: MenuInitialData["menu"], raw: Record<string, unknown> | null): MenuRow[] {
+  return sortMenuRows(
+    menu.map((d) => mapMenuDoc(d.id, d.data)).filter((r) => r.isAvailable),
+    raw,
+  );
 }
 
 /** Robo #8: pista de elección en la cara de la tarjeta. Con un grupo
@@ -493,7 +493,7 @@ function PublicMenuPageWithOrdering({
     initial ? restaurantPromisesPoints(initial.raw) : true,
   );
   const [items, setItems] = useState<MenuRow[]>(
-    initial ? seedItems(initial.menu) : [],
+    initial ? seedItems(initial.menu, initial.raw) : [],
   );
   const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
   const [address, setAddress] = useState<string | null>(
@@ -582,12 +582,7 @@ function PublicMenuPageWithOrdering({
         menuSnap.forEach((d) => {
           rows.push(mapMenuDoc(d.id, d.data() as Record<string, unknown>));
         });
-        const available = rows
-          .filter((r) => r.isAvailable)
-          .sort((a, b) => {
-            const c = a.category.localeCompare(b.category, "es");
-            return c !== 0 ? c : a.name.localeCompare(b.name, "es");
-          });
+        const available = sortMenuRows(rows.filter((r) => r.isAvailable), rData);
         setItems(available);
         if (!cancelled) {
           trackWebMenuView({
@@ -878,7 +873,7 @@ function PublicMenuPageBrowseOnly({
     initial ? restaurantPromisesPoints(initial.raw) : true,
   );
   const [items, setItems] = useState<MenuRow[]>(
-    initial ? seedItems(initial.menu) : [],
+    initial ? seedItems(initial.menu, initial.raw) : [],
   );
   const [menuLinkResolved, setMenuLinkResolved] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleStatus | null>(null);
@@ -963,12 +958,7 @@ function PublicMenuPageBrowseOnly({
         menuSnap.forEach((d) => {
           rows.push(mapMenuDoc(d.id, d.data() as Record<string, unknown>));
         });
-        const available = rows
-          .filter((r) => r.isAvailable)
-          .sort((a, b) => {
-            const c = a.category.localeCompare(b.category, "es");
-            return c !== 0 ? c : a.name.localeCompare(b.name, "es");
-          });
+        const available = sortMenuRows(rows.filter((r) => r.isAvailable), rData);
         setItems(available);
         if (!cancelled) {
           trackWebMenuView({

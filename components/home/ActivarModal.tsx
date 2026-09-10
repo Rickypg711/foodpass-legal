@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { paperCategoryOrder } from "@/lib/menu/categoryOrder";
 import { cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -448,6 +449,12 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             }
             await batch.commit();
           }
+          // El orden del papel (10-sep): la IA leyó las secciones en el orden
+          // impreso; se guarda para que el menú público no salga alfabético.
+          try {
+            const order = paperCategoryOrder(items);
+            if (order.length) await updateDoc(restaurantRef, { menuCategoryOrder: order });
+          } catch { /* nunca romper el alta por esto */ }
           // El momento IA de premios (§6.3/§6.4): el borrador se genera en
           // background para que Recompensas lo reciba YA propuesto — igual
           // que el publish normal del wizard. Nunca bloquea.
