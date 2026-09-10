@@ -34,24 +34,33 @@ export const metadata: Metadata = {
 };
 
 
-/** Números REALES de restaurantes en Comeleal (5-sep-2026). Sin nombres a
- *  propósito; si Ricardo quiere firmar cada cifra con el local, se agrega.
- *  - 62 platillos: CENTRAL FAST FOOD montó su menú de una foto en una tarde (4-sep).
- *  - 163 ventas: Pecado Escondido cobró 163 ventas en su Caja en agosto 2026.
- *  - 16 con salsas: Spicy & Sweet, 32 platillos y 16 con salsas de una foto (23-ago). */
+/** Números REALES de restaurantes en Comeleal, contados en Firestore el
+ *  10-sep-2026 en hora de Chihuahua. Sin nombres a propósito (regla: nada de
+ *  prueba social con nombre hasta ~50 locales). Los tres cuentan UNA historia,
+ *  en el orden de la promesa: foto → ventas → clientes con nombre y teléfono.
+ *  - 64 platillos: CENTRAL FAST FOOD (RzeRSmepS5JP0HY8kD8G) montó su menú de
+ *    una foto en una tarde (4-sep); 64 docs en restaurants/{id}/menu.
+ *  - 214 ventas: Pecado Escondido (d3v9krkR2YY90lrZGkjt) cobró 214 ventas
+ *    (status completed + paid) en su Caja en agosto 2026; solo 1 con teléfono.
+ *    Es el MISMO local del villano de abajo, a propósito: la Caja aguanta 214,
+ *    sin el paso del teléfono te quedas con 1.
+ *  - 10 de 10: CENTRAL FAST FOOD, primera semana con pedidos (5 al 11-sep):
+ *    10 pedidos reales por el link, los 10 con nombre y teléfono. Muestra
+ *    chica, pero real. Al recontar, correr scratch numeros.js (admin SDK). */
 const PROOF_POINTS = [
-  { figure: "62 platillos", body: "leídos de una sola foto del menú, en una tarde" },
-  { figure: "163 ventas", body: "cobradas en un mes desde la Caja de un solo local" },
-  { figure: "16 platillos con salsas", body: "montados de una foto, con precio por salsa y tamaño" },
+  { figure: "64 platillos", body: "leídos de una sola foto del menú, en una tarde" },
+  { figure: "214 ventas", body: "cobradas en un mes desde la Caja de un solo local" },
+  { figure: "10 de 10 pedidos", body: "con nombre y teléfono en la primera semana de un local" },
 ] as const;
 
 /** El villano (5-sep-2026, revisión contra Owner/Fluxsales): concreto y
- *  VERDADERO. El dato de "184 ventas, 1 teléfono" es de un local real de
- *  Comeleal (Pecado Escondido, ago-2026), sin nombre a propósito. */
+ *  VERDADERO. "214 ventas, 1 teléfono" es Pecado Escondido en agosto 2026
+ *  (mismo conteo que la tarjeta de arriba, 10-sep, hora de Chihuahua), sin
+ *  nombre a propósito. Si cambia una cifra, cambian las dos. */
 const PROBLEM_CARDS = [
   {
     title: "No sabes quién te compró",
-    body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 184 ventas en un mes se quedó con 1 teléfono. Con 1 no traes a nadie de vuelta.",
+    body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 214 ventas en un mes se quedó con 1 teléfono. Con 1 no traes a nadie de vuelta.",
     icon: "🧾",
   },
   {
