@@ -380,7 +380,8 @@ function MenuCategoryList({
   /** Ventanas por categoría (lib/menu/categoryWindows.ts): fuera de hora la
    *  sección se ve apagada con su horario y no se agrega nada. */
   windows?: CategoryWindows;
-  now?: Date;
+  /** null = todavía sin hora local (server / antes de montar): todo abierto. */
+  now?: Date | null;
   onAddItem: (item: MenuRow) => void;
   getItemQuantity?: (itemId: string) => number;
   onIncrementItem?: (item: MenuRow) => void;
@@ -389,17 +390,33 @@ function MenuCategoryList({
   onOpenItem?: (item: MenuRow) => void;
 }) {
   const availabilityOf = (category: string) => {
-    const a = categoryAvailability(category, windows, now ?? new Date());
+    if (!now) return { closed: false, note: null as string | null };
+    const a = categoryAvailability(category, windows, now);
     return { closed: !a.always && !a.openNow, note: categoryAvailabilityLabel(a) };
   };
+  // Fuera de hora la sección nace PLEGADA (título + horario + "Ver los
+  // platillos"); abrirla la muestra apagada. Así sabes que existe y cuándo, sin
+  // tragarte la pared gris (Ricardo, 10-sep).
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
+  const toggle = (category: string) =>
+    setOpened((prev) => ({ ...prev, [category]: !prev[category] }));
   if (skin === "tercera") {
     return (
       <div>
         {groups.map((group, index) => {
           const { closed, note } = availabilityOf(group.category);
           return (
-          <TerceraCategorySection key={`${group.category}-${index}`} category={group.category} index={index} note={note} closed={closed}>
-            {group.items.map((item) => (
+          <TerceraCategorySection
+            key={`${group.category}-${index}`}
+            category={group.category}
+            index={index}
+            note={note}
+            closed={closed}
+            collapsed={closed && !opened[group.category]}
+            itemCount={group.items.length}
+            onToggle={() => toggle(group.category)}
+          >
+            {(!closed || opened[group.category]) && group.items.map((item) => (
               <TerceraItemRow
                 key={item.id}
                 id={item.id}
@@ -444,7 +461,18 @@ function MenuCategoryList({
               </span>
             ) : null}
           </h2>
-          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {closed ? (
+            <button
+              type="button"
+              onClick={() => toggle(group.category)}
+              aria-expanded={!!opened[group.category]}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#1C2526]/15 bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#1C2526]/80 hover:border-[#F28C38]/50"
+            >
+              {opened[group.category] ? "Ocultar" : `Ver los ${group.items.length} platillos`}
+              <span aria-hidden>{opened[group.category] ? "▴" : "▾"}</span>
+            </button>
+          ) : null}
+          <ul className={(closed && !opened[group.category] ? "hidden " : "") + "grid grid-cols-1 gap-3 lg:grid-cols-2"}>
             {group.items.map((item) => (
               <MenuItemCard
                 key={item.id}
@@ -618,12 +646,16 @@ function PublicMenuPageWithOrdering({
   /** Ventanas por categoría (AM/PM) y un reloj por minuto para que la
    *  sección se apague sola a las 12:00 sin recargar. */
   const windows = useMemo(() => categoryWindowsFromRestaurant(rdata), [rdata]);
-  const [now, setNow] = useState<Date>(() => new Date());
+  // null en el server (vive en UTC): el HTML sale con TODO el menú y Google lo
+  // lee; en el navegador se pone la hora local y ahí se apaga/pliega.
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
   const categoryClosedNow = (category: string) => {
+    if (!now) return false;
     const a = categoryAvailability(category, windows, now);
     return !a.always && !a.openNow;
   };
@@ -856,8 +888,8 @@ function PublicMenuPageWithOrdering({
           <MenuCategoryChips
             skin={skin}
             chips={categoryGroups.map((g, index) => {
-              const a = categoryAvailability(g.category, windows, now);
-              return { category: g.category, index, closed: !a.always && !a.openNow };
+              const a = now ? categoryAvailability(g.category, windows, now) : null;
+              return { category: g.category, index, closed: a ? !a.always && !a.openNow : false };
             })}
           />
         )}
@@ -1030,8 +1062,11 @@ function PublicMenuPageBrowseOnly({
   /** Ventanas por categoría (AM/PM) y un reloj por minuto para que la
    *  sección se apague sola a las 12:00 sin recargar. */
   const windows = useMemo(() => categoryWindowsFromRestaurant(rdata), [rdata]);
-  const [now, setNow] = useState<Date>(() => new Date());
+  // null en el server (vive en UTC): el HTML sale con TODO el menú y Google lo
+  // lee; en el navegador se pone la hora local y ahí se apaga/pliega.
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
@@ -1162,8 +1197,8 @@ function PublicMenuPageBrowseOnly({
           <MenuCategoryChips
             skin={skin}
             chips={categoryGroups.map((g, index) => {
-              const a = categoryAvailability(g.category, windows, now);
-              return { category: g.category, index, closed: !a.always && !a.openNow };
+              const a = now ? categoryAvailability(g.category, windows, now) : null;
+              return { category: g.category, index, closed: a ? !a.always && !a.openNow : false };
             })}
           />
         )}

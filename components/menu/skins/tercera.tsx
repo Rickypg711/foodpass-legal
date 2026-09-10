@@ -246,14 +246,21 @@ export function TerceraCategorySection({
   children,
   note = null,
   closed = false,
+  collapsed = false,
+  itemCount = 0,
+  onToggle,
 }: {
   category: string;
   index: number;
   children: ReactNode;
-  /** "de 9:00 am a 12:00 pm · vuelve mañana a las 10:00 am" (ventanas por categoría). */
+  /** "Solo de 9:00 am a 12:00 pm · mañana desde las 9:00 am" (ventanas por categoría). */
   note?: string | null;
   /** Fuera de su hora: la sección se apaga, se lee, no se pide. */
   closed?: boolean;
+  /** Fuera de hora nace plegada: título + horario + "Ver los platillos". */
+  collapsed?: boolean;
+  itemCount?: number;
+  onToggle?: () => void;
 }) {
   const s = terceraCategoryStyle(category, index);
   const art = s.art ? ART[s.art] : null;
@@ -296,7 +303,17 @@ export function TerceraCategorySection({
           {note}
         </p>
       ) : null}
-      <ul className="mt-4 divide-y-2 divide-dotted divide-[#1a1a1a]/25">{children}</ul>
+      {closed && onToggle ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={!collapsed}
+          className={`${FONT_CLASS.pixel} relative mt-3 inline-flex items-center gap-2 rounded-full border-2 border-[#1a1a1a] px-3.5 py-1.5 text-[11px] uppercase text-[#1a1a1a] hover:bg-[#1a1a1a]/10`}
+        >
+          {collapsed ? `Ver los ${itemCount} platillos ▾` : "Ocultar ▴"}
+        </button>
+      ) : null}
+      {collapsed ? null : <ul className="mt-4 divide-y-2 divide-dotted divide-[#1a1a1a]/25">{children}</ul>}
     </section>
   );
 }
