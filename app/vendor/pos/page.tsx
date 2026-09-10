@@ -1494,8 +1494,13 @@ export default function PosPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Modo Caja — candado kiosk para tablet compartida */}
-            {posStaff.length > 0 && vendorRole !== "employee" && !cajaLocked && (
+            {/* Modo Caja — candado kiosk para tablet compartida. Solo se
+                ofrece cuando de verdad CIERRA: hace falta un Gerente activo
+                con PIN para salir; sin gerente el candado se abre con un
+                toque (fail-open) y es puro dedazo esperando a pasar (Zahir,
+                10-sep: dueño solo, lo prendió en su celular y quedó
+                encerrado). */}
+            {posStaff.some((m) => m.active && m.role === "gerente") && vendorRole !== "employee" && !cajaLocked && (
               <button
                 onClick={() => setLockDialogOpen(true)}
                 className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
@@ -1879,16 +1884,6 @@ export default function PosPage() {
               ideal para la tablet del mostrador. Para salir se necesita el PIN
               de un <b>Gerente</b> de tu equipo.
             </p>
-            {!posStaff.some((m) => m.active && m.role === "gerente") && (
-              <p
-                className="mt-2 rounded-lg px-3 py-2 text-[11px] font-semibold"
-                style={{ background: "rgba(234,88,12,0.1)", color: "#9A3412" }}
-              >
-                ⚠️ No tienes ningún Gerente en el equipo — cualquiera podría
-                salir del modo. Agrega uno en Configuración (puede ser tu
-                propio PIN).
-              </p>
-            )}
             <div className="mt-4 flex gap-2">
               <button
                 type="button"

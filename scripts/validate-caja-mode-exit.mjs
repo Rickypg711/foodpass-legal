@@ -25,4 +25,13 @@ assert.ok(/cajaLocked && \(\s*<button[\s\S]*?setExitDialogOpen\(true\)/.test(mor
 assert.ok(layout.includes('addEventListener("cajaModeExitRequested"'), "el layout escucha la petición de salir");
 assert.ok(pos.includes('new Event("cajaModeExitRequested")'), "el candado de la Caja pide salir");
 assert.ok(!pos.includes('title="Modo Caja activo — salir desde la barra lateral'), "el candado ya no manda a una barra lateral que el celular no tiene");
-console.log("✅ modo caja: hay salida en el celular");
+
+// ── 4. El candado solo se OFRECE cuando cierra de verdad ────────────────────
+// Sin un Gerente activo con PIN, salir es un toque (fail-open): ofrecerlo es
+// regalar un dedazo. Un dueño solo (un PIN de cajero) no ve el 🔓.
+assert.ok(
+  /posStaff\.some\(\(m\) => m\.active && m\.role === "gerente"\) && vendorRole !== "employee" && !cajaLocked && \(/.test(pos),
+  "el 🔓 de la Caja exige un Gerente activo en el equipo",
+);
+assert.ok(!/posStaff\.length > 0 && vendorRole !== "employee" && !cajaLocked/.test(pos), "prohibido ofrecer el candado con cualquier PIN");
+console.log("✅ modo caja: hay salida en el celular y solo se ofrece con gerente");
