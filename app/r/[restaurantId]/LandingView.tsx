@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
+import { MenuPoweredByFooter } from "@/components/menu/MenuPoweredByFooter";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import {
   trackWebLandingMenuClick,
@@ -687,17 +688,17 @@ export default function LandingView({
               skin={menuSkinFromRestaurant(rdata ?? undefined)}
             />
 
-            {/* ---- FIRMA (el loop viral: cada página vende Comeleal) ---- */}
-            <p className={`pt-2 text-center text-xs ${theme.signature}`}>
-              Página creada con{" "}
-              <Link
-                href="/para-restaurantes"
-                className={theme.signatureLink}
-              >
-                Comeleal
-              </Link>{" "}
-              — para que tus clientes regresen.
-            </p>
+            {/* ---- PIE (el loop viral: cada página vende Comeleal) ----
+                 10-sep-2026: el mismo pie de /menu ("Hecho con Comeleal ·
+                 ¿Tienes un restaurante? Crea tu menú gratis →") con el link al
+                 demo y utm_content = este local. Antes era una firma a
+                 /para-restaurantes sin utm: no se podía saber qué portada
+                 trajo a quién. Validado en carne propia: Ricardo llegó a
+                 Last.app por el "Powered by Last" de una tienda. */}
+            <MenuPoweredByFooter
+              skin={menuSkinFromRestaurant(rdata ?? undefined)}
+              restaurantId={restaurantId}
+            />
           </>
         )}
       </main>
