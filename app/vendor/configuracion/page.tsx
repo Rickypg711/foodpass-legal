@@ -12,6 +12,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { deliveryFeeOf, deliveryZoneOf, restaurantOffersDelivery } from "@/lib/order/deliveryOptions";
+import { TICKET_SAMPLE_ID, ticketPaperMm } from "@/lib/pos/ticketPaper";
 import {
   entitlementOf,
   entitlementsOf,
@@ -130,6 +131,8 @@ export default function ConfiguracionPage() {
   const [deliveryFee, setDeliveryFee] = useState<number | "">("");
   /** 🛵 "¿Hasta dónde entregas?" — texto que ve el comensal al elegir A domicilio. */
   const [deliveryZone, setDeliveryZone] = useState("");
+  /** 🖨️ Ancho del papel de la impresora térmica (10-sep): 80 o 58 mm. */
+  const [paperMm, setPaperMm] = useState<58 | 80>(80);
   const [mpConnected, setMpConnected] = useState(false);
   const [mpEmail, setMpEmail] = useState<string | null>(null);
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
@@ -196,6 +199,7 @@ export default function ConfiguracionPage() {
       const fee = deliveryFeeOf(data);
       setDeliveryFee(fee > 0 ? fee : "");
       setDeliveryZone(deliveryZoneOf(data));
+      setPaperMm(ticketPaperMm(data));
       const bday = data.birthdayReward as Record<string, unknown> | undefined;
       if (bday && typeof bday === "object") {
         setBirthdayEnabled(bday.enabled === true);
@@ -478,6 +482,7 @@ export default function ConfiguracionPage() {
         deliveryEnabled,
         deliveryFee: deliveryFee !== "" && Number(deliveryFee) > 0 ? Number(deliveryFee) : 0,
         deliveryZone: deliveryZone.trim(),
+        ticketPaperMm: paperMm,
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
@@ -1251,6 +1256,56 @@ export default function ConfiguracionPage() {
                   ) : null}
                 </div>
               ) : null}
+            </SectionCard>
+
+            {/* ── 🖨️ Impresora de tickets (10-sep-2026) ──
+                Zahir (RD) tiene una Aokia de 80 mm con Bluetooth. No hay nada
+                que "conectar" aquí: el celular empareja la impresora y una app
+                puente la presta a Chrome. Comeleal solo imprime una hoja
+                limpia. Esta sección: ancho del papel, los pasos y una prueba. */}
+            <SectionCard label="Impresora de tickets">
+              <p className="mb-2 text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+                Imprime el ticket de cada pedido desde Pedidos (🖨️) o al cobrar
+                en la Caja. Sirve con impresoras térmicas de 80 y 58 mm.
+              </p>
+              <Field label="Ancho del papel">
+                <div className="flex gap-2">
+                  {([80, 58] as const).map((mm) => {
+                    const on = paperMm === mm;
+                    return (
+                      <button
+                        key={mm}
+                        type="button"
+                        onClick={() => { setPaperMm(mm); setSaved(false); }}
+                        aria-pressed={on}
+                        className="rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all"
+                        style={{
+                          background: on ? "#FFF3E8" : "#F5F3EF",
+                          border: on ? "1px solid rgba(242,140,56,0.5)" : "1px solid rgba(28,37,38,0.12)",
+                          color: "#1C2526",
+                        }}
+                      >
+                        {mm} mm
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+              <div className="mt-3 rounded-xl px-3.5 py-3 text-[12px] leading-relaxed" style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.7)" }}>
+                <p className="font-semibold" style={{ color: "#1C2526" }}>Para dejarla lista desde tu celular (Android):</p>
+                <p className="mt-1">1. Prende el Bluetooth y empareja tu impresora en los ajustes del celular.</p>
+                <p>2. Instala la app gratis &quot;ESCPOS Bluetooth Print Service&quot; de Play Store y elige ahí tu impresora.</p>
+                <p>3. Al tocar Imprimir, escoge esa impresora en la ventana de Chrome.</p>
+                <p className="mt-1">En una computadora con la impresora por USB, Chrome la imprime directo.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.open(`/vendor/ticket/${TICKET_SAMPLE_ID}?w=${paperMm}`, "_blank", "noopener,noreferrer")}
+                className="mt-3 w-full rounded-xl px-3.5 py-3 text-[13px] font-bold"
+                style={{ background: "#1C2526", color: "#fff" }}
+              >
+                🖨️ Imprimir ticket de prueba
+              </button>
             </SectionCard>
 
             {/* ── Premio de cumpleaños ──

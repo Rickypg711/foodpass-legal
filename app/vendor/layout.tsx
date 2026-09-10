@@ -221,7 +221,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Setup pages should render without the sidebar (hooks must come before any return)
-  const isSetupFlow = pathname.startsWith("/vendor/setup");
+  // /vendor/ticket: la hoja para la impresora térmica (10-sep) sale sin
+  // barra lateral ni nav — lo impreso tiene que ser SOLO el ticket.
+  const isSetupFlow = pathname.startsWith("/vendor/setup") || pathname.startsWith("/vendor/ticket");
 
   useEffect(() => {
     if (isSetupFlow) return;

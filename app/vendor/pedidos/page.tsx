@@ -664,6 +664,16 @@ export default function PedidosPage() {
                         </div>
 
                         <div className="flex gap-1.5">
+                          {/* 🖨️ Ticket para la impresora térmica (10-sep, Zahir/Aokia):
+                              abre la hoja limpia y el navegador imprime. */}
+                          <button
+                            onClick={() => window.open(`/vendor/ticket/${encodeURIComponent(order.id)}`, "_blank", "noopener,noreferrer")}
+                            className="rounded-xl px-2.5 py-2.5 text-[11px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+                            title="Imprimir ticket"
+                            aria-label="Imprimir ticket"
+                          >
+                            🖨️
+                          </button>
                           {order.status !== "completed" && (
                             <button
                               onClick={() => cancelOrder(order.id)}

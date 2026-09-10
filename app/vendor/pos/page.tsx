@@ -763,11 +763,12 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
-    if (receiptUrl) return;
+    // Con ticket que imprimir, igual: el cajero cierra cuando termine.
+    if (receiptUrl || ticketUrl) return;
     const t = setTimeout(onDone, 2000);
     return () => clearTimeout(t);
   }, [onDone, receiptUrl]);
@@ -813,6 +814,35 @@ function SuccessOverlay({ mode, total, receiptUrl, onDone, loyaltyLive = true }:
               style={{ background: "#25D366" }}
             >
               🧾 Enviar recibo por WhatsApp
+            </button>
+            {ticketUrl ? (
+              <button
+                onClick={() => window.open(ticketUrl, "_blank", "noopener,noreferrer")}
+                className="w-full rounded-2xl py-3 text-[14px] font-bold"
+                style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
+              >
+                🖨️ Imprimir ticket
+              </button>
+            ) : null}
+            <button
+              onClick={onDone}
+              className="w-full rounded-2xl py-3 text-[14px] font-bold"
+              style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+            >
+              Listo
+            </button>
+          </div>
+        )}
+        {/* Sin teléfono no hay recibo por WhatsApp, pero el ticket de
+            cocina sí se imprime. */}
+        {!receiptUrl && ticketUrl && (
+          <div className="flex w-full flex-col gap-2">
+            <button
+              onClick={() => window.open(ticketUrl, "_blank", "noopener,noreferrer")}
+              className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
+              style={{ background: "#1C2526" }}
+            >
+              🖨️ Imprimir ticket
             </button>
             <button
               onClick={onDone}
@@ -880,7 +910,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1445,7 +1475,9 @@ export default function PosPage() {
             })
           : undefined;
 
-      setSuccess({ mode, total: subtotal, receiptUrl });
+      // 🖨️ Ticket para la impresora térmica (10-sep): la misma hoja que
+      // Pedidos, con el pedido recién cobrado.
+      setSuccess({ mode, total: subtotal, receiptUrl, ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}` });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -1992,6 +2024,7 @@ export default function PosPage() {
           mode={success.mode}
           total={success.total}
           receiptUrl={success.receiptUrl}
+          ticketUrl={success.ticketUrl}
           onDone={() => setSuccess(null)}
         />
       )}
