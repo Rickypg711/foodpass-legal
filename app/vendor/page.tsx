@@ -836,7 +836,7 @@ function getNbaFallbackTitle(actionCode: string): string {
     // 7-sep: premios sin ser pared — el cerebro pide en orden venta → número → premio.
     case "ring_first_sale": return "Cobra tu primera venta";
     // 10-sep: pedidos del link que el dueño cobró por WhatsApp pero nunca marcó.
-    case "charge_web_orders": return "Tienes pedidos del link sin cobrar";
+    case "charge_web_orders": return "Tienes pedidos en línea sin cobrar";
     case "grow_phone_capture": return "Pide el número en cada venta";
     case "set_map_pin": return "Ponte en el mapa";
     case "check_ai_draft": return "Tus premios ya están armados";
@@ -860,7 +860,7 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
     case "enable_first_purchase_reward": return "Tu bienvenida está apagada. Es el regalo que se gana en la primera visita y se cobra en la segunda: la razón para volver. Préndela en Recompensas, toma un minuto.";
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "ring_first_sale": return "Tu menú, tu horario y tu QR ya están listos. Cobra tu siguiente venta en la Caja: llevas tus ventas del día y, si pides el número, empiezas tu lista de clientes. Toma 10 segundos.";
-    case "charge_web_orders": return "Te llegaron pedidos por tu link que siguen sin cobrar en Comeleal. Si ya te pagaron, entra a Pedidos y toca con qué te pagaron: queda cobrado y entregado en un toque, y el cliente recibe sus puntos.";
+    case "charge_web_orders": return "Te llegaron pedidos en línea desde tu menú que siguen sin cobrar en Comeleal. Si ya te pagaron, entra a Pedidos y toca con qué te pagaron: queda cobrado y entregado en un toque, y el cliente recibe sus puntos.";
     case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
     case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
