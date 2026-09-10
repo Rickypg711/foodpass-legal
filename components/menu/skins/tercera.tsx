@@ -244,10 +244,16 @@ export function TerceraCategorySection({
   category,
   index,
   children,
+  note = null,
+  closed = false,
 }: {
   category: string;
   index: number;
   children: ReactNode;
+  /** "de 9:00 am a 12:00 pm · vuelve mañana a las 10:00 am" (ventanas por categoría). */
+  note?: string | null;
+  /** Fuera de su hora: la sección se apaga, se lee, no se pide. */
+  closed?: boolean;
 }) {
   const s = terceraCategoryStyle(category, index);
   const art = s.art ? ART[s.art] : null;
@@ -257,6 +263,7 @@ export function TerceraCategorySection({
       aria-labelledby={`menu-cat-${index}`}
       className={
         "tercera-rise relative rounded-[28px] px-4 pt-5 pb-4 sm:px-6 sm:pt-6 " +
+        (closed ? "opacity-60 " : "") +
         (art ? `${art.section} ` : "mt-8 ") +
         (s.dashed ? "border-[3px] border-dashed " : "")
       }
@@ -284,6 +291,11 @@ export function TerceraCategorySection({
       >
         {category}
       </h2>
+      {note ? (
+        <p className={`${FONT_CLASS.hand} relative mt-1 pr-24 text-[17px] leading-tight text-[#1a1a1a]/75`}>
+          {closed ? "cerrado ahorita · " : ""}{note}
+        </p>
+      ) : null}
       <ul className="mt-4 divide-y-2 divide-dotted divide-[#1a1a1a]/25">{children}</ul>
     </section>
   );

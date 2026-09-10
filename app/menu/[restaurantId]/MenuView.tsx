@@ -33,6 +33,12 @@ import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
 import { menuPaymentLine } from "@/lib/order/menuPaymentLine";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import {
+  categoryAvailability,
+  categoryAvailabilityLabel,
+  categoryWindowsFromRestaurant,
+  type CategoryWindows,
+} from "@/lib/menu/categoryWindows";
+import {
   TERCERA_ROOT_CLASS,
   TerceraCategorySection,
   TerceraCover,
@@ -363,11 +369,17 @@ function MenuCategoryList({
   onDecrementItem,
   onOpenItem,
   skin = null,
+  windows = {},
+  now,
 }: {
   groups: { category: string; items: MenuRow[] }[];
   orderingEnabled: boolean;
   /** Piel del local (10-sep). */
   skin?: MenuSkinId | null;
+  /** Ventanas por categoría (lib/menu/categoryWindows.ts): fuera de hora la
+   *  sección se ve apagada con su horario y no se agrega nada. */
+  windows?: CategoryWindows;
+  now?: Date;
   onAddItem: (item: MenuRow) => void;
   getItemQuantity?: (itemId: string) => number;
   onIncrementItem?: (item: MenuRow) => void;
@@ -375,11 +387,17 @@ function MenuCategoryList({
   /** Tocar la tarjeta/foto → hoja de detalle (9-sep, paridad app). */
   onOpenItem?: (item: MenuRow) => void;
 }) {
+  const availabilityOf = (category: string) => {
+    const a = categoryAvailability(category, windows, now ?? new Date());
+    return { closed: !a.always && !a.openNow, note: categoryAvailabilityLabel(a) };
+  };
   if (skin === "tercera") {
     return (
       <div>
-        {groups.map((group, index) => (
-          <TerceraCategorySection key={`${group.category}-${index}`} category={group.category} index={index}>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          return (
+          <TerceraCategorySection key={`${group.category}-${index}`} category={group.category} index={index} note={note} closed={closed}>
             {group.items.map((item) => (
               <TerceraItemRow
                 key={item.id}
@@ -388,7 +406,7 @@ function MenuCategoryList({
                 description={item.description}
                 price={item.price}
                 imageUrl={item.imageUrl}
-                orderingEnabled={orderingEnabled}
+                orderingEnabled={orderingEnabled && !closed}
                 optionsHint={optionsHintFor(item)}
                 quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
@@ -398,20 +416,32 @@ function MenuCategoryList({
               />
             ))}
           </TerceraCategorySection>
-        ))}
+          );
+        })}
       </div>
     );
   }
   return (
     <div className="space-y-8">
-      {groups.map((group, index) => (
-        <section key={`${group.category}-${index}`} aria-labelledby={`menu-cat-${index}`}>
+      {groups.map((group, index) => {
+        const { closed, note } = availabilityOf(group.category);
+        return (
+        <section
+          key={`${group.category}-${index}`}
+          aria-labelledby={`menu-cat-${index}`}
+          className={closed ? "opacity-60" : undefined}
+        >
           <h2
             id={`menu-cat-${index}`}
-            className="mb-3 flex items-center gap-2.5 text-lg font-bold capitalize tracking-tight text-[#1C2526]"
+            className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 text-lg font-bold capitalize tracking-tight text-[#1C2526]"
           >
-            <span className="h-5 w-1 rounded-full bg-[#F28C38]" aria-hidden />
+            <span className="h-5 w-1 self-center rounded-full bg-[#F28C38]" aria-hidden />
             {group.category.toLowerCase()}
+            {note ? (
+              <span className="text-xs font-semibold normal-case tracking-normal text-[#1C2526]/55">
+                {closed ? "🕒 " : ""}{note}
+              </span>
+            ) : null}
           </h2>
           <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {group.items.map((item) => (
@@ -422,7 +452,7 @@ function MenuCategoryList({
                 description={item.description}
                 price={item.price}
                 imageUrl={item.imageUrl}
-                orderingEnabled={orderingEnabled}
+                orderingEnabled={orderingEnabled && !closed}
                 optionsHint={optionsHintFor(item)}
                 quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
@@ -433,7 +463,8 @@ function MenuCategoryList({
             ))}
           </ul>
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -583,6 +614,18 @@ function PublicMenuPageWithOrdering({
   const [rdata, setRdata] = useState<Record<string, unknown> | null>(
     initial?.raw ?? null,
   );
+  /** Ventanas por categoría (AM/PM) y un reloj por minuto para que la
+   *  sección se apague sola a las 12:00 sin recargar. */
+  const windows = useMemo(() => categoryWindowsFromRestaurant(rdata), [rdata]);
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const categoryClosedNow = (category: string) => {
+    const a = categoryAvailability(category, windows, now);
+    return !a.always && !a.openNow;
+  };
   /** true SOLO si el horario configurado dice cerrado (lib/schedule). */
   const [closedNow, setClosedNow] = useState(false);
   /** Mesa del QR (?mesa=5). Vacío = menú normal para llevar/recoger. */
@@ -702,6 +745,7 @@ function PublicMenuPageWithOrdering({
   /** El "+" de la tarjeta y el "Agregar" de la hoja de detalle: con opciones
    *  abre la hoja de opciones; sin opciones agrega directo. */
   const handleAddItem = (item: MenuRow) => {
+    if (categoryClosedNow(item.category)) return; // fuera de su hora: se ve, no se pide
     const groups = resolveOptionGroups(item);
     if (groups.length > 0) {
       setPendingItem({
@@ -811,6 +855,8 @@ function PublicMenuPageWithOrdering({
           <MenuCategoryList
             groups={categoryGroups}
             skin={skin}
+            windows={windows}
+            now={now}
             orderingEnabled={orderingEnabled}
             getItemQuantity={(itemId) => quantityByItemId.get(itemId) ?? 0}
             onOpenItem={(item) => setDetailItem(item)}
@@ -855,7 +901,7 @@ function PublicMenuPageWithOrdering({
         price={detailItem?.price ?? 0}
         imageUrl={detailItem?.imageUrl ?? null}
         optionsHint={detailItem ? optionsHintFor(detailItem) : null}
-        orderingEnabled={orderingEnabled}
+        orderingEnabled={orderingEnabled && !(detailItem && categoryClosedNow(detailItem.category))}
         onClose={() => setDetailItem(null)}
         onAdd={() => {
           if (!detailItem) return;
@@ -970,6 +1016,15 @@ function PublicMenuPageBrowseOnly({
   const [rdata, setRdata] = useState<Record<string, unknown> | null>(
     initial?.raw ?? null,
   );
+  /** Ventanas por categoría (AM/PM) y un reloj por minuto para que la
+   *  sección se apague sola a las 12:00 sin recargar. */
+  const windows = useMemo(() => categoryWindowsFromRestaurant(rdata), [rdata]);
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  // (solo-ver: sin carrito, no hace falta el guardia por categoría)
 
   useEffect(() => {
     if (!restaurantId) {
@@ -1096,6 +1151,8 @@ function PublicMenuPageBrowseOnly({
           <MenuCategoryList
             groups={categoryGroups}
             skin={skin}
+            windows={windows}
+            now={now}
             orderingEnabled={false}
             onAddItem={() => {}}
             onOpenItem={(item) => setDetailItem(item)}
