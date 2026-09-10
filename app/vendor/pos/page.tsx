@@ -895,7 +895,7 @@ export default function PosPage() {
   // EXACTAMENTE como siempre. Núcleo puro en lib/pos/tabGroups.ts.
   const openTabGroups = useMemo(() => groupOpenTabs(activeOpenTabs as any[]), [activeOpenTabs]);
 
-  // Modo Caja: sync con el candado del layout (salir desde la barra lateral).
+  // Modo Caja: sync con el candado del layout (el diálogo de salir vive allá).
   useEffect(() => {
     function sync() {
       if (restaurantId) setCajaLocked(isCajaModeLocked(restaurantId));
@@ -1506,13 +1506,25 @@ export default function PosPage() {
               </button>
             )}
             {cajaLocked && (
-              <span
+              // El candado es un BOTÓN: tocarlo pide al layout el diálogo de
+              // salir (PIN de gerente; sin gerentes sale directo). Antes era
+              // un letrero que decía "salir desde la barra lateral" — y en el
+              // celular no hay barra lateral (10-sep, Zahir encerrado).
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.dispatchEvent(new Event("cajaModeExitRequested"));
+                  } catch {
+                    /* sin listeners */
+                  }
+                }}
                 className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[12px] font-bold"
                 style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
-                title="Modo Caja activo — salir desde la barra lateral (PIN de gerente)"
+                title="Modo Caja activo — toca para salir (PIN de gerente)"
               >
                 🔒
-              </span>
+              </button>
             )}
             {/* ¿Quién cobra? — switcher del equipo (solo si hay roster) */}
             {posStaff.length > 0 && (

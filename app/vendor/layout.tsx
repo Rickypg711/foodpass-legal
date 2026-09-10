@@ -276,10 +276,17 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     function sync() {
       if (restaurantId) setCajaLocked(isCajaModeLocked(restaurantId));
     }
+    // La caja pide salir (el candado 🔒 de su header es botón desde el
+    // 10-sep): el diálogo con PIN vive aquí, en el layout.
+    function exitRequested() {
+      setExitDialogOpen(true);
+    }
     window.addEventListener("cajaModeChanged", sync);
+    window.addEventListener("cajaModeExitRequested", exitRequested);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("cajaModeChanged", sync);
+      window.removeEventListener("cajaModeExitRequested", exitRequested);
       window.removeEventListener("storage", sync);
     };
   }, [restaurantId]);
@@ -775,6 +782,24 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               >
                 ⭐ Hazte Pro
               </Link>
+            )}
+            {/* 🔒 Salir de Modo Caja TAMBIÉN en el celular (10-sep-2026). El
+                botón vivía solo en la barra lateral de escritorio; en un
+                teléfono el dueño quedaba encerrado en Caja/Pedidos sin salida
+                (Zahir, Central Fast Food: "no puedo quitar el seguro" — y por
+                eso no llegaba a Configuración). Mismo diálogo, mismo PIN. */}
+            {cajaLocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  setExitDialogOpen(true);
+                }}
+                className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-3.5 py-3 text-[13px] font-bold"
+                style={{ background: "rgba(242,140,56,0.15)", color: "#F28C38", border: "1px solid rgba(242,140,56,0.3)" }}
+              >
+                🔒 Salir de Modo Caja
+              </button>
             )}
           </div>
         </div>
