@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
+import { MenuCategoryChips } from "@/components/menu/MenuCategoryChips";
 import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import { OwnerHoursStrip } from "@/components/menu/OwnerHoursStrip";
@@ -852,6 +853,16 @@ function PublicMenuPageWithOrdering({
         )}
 
         {!loading && !error && items.length > 0 && (
+          <MenuCategoryChips
+            skin={skin}
+            chips={categoryGroups.map((g, index) => {
+              const a = categoryAvailability(g.category, windows, now);
+              return { category: g.category, index, closed: !a.always && !a.openNow };
+            })}
+          />
+        )}
+
+        {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
             skin={skin}
@@ -1146,6 +1157,15 @@ function PublicMenuPageBrowseOnly({
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
         {!loading && !error && items.length === 0 && (
           <MenuStatusMessage>No hay platillos disponibles</MenuStatusMessage>
+        )}
+        {!loading && !error && items.length > 0 && (
+          <MenuCategoryChips
+            skin={skin}
+            chips={categoryGroups.map((g, index) => {
+              const a = categoryAvailability(g.category, windows, now);
+              return { category: g.category, index, closed: !a.always && !a.openNow };
+            })}
+          />
         )}
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
