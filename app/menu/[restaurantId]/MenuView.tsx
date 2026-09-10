@@ -1031,7 +1031,7 @@ function PublicMenuPageWithOrdering({
           />
         ) : null}
 
-        {!loading && !error ? <MenuPoweredByFooter skin={skin} /> : null}
+        {!loading && !error ? <MenuPoweredByFooter skin={skin} restaurantId={restaurantId} /> : null}
       </main>
 
       <MenuItemDetailSheet
@@ -1323,7 +1323,7 @@ function PublicMenuPageBrowseOnly({
           />
         ) : null}
 
-        {!loading && !error ? <MenuPoweredByFooter skin={skin} /> : null}
+        {!loading && !error ? <MenuPoweredByFooter skin={skin} restaurantId={restaurantId} /> : null}
       </main>
 
       <MenuItemDetailSheet

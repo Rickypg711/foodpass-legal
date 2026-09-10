@@ -6,6 +6,11 @@
  *
  * El link va al demo (la misma puerta del prospecto solo) con utm para saber
  * cuántos dueños llegan por aquí. Piel de siempre y piel Tercera.
+ *
+ * utm_content = el local que abrió el comensal (slug o id de la URL), robado
+ * del "Powered by Last" de last.shop (utm_adname=Pizza Radical, 10-sep-2026):
+ * así sabemos QUÉ menú nos trajo a cada dueño, no solo cuántos. El formulario
+ * del prospecto ya guarda utm_content (parseUtmsFromSearch).
  */
 import Link from "next/link";
 import type { MenuSkinId } from "@/lib/menu/menuSkin";
@@ -13,9 +18,22 @@ import type { MenuSkinId } from "@/lib/menu/menuSkin";
 export const POWERED_BY_HREF =
   "/demo?utm_source=menu&utm_medium=footer&utm_campaign=hecho_con_comeleal";
 
-export function MenuPoweredByFooter({ skin = null }: { skin?: MenuSkinId | null }) {
+/** Link del pie con el local que lo mostró; sin local, el link de siempre. */
+export function poweredByHref(restaurantId?: string | null): string {
+  const id = (restaurantId ?? "").trim().slice(0, 80);
+  return id ? `${POWERED_BY_HREF}&utm_content=${encodeURIComponent(id)}` : POWERED_BY_HREF;
+}
+
+export function MenuPoweredByFooter({
+  skin = null,
+  restaurantId = null,
+}: {
+  skin?: MenuSkinId | null;
+  restaurantId?: string | null;
+}) {
   const tercera = skin === "tercera";
   const pecado = skin === "pecado";
+  const href = poweredByHref(restaurantId);
   return (
     <footer
       className={
@@ -34,7 +52,7 @@ export function MenuPoweredByFooter({ skin = null }: { skin?: MenuSkinId | null 
       <p className="mt-1">
         ¿Tienes un restaurante?{" "}
         <Link
-          href={POWERED_BY_HREF}
+          href={href}
           className={
             "font-semibold underline underline-offset-4 " +
             (tercera

@@ -170,7 +170,11 @@ export default function Home() {
                 Menú con QR, pedidos por WhatsApp y puntos. Sin cambiar tu caja.
               </p>
               <HomeCta />
-              <p className="mt-3 text-xs text-white/35">Sin tarjeta de crédito · Sin contrato</p>
+              {/* Robado de Last.app (10-sep-2026): "si sabes usar WhatsApp ya
+                  sabes usarlo". Nivel secundaria, cero jerga, y quita el miedo
+                  a "otro sistema" antes de que el dueño lo diga. */}
+              <p className="mt-4 text-sm text-white/60">Si sabes mandar un WhatsApp, ya sabes usar Comeleal.</p>
+              <p className="mt-2 text-xs text-white/35">Sin tarjeta de crédito · Sin contrato</p>
             </div>
 
             <div className="flex justify-center lg:justify-end">
