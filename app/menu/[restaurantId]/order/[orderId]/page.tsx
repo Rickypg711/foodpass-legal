@@ -7,6 +7,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mpWebDebugClient } from "@/lib/mercadoPago/mpWebDebug";
 import { paidWithLine, pickupPaymentLine } from "@/lib/pos/paidOrderFields";
+import { deliveryPaymentLine } from "@/lib/order/deliveryOptions";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { formatPrice } from "@/lib/priceFormat";
@@ -48,6 +49,10 @@ type OrderDoc = {
   /** Mesa (dine_in): la orden nació del QR de una mesa. */
   orderType?: string;
   tableNumber?: string;
+  /** 🛵 A domicilio: a dónde se lleva, con las palabras del comensal. */
+  deliveryAddress?: string;
+  /** 🛵 Envío ya sumado en total. */
+  deliveryFee?: number;
   total?: number;
   items?: Array<{
     name?: string;
@@ -308,9 +313,17 @@ function OrderStatusPageContent() {
     order?.orderType === "dine_in" && (order?.tableNumber ?? "").trim()
       ? (order!.tableNumber as string).trim()
       : null;
+  // 🛵 A domicilio: el pedido va hacia él — nada de "pasa por él" ni PIN.
+  const direccion =
+    order?.orderType === "delivery" && (order?.deliveryAddress ?? "").trim()
+      ? (order!.deliveryAddress as string).trim()
+      : null;
+  const envio =
+    typeof order?.deliveryFee === "number" && order.deliveryFee > 0 ? order.deliveryFee : 0;
   const orderDisplay = customerOrderDisplay(status, paymentStatus, {
     tableLabel: mesaLabel,
     posReceipt: isPosOrder,
+    delivery: direccion !== null,
   });
 
   useEffect(() => {
@@ -408,6 +421,8 @@ function OrderStatusPageContent() {
           : undefined,
       cartLines: cartLinesForWa,
       total: displayTotal,
+      deliveryAddress: direccion,
+      deliveryFee: envio,
     });
     trackWhatsappOrderMessageSent({ restaurantId, orderId });
     window.open(buildWhatsappUrl(whatsapp, text, phoneCountry), "_blank", "noopener,noreferrer");
@@ -508,7 +523,17 @@ function OrderStatusPageContent() {
               </p>
               {/* POS/counter orders have no pickup PIN — the customer is at the
                   restaurant already (this page is their WhatsApp receipt). */}
-              {isPosOrder ? null : (
+              {isPosOrder ? null : direccion ? (
+                <>
+                  {/* 🛵 A domicilio no hay mostrador donde enseñar un PIN: lo
+                      que el comensal necesita ver es que la dirección llegó
+                      bien, y corregirla por WhatsApp si no. */}
+                  <p className="mt-3 text-xs text-[#1C2526]/60">Te lo llevamos a</p>
+                  <p className="text-base font-bold leading-snug" suppressHydrationWarning>
+                    🛵 {direccion}
+                  </p>
+                </>
+              ) : (
                 <>
                   <p className="mt-3 text-xs text-[#1C2526]/60">
                     {mesaLabel ? "Folio del pedido" : "PIN de recogida"}
@@ -548,7 +573,9 @@ function OrderStatusPageContent() {
                 <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
                   {mesaLabel
                     ? "💵 Pagas al final, aquí en tu mesa"
-                    : pickupPaymentLine(order?.pickupPaymentMethod)}
+                    : direccion
+                      ? deliveryPaymentLine(order?.pickupPaymentMethod)
+                      : pickupPaymentLine(order?.pickupPaymentMethod)}
                 </p>
               ) : null}
               {/* 🧾 Ya cobrado: el recibo dice cómo se pagó ("Pagado por
@@ -602,6 +629,12 @@ function OrderStatusPageContent() {
                     <span className="shrink-0">{formatPrice(it.subtotal ?? 0)}</span>
                   </li>
                 ))}
+                {envio > 0 ? (
+                  <li className="flex justify-between gap-3 border-t border-[#1C2526]/8 py-1 pt-2 text-[#1C2526]/70">
+                    <span>🛵 Envío a domicilio</span>
+                    <span className="shrink-0">{formatPrice(envio)}</span>
+                  </li>
+                ) : null}
               </ul>
             ) : null}
 
@@ -611,8 +644,9 @@ function OrderStatusPageContent() {
                   📲 Confírmalo por WhatsApp
                 </p>
                 <p className="mt-1 text-xs text-[#1C2526]/60">
-                  El restaurante ya tiene tu pedido — con el WhatsApp seguro lo
-                  ven al momento, y te queda tu recibo con PIN en el chat.
+                  {direccion
+                    ? "El restaurante ya tiene tu pedido y tu dirección — con el WhatsApp seguro lo ven al momento, y te queda tu recibo en el chat."
+                    : "El restaurante ya tiene tu pedido — con el WhatsApp seguro lo ven al momento, y te queda tu recibo con PIN en el chat."}
                 </p>
                 <button
                   type="button"

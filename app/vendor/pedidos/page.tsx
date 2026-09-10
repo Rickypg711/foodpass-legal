@@ -73,6 +73,10 @@ interface Order {
   tableNumber?: string;
   /** Personas en la mesa (opcional, lo pone el comensal). */
   diners?: number;
+  /** 🛵 A domicilio (9-sep): a dónde se lleva, con las palabras del comensal. */
+  deliveryAddress?: string;
+  /** 🛵 Envío ya sumado en `total`; se desglosa para que el cobro cuadre. */
+  deliveryFee?: number;
   orderSource: "pos" | "app" | "web" | string;
   notes?: string;
   createdAt: Timestamp;
@@ -527,7 +531,7 @@ export default function PedidosPage() {
                               ? "En mesa"
                               : order.orderType === "pickup"
                               ? "Para llevar"
-                              : "Delivery"}
+                              : "A domicilio"}
                           </span>
                           {/* La mesa es lo ÚNICO que le dice al mesero a dónde
                               llevar el plato — va en verde y grande, no como un
@@ -540,6 +544,15 @@ export default function PedidosPage() {
                                   hoja de QR ya usaba esta misma regla. */}
                               🍽️ {tableLabel(order.tableNumber)}
                               {order.diners ? ` · ${order.diners}p` : ""}
+                            </span>
+                          ) : null}
+                          {/* 🛵 La dirección es lo ÚNICO que le dice al dueño a
+                              dónde ir — verde y grande como la mesa, no un chip.
+                              Central Fast Food (RD) entrega él mismo; antes la
+                              gente metía "Daly dígale a Harol" en el NOMBRE. */}
+                          {order.orderType === "delivery" && order.deliveryAddress?.trim() ? (
+                            <span className="w-full rounded-xl px-2.5 py-1.5 text-[12px] font-bold leading-snug bg-[#16A34A] text-white">
+                              🛵 {order.deliveryAddress.trim()}
                             </span>
                           ) : null}
                           {/* 🏦 Lo que el comensal DIJO al ordenar. Solo mientras
@@ -639,6 +652,12 @@ export default function PedidosPage() {
 
                       {/* Bottom Actions */}
                       <div className="pt-3 border-t border-gray-100 space-y-2">
+                        {typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? (
+                          <div className="flex justify-between items-center">
+                            <span className="text-[11px] font-semibold text-gray-400">ENVÍO</span>
+                            <span className="text-[12px] font-bold text-[#1C2526]/70">{fmt(order.deliveryFee)}</span>
+                          </div>
+                        ) : null}
                         <div className="flex justify-between items-center">
                           <span className="text-[11px] font-semibold text-gray-400">TOTAL</span>
                           <span className="text-[16px] font-extrabold text-[#1C2526]">{fmt(order.total)}</span>

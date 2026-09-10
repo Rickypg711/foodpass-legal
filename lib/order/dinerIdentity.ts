@@ -11,6 +11,8 @@
 export type DinerIdentity = {
   name: string;
   phone: string;
+  /** 🛵 Última dirección de entrega que tecleó (9-sep). Opcional. */
+  address?: string;
 };
 
 const KEY = "comeleal_diner_identity_v1";
@@ -23,6 +25,8 @@ export function saveDinerIdentity(identity: Partial<DinerIdentity>): void {
       name: (identity.name ?? prev?.name ?? "").trim(),
       phone: (identity.phone ?? prev?.phone ?? "").trim(),
     };
+    const address = (identity.address ?? prev?.address ?? "").trim();
+    if (address) next.address = address;
     if (!next.name && !next.phone) return;
     window.localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -38,7 +42,9 @@ export function loadDinerIdentity(): DinerIdentity | null {
     const parsed = JSON.parse(raw) as Partial<DinerIdentity>;
     const name = typeof parsed.name === "string" ? parsed.name.trim() : "";
     const phone = typeof parsed.phone === "string" ? parsed.phone.trim() : "";
-    return name || phone ? { name, phone } : null;
+    const address = typeof parsed.address === "string" ? parsed.address.trim() : "";
+    if (!name && !phone) return null;
+    return address ? { name, phone, address } : { name, phone };
   } catch {
     return null;
   }

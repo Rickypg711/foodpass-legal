@@ -36,6 +36,12 @@ export async function createCustomerWebOrder(params: {
   diners?: number | null;
   /** Cómo dijo el comensal que paga al recoger (pay_at_pickup sin mesa). */
   pickupPaymentMethod?: import("@/lib/types/order").PickupPaymentMethod | null;
+  /** 🛵 "pickup" | "delivery" (solo sin mesa). */
+  fulfillment?: import("@/lib/order/deliveryOptions").Fulfillment | null;
+  /** 🛵 A dónde se lleva. Exigido cuando fulfillment es delivery. */
+  deliveryAddress?: string | null;
+  /** 🛵 Costo de envío del local; se suma al total. */
+  deliveryFee?: number | null;
 }): Promise<CreateOrderResult> {
   const user = await ensureAnonymousUser();
   const pickupPin = generatePickupPin();
@@ -69,6 +75,9 @@ export async function createCustomerWebOrder(params: {
     diners: params.diners,
     tabId,
     pickupPaymentMethod: params.pickupPaymentMethod ?? null,
+    fulfillment: params.fulfillment ?? null,
+    deliveryAddress: params.deliveryAddress ?? null,
+    deliveryFee: params.deliveryFee ?? null,
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {
@@ -88,6 +97,9 @@ export async function createCustomerWebOrder(params: {
   saveDinerIdentity({
     name: params.customerName,
     phone: params.customerPhone ?? "",
+    // La dirección también: Daly pidió 3 veces en 4 días; escribir "casa
+    // azul frente al colmado" tres veces es la fricción que mata la 4ª.
+    ...(payload.deliveryAddress ? { address: payload.deliveryAddress } : {}),
   });
   saveOrderSnapshot({
     orderId: ref.id,

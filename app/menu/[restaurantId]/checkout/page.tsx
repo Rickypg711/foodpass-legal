@@ -42,6 +42,16 @@ import {
   restaurantSupportsWebCheckout,
 } from "@/lib/order/customerWebCheckoutPolicy";
 import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
+import {
+  DELIVERY_ADDRESS_MAX,
+  DELIVERY_CHOICE_COPY,
+  deliveryFeeOf,
+  deliveryPaymentLine,
+  deliveryZoneOf,
+  isUsableDeliveryAddress,
+  restaurantOffersDelivery,
+  type Fulfillment,
+} from "@/lib/order/deliveryOptions";
 import { isPositivelyClosedNow, scheduleStatus } from "@/lib/schedule";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { formatPrice } from "@/lib/priceFormat";
@@ -55,10 +65,13 @@ function CheckoutHeader({
   restaurantId,
   restaurantName,
   logoUrl,
+  modeLabel = "Recoger en local",
 }: {
   restaurantId: string;
   restaurantName: string;
   logoUrl?: string | null;
+  /** "Recoger en local" · "A domicilio" · "En tu mesa" — lo que el comensal eligió. */
+  modeLabel?: string;
 }) {
   return (
     <header className="relative overflow-hidden bg-[#141414] shadow-md">
@@ -96,7 +109,7 @@ function CheckoutHeader({
             Confirmar pedido
           </h1>
           <p className="truncate text-xs text-white/55">
-            {restaurantName} · Recoger en local
+            {restaurantName} · {modeLabel}
           </p>
         </div>
       </div>
@@ -137,15 +150,34 @@ export default function CheckoutPage() {
   const [acceptedMethods, setAcceptedMethods] = useState<PaymentMethod[]>([]);
   /** 🏦 "Pago por transferencia": lo que el comensal dice al ordenar. null = la primera aceptada. */
   const [pickupPayMethod, setPickupPayMethod] = useState<PaymentMethod | null>(null);
+  /** 🛵 El local entrega a domicilio (deliveryEnabled en Configuración). */
+  const [deliveryOffered, setDeliveryOffered] = useState(false);
+  /** 🛵 Costo de envío fijo del local (0 = no cobra). */
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  /** 🛵 "¿Hasta dónde entregas?" del dueño, para que el comensal no pida de más lejos. */
+  const [deliveryZone, setDeliveryZone] = useState("");
+  /** 🛵 Lo que eligió: recoger (default) o que se lo lleven. Sin mesa nada más. */
+  const [fulfillment, setFulfillment] = useState<Fulfillment>("pickup");
+  /** 🛵 A dónde se lo llevan, con sus palabras ("casa azul frente al colmado"). */
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   /**
    * Está SENTADO, no viene por su comida. Cambia tres cosas: no elige forma de
    * pago, el botón manda a cocina en vez de cobrar, y la letra chica dice que
    * paga al final con el mesero.
    */
   const enMesa = Boolean(tableNumber) && payAtPickupAvailable;
+  /**
+   * 🛵 Va a domicilio: el local lo ofrece, no hay mesa y el comensal lo
+   * eligió. Cambia el copy de pago ("al recibir", no "al recoger"), exige la
+   * dirección y suma el envío al total que se cobra.
+   */
+  const esDomicilio = deliveryOffered && !tableNumber && fulfillment === "delivery";
+  const envio = esDomicilio ? deliveryFee : 0;
+  /** Lo que el dueño cobra de verdad: platillos + envío. Los puntos salen de esto. */
+  const totalConEnvio = subtotal + envio;
   /** Lo que GANA con este pedido, dicho ANTES del campo de teléfono (robo
    *  5-sep: Fluxsales). Null cuando el local no promete puntos. */
-  const earnLine = loyaltyLive ? earnPreviewLine(buildEarnPreview(restaurantData, subtotal)) : null;
+  const earnLine = loyaltyLive ? earnPreviewLine(buildEarnPreview(restaurantData, totalConEnvio)) : null;
   const paymentChoiceCount =
     (mercadoPagoAvailable ? 1 : 0) + (payAtPickupAvailable ? acceptedMethods.length : 0);
   const effectivePickupPayMethod: PaymentMethod | null =
@@ -179,6 +211,7 @@ export default function CheckoutPage() {
     if (!prev) return;
     if (prev.name) setCustomerName((current) => current || prev.name);
     if (prev.phone) setCustomerPhone((current) => current || prev.phone);
+    if (prev.address) setDeliveryAddress((current) => current || prev.address!);
   }, []);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLogged, setCheckoutLogged] = useState(false);
@@ -229,6 +262,9 @@ export default function CheckoutPage() {
           setPayAtPickupAvailable(papOk);
           const accepted = acceptedPaymentMethods(data);
           setAcceptedMethods(accepted);
+          setDeliveryOffered(restaurantOffersDelivery(data));
+          setDeliveryFee(deliveryFeeOf(data));
+          setDeliveryZone(deliveryZoneOf(data));
           // Default selection: MP when available (pay-before-prepare stays the
           // preferred path); otherwise pay-at-pickup if the vendor allows it.
           setPayMethod(
@@ -336,6 +372,12 @@ export default function CheckoutPage() {
       setError("Ingresa tu WhatsApp (10 dígitos) para avisarte de tu pedido.");
       return;
     }
+    // 🛵 Sin dirección no hay a dónde llevarlo — y el pedido NO cae como
+    // "para recoger" a escondidas: se le pide aquí.
+    if (esDomicilio && !isUsableDeliveryAddress(deliveryAddress)) {
+      setError("Dinos a dónde te lo llevamos: calle, casa y una referencia.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -384,6 +426,9 @@ export default function CheckoutPage() {
           diners: diners ? Number.parseInt(diners, 10) : null,
           // En mesa no hay decisión (se paga al final con el mesero).
           pickupPaymentMethod: enMesaSePagaAlFinal ? null : effectivePickupPayMethod,
+          fulfillment: esDomicilio ? "delivery" : "pickup",
+          deliveryAddress: esDomicilio ? deliveryAddress : null,
+          deliveryFee: envio,
         });
         mpWebDebugClient("order_create_success", {
           restaurantId,
@@ -450,6 +495,9 @@ export default function CheckoutPage() {
         redemptionRequest: redemption,
         tableNumber,
         diners: diners ? Number.parseInt(diners, 10) : null,
+        fulfillment: esDomicilio ? "delivery" : "pickup",
+        deliveryAddress: esDomicilio ? deliveryAddress : null,
+        deliveryFee: envio,
       });
 
       mpWebDebugClient("order_create_success", {
@@ -563,6 +611,7 @@ export default function CheckoutPage() {
           restaurantId={restaurantId}
           restaurantName={restaurantName}
           logoUrl={restaurantImageUrl}
+          modeLabel={tableNumber ? "En tu mesa" : esDomicilio ? "A domicilio" : "Recoger en local"}
         />
 
       <main className="mx-auto max-w-md px-4 py-6">
@@ -683,6 +732,68 @@ export default function CheckoutPage() {
             </div>
           ) : null}
 
+          {/* ── 🛵 ¿Para recoger o a domicilio? (9-sep-2026) ──
+              Solo si el dueño prendió "Entrego a domicilio" y no hay mesa.
+              Es la PRIMERA decisión porque cambia todo lo de abajo: el copy
+              de pago, el total (envío) y si se pide dirección. Dos botones
+              grandes, no un select: es un celular en la mano. */}
+          {deliveryOffered && !tableNumber ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold">¿Cómo quieres tu pedido?</p>
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                {(
+                  [
+                    { key: "pickup", emoji: "🛍️", title: "Para recoger", sub: "Pasas por él al local" },
+                    { key: "delivery", emoji: "🛵", title: "A domicilio", sub: deliveryFee > 0 ? `Envío ${formatPrice(deliveryFee)}` : "Te lo llevan" },
+                  ] as { key: Fulfillment; emoji: string; title: string; sub: string }[]
+                ).map((opt) => {
+                  const on = fulfillment === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => setFulfillment(opt.key)}
+                      aria-pressed={on}
+                      className={`flex flex-col items-center rounded-xl border px-3 py-3 text-center transition-colors ${
+                        on
+                          ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
+                          : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
+                      }`}
+                    >
+                      <span className="text-2xl" aria-hidden>{opt.emoji}</span>
+                      <span className="mt-1 text-sm font-semibold">{opt.title}</span>
+                      <span className="text-xs text-[#1C2526]/55">{opt.sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {esDomicilio ? (
+                <label className="mt-3 block">
+                  <span className="text-sm font-semibold">
+                    ¿Dónde te lo llevamos? <span className="text-[#F28C38]">*</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+                    {deliveryZone
+                      ? `${deliveryZone}. Escribe calle, casa y una referencia.`
+                      : "Escribe calle, casa y una referencia para encontrarte."}
+                  </span>
+                  <textarea
+                    required
+                    rows={2}
+                    maxLength={DELIVERY_ADDRESS_MAX}
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    className="mt-2.5 w-full resize-none rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                    placeholder="Ej. Calle Duarte #12, casa azul frente al colmado"
+                    autoComplete="street-address"
+                    disabled={submitting}
+                  />
+                </label>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <label className="block">
               <span className="text-sm font-semibold">
@@ -697,7 +808,7 @@ export default function CheckoutPage() {
                 const phoneDigitsTyped = customerPhone.replace(/\D/g, "");
                 const welcomeLine =
                   phoneDigitsTyped.length < 10
-                    ? welcomePreviewLine(buildEarnPreview(restaurantData, subtotal))
+                    ? welcomePreviewLine(buildEarnPreview(restaurantData, totalConEnvio))
                     : null;
                 return (
                   <span className="mt-1 block rounded-xl bg-[#F28C38]/10 px-3 py-2 text-[13px] text-[#1C2526]">
@@ -744,7 +855,9 @@ export default function CheckoutPage() {
                     cuando la mesa pidió varias cosas, no para gritarlo. */}
                 {enMesa
                   ? "Para que el mesero sepa cuál platillo es tuyo."
-                  : "Para avisarte cuando tu pedido esté listo."}
+                  : esDomicilio
+                    ? "Para saber a quién entregarle."
+                    : "Para avisarte cuando tu pedido esté listo."}
               </span>
               <input
                 type="text"
@@ -873,9 +986,13 @@ export default function CheckoutPage() {
                         >
                           <span className="text-xl" aria-hidden>{o.emoji}</span>
                           <span className="min-w-0">
-                            <span className="block text-sm font-semibold">{PICKUP_CHOICE_COPY[o.key].title}</span>
+                            {/* 🛵 A domicilio el dinero cambia de manos en la
+                                puerta, no en el mostrador — copy propio. */}
+                            <span className="block text-sm font-semibold">
+                              {esDomicilio ? DELIVERY_CHOICE_COPY[o.key].title : PICKUP_CHOICE_COPY[o.key].title}
+                            </span>
                             <span className="block text-xs text-[#1C2526]/55">
-                              {PICKUP_CHOICE_COPY[o.key].sub}
+                              {esDomicilio ? DELIVERY_CHOICE_COPY[o.key].sub : PICKUP_CHOICE_COPY[o.key].sub}
                             </span>
                           </span>
                         </button>
@@ -898,6 +1015,13 @@ export default function CheckoutPage() {
             <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-800" role="alert">
               {error}
             </p>
+          ) : null}
+          {/* 🛵 El envío se dice ANTES del botón, no escondido en el total. */}
+          {envio > 0 ? (
+            <div className="-mb-1 flex items-center justify-between rounded-xl bg-white px-3.5 py-2.5 text-sm shadow-sm">
+              <span className="text-[#1C2526]/70">🛵 Envío a domicilio</span>
+              <span className="font-semibold">{formatPrice(envio)}</span>
+            </div>
           ) : null}
           {closedNow ? (
             <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -922,18 +1046,24 @@ export default function CheckoutPage() {
               : enMesa
                 ? `Mandar a la cocina · ${formatPrice(subtotal)}`
                 : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                  ? `Ordenar ${formatPrice(subtotal)} · ${
+                  ? `Ordenar ${formatPrice(totalConEnvio)} · ${
                       effectivePickupPayMethod
-                        ? PICKUP_CHOICE_COPY[effectivePickupPayMethod].cta
-                        : "Pagas al recoger"
+                        ? esDomicilio
+                          ? DELIVERY_CHOICE_COPY[effectivePickupPayMethod].cta
+                          : PICKUP_CHOICE_COPY[effectivePickupPayMethod].cta
+                        : esDomicilio
+                          ? "Pagas al recibir"
+                          : "Pagas al recoger"
                     }`
-                  : `Pagar ${formatPrice(subtotal)} · Mercado Pago`}
+                  : `Pagar ${formatPrice(totalConEnvio)} · Mercado Pago`}
           </button>
           <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
             {enMesa
               ? "🍽️ Se agrega a la cuenta de tu mesa. Pagas al final."
               : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
-                ? pickupPaymentLine(effectivePickupPayMethod)
+                ? esDomicilio
+                  ? deliveryPaymentLine(effectivePickupPayMethod)
+                  : pickupPaymentLine(effectivePickupPayMethod)
                 : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
           <p className="-mt-2 text-center text-[11px] text-[#1C2526]/40">

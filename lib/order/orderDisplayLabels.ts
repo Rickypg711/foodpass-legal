@@ -11,10 +11,40 @@ export type OrderDisplayCopy = {
 export function customerOrderDisplay(
   status: string | undefined,
   paymentStatus: string | undefined,
-  opts: { posReceipt?: boolean; tableLabel?: string | null } = {},
+  opts: { posReceipt?: boolean; tableLabel?: string | null; delivery?: boolean } = {},
 ): OrderDisplayCopy {
   const s = (status ?? "").trim();
   const ps = (paymentStatus ?? "pending").trim();
+
+  // 🛵 A DOMICILIO (9-sep): nadie "pasa por él" ni enseña un PIN — la comida
+  // va a su casa. "Listo" aquí significa que ya salió.
+  if (opts.delivery && !opts.tableLabel && !opts.posReceipt) {
+    if (s === "cancelled") return { title: "Pedido cancelado" };
+    if (s === "payment_pending") {
+      return {
+        title: "Falta tu pago",
+        subtitle: "En cuanto Mercado Pago confirme, tu pedido llega al restaurante.",
+      };
+    }
+    if (ps === "paid" && s === "pending") {
+      return {
+        title: "¡Pedido pagado! ✅",
+        subtitle: "El restaurante ya lo tiene — en un momento lo empiezan a preparar.",
+      };
+    }
+    if (s === "preparing") return { title: "Preparando tu pedido 👨‍🍳" };
+    if (s === "ready") {
+      return {
+        title: "¡Ya va en camino! 🛵",
+        subtitle: "Ten a la mano tu pago si pagas al recibir.",
+      };
+    }
+    if (s === "completed") return { title: "Entregado en tu puerta ✔️" };
+    return {
+      title: "¡Pedido recibido! 🛎️",
+      subtitle: "El restaurante ya lo tiene — te lo llevan a la dirección que escribiste.",
+    };
+  }
   // Pedido DE MESA: el cliente está SENTADO — nada de "pasa por él" ni
   // "al recoger". La comida viene a él, y paga al final en su mesa.
   const mesa = (opts.tableLabel ?? "").trim();

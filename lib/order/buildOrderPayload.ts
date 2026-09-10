@@ -3,6 +3,7 @@ import type { CartLine } from "@/lib/cart/types";
 import { resolveInitialOrderStatus } from "@/lib/order/orderLifecycle";
 import {
   ORDER_SOURCE_CUSTOMER_WEB,
+  ORDER_TYPE_DELIVERY,
   ORDER_TYPE_DINE_IN,
   ORDER_TYPE_PICKUP,
   PAYMENT_METHOD_MERCADO_PAGO,
@@ -13,6 +14,10 @@ import {
   type PickupPaymentMethod,
 } from "@/lib/types/order";
 import { assertCustomerWebPaymentMethod } from "@/lib/order/customerWebCheckoutPolicy";
+import {
+  normalizeDeliveryAddress,
+  type Fulfillment,
+} from "@/lib/order/deliveryOptions";
 import {
   normalizeDiners,
   normalizeTableNumber,
@@ -44,6 +49,12 @@ export type BuildOrderInput = {
   tabId?: string | null;
   /** Cómo dijo el comensal que paga al recoger. Solo pay_at_pickup sin mesa. */
   pickupPaymentMethod?: PickupPaymentMethod | null;
+  /** 🛵 "Para recoger" o "A domicilio". Sin mesa nada más; con mesa se ignora. */
+  fulfillment?: Fulfillment | null;
+  /** 🛵 A dónde se lleva (texto libre del comensal). Exigido para delivery. */
+  deliveryAddress?: string | null;
+  /** 🛵 Costo de envío del local (Configuración). Se suma al total. */
+  deliveryFee?: number | null;
 };
 
 /**
@@ -89,7 +100,6 @@ export function buildCustomerWebOrderPayload(
     return item;
   });
 
-  const total = items.reduce((sum, i) => sum + i.subtotal, 0);
   const paymentMethod = assertCustomerWebPaymentMethod(
     input.paymentMethod ?? PAYMENT_METHOD_MERCADO_PAGO,
   );
@@ -102,7 +112,29 @@ export function buildCustomerWebOrderPayload(
   // El pickupPin se sigue generando SIEMPRE — en dine_in sirve de folio corto
   // para que el mesero cante el pedido sin leer un id de Firestore.
   const tableNumber = normalizeTableNumber(input.tableNumber ?? "");
-  const orderType = tableNumber ? ORDER_TYPE_DINE_IN : ORDER_TYPE_PICKUP;
+
+  // 🛵 A domicilio (9-sep-2026): SOLO sin mesa, SOLO si el comensal lo pidió
+  // y SOLO con una dirección de verdad. Si falta cualquiera, el pedido cae
+  // como "para recoger" — jamás un delivery sin a dónde llevarlo.
+  const deliveryAddress = normalizeDeliveryAddress(input.deliveryAddress);
+  const esDomicilio =
+    !tableNumber && input.fulfillment === "delivery" && deliveryAddress.length > 0;
+  const orderType = tableNumber
+    ? ORDER_TYPE_DINE_IN
+    : esDomicilio
+      ? ORDER_TYPE_DELIVERY
+      : ORDER_TYPE_PICKUP;
+
+  // El envío se SUMA al total: es lo que el dueño cobra en la puerta y lo que
+  // "¿Ya te pagó?" registra. Redondeado a centavos, nunca negativo, y solo
+  // cuando el pedido de verdad va a domicilio.
+  const feeRaw = Number(input.deliveryFee);
+  const deliveryFee =
+    esDomicilio && Number.isFinite(feeRaw) && feeRaw > 0
+      ? Math.round(feeRaw * 100) / 100
+      : 0;
+  const itemsTotal = items.reduce((sum, i) => sum + i.subtotal, 0);
+  const total = Math.round((itemsTotal + deliveryFee) * 100) / 100;
 
   // Una cuenta abierta es algo que queda POR COBRAR. Un pedido de mesa que ya
   // se pagó con Mercado Pago no lo es: si lo abriéramos igual, se quedaría
@@ -157,6 +189,13 @@ export function buildCustomerWebOrderPayload(
       ? normalizePickupPaymentMethod(input.pickupPaymentMethod)
       : null;
   if (pickupPaymentMethod) payload.pickupPaymentMethod = pickupPaymentMethod;
+
+  // 🛵 La dirección tal cual la escribió — es lo ÚNICO que le dice al dueño
+  // a dónde ir. Mismos nombres que ya lee la app (OrderDetailScreen.dart).
+  if (esDomicilio) {
+    payload.deliveryAddress = deliveryAddress;
+    if (deliveryFee > 0) payload.deliveryFee = deliveryFee;
+  }
 
   if (tableNumber) {
     payload.tableNumber = tableNumber;

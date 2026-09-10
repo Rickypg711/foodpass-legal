@@ -42,6 +42,8 @@ type OrderRow = {
   status?: string;
   paymentStatus?: string;
   total?: number;
+  /** 🛵 Costo de envío ya sumado en total (pedidos a domicilio). */
+  deliveryFee?: number;
   items?: Array<{ name?: string; quantity?: number; subtotal?: number; price?: number }>;
 };
 
@@ -197,6 +199,14 @@ export async function POST(request: Request) {
             ? it.subtotal / it.quantity
             : 0,
     }));
+    // 🛵 A domicilio (9-sep): el envío ya está sumado en order.total; si no
+    // viaja como renglón, Mercado Pago cobraría MENOS que el total y la
+    // orden quedaría "pagada" con dinero faltante.
+    const deliveryFee =
+      typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? order.deliveryFee : 0;
+    if (deliveryFee > 0) {
+      items.push({ title: "Envío a domicilio", quantity: 1, unit_price: deliveryFee });
+    }
 
     const webhookUrl = process.env.MERCADO_PAGO_WEBHOOK_URL?.trim() ?? "";
     if (!webhookUrl) {

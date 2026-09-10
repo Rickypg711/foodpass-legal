@@ -17,6 +17,11 @@ export type WhatsappOrderContext = {
   paymentMethod?: string | null;
   /** Checkout redemption riding on the order (name of the free item). */
   redemptionName?: string | null;
+  /** 🛵 A domicilio: la dirección va EN el mensaje — así el chat del dueño
+   *  también la tiene aunque nunca abra Pedidos. Sin dirección = para recoger. */
+  deliveryAddress?: string | null;
+  /** 🛵 Costo de envío ya sumado en `total`; se desglosa para que cuadre. */
+  deliveryFee?: number | null;
 };
 
 /** Short human order code — same as the vendor's Pedidos card (#XXXXXX). */
@@ -39,19 +44,30 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     })
     .join("\n");
 
+  const address = ctx.deliveryAddress?.trim() ?? "";
+  const esDomicilio = address.length > 0;
+  const fee = typeof ctx.deliveryFee === "number" && ctx.deliveryFee > 0 ? ctx.deliveryFee : 0;
+
   return [
     `Hola! Acabo de hacer un pedido en *${ctx.restaurantName}*:`,
     "",
     `Pedido *#${shortOrderCode(ctx.orderId)}*`,
     `Nombre: ${ctx.customerName}`,
-    `PIN de recogida: *${ctx.pickupPin}*`,
+    // A domicilio no hay PIN que enseñar en un mostrador: lo que importa es
+    // A DÓNDE. Para recoger, el PIN sigue siendo la llave del pedido.
+    esDomicilio
+      ? `*A domicilio:* ${address}`
+      : `PIN de recogida: *${ctx.pickupPin}*`,
     "",
     itemsLines,
+    ...(fee > 0 ? [`Envío — ${formatPrice(fee)}`] : []),
     ...(ctx.redemptionName ? [`🎁 Premio en este pedido: ${ctx.redemptionName} — GRATIS`] : []),
     "",
     `*Total: ${formatPrice(ctx.total)}*`,
     ctx.paymentMethod === "pay_at_pickup"
-      ? "Pago al recoger en el local."
+      ? esDomicilio
+        ? "Pago al recibir el pedido."
+        : "Pago al recoger en el local."
       : "Pago en línea con Mercado Pago.",
     ...(ctx.orderUrl ? ["", `Mi recibo y puntos: ${ctx.orderUrl}`] : []),
   ].join("\n");

@@ -11,6 +11,7 @@ import CambiarContrasenaCard from "../_components/CambiarContrasenaCard";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
+import { deliveryFeeOf, deliveryZoneOf, restaurantOffersDelivery } from "@/lib/order/deliveryOptions";
 import {
   entitlementOf,
   entitlementsOf,
@@ -122,6 +123,13 @@ export default function ConfiguracionPage() {
   );
   const [birthdayEnabled, setBirthdayEnabled] = useState(false);
   const [birthdayPoints, setBirthdayPoints] = useState(10);
+  /** 🛵 Entrega a domicilio (9-sep): el comensal elige "A domicilio" en el
+   * checkout y escribe su dirección; el pedido llega a Pedidos con ella. */
+  const [deliveryEnabled, setDeliveryEnabled] = useState(false);
+  /** 🛵 Costo de envío fijo (vacío = no cobra). Se suma al total del pedido. */
+  const [deliveryFee, setDeliveryFee] = useState<number | "">("");
+  /** 🛵 "¿Hasta dónde entregas?" — texto que ve el comensal al elegir A domicilio. */
+  const [deliveryZone, setDeliveryZone] = useState("");
   const [mpConnected, setMpConnected] = useState(false);
   const [mpEmail, setMpEmail] = useState<string | null>(null);
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
@@ -184,6 +192,10 @@ export default function ConfiguracionPage() {
       setDailyRevenueGoal(goal && goal > 0 ? goal : "");
       setPayAtPickup(data.payAtPickupEnabled === true);
       setAcceptedMethods(acceptedPaymentMethods(data));
+      setDeliveryEnabled(restaurantOffersDelivery(data));
+      const fee = deliveryFeeOf(data);
+      setDeliveryFee(fee > 0 ? fee : "");
+      setDeliveryZone(deliveryZoneOf(data));
       const bday = data.birthdayReward as Record<string, unknown> | undefined;
       if (bday && typeof bday === "object") {
         setBirthdayEnabled(bday.enabled === true);
@@ -462,6 +474,10 @@ export default function ConfiguracionPage() {
         categories,
         payAtPickupEnabled: payAtPickup,
         paymentMethods: acceptedMethods,
+        // 🛵 Mismos nombres que ya lee la app (deliveryFee en OrderDetailScreen).
+        deliveryEnabled,
+        deliveryFee: deliveryFee !== "" && Number(deliveryFee) > 0 ? Number(deliveryFee) : 0,
+        deliveryZone: deliveryZone.trim(),
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
@@ -1140,6 +1156,101 @@ export default function ConfiguracionPage() {
                 o al recoger. Sin Mercado Pago, esta opción es la única forma de
                 recibir pedidos en línea.
               </p>
+            </SectionCard>
+
+            {/* ── 🛵 Entrega a domicilio (9-sep-2026) ──
+                Pedido por Central Fast Food (RD): entrega él mismo y todo le
+                caía como "para recoger". Default APAGADO: es trabajo del dueño.
+                Sin mapa ni zonas: una caja de texto para la dirección y un
+                costo fijo opcional que se suma al total. */}
+            <SectionCard label="Entrega a domicilio">
+              <button
+                type="button"
+                onClick={() => { setDeliveryEnabled((v) => !v); setSaved(false); }}
+                aria-pressed={deliveryEnabled}
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                style={{
+                  background: deliveryEnabled ? "#FFF3E8" : "#F5F3EF",
+                  border: deliveryEnabled
+                    ? "1px solid rgba(242,140,56,0.5)"
+                    : "1px solid rgba(28,37,38,0.12)",
+                }}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    🛵 Entrego a domicilio
+                  </span>
+                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                    Tus clientes eligen &quot;A domicilio&quot; al ordenar y
+                    escriben su dirección. Te llega en Pedidos con la
+                    dirección para que lo lleves tú.
+                  </span>
+                </span>
+                <span
+                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                  style={{ background: deliveryEnabled ? "#F28C38" : "rgba(28,37,38,0.2)" }}
+                  aria-hidden
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
+                    style={{ left: deliveryEnabled ? "22px" : "2px" }}
+                  />
+                </span>
+              </button>
+              {deliveryEnabled ? (
+                <div className="mt-3 space-y-3">
+                  <Field label="Costo de envío (opcional)">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={deliveryFee}
+                        placeholder="0"
+                        onChange={(e) => { setDeliveryFee(e.target.value === "" ? "" : Number(e.target.value)); setSaved(false); }}
+                        className="w-36 rounded-xl px-3 py-2.5 text-[13px] outline-none"
+                        style={{
+                          background: "#F5F3EF",
+                          border: "1px solid rgba(28,37,38,0.12)",
+                          color: "#1C2526",
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
+                        onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                      />
+                      <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>{currency} por pedido</span>
+                    </div>
+                    <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                      Se suma al total del pedido. Vacío = no cobras envío.
+                    </p>
+                  </Field>
+                  <Field label="¿Hasta dónde entregas? (opcional)">
+                    <input
+                      type="text"
+                      maxLength={120}
+                      value={deliveryZone}
+                      placeholder="Ej. Solo dentro de la ciudad"
+                      onChange={(e) => { setDeliveryZone(e.target.value); setSaved(false); }}
+                      className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none"
+                      style={{
+                        background: "#F5F3EF",
+                        border: "1px solid rgba(28,37,38,0.12)",
+                        color: "#1C2526",
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
+                      onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                    />
+                    <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                      Tu cliente lo lee al elegir &quot;A domicilio&quot;, para que no te pida de más lejos.
+                    </p>
+                  </Field>
+                  {!payAtPickup && !mpConnected ? (
+                    <p className="text-[11px] font-semibold" style={{ color: "#C2410C" }}>
+                      Para recibir pedidos necesitas prender &quot;Pagar al recoger&quot; o conectar Mercado Pago.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </SectionCard>
 
             {/* ── Premio de cumpleaños ──
