@@ -37,6 +37,8 @@ import { buildFaq, buildSeoParagraph, cityForRestaurant, seoCategories } from "@
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { menuSkinFromRestaurant } from "@/lib/menu/menuSkin";
+import { landingThemeFor, type LandingTheme } from "@/components/menu/skins/landingTheme";
 
 export type LandingMenuPhoto = {
   name: string;
@@ -153,17 +155,16 @@ function ScheduleChip({ schedule }: { schedule: ScheduleStatus }) {
 
 function SectionCard({
   title,
+  theme,
   children,
 }: {
   title: string;
+  theme: LandingTheme;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[#1C2526]/8 bg-white/85 p-4 shadow-sm sm:p-5">
-      <h2 className="mb-3 flex items-center gap-2.5 text-base font-bold tracking-tight text-[#1C2526]">
-        <span className="h-4 w-1 rounded-full bg-[#F28C38]" aria-hidden />
-        {title}
-      </h2>
+    <section className={theme.card}>
+      {theme.cardTitle(title)}
       {children}
     </section>
   );
@@ -341,9 +342,26 @@ export default function LandingView({
   const tagline = taglineFromRestaurant(rdata ?? undefined);
   const heroBg = heroUrl ? "#141414" : brand.bg;
   const heroInk = heroUrl ? "#FFFFFF" : brand.ink;
+  // Piel del local (10-sep): una piel = las dos páginas. Sin piel, el tema
+  // DEFAULT es la portada de siempre byte por byte.
+  const theme = landingThemeFor(menuSkinFromRestaurant(rdata ?? undefined));
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] via-[#F5EDE2] to-[#F0E3D2] text-[#1C2526]">
+    <div className={theme.root}>
       {/* ---- HERO ---- */}
+      {theme.Header ? (
+        theme.Header({
+          loading,
+          restaurantName: name,
+          logoUrl: restaurant?.logoUrl ?? null,
+          tagline,
+          schedule,
+          address: restaurant?.address ?? null,
+          secondarySubtitle:
+            restaurant && restaurant.categories.length > 0
+              ? restaurant.categories.slice(0, 3).join(" · ").toLowerCase()
+              : null,
+        })
+      ) : (
       <header className="relative overflow-hidden" style={{ background: heroBg }}>
         {heroUrl ? (
           <>
@@ -418,10 +436,11 @@ export default function LandingView({
           aria-hidden
         />
       </header>
+      )}
 
       <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-16 pt-4 sm:px-6 sm:pt-5 lg:max-w-4xl">
         {loading && (
-          <p className="rounded-2xl border border-[#1C2526]/8 bg-white/80 px-4 py-6 text-center text-sm text-[#1C2526]/70">
+          <p className={theme.loading}>
             Cargando…
           </p>
         )}
@@ -444,7 +463,7 @@ export default function LandingView({
               <Link
                 href={menuHref}
                 onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                className="block min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-center text-base font-semibold text-[#1C2526] shadow-md ring-1 ring-black/5 transition-colors hover:bg-[#d67428]"
+                className={theme.cta}
               >
                 🍽 Ver menú y ordenar
               </Link>
@@ -459,7 +478,7 @@ export default function LandingView({
                     onClick={() =>
                       trackWebLandingWhatsappClick({ restaurantId, restaurantName: name })
                     }
-                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-600/25 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+                    className={theme.btnWhatsapp}
                   >
                     💬 WhatsApp
                   </a>
@@ -467,7 +486,7 @@ export default function LandingView({
                 {restaurant.phone ? (
                   <a
                     href={`tel:${restaurant.phone.replace(/[^\d+]/g, "")}`}
-                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[#1C2526]/10 bg-white px-3 py-2.5 text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#FAF7F2]"
+                    className={theme.btnNeutral}
                   >
                     📞 Llamar
                   </a>
@@ -478,7 +497,7 @@ export default function LandingView({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={
-                      "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[#1C2526]/10 bg-white px-3 py-2.5 text-sm font-semibold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] " +
+                      theme.btnNeutral + " " +
                       (!whatsappHref !== !restaurant.phone ? "" : "col-span-2")
                     }
                   >
@@ -490,14 +509,14 @@ export default function LandingView({
 
             {/* ---- DESCRIPCIÓN ---- */}
             {restaurant.description ? (
-              <p className="rounded-2xl border border-[#1C2526]/8 bg-white/85 p-4 text-sm leading-relaxed text-[#1C2526]/80 shadow-sm sm:p-5">
+              <p className={theme.descriptionCard}>
                 {restaurant.description}
               </p>
             ) : null}
 
             {/* ---- DEL MENÚ (fotos) — "Los más pedidos" con datos de ventas ---- */}
             {menuPhotos.length > 0 ? (
-              <SectionCard title={menuPhotosArePopular ? "Los más pedidos 🔥" : "Del menú"}>
+              <SectionCard theme={theme} title={menuPhotosArePopular ? "Los más pedidos 🔥" : "Del menú"}>
                 <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
                   {menuPhotos.map((item, i) => (
                     <Link
@@ -516,10 +535,10 @@ export default function LandingView({
                         unoptimized
                         className="h-28 w-36 rounded-xl object-cover shadow-sm"
                       />
-                      <p className="mt-1.5 truncate text-xs font-semibold text-[#1C2526]">
+                      <p className={`mt-1.5 truncate text-xs font-semibold ${theme.photoName}`}>
                         {item.name}
                       </p>
-                      <p className="text-xs font-medium text-[#F28C38]">
+                      <p className={`text-xs font-medium ${theme.photoPrice}`}>
                         {formatPrice(item.price)}
                       </p>
                     </Link>
@@ -528,7 +547,7 @@ export default function LandingView({
                 <Link
                   href={menuHref}
                   onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                  className="mt-2 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                  className={`mt-2 inline-block text-sm ${theme.link}`}
                 >
                   Ver menú completo →
                 </Link>
@@ -541,7 +560,7 @@ export default function LandingView({
                  fricción. Sale en el HTML del SSR → los motores de IA citan
                  los premios concretos. ---- */}
             {rdata && hasRewardLadder(rdata) ? (
-              <SectionCard title="Premios por regresar ⭐">
+              <SectionCard theme={theme} title="Premios por regresar ⭐">
                 <RewardLadder
                   restaurantData={rdata}
                   menuItems={menuPhotos.map((p) => ({
@@ -552,7 +571,7 @@ export default function LandingView({
                 {restaurantPromisesPoints(rdata ?? undefined) ? (
                   <Link
                     href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
-                    className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                    className={`mt-3 inline-block text-sm ${theme.link}`}
                   >
                     ¿Ya has comprado aquí? Ver mis puntos →
                   </Link>
@@ -562,7 +581,7 @@ export default function LandingView({
 
             {/* ---- HORARIO ---- */}
             {weekly ? (
-              <SectionCard title="Horario">
+              <SectionCard theme={theme} title="Horario">
                 <ul className="space-y-1.5">
                   {weekly.map((row, idx) => {
                     const isToday = todayIdx === idx;
@@ -571,9 +590,7 @@ export default function LandingView({
                         key={row.day}
                         className={
                           "flex items-center justify-between rounded-lg px-2 py-1 text-sm " +
-                          (isToday
-                            ? "bg-[#F28C38]/10 font-semibold text-[#1C2526]"
-                            : "text-[#1C2526]/70")
+                          (isToday ? theme.todayRow : theme.row)
                         }
                       >
                         {/* capitalize SOLO en el día — sobre la fila convertía "8:00 am" en "8:00 Am" */}
@@ -581,7 +598,7 @@ export default function LandingView({
                           {row.day}
                           {isToday ? " · hoy" : ""}
                         </span>
-                        <span className={row.hours === "Cerrado" ? "text-[#1C2526]/45" : ""}>
+                        <span className={row.hours === "Cerrado" ? theme.closedText : ""}>
                           {row.hours}
                         </span>
                       </li>
@@ -593,13 +610,13 @@ export default function LandingView({
 
             {/* ---- UBICACIÓN ---- */}
             {restaurant.address ? (
-              <SectionCard title="Ubicación">
-                <p className="text-sm leading-relaxed text-[#1C2526]/80">{restaurant.address}</p>
+              <SectionCard theme={theme} title="Ubicación">
+                <p className={`text-sm leading-relaxed ${theme.text}`}>{restaurant.address}</p>
                 <a
                   href={`https://maps.google.com/?q=${encodeURIComponent(restaurant.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-block text-sm font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                  className={`mt-2 inline-block text-sm ${theme.link}`}
                 >
                   Abrir en Google Maps →
                 </a>
@@ -610,8 +627,8 @@ export default function LandingView({
                  storytelling real = retención emocional; solo si el dueño
                  escribió el campo opcional `story`). ---- */}
             {restaurant.story ? (
-              <SectionCard title="Nuestra historia">
-                <p className="whitespace-pre-line text-sm leading-relaxed text-[#1C2526]/80">
+              <SectionCard theme={theme} title="Nuestra historia">
+                <p className={`whitespace-pre-line text-sm leading-relaxed ${theme.text}`}>
                   {restaurant.story}
                 </p>
               </SectionCard>
@@ -621,12 +638,12 @@ export default function LandingView({
                  párrafo con las palabras que la gente busca + el pitch de
                  ordenar directo. Texto plano, indexable, sin estorbar. ---- */}
             {seoParagraph ? (
-              <p className="px-1 text-[13px] leading-relaxed text-[#1C2526]/55">
+              <p className={`px-1 text-[13px] leading-relaxed ${theme.seoText}`}>
                 {seoParagraph}{" "}
                 <Link
                   href={menuHref}
                   onClick={() => trackWebLandingMenuClick({ restaurantId, restaurantName: name })}
-                  className="font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                  className={theme.link}
                 >
                   Ordenar ahora →
                 </Link>
@@ -636,20 +653,20 @@ export default function LandingView({
             {/* ---- PREGUNTAS FRECUENTES (FAQPage schema en el layout con las
                  MISMAS respuestas — <details> nativo: funciona sin JS) ---- */}
             {faq.length > 0 ? (
-              <SectionCard title="Preguntas frecuentes">
+              <SectionCard theme={theme} title="Preguntas frecuentes">
                 <div className="space-y-1">
                   {faq.map((f) => (
                     <details
                       key={f.q}
-                      className="group rounded-xl px-3 py-2 open:bg-[#FAF7F2]"
+                      className={`group rounded-xl px-3 py-2 ${theme.faqOpen}`}
                     >
-                      <summary className="cursor-pointer list-none text-sm font-semibold text-[#1C2526] marker:content-none">
-                        <span className="mr-1.5 inline-block text-[#F28C38] transition-transform group-open:rotate-90">
+                      <summary className="cursor-pointer list-none text-sm font-semibold marker:content-none">
+                        <span className={`mr-1.5 inline-block transition-transform group-open:rotate-90 ${theme.faqChevron}`}>
                           ›
                         </span>
                         {f.q}
                       </summary>
-                      <p className="mt-1.5 pl-4 text-sm leading-relaxed text-[#1C2526]/75">
+                      <p className={`mt-1.5 pl-4 text-sm leading-relaxed ${theme.faqAnswer}`}>
                         {f.a}
                       </p>
                     </details>
@@ -667,14 +684,15 @@ export default function LandingView({
               variant="browse"
               firstVisitRewardLabel={restaurant.firstVisitReward}
               loyaltyLive={restaurantPromisesPoints(rdata ?? undefined)}
+              skin={menuSkinFromRestaurant(rdata ?? undefined)}
             />
 
             {/* ---- FIRMA (el loop viral: cada página vende Comeleal) ---- */}
-            <p className="pt-2 text-center text-xs text-[#1C2526]/50">
+            <p className={`pt-2 text-center text-xs ${theme.signature}`}>
               Página creada con{" "}
               <Link
                 href="/para-restaurantes"
-                className="font-semibold text-[#F28C38] underline-offset-2 hover:underline"
+                className={theme.signatureLink}
               >
                 Comeleal
               </Link>{" "}
