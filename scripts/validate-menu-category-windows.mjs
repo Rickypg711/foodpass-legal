@@ -3,8 +3,9 @@
  * espejo de lib/utils/menu_category_windows.dart (app).
  *  1. Sin entrada para la categoría → { always: true } (todo el día).
  *  2. Entradas mal formadas (hora inválida, to <= from, días fuera de 1..7) se ignoran.
- *  3. Abierta: "hasta las 12:00 pm". Cerrada con ventana más tarde hoy: "de 1:00 pm a
- *     8:00 pm · vuelve hoy a la 1:00 pm". Sin más hoy: "vuelve mañana a las 10:00 am".
+ *  3. Abierta: "Hasta las 12:00 pm". Fuera de hora: "Solo de 1:00 pm a 8:00 pm · hoy desde
+ *     la 1:00 pm" / "… · mañana desde las 10:00 am". Jamás "cerrado": suena a que el LOCAL
+ *     está cerrado (Ricardo, 10-sep).
  *  4. Lunes=1 … Domingo=7; la una va en singular ("a la 1:00 pm").
  * Run: node --experimental-strip-types scripts/validate-menu-category-windows.mjs
  */
@@ -40,26 +41,26 @@ assert.deepEqual(categoryAvailability("Mocktails", w, thu), { always: true });
 
 // 3. abierta / cerrada
 let a = categoryAvailability("Desayunos", w, thu);
-assert.equal(a.openNow, true); assert.equal(a.hoursLabel, "hasta las 12:00 pm");
-assert.equal(categoryAvailabilityLabel(a), "hasta las 12:00 pm");
+assert.equal(a.openNow, true); assert.equal(a.hoursLabel, "Hasta las 12:00 pm");
+assert.equal(categoryAvailabilityLabel(a), "Hasta las 12:00 pm");
 
 a = categoryAvailability("Fuertes", w, thu); // "pm fuertes" NO es "fuertes" → siempre
 assert.deepEqual(a, { always: true });
 a = categoryAvailability("PM · Fuertes", w, thu);
 assert.equal(a.openNow, false);
-assert.equal(categoryAvailabilityLabel(a), "de 1:00 pm a 8:00 pm · vuelve hoy a la 1:00 pm");
+assert.equal(categoryAvailabilityLabel(a), "Solo de 1:00 pm a 8:00 pm · hoy desde la 1:00 pm");
 
 a = categoryAvailability("Desayunos", w, new Date(2026, 8, 10, 12, 30)); // jueves 12:30 → mañana viernes 9
-assert.equal(categoryAvailabilityLabel(a), "de 9:00 am a 12:00 pm · vuelve mañana a las 9:00 am");
+assert.equal(categoryAvailabilityLabel(a), "Solo de 9:00 am a 12:00 pm · mañana desde las 9:00 am");
 
 a = categoryAvailability("Desayunos", w, new Date(2026, 8, 11, 15, 0)); // viernes 3 pm → sábado 10
-assert.equal(categoryAvailabilityLabel(a), "de 10:00 am a 1:00 pm · vuelve mañana a las 10:00 am");
+assert.equal(categoryAvailabilityLabel(a), "Solo de 10:00 am a 1:00 pm · mañana desde las 10:00 am");
 
 a = categoryAvailability("Desayunos", w, new Date(2026, 8, 13, 15, 0)); // domingo 3 pm → lunes cerrado → martes 9
-assert.equal(categoryAvailabilityLabel(a), "de 9:00 am a 12:00 pm · vuelve el martes a las 9:00 am");
+assert.equal(categoryAvailabilityLabel(a), "Solo de 9:00 am a 12:00 pm · el martes desde las 9:00 am");
 
 a = categoryAvailability("Desayunos", w, new Date(2026, 8, 12, 12, 59)); // sábado 12:59 → abierta hasta la 1
-assert.equal(categoryAvailabilityLabel(a), "hasta las 1:00 pm");
+assert.equal(categoryAvailabilityLabel(a), "Hasta las 1:00 pm");
 
 // borde: el límite superior es exclusivo
 a = categoryAvailability("Desayunos", w, new Date(2026, 8, 10, 12, 0));

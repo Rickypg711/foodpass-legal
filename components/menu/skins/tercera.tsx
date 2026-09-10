@@ -293,7 +293,7 @@ export function TerceraCategorySection({
       </h2>
       {note ? (
         <p className={`${FONT_CLASS.hand} relative mt-1 pr-24 text-[17px] leading-tight text-[#1a1a1a]/75`}>
-          {closed ? "cerrado ahorita · " : ""}{note}
+          {note}
         </p>
       ) : null}
       <ul className="mt-4 divide-y-2 divide-dotted divide-[#1a1a1a]/25">{children}</ul>

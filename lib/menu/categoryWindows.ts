@@ -49,9 +49,9 @@ export type CategoryAvailability =
   | {
       always: false;
       openNow: boolean;
-      /** "hasta las 12:00 pm" (abierta) · "de 9:00 am a 12:00 pm" (cerrada). */
+      /** "Hasta las 12:00 pm" (abierta) · "Solo de 9:00 am a 12:00 pm" (fuera de hora). */
       hoursLabel: string;
-      /** Solo cerrada: "vuelve hoy a la 1:00 pm" / "vuelve mañana a las 10:00 am". */
+      /** Solo fuera de hora: "hoy desde la 1:00 pm" / "mañana desde las 10:00 am". Jamás "cerrado": suena a que el LOCAL está cerrado (Ricardo, 10-sep). */
       nextLabel: string | null;
     };
 
@@ -105,10 +105,10 @@ function fmtMin(min: number): string {
   return fmt12({ hour: Math.floor(min / 60) % 24, minute: min % 60 });
 }
 
-/** "a la 1:00 pm" / "a las 10:00 am" — el español cuenta la una en singular. */
-function aLas(min: number): string {
+/** "desde la 1:00 pm" / "desde las 10:00 am" — el español cuenta la una en singular. */
+function desdeLas(min: number): string {
   const h12 = ((Math.floor(min / 60) + 11) % 12) + 1;
-  return `${h12 === 1 ? "a la" : "a las"} ${fmtMin(min)}`;
+  return `${h12 === 1 ? "desde la" : "desde las"} ${fmtMin(min)}`;
 }
 
 export function categoryAvailability(
@@ -127,7 +127,7 @@ export function categoryAvailability(
 
   const active = todays.find((w) => cur >= w.from && cur < w.to);
   if (active) {
-    return { always: false, openNow: true, hoursLabel: `hasta las ${fmtMin(active.to)}`, nextLabel: null };
+    return { always: false, openNow: true, hoursLabel: `Hasta las ${fmtMin(active.to)}`, nextLabel: null };
   }
 
   // Cerrada: horario de hoy (o del próximo día con ventana) + cuándo vuelve.
@@ -136,8 +136,8 @@ export function categoryAvailability(
     return {
       always: false,
       openNow: false,
-      hoursLabel: `de ${fmtMin(later.from)} a ${fmtMin(later.to)}`,
-      nextLabel: `vuelve hoy ${aLas(later.from)}`,
+      hoursLabel: `Solo de ${fmtMin(later.from)} a ${fmtMin(later.to)}`,
+      nextLabel: `hoy ${desdeLas(later.from)}`,
     };
   }
   for (let i = 1; i <= 7; i++) {
@@ -151,11 +151,11 @@ export function categoryAvailability(
     return {
       always: false,
       openNow: false,
-      hoursLabel: `de ${fmtMin(next.from)} a ${fmtMin(next.to)}`,
-      nextLabel: `vuelve ${when} ${aLas(next.from)}`,
+      hoursLabel: `Solo de ${fmtMin(next.from)} a ${fmtMin(next.to)}`,
+      nextLabel: `${when} ${desdeLas(next.from)}`,
     };
   }
-  return { always: false, openNow: false, hoursLabel: "solo a ciertas horas", nextLabel: null };
+  return { always: false, openNow: false, hoursLabel: "Solo a ciertas horas", nextLabel: null };
 }
 
 /** Una sola línea para pintar junto al título de la categoría. */
