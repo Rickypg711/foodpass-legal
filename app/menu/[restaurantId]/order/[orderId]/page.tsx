@@ -164,6 +164,13 @@ function OrderStatusPageContent() {
   });
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /**
+   * Quien abre este recibo con la sesión del restaurante abierta (dueño o
+   * equipo): el link llega al chat del local por WhatsApp (10-sep) y desde
+   * aquí no se puede cobrar. Se le enseña el camino a Pedidos en un toque.
+   * Anónimo o cliente = false y la página es la de siempre.
+   */
+  const [viewerIsStaff, setViewerIsStaff] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const prevStatusRef = useRef<{ status?: string; paymentStatus?: string }>({});
 
@@ -188,7 +195,7 @@ function OrderStatusPageContent() {
 
     (async () => {
       try {
-        await ensureAnonymousUser();
+        const viewer = await ensureAnonymousUser();
         setAuthReady(true);
         const db = getFirebaseDb();
         const ref = doc(db, "restaurants", restaurantId, "orders", orderId);
@@ -254,6 +261,16 @@ function OrderStatusPageContent() {
         const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
         if (rSnap.exists()) {
           const d = rSnap.data() as Record<string, unknown>;
+          if (!viewer.isAnonymous) {
+            let staff = d.ownerId === viewer.uid || d.billingOwnerUserId === viewer.uid;
+            if (!staff) {
+              try {
+                const m = await getDoc(doc(db, "restaurants", restaurantId, "members", viewer.uid));
+                staff = m.exists() && (m.data() as { status?: unknown }).status !== "removed";
+              } catch { /* sin permiso = no es del equipo */ }
+            }
+            setViewerIsStaff(staff);
+          }
           setPhoneCountry(phoneCountryOf(d));
           const wa = d.whatsapp;
           if (typeof wa === "string" && wa.trim()) {
@@ -485,6 +502,18 @@ function OrderStatusPageContent() {
           </div>
         ) : (
           <div className="space-y-4">
+            {viewerIsStaff && !isPosOrder && status !== "cancelled" && order?.paymentStatus !== "paid" ? (
+              <Link
+                href="/vendor/pedidos"
+                className="block rounded-xl border-2 border-[#F28C38] bg-[#FFF3E8] p-4 text-sm text-[#1C2526]"
+              >
+                <p className="font-bold">Este pedido es de tu local y sigue sin cobrar.</p>
+                <p className="mt-1 text-[#1C2526]/75">
+                  Cóbralo en Pedidos: toca con qué te pagó y queda cobrado, entregado y con sus puntos.
+                </p>
+                <p className="mt-2 font-semibold text-[#F28C38]">Ir a Pedidos →</p>
+              </Link>
+            ) : null}
             {returnBanner ? (
               <div
                 className="rounded-xl border border-[#009EE3]/40 bg-white p-4 text-sm text-[#1C2526]"
