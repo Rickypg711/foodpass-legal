@@ -327,6 +327,7 @@ function MenuRestaurantHeader({
   if (skin === "pecado") {
     return (
       <PecadoHeader
+        phoneCompact
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}

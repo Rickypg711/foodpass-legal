@@ -141,6 +141,7 @@ export function PecadoHeader({
   schedule,
   address,
   secondarySubtitle,
+  phoneCompact = false,
 }: {
   loading: boolean;
   restaurantName: string;
@@ -149,6 +150,9 @@ export function PecadoHeader({
   schedule?: ScheduleStatus | null;
   address?: string | null;
   secondarySubtitle?: string | null;
+  /** Solo el menú (11-sep): en teléfono las polaroids se esconden para que el primer platillo caiga en la primera
+   *  pantalla (antes a 907 px de 812). En la portada /r y de tableta para arriba siguen igual. */
+  phoneCompact?: boolean;
 }) {
   return (
     <header className="relative">
@@ -196,7 +200,13 @@ export function PecadoHeader({
             <p className="mt-2 text-[12px] font-semibold text-[#a61c21]/65">{secondarySubtitle}</p>
           ) : null}
         </div>
-        <PecadoPolaroids />
+        {phoneCompact ? (
+          <div className="hidden sm:block">
+            <PecadoPolaroids />
+          </div>
+        ) : (
+          <PecadoPolaroids />
+        )}
       </div>
     </header>
   );

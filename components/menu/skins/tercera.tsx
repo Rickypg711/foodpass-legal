@@ -67,7 +67,8 @@ type Art = "disco_guy" | "mano" | "tacitas_calcetin" | "tacitas_caminando" | "vi
 /** box = dónde se para la ilustración; section = el hueco que la sección deja
  *  arriba/abajo para que NO tape el primer renglón (los pies pisan el borde). */
 const ART: Record<Art, { w: number; h: number; box: string; section: string; bob?: boolean }> = {
-  disco_guy: { w: 454, h: 800, box: "-top-[120px] right-1 h-36 sm:-top-[168px] sm:h-48", section: "mt-32 sm:mt-44", bob: true },
+  // En teléfono más chico y con menos hueco (11-sep: la portada + su hueco dejaban el menú fuera de la 1ª pantalla).
+  disco_guy: { w: 454, h: 800, box: "-top-[94px] right-1 h-28 sm:-top-[168px] sm:h-48", section: "mt-24 sm:mt-44", bob: true },
   mano: { w: 240, h: 340, box: "-top-16 right-2 h-24 sm:-top-20 sm:h-28", section: "mt-20 sm:mt-24" },
   tacitas_calcetin: { w: 320, h: 240, box: "-top-12 right-2 h-20 sm:-top-14 sm:h-24", section: "mt-16 sm:mt-20" },
   tacitas_caminando: { w: 710, h: 160, box: "-bottom-3 right-3 h-12 sm:h-14", section: "mt-8 pb-12 sm:pb-14" },
@@ -142,7 +143,7 @@ export function TerceraHeader({
   const name = (loading ? "" : restaurantName || "Menú").toUpperCase();
   return (
     <header className="relative overflow-hidden bg-[#f9b699]">
-      <div className="relative mx-auto max-w-3xl px-4 pt-6 pb-4 sm:px-6 sm:pt-8 lg:max-w-4xl">
+      <div className="relative mx-auto max-w-3xl px-4 pt-4 pb-3 sm:px-6 sm:pt-8 sm:pb-4 lg:max-w-4xl">
         {/* El arco del papel: CAFÉ DE LA TERCERA sobre las tres caritas. */}
         <div className="tercera-rise mx-auto max-w-[520px]" style={{ animationDelay: "40ms" }}>
           <svg viewBox="0 0 600 200" className="w-full" role="img" aria-label={restaurantName}>
@@ -176,7 +177,7 @@ export function TerceraHeader({
           </div>
         </div>
 
-        <div className="tercera-rise mt-4 flex items-center gap-3" style={{ animationDelay: "140ms" }}>
+        <div className="tercera-rise mt-3 flex items-center gap-3 sm:mt-4" style={{ animationDelay: "140ms" }}>
           {logoUrl ? (
             <Image
               src={logoUrl}
@@ -232,8 +233,8 @@ export function TerceraHeader({
 
 export function TerceraCover({ url, name }: { url: string; name: string }) {
   return (
-    <div className="tercera-rise mb-8 overflow-hidden rounded-[28px] ring-4 ring-[#fbddd5]" style={{ animationDelay: "220ms" }}>
-      <Image src={url} alt={`Portada de ${name}`} width={1600} height={900} unoptimized priority className="h-40 w-full object-cover sm:h-56" />
+    <div className="tercera-rise mb-5 overflow-hidden rounded-[28px] ring-4 ring-[#fbddd5] sm:mb-8" style={{ animationDelay: "220ms" }}>
+      <Image src={url} alt={`Portada de ${name}`} width={1600} height={900} unoptimized priority className="h-28 w-full object-cover sm:h-56" />
     </div>
   );
 }

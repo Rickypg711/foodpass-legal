@@ -127,9 +127,9 @@ export function BloomsHeader({
     <header className="relative overflow-hidden">
       {/* Su portada: el rubor de acuarela a todo lo ancho y el logo grande, sin caja. */}
       <div className="bl-cover relative">
-        <div className="mx-auto max-w-5xl px-4 pt-4 pb-8 sm:px-6 lg:pt-8 lg:pb-12">
+        <div className="mx-auto max-w-5xl px-4 pt-3 pb-5 sm:px-6 sm:pt-4 sm:pb-8 lg:pt-8 lg:pb-12">
           <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10">
-            <div className="bl-rise relative mx-auto w-full max-w-[440px] lg:max-w-[520px]">
+            <div className="bl-rise relative mx-auto w-[48%] max-w-[440px] sm:w-full lg:max-w-[520px]">
               <Image
                 src="/skins/blooms/portada_logo.jpg"
                 alt={restaurantName || "Blooms Coffee & Mocktails"}
@@ -146,18 +146,19 @@ export function BloomsHeader({
             <div className="bl-rise min-w-0 text-center lg:text-left" style={{ animationDelay: "140ms" }}>
               <h1 className="sr-only">{restaurantName || "Blooms Coffee & Mocktails"}</h1>
               {/* El horario como su portada: la etiqueta en rosa espaciado, la hora en negro. */}
-              <dl className="space-y-1">
+              {/* En teléfono los dos horarios van lado a lado (11-sep: la portada tapaba el menú). */}
+              <dl className="grid grid-cols-[auto_auto] justify-center gap-x-5 sm:block sm:space-y-1">
                 {PAPER_HOURS.map(([k, v]) => (
                   <div key={k}>
-                    <dt className="text-[15px] font-extrabold tracking-[0.2em] text-[#ff5c9a] sm:text-[18px]">{k}</dt>
-                    <dd className="text-[22px] font-black tracking-[0.08em] text-[#1c1a1b] sm:text-[28px]">{v}</dd>
+                    <dt className="text-[11px] font-extrabold tracking-[0.2em] text-[#ff5c9a] sm:text-[18px]">{k}</dt>
+                    <dd className="text-[16px] font-black tracking-[0.08em] text-[#1c1a1b] sm:text-[28px]">{v}</dd>
                   </div>
                 ))}
               </dl>
               {!loading && tagline ? (
-                <p className={`${BL_SCRIPT} mt-3 text-[30px] leading-tight text-[#6d2f47] [text-wrap:balance] sm:text-[36px]`}>{tagline}</p>
+                <p className={`${BL_SCRIPT} mt-2 text-[24px] leading-tight text-[#6d2f47] [text-wrap:balance] sm:mt-3 sm:text-[36px]`}>{tagline}</p>
               ) : null}
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 lg:justify-start">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5 sm:mt-5 lg:justify-start">
                 <a
                   href={INSTAGRAM_URL}
                   target="_blank"
@@ -189,7 +190,7 @@ export function BloomsHeader({
                   href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex max-w-full items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-[#6d2f47] underline decoration-[#ff5c9a]/50 underline-offset-4"
+                  className="mt-2 inline-flex max-w-full items-center gap-1.5 text-[11.5px] font-bold uppercase sm:mt-3 tracking-[0.1em] text-[#6d2f47] underline decoration-[#ff5c9a]/50 underline-offset-4"
                 >
                   <span className="min-w-0 truncate">{address}</span>
                   <span aria-hidden className="shrink-0">↗</span>
@@ -326,10 +327,10 @@ export function BloomsCategorySection({
         <div className={art ? "grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-8" : ""}>
           <div className="min-w-0">
             {/* Encabezado de su página */}
-            <div className={art ? "relative pr-[38%] lg:pr-0" : "relative"}>
+            <div className={art ? "relative pr-[30%] sm:pr-[38%] lg:pr-0" : "relative"}>
               {art ? (
-                <div className="pointer-events-none absolute right-0 top-[-8px] w-[36%] lg:hidden" aria-hidden>
-                  <Image src={art.src} alt="" width={art.w} height={art.h} unoptimized className="bl-art bl-float ml-auto h-32 w-auto max-w-full object-contain sm:h-40" />
+                <div className="pointer-events-none absolute right-0 top-[-8px] w-[28%] sm:w-[36%] lg:hidden" aria-hidden>
+                  <Image src={art.src} alt="" width={art.w} height={art.h} unoptimized className="bl-art bl-float ml-auto h-24 w-auto max-w-full object-contain sm:h-40" />
                   <HandArrow className="absolute -left-6 bottom-0 h-7 w-10 opacity-80" />
                 </div>
               ) : null}
@@ -362,7 +363,7 @@ export function BloomsCategorySection({
             </div>
 
             {priceColumns && !collapsed ? (
-              <div className="mt-5 flex items-end justify-end gap-2 pr-[52px] sm:gap-3" aria-hidden>
+              <div className="mt-3 flex items-end justify-end gap-2 pr-[52px] sm:mt-5 sm:gap-3" aria-hidden>
                 {[0, 2].map((k) => (
                   <div key={k} className="w-[66px] text-center sm:w-[92px]">
                     <span className="block bg-[#1c1a1b] px-1 py-[3px] text-[9.5px] font-black tracking-[0.04em] text-white sm:text-[11px]">{priceColumns[k]}</span>
@@ -373,7 +374,7 @@ export function BloomsCategorySection({
             ) : null}
 
             {collapsed ? <div className="h-4" /> : (
-              <ul className={(art ? "mt-7 lg:mt-5 " : "mt-5 ") + (twoCol ? "grid grid-cols-1 sm:grid-cols-2 sm:gap-x-10" : "")}>{children}</ul>
+              <ul className={(art ? "mt-5 sm:mt-7 lg:mt-5 " : "mt-5 ") + (twoCol ? "grid grid-cols-1 sm:grid-cols-2 sm:gap-x-10" : "")}>{children}</ul>
             )}
 
             {s?.note ? (
