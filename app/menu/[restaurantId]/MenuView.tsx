@@ -68,6 +68,13 @@ import {
   nbTone,
 } from "@/components/menu/skins/negroblanco";
 import {
+  BL_ROOT_CLASS,
+  BloomsCategorySection,
+  BloomsHeader,
+  BloomsItemRow,
+  BloomsPanel,
+} from "@/components/menu/skins/blooms";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -206,6 +213,7 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "tercera") return TERCERA_ROOT_CLASS;
   if (skin === "pecado") return PECADO_ROOT_CLASS;
   if (skin === "negroblanco") return NB_ROOT_CLASS;
+  if (skin === "blooms") return BL_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -250,6 +258,19 @@ function MenuRestaurantHeader({
   if (skin === "tercera") {
     return (
       <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "blooms") {
+    return (
+      <BloomsHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -397,6 +418,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "tercera") return <TerceraCover url={url} name={name} />;
   if (skin === "pecado") return <PecadoCover url={url} name={name} />;
   if (skin === "negroblanco") return <NegroBlancoCover url={url} name={name} />;
+  // Blooms: su arte (logo sobre acuarela) ya vive en el encabezado.
+  if (skin === "blooms") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -495,6 +518,67 @@ function MenuCategoryList({
             })}
           </PecadoSheet>
         ))}
+      </div>
+    );
+  }
+  if (skin === "blooms") {
+    // Cada sección copia la composición de su página (components/menu/skins/blooms.tsx):
+    // tabla CALIENTE | EN LAS ROCAS cuando los platillos traen ese tamaño, precio común junto al título,
+    // y dos columnas en listas cortas sin descripción.
+    return (
+      <div>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const rocks = new Map<string, number | null>();
+          for (const it of group.items) {
+            const size = resolveOptionGroups(it).find((g) => /tama/i.test(g.name));
+            const r = size?.options.find((o) => /rocas/i.test(o.name));
+            rocks.set(it.id, r ? it.price + r.priceDelta : size ? null : null);
+          }
+          const tableItems = group.items.filter((it) => resolveOptionGroups(it).some((g) => /tama/i.test(g.name) && g.options.some((o) => /rocas/i.test(o.name))));
+          const isTable = tableItems.length >= Math.max(2, Math.ceil(group.items.length / 2));
+          const counts = new Map<number, number>();
+          for (const it of group.items) counts.set(it.price, (counts.get(it.price) ?? 0) + 1);
+          const [modePrice, modeCount] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [0, 0];
+          const sectionPrice = !isTable && group.items.length >= 4 && modeCount / group.items.length >= 0.6 ? modePrice : null;
+          const twoCol = !isTable && group.items.length >= 4 && group.items.every((it) => !it.description);
+          return (
+            <BloomsCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+              sectionPrice={sectionPrice}
+              priceColumns={isTable ? ["CALIENTE", "12oz", "EN LAS ROCAS", "16oz"] : null}
+              twoCol={twoCol}
+            >
+              {(!closed || opened[group.category]) && group.items.map((item) => (
+                <BloomsItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  priceColumns={isTable}
+                  altPrice={rocks.get(item.id) ?? null}
+                  hidePrice={sectionPrice != null && item.price === sectionPrice}
+                />
+              ))}
+            </BloomsCategorySection>
+          );
+        })}
       </div>
     );
   }
@@ -669,6 +753,21 @@ function MenuRewardsLadderSection({
       </PecadoPanel>
     );
   }
+  if (skin === "blooms") {
+    return (
+      <BloomsPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-extrabold uppercase tracking-[0.1em] text-[#e8407f] underline underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </BloomsPanel>
+    );
+  }
   if (skin === "negroblanco") {
     return (
       <NegroBlancoPanel title="Premios por regresar">
@@ -730,7 +829,9 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
           ? "border-[#a61c21]/20 bg-[#ffeecf]/95 shadow-[0_-8px_32px_rgba(60,10,5,0.25)]"
           : skin === "negroblanco"
             ? "border-[#0b0b0b]/10 bg-[#f4f3ef]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.3)]"
-            : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
+            : skin === "blooms"
+              ? "border-[#ff5c9a]/20 bg-[#fff6f4]/95 shadow-[0_-12px_36px_-16px_rgba(232,64,127,0.35)]"
+              : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >

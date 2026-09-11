@@ -1,0 +1,69 @@
+/* Piel "Blooms" (blooms.tsx): Blooms Coffee & Mocktails. Vive junto a la piel (no en globals.css).
+   Todo sale de SU "Menú BLOOMS 2026" (Canva): el rubor de acuarela de su portada, la franja rosa que corre
+   por la izquierda de cada página, el ajedrez rosa de la página de pizzas y sus acuarelas de platillos. */
+.bl-skin {
+  background-color: #fbe9e6;
+}
+/* La franja rosa de su papel, pegada a la izquierda de la pantalla. */
+.bl-skin::before {
+  content: "";
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 10px;
+  background: #ff5c9a;
+  z-index: 45;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .bl-skin::before { width: 22px; }
+}
+/* Portada: rubor de acuarela como el fondo de su portada (duraznos y rosas que se corren). */
+.bl-skin .bl-cover {
+  background-color: #f9d4cd;
+  background-image:
+    radial-gradient(38rem 26rem at 18% 22%, rgba(255, 240, 236, 0.9), transparent 62%),
+    radial-gradient(30rem 22rem at 86% 30%, rgba(247, 176, 168, 0.55), transparent 60%),
+    radial-gradient(34rem 24rem at 60% 100%, rgba(244, 160, 150, 0.55), transparent 62%),
+    radial-gradient(24rem 18rem at 4% 96%, rgba(255, 220, 214, 0.9), transparent 60%);
+}
+/* El logo sin caja: se funde en el rubor por los bordes. */
+.bl-skin .bl-cover-logo {
+  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+}
+/* La píldora de Instagram de su portada. */
+.bl-skin .bl-ig {
+  background: linear-gradient(90deg, #f58529 0%, #dd2a7b 45%, #8134af 75%, #515bd4 100%);
+}
+/* Cada sección es una página de su papel: blanca, cuadrada, con sombra de hoja. */
+.bl-skin .bl-page {
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(28, 26, 27, 0.06), 0 22px 40px -28px rgba(120, 40, 70, 0.45);
+}
+/* Ajedrez rosa (su página de pizzas). */
+.bl-skin .bl-checker {
+  background-color: #fff;
+  background-image: conic-gradient(#ff5c9a 25%, transparent 0 50%, #ff5c9a 0 75%, transparent 0);
+  background-size: 30px 30px;
+}
+/* Acuarela sobre blanco: multiply desaparece el papel y deja la pintura. */
+.bl-skin .bl-art { mix-blend-mode: multiply; }
+
+@keyframes bl-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.bl-skin .bl-rise { animation: bl-rise 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes bl-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-6px) rotate(1.5deg); }
+}
+.bl-skin .bl-float { animation: bl-float 6.5s ease-in-out infinite; }
+@keyframes bl-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.72) rotate(20deg); opacity: 0.75; }
+}
+.bl-skin .bl-twinkle { animation: bl-twinkle 2.8s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) {
+  .bl-skin .bl-rise, .bl-skin .bl-float, .bl-skin .bl-twinkle { animation: none; }
+}

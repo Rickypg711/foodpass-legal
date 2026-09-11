@@ -18,6 +18,7 @@ import type { ScheduleStatus } from "@/lib/schedule";
 import { PECADO_ROOT_CLASS, PecadoHeader } from "@/components/menu/skins/pecado";
 import { TERCERA_ROOT_CLASS, TerceraHeader } from "@/components/menu/skins/tercera";
 import { NB_MONO, NB_ROOT_CLASS, NBDots, NegroBlancoHeader } from "@/components/menu/skins/negroblanco";
+import { BL_ROOT_CLASS, BloomsHeader } from "@/components/menu/skins/blooms";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -187,9 +188,42 @@ const NEGROBLANCO: LandingTheme = {
   photoPrice: `${NB_MONO} text-[#0b0b0b]/60`,
 };
 
+/** Blooms Coffee & Mocktails: rubor de acuarela, tarjetas blancas con su franja rosa, botón rosa, títulos anchos. */
+const BLOOMS: LandingTheme = {
+  root: BL_ROOT_CLASS,
+  Header: (p) => <BloomsHeader {...p} />,
+  cta: "block min-h-12 rounded-full bg-[#ff5c9a] py-3.5 text-center text-[15px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_14px_30px_-12px_rgba(255,92,154,0.95)] transition-transform hover:scale-[1.01] active:scale-[0.99]",
+  btnWhatsapp: "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1c1a1b] bg-white px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#1c1a1b] transition-colors hover:bg-[#1c1a1b] hover:text-white",
+  btnNeutral: "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#ff5c9a]/40 bg-white px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#1c1a1b] transition-colors hover:border-[#ff5c9a]",
+  descriptionCard: "rounded-[24px] border-l-[10px] border-[#ff5c9a] bg-white p-5 text-[14.5px] font-medium leading-relaxed text-[#6d2f47] shadow-[0_18px_44px_-30px_rgba(232,64,127,0.6)]",
+  card: "rounded-[28px] border-l-[10px] border-[#ff5c9a] bg-white px-5 pt-5 pb-5 shadow-[0_18px_44px_-30px_rgba(232,64,127,0.6)] sm:px-7",
+  cardTitle: (title) => (
+    <h2 className="mb-4 border-y-2 border-[#1c1a1b] py-2 text-[20px] font-black uppercase tracking-[0.08em] text-[#1c1a1b]">
+      <span className="text-[#ff5c9a]">{title.slice(0, Math.max(2, Math.round(title.length * 0.42)))}</span>
+      {title.slice(Math.max(2, Math.round(title.length * 0.42)))}
+    </h2>
+  ),
+  link: "font-extrabold text-[#e8407f] underline decoration-[#ff5c9a]/40 underline-offset-4",
+  text: "font-medium text-[#1c1a1b]/80",
+  textSoft: "text-[#6d2f47]/75",
+  todayRow: "bg-[#ff5c9a] font-extrabold text-white",
+  row: "text-[#1c1a1b]/75",
+  closedText: "text-[#1c1a1b]/40",
+  faqOpen: "open:bg-[#ff5c9a]/[0.06]",
+  faqChevron: "text-[#ff5c9a]",
+  faqAnswer: "text-[#6d2f47]/85",
+  seoText: "text-[#6d2f47]/65",
+  signature: "text-[11px] font-bold uppercase tracking-[0.12em] text-[#6d2f47]/70",
+  signatureLink: "font-extrabold text-[#e8407f] underline decoration-[#ff5c9a]/40 underline-offset-4",
+  loading: "rounded-[24px] bg-white px-4 py-6 text-center text-sm text-[#6d2f47]/70",
+  photoName: "text-[#1c1a1b]",
+  photoPrice: "font-extrabold text-[#e8407f]",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
   if (skin === "pecado") return PECADO;
   if (skin === "tercera") return TERCERA;
   if (skin === "negroblanco") return NEGROBLANCO;
+  if (skin === "blooms") return BLOOMS;
   return DEFAULT;
 }

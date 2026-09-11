@@ -20,12 +20,15 @@
  *  - "negroblanco": Negro Blanco Café, Chihuahua — negro y blanco, sus tres
  *    puntos, su pegboard y su arte a línea (components/menu/skins/negroblanco.tsx).
  *    Tercera piel = la última en código; la siguiente ya es "tema" en el doc.
+ *  - "blooms": Blooms Coffee & Mocktails, Chihuahua — rubor de acuarela, su franja rosa, títulos mitad rosa y
+ *    sus acuarelas de platillos (components/menu/skins/blooms.tsx). Cuarta piel en código por pedido de Ricardo
+ *    (10-sep): la regla del "tema" en el doc queda pendiente para la quinta.
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

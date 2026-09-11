@@ -60,6 +60,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const tercera = skin === "tercera";
   const pecado = skin === "pecado";
   const nb = skin === "negroblanco";
+  const bl = skin === "blooms";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -79,6 +80,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
             ? "bg-[#c03427]/95 backdrop-blur-sm"
             : nb
               ? "bg-[#f4f3ef]/88 py-2.5 backdrop-blur-md"
+              : bl
+                ? "bg-[#fff6f4]/90 py-2.5 backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -93,6 +96,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
             : pecado
               ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[13px] font-extrabold uppercase tracking-wide border-2 border-[#ffeecf] " +
                 (on ? "bg-[#ffeecf] text-[#a61c21]" : "bg-transparent text-[#ffeecf] hover:bg-[#ffeecf]/15")
+            : bl
+              ? "text-[11px] font-extrabold uppercase tracking-[0.12em] border-2 " +
+                (on
+                  ? "border-[#ff5c9a] bg-[#ff5c9a] text-white shadow-[0_6px_16px_-8px_rgba(255,92,154,0.9)]"
+                  : "border-[#ff5c9a]/30 bg-white text-[#1c1a1b] hover:border-[#ff5c9a]")
             : nb
               ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] border " +
                 (on
@@ -109,7 +117,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
               {tercera ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}

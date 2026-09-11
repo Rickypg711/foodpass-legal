@@ -34,6 +34,7 @@ export function MenuPoweredByFooter({
   const tercera = skin === "tercera";
   const pecado = skin === "pecado";
   const nb = skin === "negroblanco";
+  const bl = skin === "blooms";
   const href = poweredByHref(restaurantId);
   return (
     <footer
@@ -45,6 +46,8 @@ export function MenuPoweredByFooter({
             ? "border-[#ffeecf]/35 text-[#ffeecf]/85"
             : nb
               ? "border-[#0b0b0b]/10 [font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] text-[#0b0b0b]/50"
+              : bl
+                ? "border-[#ff5c9a]/25 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6d2f47]/70"
               : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
@@ -58,6 +61,8 @@ export function MenuPoweredByFooter({
                 ? "font-bold text-[#ffeecf]"
                 : nb
                   ? "font-semibold text-[#0b0b0b]"
+                  : bl
+                    ? "font-extrabold text-[#e8407f]"
                   : "font-semibold text-[#1C2526]/75"
           }
         >
@@ -76,6 +81,8 @@ export function MenuPoweredByFooter({
                 ? "text-[#fbaa19] decoration-[#fbaa19]/50 hover:decoration-[#fbaa19]"
                 : nb
                   ? "text-[#0b0b0b] decoration-[#0b0b0b]/30 hover:decoration-[#0b0b0b]"
+                  : bl
+                    ? "text-[#e8407f] decoration-[#ff5c9a]/40 hover:decoration-[#ff5c9a]"
                   : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >

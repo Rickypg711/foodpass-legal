@@ -24,6 +24,7 @@ export function CartBar({
 }) {
   const pecado = skin === "pecado";
   const nb = skin === "negroblanco";
+  const bl = skin === "blooms";
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
@@ -56,6 +57,8 @@ export function CartBar({
           ? "border-[#a61c21]/20 bg-[#ffeecf]/95 shadow-[0_-8px_32px_rgba(60,10,5,0.25)]"
           : nb
             ? "border-[#0b0b0b]/10 bg-[#f4f3ef]/92 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.35)]"
+            : bl
+              ? "border-[#ff5c9a]/20 bg-[#fff6f4]/94 shadow-[0_-12px_36px_-16px_rgba(232,64,127,0.4)]"
             : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
@@ -68,6 +71,8 @@ export function CartBar({
               ? "flex min-h-11 w-full items-center justify-between rounded-full bg-[#a61c21] px-5 py-2.5 text-[#ffeecf] shadow-[0_3px_0_#7a1014] transition-colors hover:bg-[#8f151a]"
               : nb
                 ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#0b0b0b] px-5 py-3 text-white transition-transform hover:scale-[1.005] active:scale-[0.995]"
+                : bl
+                  ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#ff5c9a] px-5 py-3 text-white shadow-[0_10px_24px_-10px_rgba(255,92,154,0.95)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                 : "flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
           }
         >
@@ -77,6 +82,8 @@ export function CartBar({
                 ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase tracking-wide"
                 : nb
                   ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11.5px] uppercase tracking-[0.16em] text-white/75"
+                  : bl
+                    ? "text-[12px] font-extrabold uppercase tracking-[0.14em] text-white/85"
                   : "text-sm font-semibold"
             }
           >
@@ -88,6 +95,8 @@ export function CartBar({
                 ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[16px] font-extrabold uppercase italic tabular-nums tracking-wide"
                 : nb
                   ? "text-[15px] font-semibold tabular-nums tracking-[-0.01em]"
+                  : bl
+                    ? "text-[15px] font-extrabold tabular-nums"
                   : "text-sm font-bold tabular-nums"
             }
           >
