@@ -31,6 +31,8 @@ import {
   groupHasAvailableOption,
   setOptionAvailability,
   applyOptionAvailabilityToMenu,
+  optionAvailabilityChanges,
+  applyOptionAvailabilityChangesToMenu,
 } from "../lib/menu/optionGroups.ts";
 
 let failed = 0;
@@ -292,6 +294,50 @@ check("el grupo se sigue renderizando con key={g.id}", editorSrc.includes("key={
   check("prender regresa los apagados", prender.map((c) => c.id), ["tacos"]);
   check("prender QUITA el campo", "available" in prender[0].groups[0].options[1], false);
 }
+
+// ------------------------------------------- el EDITOR también reparte
+// 10-sep-2026: la casilla "Agotado" del editor (/vendor/menu) cambiaba solo ese
+// platillo; ahora, al guardar, reparte igual que la Caja.
+{
+  const g = (bistecOff, extra = {}) => [{
+    id: "carne", name: "Carne", required: true, min: 1, max: 1,
+    options: [
+      { id: "suadero", name: "Suadero", priceDelta: 0, ...extra },
+      bistecOff ? { id: "bistec", name: "Bistec", priceDelta: 0, available: false } : { id: "bistec", name: "Bistec", priceDelta: 0 },
+    ],
+  }];
+  check("sin cambio de agotado => nada que repartir", optionAvailabilityChanges(g(false), g(false)), []);
+  check("apagar bistec en el editor => 1 cambio", optionAvailabilityChanges(g(false), g(true)),
+    [{ groupId: "carne", optionId: "bistec", available: false }]);
+  check("prender bistec en el editor => 1 cambio", optionAvailabilityChanges(g(true), g(false)),
+    [{ groupId: "carne", optionId: "bistec", available: true }]);
+  check("cambiar precio o nombre NO es cambio de agotado",
+    optionAvailabilityChanges(g(false), g(false, { priceDelta: 5, name: "Suadero!" })), []);
+  const nueva = [{ ...g(false)[0], options: [...g(false)[0].options, { id: "tripa", name: "Tripa", priceDelta: 0, available: false }] }];
+  check("opción NUEVA ya agotada no se reparte", optionAvailabilityChanges(g(false), nueva), []);
+  check("grupo NUEVO no se reparte", optionAvailabilityChanges([], g(true)), []);
+
+  const menu = [
+    { id: "tacos", groups: g(false) },
+    { id: "torta", groups: g(false) },
+    { id: "coca", groups: [] },
+  ];
+  const dos = [
+    { groupId: "carne", optionId: "bistec", available: false },
+    { groupId: "carne", optionId: "suadero", available: false },
+  ];
+  const res = applyOptionAvailabilityChangesToMenu(menu, dos);
+  check("varios cambios: cada platillo sale UNA vez", res.map((r) => r.id), ["tacos", "torta"]);
+  check("varios cambios: se acumulan (bistec y suadero apagados)",
+    res.every((r) => r.groups[0].options.every((o) => o.available === false)), true);
+  check("sin cambios => nada", applyOptionAvailabilityChangesToMenu(menu, []), []);
+}
+
+const editorPageSrc = readFileSync(new URL("../app/vendor/setup/menu/page.tsx", import.meta.url), "utf8");
+check("el editor reparte el agotado al guardar", editorPageSrc.includes("applyOptionAvailabilityChangesToMenu("), true);
+check("el editor reparte ANTES de recargar la lista (onChanged)",
+  editorPageSrc.indexOf("applyOptionAvailabilityChangesToMenu(") > 0 &&
+  editorPageSrc.indexOf("applyOptionAvailabilityChangesToMenu(") < editorPageSrc.indexOf("await onChanged();"), true);
 
 // La Caja lo usa de verdad: un toque guarda en lote, no platillo por platillo.
 const posSrc = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");

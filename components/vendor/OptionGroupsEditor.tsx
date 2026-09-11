@@ -144,7 +144,7 @@ export function OptionGroupsEditor({
                 </div>
                 <label
                   className="flex shrink-0 items-center gap-1 text-[11px] text-[#141413]/50"
-                  title="Se ve tachada y no se puede elegir. También se prende y apaga desde la Caja."
+                  title="Se ve tachada y no se puede elegir. Al guardar, cambia en todos los platillos que llevan esta opción. También se prende y apaga desde la Caja."
                 >
                   <input
                     type="checkbox"

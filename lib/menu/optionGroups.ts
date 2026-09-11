@@ -204,3 +204,47 @@ export function applyOptionAvailabilityToMenu(
   }
   return changed;
 }
+
+export type OptionAvailabilityChange = { groupId: string; optionId: string; available: boolean };
+
+/**
+ * Qué casillas "Agotado" cambió el dueño en el editor de un platillo: solo opciones que
+ * YA existían (mismo grupo y misma opción, por id) y cuyo agotado cambió. Una opción
+ * nueva o renombrada no cuenta: no hay de dónde saber si es la misma de otro platillo.
+ */
+export function optionAvailabilityChanges(
+  before: MenuItemOptionGroup[],
+  after: MenuItemOptionGroup[],
+): OptionAvailabilityChange[] {
+  const out: OptionAvailabilityChange[] = [];
+  for (const g of after) {
+    const prevGroup = before.find((x) => x.id === g.id);
+    if (!prevGroup) continue;
+    for (const o of g.options) {
+      const prev = prevGroup.options.find((x) => x.id === o.id);
+      if (!prev || isOptionAvailable(prev) === isOptionAvailable(o)) continue;
+      out.push({ groupId: g.id, optionId: o.id, available: isOptionAvailable(o) });
+    }
+  }
+  return out;
+}
+
+/**
+ * Varias casillas de un jalón (el editor guarda todo junto): aplica cada cambio sobre el
+ * resultado del anterior y devuelve cada platillo tocado UNA vez, con sus grupos finales.
+ */
+export function applyOptionAvailabilityChangesToMenu(
+  items: { id: string; groups: MenuItemOptionGroup[] }[],
+  changes: OptionAvailabilityChange[],
+): { id: string; groups: MenuItemOptionGroup[] }[] {
+  const current = new Map(items.map((i) => [i.id, i.groups]));
+  const touched = new Set<string>();
+  for (const c of changes) {
+    const snapshot = [...current].map(([id, groups]) => ({ id, groups }));
+    for (const ch of applyOptionAvailabilityToMenu(snapshot, c.groupId, c.optionId, c.available)) {
+      current.set(ch.id, ch.groups);
+      touched.add(ch.id);
+    }
+  }
+  return [...touched].map((id) => ({ id, groups: current.get(id)! }));
+}

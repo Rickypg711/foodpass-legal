@@ -30,7 +30,13 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseStorage, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness } from "@/lib/vendorReadiness";
-import { parseOptionGroupsFromDescription, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import {
+  parseOptionGroupsFromDescription,
+  resolveOptionGroups,
+  optionAvailabilityChanges,
+  applyOptionAvailabilityChangesToMenu,
+  type MenuItemOptionGroup,
+} from "@/lib/menu/optionGroups";
 import { OptionGroupsEditor, cleanOptionGroups } from "@/components/vendor/OptionGroupsEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -944,6 +950,45 @@ function ItemFormModal({
           createdAt: serverTimestamp(),
         });
       }
+
+      // "Agotado" en TODO el menú (10-sep-2026, igual que la Caja): si el dueño
+      // cambió la casilla de una opción que ya existía, se reparte a cada platillo
+      // que la lleva. Lee el menú completo (también los apagados) y guarda en un
+      // lote ANTES de onChanged, que recarga la lista: si no, el siguiente
+      // platillo que se guarde traería la copia vieja y lo desharía.
+      if (mode === "edit" && item) {
+        const antes = item.optionGroups?.length
+          ? item.optionGroups
+          : parseOptionGroupsFromDescription(item.description);
+        const cambios = optionAvailabilityChanges(antes, fields.optionGroups);
+        if (cambios.length > 0) {
+          try {
+            const menuRef = collection(db, "restaurants", rid, "menu");
+            const snap = await getDocs(menuRef);
+            const otros = applyOptionAvailabilityChangesToMenu(
+              snap.docs
+                .filter((d) => d.id !== item.id)
+                .map((d) => ({ id: d.id, groups: resolveOptionGroups(d.data()) })),
+              cambios,
+            );
+            if (otros.length > 0) {
+              const lote = writeBatch(db);
+              for (const o of otros) {
+                lote.update(doc(menuRef, o.id), { optionGroups: o.groups, updatedAt: serverTimestamp() });
+              }
+              await lote.commit();
+            }
+          } catch (e) {
+            // Este platillo SÍ se guardó; lo que falló es repartirlo. Se dice tal
+            // cual y el modal sigue abierto: volver a guardar lo reintenta.
+            console.error(e);
+            setModalError("Se guardó este platillo, pero no se pudo cambiar en los demás. Toca Guardar otra vez.");
+            setBusy(null);
+            return;
+          }
+        }
+      }
+
       await persistReadiness(rid);
       await onChanged();
     } catch (e) {

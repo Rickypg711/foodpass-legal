@@ -309,6 +309,13 @@ dueño tenía que pedírselo a alguien. Un puesto se queda sin una carne todos l
 - **Menú del cliente:** la opción apagada se ve tachada con "Agotado hoy" y no se puede elegir.
   Si un grupo obligatorio queda TODO agotado, el botón dice "Sin carne hoy" y no deja agregar.
 - **Editor (`/vendor/menu`):** casilla "Agotado" por opción, por si lo prefiere desde ahí.
+  **Desde el 10-sep, al guardar, la casilla también cambia en TODOS los platillos que llevan esa
+  opción** (igual que la Caja). Solo cuentan opciones que ya existían (mismo grupo y opción por
+  id) y cuyo agotado cambió; una opción nueva o renombrada no se reparte. Se lee el menú completo
+  de Firestore y se guarda en un lote ANTES de recargar la lista, para que el siguiente platillo
+  que se guarde no traiga la copia vieja (`optionAvailabilityChanges` +
+  `applyOptionAvailabilityChangesToMenu`). La app no tiene editor de opciones: su único
+  apagador es la Caja, que ya reparte.
 - Candados: `scripts/validate-cart-options.mjs` (web) y `test/menu/option_groups_test.dart` (app).
 
 **Lo que NO hace:** no apaga sola al llegar la noche ni avisa; no toca `isAvailable` del
