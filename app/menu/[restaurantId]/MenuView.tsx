@@ -75,6 +75,17 @@ import {
   BloomsPanel,
 } from "@/components/menu/skins/blooms";
 import {
+  MX_ROOT_CLASS,
+  MixtecoCategorySection,
+  MixtecoHeader,
+  MixtecoItemRow,
+  MixtecoPanel,
+  MixtecoSheet,
+  mixtecoSectionPrice,
+  mixtecoSheets,
+  mixtecoSortItems,
+} from "@/components/menu/skins/mixteco";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -214,7 +225,13 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "pecado") return PECADO_ROOT_CLASS;
   if (skin === "negroblanco") return NB_ROOT_CLASS;
   if (skin === "blooms") return BL_ROOT_CLASS;
+  if (skin === "mixteco") return MX_ROOT_CLASS;
   return MENU_PAGE_BG;
+}
+
+/** Ancho del menú. Mixteco usa todo el escritorio: sus hojas van a dos columnas, como su papel (11-sep). */
+function mainWidthFor(skin: MenuSkinId | null): string {
+  return skin === "mixteco" ? "max-w-3xl lg:max-w-6xl" : "max-w-3xl lg:max-w-4xl";
 }
 
 function MenuRestaurantHeader({
@@ -258,6 +275,19 @@ function MenuRestaurantHeader({
   if (skin === "tercera") {
     return (
       <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "mixteco") {
+    return (
+      <MixtecoHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -420,6 +450,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "negroblanco") return <NegroBlancoCover url={url} name={name} />;
   // Blooms: su arte (logo sobre acuarela) ya vive en el encabezado.
   if (skin === "blooms") return null;
+  // Mixteco: su portada (frase + logo) ya vive en el encabezado.
+  if (skin === "mixteco") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -517,6 +549,62 @@ function MenuCategoryList({
               );
             })}
           </PecadoSheet>
+        ))}
+      </div>
+    );
+  }
+  if (skin === "mixteco") {
+    // Sus 4 hojas (components/menu/skins/mixteco.tsx): desayunos · caldos/chilaquiles/tortas · tacos/quesadillas/
+    // de la casa · bebidas con salsas y guisos. Dentro de cada sección, el orden de su papel. El índice de cada
+    // sección es el GLOBAL (los chips saltan por menu-cat-{i}).
+    const sheets = mixtecoSheets(groups.map((g, index) => ({ ...g, index })));
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        {sheets.map((sheet) => (
+          <MixtecoSheet key={sheet.n} n={sheet.n}>
+            {sheet.groups.map((group) => {
+              const index = group.index;
+              const { closed, note } = availabilityOf(group.category);
+              const drinks = sheet.n === 3;
+              const rows = mixtecoSortItems(group.items);
+              const sectionPrice = drinks ? mixtecoSectionPrice(rows) : null;
+              return (
+                <MixtecoCategorySection
+                  key={`${group.category}-${index}`}
+                  category={group.category}
+                  index={index}
+                  drinks={drinks}
+                  note={note}
+                  closed={closed}
+                  collapsed={closed && !opened[group.category]}
+                  itemCount={group.items.length}
+                  onToggle={() => toggle(group.category)}
+                  sectionPrice={sectionPrice}
+                >
+                  {(!closed || opened[group.category]) && rows.map((item) => (
+                    <MixtecoItemRow
+                      key={item.id}
+                      id={item.id}
+                      name={item.name}
+                      description={item.description}
+                      price={item.price}
+                      imageUrl={item.imageUrl}
+                      orderingEnabled={orderingEnabled && !closed}
+                      optionsHint={optionsHintFor(item)}
+                      quantity={getItemQuantity?.(item.id) ?? 0}
+                      onAdd={() => onAddItem(item)}
+                      onIncrement={() => onIncrementItem?.(item)}
+                      onDecrement={() => onDecrementItem?.(item)}
+                      onOpen={() => onOpenItem?.(item)}
+                      category={group.category}
+                      drinks={drinks}
+                      hidePrice={sectionPrice != null && item.price === sectionPrice}
+                    />
+                  ))}
+                </MixtecoCategorySection>
+              );
+            })}
+          </MixtecoSheet>
         ))}
       </div>
     );
@@ -753,6 +841,21 @@ function MenuRewardsLadderSection({
       </PecadoPanel>
     );
   }
+  if (skin === "mixteco") {
+    return (
+      <MixtecoPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-semibold text-[#2f7a50] underline decoration-[#2f7a50]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </MixtecoPanel>
+    );
+  }
   if (skin === "blooms") {
     return (
       <BloomsPanel title="Premios por regresar">
@@ -831,6 +934,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
             ? "border-[#0b0b0b]/10 bg-[#f4f3ef]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.3)]"
             : skin === "blooms"
               ? "border-[#ff5c9a]/20 bg-[#fff6f4]/95 shadow-[0_-12px_36px_-16px_rgba(232,64,127,0.35)]"
+              : skin === "mixteco"
+                ? "border-[#234933]/15 bg-[#f6f5e0]/95 shadow-[0_-12px_36px_-16px_rgba(20,50,35,0.55)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
@@ -1143,7 +1248,7 @@ function PublicMenuPageWithOrdering({
 
       <main
         className={
-          "mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 sm:px-6 sm:pt-6 " +
+          "mx-auto w-full " + mainWidthFor(skin) + " px-4 pt-5 sm:px-6 sm:pt-6 " +
           (webOrderingReady ? "pb-[220px] sm:pb-[200px]" : "pb-28")
         }
       >
@@ -1230,6 +1335,7 @@ function PublicMenuPageWithOrdering({
       </main>
 
       <MenuItemDetailSheet
+        skin={skin}
         open={detailItem !== null}
         name={detailItem?.name ?? ""}
         description={detailItem?.description ?? null}
@@ -1247,6 +1353,7 @@ function PublicMenuPageWithOrdering({
       />
 
       <ItemOptionsSheet
+          skin={skin}
           open={pendingItem !== null}
           itemName={pendingItem?.name ?? ""}
           basePrice={pendingItem?.price ?? 0}
@@ -1495,7 +1602,7 @@ function PublicMenuPageBrowseOnly({
         skin={skin}
       />
 
-      <main className="mx-auto w-full max-w-3xl lg:max-w-4xl px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]">
+      <main className={"mx-auto w-full " + mainWidthFor(skin) + " px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]"}>
         {!loading && bannerUrl ? <MenuCoverBanner url={bannerUrl} name={restaurantName} skin={skin} /> : null}
         {loading && <MenuStatusMessage>Cargando menú…</MenuStatusMessage>}
         {!loading && error && <MenuStatusMessage tone="error">{error}</MenuStatusMessage>}
@@ -1536,6 +1643,7 @@ function PublicMenuPageBrowseOnly({
       </main>
 
       <MenuItemDetailSheet
+        skin={skin}
         open={detailItem !== null}
         name={detailItem?.name ?? ""}
         description={detailItem?.description ?? null}

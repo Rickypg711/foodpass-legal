@@ -10,6 +10,7 @@
 import Image from "next/image";
 import { useEffect } from "react";
 import { formatPrice } from "@/lib/priceFormat";
+import type { MenuSkinId } from "@/lib/menu/menuSkin";
 
 export type MenuItemDetailSheetProps = {
   open: boolean;
@@ -23,6 +24,48 @@ export type MenuItemDetailSheetProps = {
   orderingEnabled: boolean;
   onClose: () => void;
   onAdd: () => void;
+  /** Piel del local (11-sep, Mixteco): la hoja se viste como su menú. Sin piel, la de siempre clase por clase. */
+  skin?: MenuSkinId | null;
+};
+
+type DetailLook = {
+  backdrop: string;
+  panel: string;
+  close: string;
+  imageWrap: string;
+  title: string;
+  hint: string;
+  description: string;
+  price: string;
+  add: string;
+};
+
+const LOOK_DEFAULT: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center",
+  panel: "animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-xl sm:max-w-md sm:rounded-3xl",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg text-[#1C2526]/70 shadow ring-1 ring-black/5 hover:text-[#1C2526]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-3xl bg-[#FAF7F2]",
+  title: "text-xl font-bold leading-tight tracking-tight text-[#1C2526]",
+  hint: "mt-2 inline-flex w-fit items-center rounded-full bg-[#F28C38]/10 px-2.5 py-1 text-xs font-semibold text-[#B05E14]",
+  description: "mt-2 text-[15px] leading-relaxed text-[#1C2526]/70",
+  price: "text-xl font-bold tabular-nums text-[#1C2526]",
+  add: "rounded-xl bg-[#F28C38] px-5 py-3 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:opacity-90 active:scale-[0.98]",
+};
+
+/** Mixteco: su hoja crema, su verde, su letra de molde (components/menu/skins/mixteco.tsx). */
+const MX_DISPLAY = "[font-family:var(--mx-display),Impact,sans-serif] font-normal";
+const LOOK_MIXTECO: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#0f2219]/60 sm:items-center",
+  panel: "animate-sheet-up mx-sheet relative max-h-[90vh] w-full overflow-y-auto rounded-t-[22px] shadow-xl sm:max-w-md sm:rounded-[10px]",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-[#f6f5e0] text-lg text-[#234933] shadow ring-2 ring-[#234933]/20 hover:ring-[#234933]/60",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[22px] bg-[#e9e7cf] sm:rounded-t-[10px]",
+  title: `${MX_DISPLAY} text-[22px] uppercase leading-tight tracking-[0.1em] text-[#234933]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full bg-[#234933]/10 px-3 py-1 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#2f7a50]",
+  description: "mt-2 text-[16px] leading-relaxed text-[#1f3a2b]/85",
+  price: `${MX_DISPLAY} text-[22px] tracking-[0.12em] tabular-nums text-[#234933]`,
+  add: `${MX_DISPLAY} rounded-full bg-[#234933] px-6 py-3 text-[14px] uppercase tracking-[0.1em] text-[#f6f5e0] shadow-[0_10px_22px_-12px_rgba(20,50,35,0.9)] transition-all hover:bg-[#1b3a28] active:scale-[0.98]`,
 };
 
 export function MenuItemDetailSheet({
@@ -35,6 +78,7 @@ export function MenuItemDetailSheet({
   orderingEnabled,
   onClose,
   onAdd,
+  skin = null,
 }: MenuItemDetailSheetProps) {
   // Escape cierra, como cualquier hoja (el toque fuera y la ✕ también).
   useEffect(() => {
@@ -47,15 +91,16 @@ export function MenuItemDetailSheet({
   }, [open, onClose]);
 
   if (!open) return null;
+  const look = skin === "mixteco" ? LOOK_MIXTECO : LOOK_DEFAULT;
 
   return (
     <div
-      className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
+      className={look.backdrop}
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-xl sm:max-w-md sm:rounded-3xl"
+        className={look.panel}
         role="dialog"
         aria-modal="true"
         aria-label={name}
@@ -65,13 +110,13 @@ export function MenuItemDetailSheet({
           type="button"
           aria-label="Cerrar"
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg text-[#1C2526]/70 shadow ring-1 ring-black/5 hover:text-[#1C2526]"
+          className={look.close}
         >
           ✕
         </button>
 
         {imageUrl ? (
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-3xl bg-[#FAF7F2]">
+          <div className={look.imageWrap}>
             <Image
               src={imageUrl}
               alt={name}
@@ -84,25 +129,25 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className="p-5">
-          <h2 className="text-xl font-bold leading-tight tracking-tight text-[#1C2526]">
+        <div className={imageUrl || skin !== "mixteco" ? "p-5" : "p-5 pt-6 pr-14"}>
+          <h2 className={look.title}>
             {name}
           </h2>
           {optionsHint ? (
-            <span className="mt-2 inline-flex w-fit items-center rounded-full bg-[#F28C38]/10 px-2.5 py-1 text-xs font-semibold text-[#B05E14]">
+            <span className={look.hint}>
               {optionsHint}
             </span>
           ) : null}
           {description ? (
-            <p className="mt-2 text-[15px] leading-relaxed text-[#1C2526]/70">{description}</p>
+            <p className={look.description}>{description}</p>
           ) : null}
           <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="text-xl font-bold tabular-nums text-[#1C2526]">{formatPrice(price)}</p>
+            <p className={look.price}>{formatPrice(price)}</p>
             {orderingEnabled ? (
               <button
                 type="button"
                 onClick={onAdd}
-                className="rounded-xl bg-[#F28C38] px-5 py-3 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
+                className={look.add}
               >
                 Agregar +
               </button>

@@ -23,12 +23,16 @@
  *  - "blooms": Blooms Coffee & Mocktails, Chihuahua — rubor de acuarela, su franja rosa, títulos mitad rosa y
  *    sus acuarelas de platillos (components/menu/skins/blooms.tsx). Cuarta piel en código por pedido de Ricardo
  *    (10-sep): la regla del "tema" en el doc queda pendiente para la quinta.
+ *  - "mixteco": Mixteco, cocina mexicana, Chihuahua — su verde bosque y su crema, su frase partida en molde y
+ *    cursiva, su jaguar, secciones verticales a dos columnas, sus fotos, salsas y guisos con sus iconos
+ *    (components/menu/skins/mixteco.tsx). Quinta piel en código por pedido de Ricardo (11-sep); primera que usa
+ *    todo el ancho en escritorio.
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

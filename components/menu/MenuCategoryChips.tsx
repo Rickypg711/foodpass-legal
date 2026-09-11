@@ -61,6 +61,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const pecado = skin === "pecado";
   const nb = skin === "negroblanco";
   const bl = skin === "blooms";
+  const mx = skin === "mixteco";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -82,6 +83,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               ? "bg-[#f4f3ef]/88 py-2.5 backdrop-blur-md"
               : bl
                 ? "bg-[#fff6f4]/90 py-2.5 backdrop-blur-md"
+                : mx
+                  ? "bg-[#234933]/95 py-2.5 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -101,6 +104,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 (on
                   ? "border-[#ff5c9a] bg-[#ff5c9a] text-white shadow-[0_6px_16px_-8px_rgba(255,92,154,0.9)]"
                   : "border-[#ff5c9a]/30 bg-white text-[#1c1a1b] hover:border-[#ff5c9a]")
+            : mx
+              ? "[font-family:var(--mx-display),Impact,sans-serif] text-[11px] uppercase tracking-[0.12em] border-2 " +
+                (on
+                  ? "border-[#f6f5e0] bg-[#f6f5e0] text-[#234933]"
+                  : "border-[#f6f5e0]/30 bg-transparent text-[#f6f5e0]/90 hover:border-[#f6f5e0]/70")
             : nb
               ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] border " +
                 (on
@@ -117,10 +125,10 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
+              {tercera || mx ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

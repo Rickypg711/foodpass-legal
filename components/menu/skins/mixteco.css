@@ -1,0 +1,55 @@
+/* Piel "Mixteco" (mixteco.tsx): Mixteco, cocina mexicana. Vive junto a la piel (no en globals.css).
+   Todo sale de SU menú (Google Sites): el verde bosque de su portada (#234933), el crema de sus hojas (#f6f5e0),
+   su jaguar corriendo, sus iconos de salsas y guisos, y sus fotos. */
+.mx-skin {
+  background-color: #234933;
+}
+/* Portada: su verde, con un grano de papel apenas visible. */
+.mx-skin .mx-cover {
+  background-color: #234933;
+  background-image:
+    radial-gradient(60rem 30rem at 12% 0%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: auto, 5px 5px;
+}
+/* Letra de molde áspera como el sello de su portada (el filtro vive en el encabezado). */
+.mx-skin .mx-rough {
+  filter: url(#mx-rough);
+}
+/* Su jaguar de fondo: el mismo verde, un poco más claro, casi invisible. */
+.mx-skin .mx-wm {
+  opacity: 0.16;
+  mix-blend-mode: screen;
+}
+/* Cada hoja: el crema de su papel con grano de impresión. */
+.mx-skin .mx-sheet {
+  background-color: #f6f5e0;
+  background-image: radial-gradient(rgba(35, 73, 51, 0.035) 1px, transparent 1px);
+  background-size: 4px 4px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 36px 60px -40px rgba(0, 0, 0, 0.65);
+}
+/* El nombre de la sección, vertical en el margen, de abajo hacia arriba como en su papel. */
+.mx-skin .mx-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+@keyframes mx-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.mx-skin .mx-rise { animation: mx-rise 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+/* Su jaguar trota: un paso corto, sin marear. */
+@keyframes mx-trot {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-1.2deg); }
+}
+.mx-skin .mx-trot { animation: mx-trot 1.9s ease-in-out infinite; }
+@keyframes mx-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.mx-skin .mx-float { animation: mx-float 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mx-skin .mx-rise, .mx-skin .mx-trot, .mx-skin .mx-float { animation: none; }
+}

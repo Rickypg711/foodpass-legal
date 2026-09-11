@@ -12,6 +12,7 @@ import {
   type MenuItemOptionGroup,
 } from "@/lib/menu/optionGroups";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
+import type { MenuSkinId } from "@/lib/menu/menuSkin";
 
 export type ItemOptionsSheetProps = {
   open: boolean;
@@ -32,10 +33,95 @@ export type ItemOptionsSheetProps = {
    * apagada solo se ve tachada. Se guarda al momento, no hay "guardar".
    */
   onToggleAvailability?: (groupId: string, optionId: string, available: boolean) => void;
+  /**
+   * Piel del local (11-sep, Mixteco): la hoja por la que pasa CADA pedido se viste como su menú. Solo el menú del
+   * cliente la pasa; la Caja no, y sin piel la hoja es la de siempre, clase por clase.
+   */
+  skin?: MenuSkinId | null;
 };
 
 /** Tope del "− 1 +": más que esto es un pedido de evento, no un toque de más. */
 const MAX_QTY = 99;
+
+/** La ropa de la hoja. La lógica (qué falta, cuánto cuesta, cuántos) no cambia con la piel. */
+type SheetLook = {
+  backdrop: string;
+  panel: string;
+  title: string;
+  subtitle: string;
+  groupName: string;
+  status: (falta: boolean) => string;
+  hasta: string;
+  option: (disponible: boolean, on: boolean) => string;
+  delta: (on: boolean) => string;
+  footer: string;
+  qtyLabel: string;
+  qtyBtn: string;
+  qtyNum: string;
+  cancel: string;
+  confirm: string;
+};
+
+const LOOK_DEFAULT: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-3xl",
+  title: "text-lg font-bold text-[#1C2526]",
+  subtitle: "text-sm text-[#1C2526]/50",
+  groupName: "text-sm font-bold text-[#1C2526]",
+  status: (falta) => `text-[11px] font-semibold ${falta ? "text-[#F28C38]" : "text-[#1C2526]/35"}`,
+  hasta: "text-[11px] text-[#1C2526]/35",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#1C2526]/8 bg-[#FAF7F2] text-[#1C2526]/35 line-through"
+        : on
+          ? "border-[#F28C38] bg-[#F28C38]/8 font-semibold text-[#1C2526]"
+          : "border-[#1C2526]/10 bg-[#FAF7F2] text-[#1C2526]/80 hover:border-[#1C2526]/25"
+    }`,
+  delta: () => "text-xs font-semibold text-[#F28C38]",
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-black/5 bg-white px-5 pb-1 pt-3",
+  qtyLabel: "text-sm font-semibold text-[#1C2526]/70",
+  qtyBtn:
+    "h-10 w-10 rounded-full border border-[#1C2526]/15 text-lg font-bold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-bold tabular-nums text-[#1C2526]",
+  cancel:
+    "rounded-xl border border-[#1C2526]/12 px-4 py-3 text-sm font-semibold text-[#1C2526]/70 transition-colors hover:bg-[#FAF7F2]",
+  confirm:
+    "flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45",
+};
+
+/** Mixteco: su hoja crema, su verde, su letra de molde (components/menu/skins/mixteco.tsx). */
+const MX_DISPLAY = "[font-family:var(--mx-display),Impact,sans-serif] font-normal";
+const LOOK_MIXTECO: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#0f2219]/60 sm:items-center",
+  panel: "animate-sheet-up mx-sheet max-h-[85vh] w-full overflow-y-auto rounded-t-[22px] p-5 shadow-xl sm:max-w-md sm:rounded-[10px]",
+  title: `${MX_DISPLAY} text-[20px] uppercase leading-tight tracking-[0.1em] text-[#234933]`,
+  subtitle: "mt-0.5 text-[15px] text-[#1f3a2b]/75",
+  groupName: `${MX_DISPLAY} text-[14px] uppercase tracking-[0.14em] text-[#234933]`,
+  status: (falta) => `text-[11.5px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#8a3f22]" : "text-[#2f7a50]"}`,
+  hasta: "text-[12px] text-[#1f3a2b]/70",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-2 px-4 py-2.5 text-left text-[15px] transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#234933]/10 bg-white/40 text-[#1f3a2b]/35 line-through"
+        : on
+          ? "border-[#234933] bg-[#234933] font-semibold text-[#f6f5e0]"
+          : "border-[#234933]/20 bg-white/60 text-[#1f3a2b] hover:border-[#234933]/60"
+    }`,
+  delta: (on) => `text-[13px] font-bold ${on ? "text-[#cfe3cb]" : "text-[#2f7a50]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#234933]/15 bg-[#f6f5e0] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-semibold text-[#1f3a2b]/80",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-2 border-[#234933]/30 text-lg font-bold text-[#234933] transition-colors hover:bg-[#234933]/10 disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-bold tabular-nums text-[#234933]",
+  cancel:
+    "rounded-full border-2 border-[#234933]/25 px-4 py-3 text-sm font-semibold text-[#1f3a2b]/80 transition-colors hover:bg-[#234933]/10",
+  confirm: `${MX_DISPLAY} flex-1 rounded-full bg-[#234933] py-3 text-[14px] uppercase tracking-[0.1em] text-[#f6f5e0] transition-colors hover:bg-[#1b3a28] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
+function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
+  return skin === "mixteco" ? LOOK_MIXTECO : LOOK_DEFAULT;
+}
 
 export function ItemOptionsSheet({
   open,
@@ -45,12 +131,14 @@ export function ItemOptionsSheet({
   onCancel,
   onConfirm,
   onToggleAvailability,
+  skin = null,
 }: ItemOptionsSheetProps) {
   const [picked, setPicked] = useState<Record<string, string[]>>({});
   /** Modo "marcar agotados": tocar una opción la apaga o la prende en vez de elegirla. */
   const [marcando, setMarcando] = useState(false);
   /** Cuántos iguales: 3 toritos de campechano en un solo toque. */
   const [qty, setQty] = useState(1);
+  const look = lookFor(skin);
 
   const delta = useMemo(() => {
     let d = 0;
@@ -100,12 +188,12 @@ export function ItemOptionsSheet({
   }
 
   return (
-    <div className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-3xl">
+    <div className={look.backdrop}>
+      <div className={look.panel}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-[#1C2526]">{itemName}</h3>
-            <p className="text-sm text-[#1C2526]/50">
+            <h3 className={look.title}>{itemName}</h3>
+            <p className={look.subtitle}>
               {marcando
                 ? "Toca una opción para apagarla o prenderla en todos los platillos que la llevan. Se guarda al momento."
                 : "Elige cómo lo quieres"}
@@ -132,14 +220,14 @@ export function ItemOptionsSheet({
           return (
             <div key={g.id} className="mb-5">
               <div className="mb-2 flex items-baseline gap-2">
-                <p className="text-sm font-bold text-[#1C2526]">{g.name}</p>
+                <p className={look.groupName}>{g.name}</p>
                 {g.required && (
-                  <span className={`text-[11px] font-semibold ${falta ? "text-[#F28C38]" : "text-[#1C2526]/35"}`}>
+                  <span className={look.status(falta)}>
                     {falta ? "Falta elegir" : "Listo"}
                   </span>
                 )}
                 {g.max > 1 && (
-                  <span className="text-[11px] text-[#1C2526]/35">Hasta {g.max}</span>
+                  <span className={look.hasta}>Hasta {g.max}</span>
                 )}
               </div>
               <div className="flex flex-col gap-2">
@@ -172,20 +260,15 @@ export function ItemOptionsSheet({
                       onClick={() => toggle(g, o.id)}
                       disabled={!disponible}
                       aria-disabled={!disponible}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
-                        !disponible
-                          ? "cursor-not-allowed border-[#1C2526]/8 bg-[#FAF7F2] text-[#1C2526]/35 line-through"
-                          : on
-                            ? "border-[#F28C38] bg-[#F28C38]/8 font-semibold text-[#1C2526]"
-                            : "border-[#1C2526]/10 bg-[#FAF7F2] text-[#1C2526]/80 hover:border-[#1C2526]/25"
-                      }`}
+                      aria-pressed={on}
+                      className={look.option(disponible, on)}
                     >
                       <span>{o.name}</span>
                       {!disponible ? (
                         <span className="text-[11px] font-bold no-underline text-red-600">Agotado hoy</span>
                       ) : (
                         o.priceDelta > 0 && (
-                          <span className="text-xs font-semibold text-[#F28C38]">
+                          <span className={look.delta(on)}>
                             +{formatPrice(o.priceDelta)}
                           </span>
                         )
@@ -198,21 +281,21 @@ export function ItemOptionsSheet({
           );
         })}
 
-        <div className="sticky bottom-0 -mx-5 mt-2 border-t border-black/5 bg-white px-5 pb-1 pt-3">
+        <div className={look.footer}>
           {!marcando && (
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#1C2526]/70">¿Cuántos?</span>
+              <span className={look.qtyLabel}>¿Cuántos?</span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   aria-label="Uno menos"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                   disabled={qty <= 1}
-                  className="h-10 w-10 rounded-full border border-[#1C2526]/15 text-lg font-bold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] disabled:opacity-30"
+                  className={look.qtyBtn}
                 >
                   −
                 </button>
-                <span className="w-7 text-center text-base font-bold tabular-nums text-[#1C2526]" aria-live="polite">
+                <span className={look.qtyNum} aria-live="polite">
                   {qty}
                 </span>
                 <button
@@ -220,7 +303,7 @@ export function ItemOptionsSheet({
                   aria-label="Uno más"
                   onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
                   disabled={qty >= MAX_QTY}
-                  className="h-10 w-10 rounded-full border border-[#1C2526]/15 text-lg font-bold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] disabled:opacity-30"
+                  className={look.qtyBtn}
                 >
                   +
                 </button>
@@ -235,7 +318,7 @@ export function ItemOptionsSheet({
                 setQty(1);
                 onCancel();
               }}
-              className="rounded-xl border border-[#1C2526]/12 px-4 py-3 text-sm font-semibold text-[#1C2526]/70 transition-colors hover:bg-[#FAF7F2]"
+              className={look.cancel}
             >
               Cancelar
             </button>
@@ -243,7 +326,7 @@ export function ItemOptionsSheet({
               type="button"
               onClick={confirm}
               disabled={faltantes.length > 0 || sinOpciones.length > 0 || marcando}
-              className="flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45"
+              className={look.confirm}
             >
               {sinOpciones.length > 0
                 ? `Sin ${sinOpciones[0]!.name.toLowerCase()} hoy`

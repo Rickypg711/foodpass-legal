@@ -19,6 +19,7 @@ import { PECADO_ROOT_CLASS, PecadoHeader } from "@/components/menu/skins/pecado"
 import { TERCERA_ROOT_CLASS, TerceraHeader } from "@/components/menu/skins/tercera";
 import { NB_MONO, NB_ROOT_CLASS, NBDots, NegroBlancoHeader } from "@/components/menu/skins/negroblanco";
 import { BL_ROOT_CLASS, BloomsHeader } from "@/components/menu/skins/blooms";
+import { MX_DISPLAY, MX_ROOT_CLASS, MixtecoHeader } from "@/components/menu/skins/mixteco";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -220,7 +221,37 @@ const BLOOMS: LandingTheme = {
   photoPrice: "font-extrabold text-[#e8407f]",
 };
 
+/** Mixteco: su portada verde con la frase y el logo, tarjetas crema como sus hojas, botón crema de molde. */
+const MIXTECO: LandingTheme = {
+  root: MX_ROOT_CLASS,
+  Header: (p) => <MixtecoHeader {...p} />,
+  cta: `${MX_DISPLAY} block min-h-12 rounded-full bg-[#f6f5e0] py-3.5 text-center text-[16px] uppercase tracking-[0.12em] text-[#234933] shadow-[0_14px_30px_-14px_rgba(0,0,0,0.8)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp: `${MX_DISPLAY} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#f6f5e0] bg-[#6cbd8c]/15 px-3 py-2.5 text-[12px] uppercase tracking-[0.12em] text-[#f6f5e0] transition-colors hover:bg-[#6cbd8c]/30`,
+  btnNeutral: `${MX_DISPLAY} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#f6f5e0]/35 bg-transparent px-3 py-2.5 text-[12px] uppercase tracking-[0.12em] text-[#f6f5e0] transition-colors hover:border-[#f6f5e0]`,
+  descriptionCard: "mx-sheet rounded-[6px] p-5 text-[15.5px] leading-relaxed text-[#1f3a2b]/85 sm:p-6",
+  card: "mx-sheet rounded-[6px] px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${MX_DISPLAY} mb-4 text-[20px] uppercase tracking-[0.1em] text-[#234933] sm:text-[22px]`}>{title}</h2>
+  ),
+  link: "font-semibold text-[#2f7a50] underline decoration-[#2f7a50]/35 underline-offset-4",
+  text: "text-[#1f3a2b]/85",
+  textSoft: "text-[#1f3a2b]/70",
+  todayRow: "bg-[#234933] font-semibold text-[#f6f5e0]",
+  row: "text-[#1f3a2b]/75",
+  closedText: "text-[#1f3a2b]/40",
+  faqOpen: "open:bg-[#234933]/[0.06]",
+  faqChevron: "text-[#234933]",
+  faqAnswer: "text-[#1f3a2b]/80",
+  seoText: "text-[#cfe3cb]/75",
+  signature: "text-[#cfe3cb]/70",
+  signatureLink: "font-semibold text-[#9fd6b3] underline decoration-[#9fd6b3]/40 underline-offset-4",
+  loading: "mx-sheet rounded-[6px] px-4 py-6 text-center text-sm text-[#1f3a2b]/70",
+  photoName: "text-[#1f3a2b]",
+  photoPrice: `${MX_DISPLAY} tracking-[0.12em] text-[#557061]`,
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "mixteco") return MIXTECO;
   if (skin === "pecado") return PECADO;
   if (skin === "tercera") return TERCERA;
   if (skin === "negroblanco") return NEGROBLANCO;
