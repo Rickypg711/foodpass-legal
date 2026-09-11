@@ -174,7 +174,18 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   } catch {
     hits = "";
   }
-  check(`sin precio a mano en app/lib/components${hits ? ":\n" + hits : ""}`, hits.trim(), "");
+  // Excepción ANGOSTA (10-sep-2026): la página de comparación cita el precio de
+  // MASPEDIDOS ("desde $299/mes"), no el de Comeleal. Solo se perdona "$299" en
+  // ESE archivo; un "$499" a mano ahí sigue tumbando el candado, y el precio de
+  // Comeleal en esa página tiene que salir de PRO_PRICE_LABEL (check de abajo).
+  const COMPARATIVA = "app/mejores-apps-menu-digital-restaurantes/page.tsx";
+  hits = hits
+    .split("\n")
+    .filter((l) => !(l.startsWith(`${COMPARATIVA}:`) && l.includes("$299") && !l.includes("$499")))
+    .join("\n");
+  check(`sin precio a mano en app/lib/components${hits.trim() ? ":\n" + hits : ""}`, hits.trim(), "");
+  check("la comparativa pinta el precio de Comeleal con PRO_PRICE_LABEL",
+    read(`../${COMPARATIVA}`).includes("Pro ${PRO_PRICE_LABEL}/mes"), true);
 }
 
 // ── 10b. Las tres paredes existen, leen private/billing y usan LA pared ──

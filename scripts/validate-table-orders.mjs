@@ -89,7 +89,15 @@ if (/orderType:\s*"pickup"/.test(builder)) {
 checkSource("usa la constante de dine_in", builder, "ORDER_TYPE_DINE_IN");
 checkSource("usa la constante de pickup", builder, "ORDER_TYPE_PICKUP");
 checkSource("normaliza la mesa antes de escribirla", builder, "normalizeTableNumber");
-checkSource("la mesa decide el modo", builder, "tableNumber ? ORDER_TYPE_DINE_IN : ORDER_TYPE_PICKUP");
+// La mesa decide el modo. Desde la entrega a domicilio (9-sep-2026, 3b28c5d) el
+// ternario tiene tres ramas y quedó partido en líneas: el candado lee la FORMA,
+// no el texto de una sola línea, y sigue exigiendo que la mesa mande PRIMERO.
+check("la mesa decide el modo (con mesa => dine_in, antes que nada)",
+  /const orderType = tableNumber\s*\?\s*ORDER_TYPE_DINE_IN\s*:/.test(builder), true);
+check("a domicilio SOLO sin mesa",
+  /!tableNumber && input\.fulfillment === "delivery"/.test(builder), true);
+check("sin mesa y sin domicilio cae a pickup",
+  /\?\s*ORDER_TYPE_DELIVERY\s*:\s*ORDER_TYPE_PICKUP/.test(builder), true);
 checkSource("escribe tableNumber", builder, "payload.tableNumber = tableNumber");
 checkSource("escribe diners validado", builder, "normalizeDiners");
 // el pickupPin se sigue generando SIEMPRE (es el folio que canta el mesero)
