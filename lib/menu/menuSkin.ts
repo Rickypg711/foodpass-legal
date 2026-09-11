@@ -27,12 +27,15 @@
  *    cursiva, su jaguar, secciones verticales a dos columnas, sus fotos, salsas y guisos con sus iconos
  *    (components/menu/skins/mixteco.tsx). Quinta piel en código por pedido de Ricardo (11-sep); primera que usa
  *    todo el ancho en escritorio.
+ *  - "laspic": LasPic, Pizza, Pasta & Fun, Chihuahua — su fachada (ajedrez negro/crema, "Las Pic" en serif rojo) y su
+ *    menú de papel editorial (mascotas, franja de maridaje ▽ ○ □, dos columnas) (components/menu/skins/laspic.tsx).
+ *    Sexta piel en código por pedido de Ricardo (11-sep).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

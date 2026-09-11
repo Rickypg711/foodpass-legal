@@ -1,0 +1,36 @@
+/* Piel "LasPic" (laspic.tsx): LasPic, Pizza, Pasta & Fun. Vive junto a la piel (no en globals.css).
+   La fachada (IG) pone el ajedrez negro/crema y el rojo tomate; su menú de papel pone la hoja blanca editorial. */
+.lp-skin {
+  background-color: #efe9df;
+}
+/* La franja de ajedrez de su fachada. */
+.lp-skin .lp-checker {
+  background-color: #f4eee4;
+  background-image: conic-gradient(#141414 25%, transparent 0 50%, #141414 0 75%, transparent 0);
+  background-size: 32px 32px;
+}
+@media (min-width: 640px) {
+  .lp-skin .lp-checker { background-size: 40px 40px; }
+}
+/* La fachada: crema cálido. */
+.lp-skin .lp-facade {
+  background-color: #f4eee4;
+}
+/* Su hoja: blanco papel con sombra de hoja impresa. */
+.lp-skin .lp-sheet {
+  background-color: #fffdf8;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 30px 50px -36px rgba(0, 0, 0, 0.45);
+}
+/* La raya negra al centro de sus dos columnas. */
+.lp-skin .lp-cols {
+  column-rule: 1px solid #141414;
+}
+
+@keyframes lp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.lp-skin .lp-rise { animation: lp-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-skin .lp-rise { animation: none; }
+}

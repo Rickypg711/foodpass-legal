@@ -20,6 +20,7 @@ import { TERCERA_ROOT_CLASS, TerceraHeader } from "@/components/menu/skins/terce
 import { NB_MONO, NB_ROOT_CLASS, NBDots, NegroBlancoHeader } from "@/components/menu/skins/negroblanco";
 import { BL_ROOT_CLASS, BloomsHeader } from "@/components/menu/skins/blooms";
 import { MX_DISPLAY, MX_ROOT_CLASS, MixtecoHeader } from "@/components/menu/skins/mixteco";
+import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/laspic";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -250,7 +251,41 @@ const MIXTECO: LandingTheme = {
   photoPrice: `${MX_DISPLAY} tracking-[0.12em] text-[#557061]`,
 };
 
+/** LasPic: su fachada (ajedrez, "Las Pic" en serif rojo) y tarjetas blancas como su papel, títulos serif con punto. */
+const LASPIC: LandingTheme = {
+  root: LP_ROOT_CLASS,
+  Header: (p) => <LaspicHeader {...p} />,
+  cta: "block min-h-12 rounded-full bg-[#141414] py-3.5 text-center text-[14px] font-semibold uppercase tracking-[0.16em] text-[#fbf8f2] shadow-[0_14px_30px_-16px_rgba(0,0,0,0.8)] transition-transform hover:scale-[1.01] active:scale-[0.99]",
+  btnWhatsapp:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#141414] bg-[#fffdf8] px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#141414] transition-colors hover:bg-[#141414] hover:text-[#fffdf8]",
+  btnNeutral:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#141414]/30 bg-transparent px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#141414] transition-colors hover:border-[#141414]",
+  descriptionCard: "lp-sheet rounded-[4px] p-5 text-[15.5px] leading-relaxed text-[#141414]/80 sm:p-6",
+  card: "lp-sheet rounded-[4px] px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${LP_SERIF} mb-4 inline-block border-b border-[#141414] pb-1 text-[28px] leading-none text-[#141414]`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}.
+    </h2>
+  ),
+  link: "font-semibold text-[#d23f2c] underline decoration-[#d23f2c]/35 underline-offset-4",
+  text: "text-[#141414]/80",
+  textSoft: "text-[#141414]/65",
+  todayRow: "bg-[#141414] font-semibold text-[#fbf8f2]",
+  row: "text-[#141414]/75",
+  closedText: "text-[#141414]/40",
+  faqOpen: "open:bg-[#141414]/[0.04]",
+  faqChevron: "text-[#d23f2c]",
+  faqAnswer: "text-[#141414]/75",
+  seoText: "text-[#141414]/55",
+  signature: "text-[#141414]/55",
+  signatureLink: "font-semibold text-[#d23f2c] underline decoration-[#d23f2c]/35 underline-offset-4",
+  loading: "lp-sheet rounded-[4px] px-4 py-6 text-center text-sm text-[#141414]/60",
+  photoName: "text-[#141414]",
+  photoPrice: "font-medium text-[#141414]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "laspic") return LASPIC;
   if (skin === "mixteco") return MIXTECO;
   if (skin === "pecado") return PECADO;
   if (skin === "tercera") return TERCERA;

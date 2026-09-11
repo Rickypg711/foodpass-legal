@@ -17,24 +17,66 @@ import { pecadoCategoryLabel } from "@/components/menu/skins/pecado";
 
 export type MenuChip = { category: string; index: number; closed?: boolean };
 
+/** Reloj del candado del chip tocado. Fuera del componente: la regla de pureza de React no deja leer la hora adentro. */
+const nowMs = () => Date.now();
+
 export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; skin?: MenuSkinId | null }) {
   const [active, setActive] = useState(0);
   const barRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * El chip que se TOCÓ manda mientras dura el salto (11-sep, Ricardo con LasPic: tocaba "Postres" y no se quedaba,
+   * porque su título nunca llega a la barra). Se suelta con la rueda, el dedo o el teclado, o con cualquier scroll
+   * pasado 1.5 s (arrastrar la barra de scroll no dispara rueda ni dedo).
+   */
+  const pinned = useRef<{ index: number; until: number } | null>(null);
 
-  // El chip activo = la última sección cuyo título ya pasó la barra.
+  useEffect(() => {
+    const release = () => {
+      pinned.current = null;
+    };
+    window.addEventListener("wheel", release, { passive: true });
+    window.addEventListener("touchstart", release, { passive: true });
+    window.addEventListener("keydown", release);
+    return () => {
+      window.removeEventListener("wheel", release);
+      window.removeEventListener("touchstart", release);
+      window.removeEventListener("keydown", release);
+    };
+  }, []);
+
+  // El chip activo = la sección que cruza la línea bajo la barra, en orden de lectura (con dos columnas gana la de
+  // la izquierda, que se lee primero). En un hueco entre secciones, la última cuyo título ya pasó la barra. Hasta
+  // abajo de la página, la última sección aunque su título nunca alcance la barra (Postres al final).
   useEffect(() => {
     if (chips.length < 2) return;
     let raf = 0;
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        const pin = pinned.current;
+        if (pin) {
+          if (nowMs() < pin.until) {
+            setActive(pin.index);
+            return;
+          }
+          pinned.current = null;
+        }
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+          setActive(chips[chips.length - 1]!.index);
+          return;
+        }
         const line = (barRef.current?.getBoundingClientRect().bottom ?? 0) + 24;
-        let cur = 0;
+        let cur = chips[0]!.index;
+        let crossing: number | null = null;
         for (const c of chips) {
           const el = document.getElementById(`menu-cat-${c.index}`);
-          if (el && el.getBoundingClientRect().top <= line) cur = c.index;
+          if (!el) continue;
+          const head = el.getBoundingClientRect().top;
+          if (head > line) continue;
+          cur = c.index;
+          if (crossing === null && (el.closest("section") ?? el).getBoundingClientRect().bottom > line) crossing = c.index;
         }
-        setActive(cur);
+        setActive(crossing ?? cur);
       });
     };
     onScroll();
@@ -62,10 +104,13 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const nb = skin === "negroblanco";
   const bl = skin === "blooms";
   const mx = skin === "mixteco";
+  const lp = skin === "laspic";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
     if (!el) return;
+    pinned.current = { index, until: nowMs() + 1500 };
+    setActive(index);
     const top = el.getBoundingClientRect().top + window.scrollY - ((barRef.current?.offsetHeight ?? 56) + 16);
     window.scrollTo({ top, behavior: "smooth" });
   };
@@ -85,6 +130,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 ? "bg-[#fff6f4]/90 py-2.5 backdrop-blur-md"
                 : mx
                   ? "bg-[#234933]/95 py-2.5 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md"
+                  : lp
+                    ? "bg-[#fbf8f2]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -104,6 +151,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 (on
                   ? "border-[#ff5c9a] bg-[#ff5c9a] text-white shadow-[0_6px_16px_-8px_rgba(255,92,154,0.9)]"
                   : "border-[#ff5c9a]/30 bg-white text-[#1c1a1b] hover:border-[#ff5c9a]")
+            : lp
+              ? "[font-family:var(--lp-sans),Jost,sans-serif] text-[11px] font-semibold uppercase tracking-[0.14em] border-[1.5px] " +
+                (on
+                  ? "border-[#141414] bg-[#141414] text-[#fbf8f2]"
+                  : "border-[#141414]/35 bg-transparent text-[#141414] hover:border-[#141414]")
             : mx
               ? "[font-family:var(--mx-display),Impact,sans-serif] text-[11px] uppercase tracking-[0.12em] border-2 " +
                 (on
@@ -125,10 +177,10 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera || mx ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
+              {tercera || mx || lp ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

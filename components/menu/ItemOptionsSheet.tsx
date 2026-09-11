@@ -119,8 +119,40 @@ const LOOK_MIXTECO: SheetLook = {
   confirm: `${MX_DISPLAY} flex-1 rounded-full bg-[#234933] py-3 text-[14px] uppercase tracking-[0.1em] text-[#f6f5e0] transition-colors hover:bg-[#1b3a28] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** LasPic: su hoja blanca editorial, su serif, píldoras negras (components/menu/skins/laspic.tsx). */
+const LP_SERIF = "[font-family:var(--lp-serif),'Times_New_Roman',serif] font-normal";
+const LOOK_LASPIC: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center",
+  panel: "animate-sheet-up lp-sheet max-h-[85vh] w-full overflow-y-auto rounded-t-[18px] p-5 shadow-xl sm:max-w-md sm:rounded-[6px]",
+  title: `${LP_SERIF} text-[28px] leading-tight text-[#141414]`,
+  subtitle: "text-[14px] text-[#141414]/60",
+  groupName: "text-[12.5px] font-semibold uppercase tracking-[0.16em] text-[#141414]",
+  status: (falta) => `text-[11px] font-semibold uppercase tracking-[0.1em] ${falta ? "text-[#d23f2c]" : "text-[#141414]/45"}`,
+  hasta: "text-[12px] text-[#141414]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-[1.5px] px-4 py-2.5 text-left text-[15px] transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#141414]/10 text-[#141414]/35 line-through"
+        : on
+          ? "border-[#141414] bg-[#141414] font-medium text-[#fffdf8]"
+          : "border-[#141414]/25 bg-transparent text-[#141414] hover:border-[#141414]"
+    }`,
+  delta: (on) => `text-[13px] font-semibold ${on ? "text-[#f2c230]" : "text-[#d23f2c]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#141414]/15 bg-[#fffdf8] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-medium text-[#141414]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-[1.5px] border-[#141414]/40 text-lg font-semibold text-[#141414] transition-colors hover:bg-[#141414]/5 disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-semibold tabular-nums text-[#141414]",
+  cancel:
+    "rounded-full border-[1.5px] border-[#141414]/30 px-4 py-3 text-sm font-medium text-[#141414]/80 transition-colors hover:bg-[#141414]/5",
+  confirm:
+    "flex-1 rounded-full bg-[#141414] py-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#fffdf8] transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-45",
+};
+
 function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
-  return skin === "mixteco" ? LOOK_MIXTECO : LOOK_DEFAULT;
+  if (skin === "mixteco") return LOOK_MIXTECO;
+  if (skin === "laspic") return LOOK_LASPIC;
+  return LOOK_DEFAULT;
 }
 
 export function ItemOptionsSheet({

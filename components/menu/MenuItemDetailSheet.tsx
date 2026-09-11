@@ -68,6 +68,21 @@ const LOOK_MIXTECO: DetailLook = {
   add: `${MX_DISPLAY} rounded-full bg-[#234933] px-6 py-3 text-[14px] uppercase tracking-[0.1em] text-[#f6f5e0] shadow-[0_10px_22px_-12px_rgba(20,50,35,0.9)] transition-all hover:bg-[#1b3a28] active:scale-[0.98]`,
 };
 
+/** LasPic: su hoja blanca editorial y su serif (components/menu/skins/laspic.tsx). */
+const LP_SERIF = "[font-family:var(--lp-serif),'Times_New_Roman',serif] font-normal";
+const LOOK_LASPIC: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center",
+  panel: "animate-sheet-up lp-sheet relative max-h-[90vh] w-full overflow-y-auto rounded-t-[18px] shadow-xl sm:max-w-md sm:rounded-[6px]",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#141414] bg-[#fffdf8] text-lg text-[#141414] hover:bg-[#141414] hover:text-[#fffdf8]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#efe9df] sm:rounded-t-[6px]",
+  title: `${LP_SERIF} text-[30px] leading-tight text-[#141414]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full border border-[#d23f2c]/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#d23f2c]",
+  description: "mt-2 text-[16px] leading-relaxed text-[#141414]/75",
+  price: "text-[22px] font-medium tabular-nums text-[#141414]",
+  add: "rounded-full bg-[#141414] px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#fffdf8] transition-all hover:bg-black active:scale-[0.98]",
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -91,7 +106,7 @@ export function MenuItemDetailSheet({
   }, [open, onClose]);
 
   if (!open) return null;
-  const look = skin === "mixteco" ? LOOK_MIXTECO : LOOK_DEFAULT;
+  const look = skin === "mixteco" ? LOOK_MIXTECO : skin === "laspic" ? LOOK_LASPIC : LOOK_DEFAULT;
 
   return (
     <div
@@ -129,7 +144,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || skin !== "mixteco" ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

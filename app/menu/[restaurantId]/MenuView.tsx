@@ -86,6 +86,15 @@ import {
   mixtecoSortItems,
 } from "@/components/menu/skins/mixteco";
 import {
+  LP_ROOT_CLASS,
+  LaspicCategorySection,
+  LaspicHeader,
+  LaspicItemRow,
+  LaspicPanel,
+  LaspicSheet,
+  laspicSortItems,
+} from "@/components/menu/skins/laspic";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -101,6 +110,8 @@ type MenuRow = {
   isAvailable: boolean;
   /** Opciones definidas por el vendor. Si vienen, mandan sobre la descripción. */
   optionGroups?: MenuItemOptionGroup[];
+  /** Maridaje impreso en el papel del local (LasPic, 11-sep): "t" ▽ · "c" ○ · "s" □. Solo lo pinta su piel. */
+  wine?: string;
 };
 
 /**
@@ -147,6 +158,7 @@ function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
     optionGroups: Array.isArray(data.optionGroups)
       ? (data.optionGroups as MenuItemOptionGroup[])
       : undefined,
+    wine: typeof data.wine === "string" && data.wine ? data.wine : undefined,
   };
 }
 
@@ -226,12 +238,13 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "negroblanco") return NB_ROOT_CLASS;
   if (skin === "blooms") return BL_ROOT_CLASS;
   if (skin === "mixteco") return MX_ROOT_CLASS;
+  if (skin === "laspic") return LP_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
-/** Ancho del menú. Mixteco usa todo el escritorio: sus hojas van a dos columnas, como su papel (11-sep). */
+/** Ancho del menú. Mixteco y LasPic usan todo el escritorio: su papel va a dos columnas (11-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
-  return skin === "mixteco" ? "max-w-3xl lg:max-w-6xl" : "max-w-3xl lg:max-w-4xl";
+  return skin === "mixteco" || skin === "laspic" ? "max-w-3xl lg:max-w-6xl" : "max-w-3xl lg:max-w-4xl";
 }
 
 function MenuRestaurantHeader({
@@ -275,6 +288,19 @@ function MenuRestaurantHeader({
   if (skin === "tercera") {
     return (
       <TerceraHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "laspic") {
+    return (
+      <LaspicHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -453,6 +479,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "blooms") return null;
   // Mixteco: su portada (frase + logo) ya vive en el encabezado.
   if (skin === "mixteco") return null;
+  // LasPic: su fachada ya es el encabezado.
+  if (skin === "laspic") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -552,6 +580,48 @@ function MenuCategoryList({
           </PecadoSheet>
         ))}
       </div>
+    );
+  }
+  if (skin === "laspic") {
+    // Su hoja de papel (components/menu/skins/laspic.tsx): mascotas + franja de maridaje + dos columnas; dentro
+    // de cada sección el orden de su papel y la figura de maridaje de cada platillo.
+    return (
+      <LaspicSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          return (
+            <LaspicCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && laspicSortItems(group.items).map((item) => (
+                <LaspicItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  wine={item.wine}
+                />
+              ))}
+            </LaspicCategorySection>
+          );
+        })}
+      </LaspicSheet>
     );
   }
   if (skin === "mixteco") {
@@ -842,6 +912,21 @@ function MenuRewardsLadderSection({
       </PecadoPanel>
     );
   }
+  if (skin === "laspic") {
+    return (
+      <LaspicPanel title="Premios por regresar">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-semibold text-[#d23f2c] underline decoration-[#d23f2c]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </LaspicPanel>
+    );
+  }
   if (skin === "mixteco") {
     return (
       <MixtecoPanel title="Premios por regresar">
@@ -937,6 +1022,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
               ? "border-[#ff5c9a]/20 bg-[#fff6f4]/95 shadow-[0_-12px_36px_-16px_rgba(232,64,127,0.35)]"
               : skin === "mixteco"
                 ? "border-[#234933]/15 bg-[#f6f5e0]/95 shadow-[0_-12px_36px_-16px_rgba(20,50,35,0.55)]"
+              : skin === "laspic"
+                ? "border-[#141414]/15 bg-[#fbf8f2]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.35)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
