@@ -28,6 +28,14 @@ import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 import { primeChime, playNewOrderChime, flashTabTitle } from "@/lib/vendor/newOrderChime";
+import {
+  isWaitingOrder,
+  lateOrdersBanner,
+  orderWaitLabel,
+  orderWaitLevel,
+  orderWaitingMinutes,
+  shouldRemindLateOrders,
+} from "@/lib/order/orderAging";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -137,6 +145,65 @@ export default function PedidosPage() {
   // aún no llega el primer snapshot (la carga inicial jamás suena).
   const seenIncomingIds = useRef<Set<string> | null>(null);
 
+  // ⏰ El reloj (10-sep-2026, La Familia): las ventas se quedaban en Pendientes
+  // horas. Cada tarjeta dice cuánto lleva (naranja a los 10 min, roja y
+  // parpadeando a los 20) y, mientras haya alguna en rojo, suena cada 5 min hasta
+  // que la marquen o lo callen. Reglas en lib/order/orderAging.ts (espejo en la app).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 30000);
+    return () => window.clearInterval(t);
+  }, []);
+  const [avisoSilenciado, setAvisoSilenciado] = useState<boolean>(() => {
+    try {
+      return typeof window !== "undefined" && window.localStorage.getItem("pedidosAvisoSilenciado") === "1";
+    } catch {
+      return false; // sin storage: el aviso suena
+    }
+  });
+  const toggleAviso = () => {
+    const next = !avisoSilenciado;
+    setAvisoSilenciado(next);
+    try {
+      window.localStorage.setItem("pedidosAvisoSilenciado", next ? "1" : "0");
+    } catch { /* sin storage: dura mientras la pestaña esté abierta */ }
+  };
+  // Notificación de la compu: solo si el dueño la pide con un toque (el navegador
+  // pregunta una vez). Sirve cuando la pestaña de Pedidos está escondida.
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission | "unsupported">(() =>
+    typeof window === "undefined" || typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+  );
+  const pedirNotificaciones = () => {
+    if (typeof Notification === "undefined") return;
+    void Notification.requestPermission().then(setNotifPerm).catch(() => {});
+  };
+  const minutesOf = (o: Order) =>
+    orderWaitingMinutes(o.createdAt?.toMillis ? o.createdAt.toMillis() : now, now);
+  const lateCount = orders.filter(
+    (o) => isWaitingOrder(o) && orderWaitLevel(minutesOf(o)) === "late",
+  ).length;
+  const lastRemindAt = useRef<number | null>(null);
+  useEffect(() => {
+    if (lateCount === 0) {
+      lastRemindAt.current = null; // se vació: el siguiente rojo suena de inmediato
+      return;
+    }
+    if (avisoSilenciado) return;
+    if (!shouldRemindLateOrders({ lateCount, lastRemindAtMs: lastRemindAt.current, nowMs: now })) return;
+    lastRemindAt.current = now;
+    playNewOrderChime();
+    flashTabTitle("⏰ Pedido esperando");
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted" &&
+      document.visibilityState !== "visible"
+    ) {
+      try {
+        new Notification("Pedidos esperando", { body: lateOrdersBanner(lateCount), tag: "pedidos-esperando" });
+      } catch { /* algunos navegadores solo notifican desde un service worker */ }
+    }
+  }, [lateCount, now, avisoSilenciado]);
+
   // ── Auth Init & Realtime Listener ──────────────────────────────────────────
 
   useEffect(() => primeChime(), []);
@@ -188,14 +255,13 @@ export default function PedidosPage() {
             ...(d.data() as Omit<Order, "id">),
           }));
 
-          // La campana: un pedido ENTRANTE es el que le cae al dueño sin que
-          // él lo haya tecleado (app/web/QR de mesa, jamás los del propio
-          // POS) y aún vive en la bandeja (pending/open_tab). Suena solo lo
-          // que aparece DESPUÉS del primer snapshot.
+          // La campana: suena todo pedido que aparece en la bandeja
+          // (pending/open_tab) DESPUÉS del primer snapshot. Desde el 10-sep
+          // también los de la Caja: en La Familia uno cobra en la Caja y otro
+          // prepara con Pedidos abierto en otra pantalla, y tiene que oírlo al
+          // instante (antes la venta de la Caja caía en silencio).
           const incoming = list.filter(
-            (o) =>
-              (o.status === "pending" || o.status === "open_tab") &&
-              o.orderSource !== "pos",
+            (o) => o.status === "pending" || o.status === "open_tab",
           );
           if (seenIncomingIds.current === null) {
             seenIncomingIds.current = new Set(incoming.map((o) => o.id));
@@ -425,14 +491,64 @@ export default function PedidosPage() {
       <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7" style={{ background: "#F5F3EF", minHeight: "100vh" }}>
         
         {/* Page Title */}
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Pedidos</h1>
             <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
               Fulfillment y cocina en tiempo real
             </p>
           </div>
+          {/* Controles del aviso: solo ya cargado (lo que guarda el navegador no
+              existe en el servidor y no debe pintarse en el primer render). */}
+          {!loading && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={toggleAviso}
+                aria-pressed={!avisoSilenciado}
+                className={`rounded-xl px-3 py-2 text-[12px] font-bold transition-colors ${
+                  avisoSilenciado
+                    ? "border border-[#1C2526]/15 bg-white text-[#1C2526]/55 hover:bg-[#FAF7F2]"
+                    : "bg-[#1C2526] text-white hover:opacity-90"
+                }`}
+              >
+                {avisoSilenciado ? "🔕 Aviso callado — activar" : "🔔 Aviso de pedidos encendido"}
+              </button>
+              {notifPerm === "default" && (
+                <button
+                  type="button"
+                  onClick={pedirNotificaciones}
+                  className="rounded-xl border border-[#F28C38]/40 bg-white px-3 py-2 text-[12px] font-bold text-[#C2410C] hover:bg-[#FFF3E8]"
+                >
+                  Avisarme también con notificación
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* ⏰ Pedidos olvidados: rojo, parpadea y suena cada 5 min hasta que los
+            marquen o callen el aviso. */}
+        {!loading && lateCount > 0 && (
+          <div role="alert" className="relative mb-5 overflow-hidden rounded-2xl border-2 border-red-500 bg-red-50 px-4 py-3">
+            <div className="pointer-events-none absolute inset-0 animate-pulse bg-red-500/10" aria-hidden />
+            <div className="relative flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[15px] font-extrabold text-red-700">⏰ {lateOrdersBanner(lateCount)}</p>
+              <button
+                type="button"
+                onClick={toggleAviso}
+                className="rounded-xl border border-red-200 bg-white px-3 py-2 text-[12px] font-bold text-red-700 hover:bg-red-100"
+              >
+                {avisoSilenciado ? "🔔 Activar aviso" : "🔕 Silenciar aviso"}
+              </button>
+            </div>
+            <p className="relative mt-1 text-[12px] font-medium text-red-700/80">
+              {avisoSilenciado
+                ? "El aviso está callado en esta pantalla. Márcalos cuando salgan."
+                : "Suena cada 5 min hasta que los marques: Comenzar → Terminar → Entregar."}
+            </p>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
@@ -480,16 +596,37 @@ export default function PedidosPage() {
                   const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
                   const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
                   const isPaid = order.paymentStatus === "paid";
+                  // ⏰ Cuánto lleva (solo lo que sigue en la bandeja; las cuentas
+                  // abiertas no, esas se quedan abiertas a propósito).
+                  const waiting = isWaitingOrder(order);
+                  const waitMin = minutesOf(order);
+                  const level = waiting ? orderWaitLevel(waitMin) : "ok";
+                  const cardBorder =
+                    level === "late"
+                      ? "2px solid #EF4444"
+                      : level === "warn"
+                        ? "2px solid #F28C38"
+                        : "1px solid rgba(28,37,38,0.07)";
 
                   return (
                     <div
                       key={order.id}
-                      className="rounded-2xl p-5 bg-white flex flex-col justify-between"
+                      className="relative rounded-2xl p-5 bg-white flex flex-col justify-between"
                       style={{
-                        border: "1px solid rgba(28,37,38,0.07)",
-                        boxShadow: "0 1px 3px rgba(28,37,38,0.04)",
+                        border: cardBorder,
+                        boxShadow:
+                          level === "late"
+                            ? "0 0 0 4px rgba(239,68,68,0.12)"
+                            : "0 1px 3px rgba(28,37,38,0.04)",
                       }}
                     >
+                      {level === "late" && (
+                        // Parpadeo: el pedido olvidado se ve desde lejos.
+                        <div
+                          className="pointer-events-none absolute -inset-[2px] rounded-2xl ring-4 ring-red-500/60 animate-pulse motion-reduce:animate-none"
+                          aria-hidden
+                        />
+                      )}
                       {/* Top Header */}
                       <div className="space-y-1.5 pb-3 border-b border-gray-100">
                         <div className="flex justify-between items-center">
@@ -500,6 +637,19 @@ export default function PedidosPage() {
                             {formattedTime}
                           </span>
                         </div>
+                        {waiting && (
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-extrabold ${
+                              level === "late"
+                                ? "bg-red-600 text-white"
+                                : level === "warn"
+                                  ? "bg-[#FFF3E8] text-[#C2410C]"
+                                  : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            ⏱ {orderWaitLabel(waitMin)}
+                          </span>
+                        )}
                         <div className="flex flex-wrap gap-1">
                           {/* Canal de origen en CRISTIANO, no el enum crudo
                               (decía "CUSTOMER_WEB" en la pantalla del mesero

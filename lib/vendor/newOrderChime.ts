@@ -86,15 +86,18 @@ export function playNewOrderChime(): void {
 let titleTimer: number | null = null;
 let originalTitle: string | null = null;
 
-/** Parpadea "🔔 Pedido nuevo" en la pestaña ~15s o hasta que el dueño vuelva. */
-export function flashTabTitle(): void {
+/**
+ * Parpadea "🔔 Pedido nuevo" en la pestaña ~15s o hasta que el dueño vuelva.
+ * `text` distinto para el recordatorio de pedidos olvidados ("⏰ Pedido esperando").
+ */
+export function flashTabTitle(text = "🔔 Pedido nuevo"): void {
   if (typeof document === "undefined") return;
   if (titleTimer !== null) return; // ya parpadeando
   originalTitle = document.title;
   let on = false;
   titleTimer = window.setInterval(() => {
     on = !on;
-    document.title = on ? "🔔 Pedido nuevo" : (originalTitle ?? "Comeleal");
+    document.title = on ? text : (originalTitle ?? "Comeleal");
   }, 1000);
   const stop = () => {
     if (titleTimer !== null) {
