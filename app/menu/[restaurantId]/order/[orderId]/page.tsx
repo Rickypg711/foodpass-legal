@@ -248,13 +248,28 @@ function OrderStatusPageContent() {
             }
           },
           (err) => {
-            setOrder(null);
-            setLoadError("No pudimos cargar tu pedido. Guarda tu PIN y número de orden.");
+            // Recibo de la Caja por WhatsApp (10-sep-2026): el pedido lo creó el
+            // restaurante, no esta sesión, y las reglas no dejan leerlo desde el
+            // teléfono del cliente. El servidor da la vista de recibo (allowlist:
+            // sin PIN ni dirección) a quien tiene el link.
             mpWebDebugClient("order_listener_error", {
               restaurantId,
               orderId,
               message: err instanceof Error ? err.message : "snapshot_error",
             });
+            const qs = `restaurantId=${encodeURIComponent(restaurantId)}&orderId=${encodeURIComponent(orderId)}`;
+            fetch(`/api/order-receipt?${qs}`, { cache: "no-store" })
+              .then(async (r) => {
+                if (!r.ok) throw new Error(`receipt_${r.status}`);
+                const j = (await r.json()) as { order?: OrderDoc };
+                if (!j.order) throw new Error("receipt_empty");
+                setOrder(j.order);
+                setLoadError(null);
+              })
+              .catch(() => {
+                setOrder(null);
+                setLoadError("No pudimos cargar tu pedido. Guarda tu PIN y número de orden.");
+              });
           },
         );
 
