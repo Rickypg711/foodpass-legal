@@ -136,7 +136,8 @@ export default function DemoPreviewPage() {
   const total = cart.reduce((s, l) => s + l.unit * l.qty, 0);
   const count = cart.reduce((s, l) => s + l.qty, 0);
 
-  function addLine(item: DemoItem, selected: SelectedOptionGroup[] | null) {
+  function addLine(item: DemoItem, selected: SelectedOptionGroup[] | null, qty = 1) {
+    const n = Math.max(1, Math.floor(qty));
     if (hint === "on") {
       setHint("fading");
       setTimeout(() => setHint("off"), 650);
@@ -158,10 +159,10 @@ export default function DemoPreviewPage() {
       const i = prev.findIndex((l) => `${l.name}|${l.detail ?? ""}` === key);
       if (i >= 0) {
         const next = [...prev];
-        next[i] = { ...next[i], qty: next[i].qty + 1 };
+        next[i] = { ...next[i], qty: next[i].qty + n };
         return next;
       }
-      return [...prev, { name: item.name, detail, unit: item.price + delta, qty: 1 }];
+      return [...prev, { name: item.name, detail, unit: item.price + delta, qty: n }];
     });
   }
 
@@ -556,8 +557,8 @@ export default function DemoPreviewPage() {
           basePrice={sheetItem.price}
           groups={(sheetItem.optionGroups ?? []) as MenuItemOptionGroup[]}
           onCancel={() => setSheetItem(null)}
-          onConfirm={(selected) => {
-            addLine(sheetItem, selected);
+          onConfirm={(selected, quantity) => {
+            addLine(sheetItem, selected, quantity);
             setSheetItem(null);
           }}
         />

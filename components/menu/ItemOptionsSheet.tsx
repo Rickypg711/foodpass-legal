@@ -19,7 +19,13 @@ export type ItemOptionsSheetProps = {
   basePrice: number;
   groups: MenuItemOptionGroup[];
   onCancel: () => void;
-  onConfirm: (selected: SelectedOptionGroup[]) => void;
+  /**
+   * `quantity` = cuántos IGUALES se agregan de un jalón (el "− 1 +" de la hoja).
+   * Nació el 10-sep-2026 con La Familia: 3 toritos de campechano eran abrir la
+   * hoja 3 veces. Quien use la hoja TIENE que respetarlo (candado en
+   * validate-cart-options): si lo ignora, el cliente pide 3 y le llega 1.
+   */
+  onConfirm: (selected: SelectedOptionGroup[], quantity: number) => void;
   /**
    * Solo en la Caja: prende/apaga una opción ("agotado hoy") desde la misma hoja
    * con la que el cajero ordena. El menú del cliente NO lo pasa: ahí la opción
@@ -27,6 +33,9 @@ export type ItemOptionsSheetProps = {
    */
   onToggleAvailability?: (groupId: string, optionId: string, available: boolean) => void;
 };
+
+/** Tope del "− 1 +": más que esto es un pedido de evento, no un toque de más. */
+const MAX_QTY = 99;
 
 export function ItemOptionsSheet({
   open,
@@ -40,6 +49,8 @@ export function ItemOptionsSheet({
   const [picked, setPicked] = useState<Record<string, string[]>>({});
   /** Modo "marcar agotados": tocar una opción la apaga o la prende en vez de elegirla. */
   const [marcando, setMarcando] = useState(false);
+  /** Cuántos iguales: 3 toritos de campechano en un solo toque. */
+  const [qty, setQty] = useState(1);
 
   const delta = useMemo(() => {
     let d = 0;
@@ -83,8 +94,9 @@ export function ItemOptionsSheet({
           .map((o) => ({ id: o.id, name: o.name, priceDelta: o.priceDelta })),
       }))
       .filter((g) => g.options.length > 0);
-    onConfirm(selected);
+    onConfirm(selected, qty);
     setPicked({});
+    setQty(1);
   }
 
   return (
@@ -186,29 +198,60 @@ export function ItemOptionsSheet({
           );
         })}
 
-        <div className="sticky bottom-0 -mx-5 mt-2 flex gap-2 border-t border-black/5 bg-white px-5 pb-1 pt-3">
-          <button
-            type="button"
-            onClick={() => {
-              setPicked({});
-              onCancel();
-            }}
-            className="rounded-xl border border-[#1C2526]/12 px-4 py-3 text-sm font-semibold text-[#1C2526]/70 transition-colors hover:bg-[#FAF7F2]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={confirm}
-            disabled={faltantes.length > 0 || sinOpciones.length > 0 || marcando}
-            className="flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {sinOpciones.length > 0
-              ? `Sin ${sinOpciones[0]!.name.toLowerCase()} hoy`
-              : faltantes.length > 0
-                ? `Elige ${faltantes[0]!.name.toLowerCase()}`
-                : `Agregar — ${formatPrice(basePrice + delta)}`}
-          </button>
+        <div className="sticky bottom-0 -mx-5 mt-2 border-t border-black/5 bg-white px-5 pb-1 pt-3">
+          {!marcando && (
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-[#1C2526]/70">¿Cuántos?</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Uno menos"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  className="h-10 w-10 rounded-full border border-[#1C2526]/15 text-lg font-bold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] disabled:opacity-30"
+                >
+                  −
+                </button>
+                <span className="w-7 text-center text-base font-bold tabular-nums text-[#1C2526]" aria-live="polite">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Uno más"
+                  onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+                  disabled={qty >= MAX_QTY}
+                  className="h-10 w-10 rounded-full border border-[#1C2526]/15 text-lg font-bold text-[#1C2526] transition-colors hover:bg-[#FAF7F2] disabled:opacity-30"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setPicked({});
+                setQty(1);
+                onCancel();
+              }}
+              className="rounded-xl border border-[#1C2526]/12 px-4 py-3 text-sm font-semibold text-[#1C2526]/70 transition-colors hover:bg-[#FAF7F2]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirm}
+              disabled={faltantes.length > 0 || sinOpciones.length > 0 || marcando}
+              className="flex-1 rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {sinOpciones.length > 0
+                ? `Sin ${sinOpciones[0]!.name.toLowerCase()} hoy`
+                : faltantes.length > 0
+                  ? `Elige ${faltantes[0]!.name.toLowerCase()}`
+                  : `Agregar${qty > 1 ? ` ${qty}` : ""} — ${formatPrice((basePrice + delta) * qty)}`}
+            </button>
+          </div>
         </div>
       </div>
     </div>

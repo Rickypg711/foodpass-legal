@@ -339,6 +339,40 @@ check("el editor reparte ANTES de recargar la lista (onChanged)",
   editorPageSrc.indexOf("applyOptionAvailabilityChangesToMenu(") > 0 &&
   editorPageSrc.indexOf("applyOptionAvailabilityChangesToMenu(") < editorPageSrc.indexOf("await onChanged();"), true);
 
+// ------------------------------------------- "¿Cuántos?" en la hoja
+// 10-sep-2026, La Familia: 3 toritos de campechano eran abrir la hoja 3 veces.
+// La hoja manda onConfirm(selected, qty). CADA pantalla que la usa tiene que
+// recibir y respetar la cantidad: si una la ignora, el cliente pide 3 y le llega 1.
+{
+  const { execSync } = await import("node:child_process");
+  const root = new URL("..", import.meta.url).pathname;
+  const sheetSrc = readFileSync(new URL("../components/menu/ItemOptionsSheet.tsx", import.meta.url), "utf8");
+  check("la hoja manda la cantidad al confirmar", sheetSrc.includes("onConfirm(selected, qty)"), true);
+  check("la hoja no baja de 1", sheetSrc.includes("Math.max(1, q - 1)"), true);
+  check("el boton dice cuántos y el total", sheetSrc.includes("formatPrice((basePrice + delta) * qty)"), true);
+
+  let usuarios = [];
+  try {
+    usuarios = execSync(`grep -rl "<ItemOptionsSheet" --include='*.tsx' app components`, { cwd: root, encoding: "utf8" })
+      .trim().split("\n").filter(Boolean);
+  } catch { usuarios = []; }
+  check("hay 3 pantallas con la hoja (Caja, menu, demo) — si cambia, revisar", usuarios.length, 3);
+  for (const f of usuarios) {
+    const src = readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
+    const bloque = src.slice(src.indexOf("<ItemOptionsSheet"), src.indexOf("<ItemOptionsSheet") + 900);
+    check(`${f}: su onConfirm recibe la cantidad`, /onConfirm=\{\(selected[^,)]*,\s*quantity/.test(bloque), true);
+  }
+  const posSrcQ = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
+  check("Caja: pushLine recibe la cantidad", posSrcQ.includes("pushLine(optionsFor.item, selected, quantity)"), true);
+  const menuSrc = readFileSync(new URL("../app/menu/[restaurantId]/MenuView.tsx", import.meta.url), "utf8");
+  check("menu del cliente: addItem recibe la cantidad", /selectedOptions: selected,\s*\},\s*quantity,/.test(menuSrc), true);
+  const demoSrc = readFileSync(new URL("../app/demo/[jobId]/page.tsx", import.meta.url), "utf8");
+  check("demo: addLine recibe la cantidad", demoSrc.includes("addLine(sheetItem, selected, quantity)"), true);
+  const cartSrc = readFileSync(new URL("../lib/cart/CartProvider.tsx", import.meta.url), "utf8");
+  check("CartProvider.addItem acepta cantidad (default 1)", cartSrc.includes('"lineId">, quantity = 1) =>'), true);
+  check("CartProvider: linea nueva nace con la cantidad y su subtotal", cartSrc.includes("quantity: n,") && cartSrc.includes("subtotal: unitPrice * n,"), true);
+}
+
 // La Caja lo usa de verdad: un toque guarda en lote, no platillo por platillo.
 const posSrc = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
 check("la Caja web aplica el agotado a todo el menu", posSrc.includes("applyOptionAvailabilityToMenu("), true);

@@ -320,3 +320,21 @@ dueño tenía que pedírselo a alguien. Un puesto se queda sin una carne todos l
 
 **Lo que NO hace:** no apaga sola al llegar la noche ni avisa; no toca `isAvailable` del
 platillo (ese sigue siendo el apagador del platillo completo).
+
+## "¿Cuántos?" en la hoja + varias carnes — 10 sep 2026
+
+**El caso.** Lo primero que dijo La Familia en la Caja de escritorio: "tienen que poder agregar más
+de uno aquí". Dos cosas: (1) 3 toritos de campechano eran abrir la hoja 3 veces; (2) una orden con
+dos carnes (2 de suadero y 2 de asada) no se podía, porque "Carne" era de una sola opción.
+
+- **Cantidad (código, web + app).** La hoja trae "¿Cuántos? − 1 +" arriba del botón, que dice
+  "Agregar 3 — $225". `ItemOptionsSheet.onConfirm(selected, quantity)`; lo respetan los TRES que la
+  usan: Caja (`pushLine(..., quantity)`), menú del cliente (`addItem(item, quantity)` en
+  `CartProvider`) y `/demo` (`addLine(..., qty)`). App: `showPosItemOptionsSheet` devuelve
+  `({elegido, cantidad})` y `_pushCartLine(..., cantidad:)`. Tope 99. Si la línea ya existe (misma
+  combinación), suma la cantidad a la línea. Candados: `validate-cart-options.mjs` (fuente de los
+  tres consumidores + `CartProvider`) y `test/pos/pos_item_options_sheet_test.dart`.
+- **Varias carnes (DATOS, sin código).** La hoja ya soportaba `max > 1` ("Hasta N", toca y
+  destoca; en la app `isMultiple = max > 1`). A La Familia se le puso `max: 3` en el grupo "Carne"
+  de los 6 platillos. El dueño lo cambia solo en el editor (campo "Hasta"). La cocina recibe
+  "Carne: Suadero, Bistec (carne asada)".

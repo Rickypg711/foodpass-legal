@@ -1252,15 +1252,18 @@ function PublicMenuPageWithOrdering({
           basePrice={pendingItem?.price ?? 0}
           groups={pendingItem?.groups ?? []}
           onCancel={() => setPendingItem(null)}
-          onConfirm={(selected: SelectedOptionGroup[]) => {
+          onConfirm={(selected: SelectedOptionGroup[], quantity: number) => {
             if (!pendingItem) return;
-            addItem({
-              menuItemId: pendingItem.id,
-              name: pendingItem.name,
-              price: pendingItem.price,
-              imageUrl: pendingItem.imageUrl,
-              selectedOptions: selected,
-            });
+            addItem(
+              {
+                menuItemId: pendingItem.id,
+                name: pendingItem.name,
+                price: pendingItem.price,
+                imageUrl: pendingItem.imageUrl,
+                selectedOptions: selected,
+              },
+              quantity,
+            );
             setPendingItem(null);
           }}
       />

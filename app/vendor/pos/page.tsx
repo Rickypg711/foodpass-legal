@@ -1217,21 +1217,23 @@ export default function PosPage() {
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
 
-  function pushLine(item: MenuItem, selected: SelectedOptionGroup[] | null) {
+  /** `quantity` viene del "− 1 +" de la hoja de opciones (3 toritos de un jalón). */
+  function pushLine(item: MenuItem, selected: SelectedOptionGroup[] | null, quantity = 1) {
     const lineId = buildLineId(item.id, selected);
     const unitPrice = item.price + optionsPriceDelta(selected);
+    const n = Math.max(1, Math.floor(quantity));
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.lineId === lineId);
       if (idx >= 0) {
         return prev.map((c, i) =>
-          i === idx ? { ...c, quantity: c.quantity + 1 } : c
+          i === idx ? { ...c, quantity: c.quantity + n } : c
         );
       }
       return [
         ...prev,
         {
           menuItem: item,
-          quantity: 1,
+          quantity: n,
           lineId,
           unitPrice,
           ...(selected && selected.length > 0 ? { selectedOptions: selected } : {}),
@@ -2002,8 +2004,8 @@ export default function PosPage() {
         basePrice={optionsFor?.item.price ?? 0}
         groups={optionsFor?.groups ?? []}
         onCancel={() => setOptionsFor(null)}
-        onConfirm={(selected) => {
-          if (optionsFor) pushLine(optionsFor.item, selected);
+        onConfirm={(selected, quantity) => {
+          if (optionsFor) pushLine(optionsFor.item, selected, quantity);
           setOptionsFor(null);
         }}
         onToggleAvailability={toggleOptionAvailability}

@@ -28,7 +28,8 @@ type CartContextValue = {
   subtotal: number;
   /** True after client has loaded cart from sessionStorage. */
   cartReady: boolean;
-  addItem: (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">) => void;
+  /** `quantity` (default 1) = el "− 1 +" de la hoja de opciones: 3 toritos de un jalón. */
+  addItem: (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">, quantity?: number) => void;
   incrementLine: (lineId: string) => void;
   decrementLine: (lineId: string) => void;
   updateLineQuantity: (lineId: string, quantity: number) => void;
@@ -94,7 +95,7 @@ export function CartProvider({
   }, [restaurantId, lines, cartReady]);
 
   const addItem = useCallback(
-    (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">) => {
+    (item: Omit<CartLine, "quantity" | "subtotal" | "lineId">, quantity = 1) => {
       if (!webOrderingAvailable) {
         mpWebDebugClient("cart_add_blocked_mp_unavailable", { restaurantId });
         return;
@@ -102,13 +103,15 @@ export function CartProvider({
       // El precio de la línea ya trae el sobreprecio de lo elegido.
       const unitPrice = item.price + optionsPriceDelta(item.selectedOptions);
       const lineId = buildLineId(item.menuItemId, item.selectedOptions);
+      // Cuántos iguales (el "− 1 +" de la hoja); nunca menos de 1 ni fracciones.
+      const n = Math.max(1, Math.floor(quantity));
       setLines((prev) => {
         const idx = prev.findIndex((l) => l.lineId === lineId);
         let next: CartLine[];
-        let addedQty = 1;
+        let addedQty = n;
         if (idx >= 0) {
           const line = prev[idx]!;
-          const qty = line.quantity + 1;
+          const qty = line.quantity + n;
           addedQty = qty;
           next = [...prev];
           next[idx] = {
@@ -123,8 +126,8 @@ export function CartProvider({
               ...item,
               lineId,
               price: unitPrice,
-              quantity: 1,
-              subtotal: unitPrice,
+              quantity: n,
+              subtotal: unitPrice * n,
             },
           ];
         }
