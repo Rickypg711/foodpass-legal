@@ -389,6 +389,7 @@ function CheckoutDialog({
   loyaltyLive = true,
   restaurantData = null,
   tableTabsLocked = false,
+  onTabsLocked,
 }: {
   total: number;
   cartLines: { price: number; quantity: number; categoryName?: string }[];
@@ -417,8 +418,28 @@ function CheckoutDialog({
   restaurantData?: Record<string, unknown> | null;
   /** Pared 3 (8-sep): abrir cuentas de mesa es Pro — el botón lo dice antes. */
   tableTabsLocked?: boolean;
+  /**
+   * Pared 3 (10-sep): con la reja cerrada, tocar "Cuenta abierta" abre la pared
+   * AL MOMENTO. Antes el modo se elegía, el botón pedía nombre y quedaba gris sin
+   * decir por qué: la pared solo salía después de teclear un nombre, así que el
+   * dueño free nunca la veía ("la puerta no abre", La Familia). Espejo de la app,
+   * donde "Cobrar después" pide la pared al tocarlo.
+   */
+  onTabsLocked?: () => void;
 }) {
   const [mode, setMode] = useState<CheckoutMode>("now");
+  /** Tocó "Cuenta abierta" con la reja cerrada: si la abre (prueba/Pro), se pasa sola a ese modo. */
+  const [quiereCuenta, setQuiereCuenta] = useState(false);
+  // Ajuste DURANTE el render (el patrón de React para "cuando cambia una prop"),
+  // no un efecto: setState dentro de useEffect provoca renders en cascada.
+  const [lockedAntes, setLockedAntes] = useState(tableTabsLocked);
+  if (lockedAntes !== tableTabsLocked) {
+    setLockedAntes(tableTabsLocked);
+    if (!tableTabsLocked && quiereCuenta) {
+      setQuiereCuenta(false);
+      setMode("tab");
+    }
+  }
   const [method, setMethod] = useState<PaymentMethod>(paymentOptions[0]?.key ?? "cash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -513,7 +534,15 @@ function CheckoutDialog({
               ] as { key: CheckoutMode; emoji: string; label: string; sub: string }[]).map((opt) => (
                 <button
                   key={opt.key}
-                  onClick={() => setMode(opt.key)}
+                  onClick={() => {
+                    // Reja cerrada: la pared sale AL TOCAR, no después de teclear un nombre.
+                    if (opt.key === "tab" && tableTabsLocked && onTabsLocked) {
+                      setQuiereCuenta(true);
+                      onTabsLocked();
+                      return;
+                    }
+                    setMode(opt.key);
+                  }}
                   className="flex flex-col items-center gap-1.5 rounded-2xl p-4 transition-all"
                   style={
                     mode === opt.key
@@ -752,6 +781,9 @@ function CheckoutDialog({
               isRedeemOnly
                 ? (redemption ? "Entregar premio ✓" : "Elige un premio para canjear ↑")
                 : `Cobrar ${fmt(grandTotal)}`
+            ) : !name.trim() ? (
+              // Gris callado se leía como "no sirve": se dice qué falta.
+              "Escribe el nombre de la cuenta ↑"
             ) : (
               `Abrir cuenta — ${fmt(effTotal)}`
             )}
@@ -2029,6 +2061,12 @@ export default function PosPage() {
           processing={processing}
           canAssignDiscount={vendorRole === "owner"}
           tableTabsLocked={!ents.tableTabsAccess}
+          onTabsLocked={() => {
+            // La pared sale al tocar "Cuenta abierta"; si se abre, el modal pasa
+            // solo a ese modo y el dueño teclea el nombre. Nada que repetir.
+            pendingAction.current = null;
+            setWallOpen(true);
+          }}
         />
       )}
 

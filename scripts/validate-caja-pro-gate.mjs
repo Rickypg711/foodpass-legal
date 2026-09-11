@@ -228,6 +228,18 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   const pos = read("../app/vendor/pos/page.tsx");
   const closeFn = pos.slice(pos.indexOf("async function closeTabGroup"), pos.indexOf("async function voidTabGroup"));
   check("caja: cerrar cuenta no consulta tableTabsAccess", closeFn.includes("tableTabsAccess"), false);
+  // 10-sep (La Familia, free): con la reja cerrada, "Cuenta abierta" abre la pared
+  // AL TOCARLA. Antes el botón pedía nombre, quedaba gris sin decir por qué y la
+  // pared nunca salía: "la puerta no abre". Espejo de la app (_onChargeLater pide
+  // la pared antes que nada).
+  const cajaSrc = read("../app/vendor/pos/page.tsx");
+  check("caja: tocar 'Cuenta abierta' con reja cerrada abre la pared",
+    cajaSrc.includes('opt.key === "tab" && tableTabsLocked && onTabsLocked'), true);
+  check("caja: la página pasa onTabsLocked y abre la pared",
+    /onTabsLocked=\{\(\) => \{[^}]*setWallOpen\(true\)/.test(cajaSrc), true);
+  check("caja: si la reja se abre, pasa sola a 'Cuenta abierta'", cajaSrc.includes('setMode("tab")'), true);
+  check("caja: el botón dice qué falta en vez de quedarse gris callado",
+    cajaSrc.includes("Escribe el nombre de la cuenta ↑"), true);
 }
 
 // ── 10. Paridad con la app: los CUATRO nombres existen en el Dart ──
