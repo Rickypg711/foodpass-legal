@@ -298,6 +298,14 @@ dueño tenía que pedírselo a alguien. Un puesto se queda sin una carne todos l
   **"Marcar agotados"**. Tocas la opción y se apaga (tachada, "Agotado hoy") o se prende. Se
   guarda al momento en `optionGroups` del platillo; no hay "guardar". El dueño lo hace solo,
   a media venta, sin salir de la Caja.
+- **En TODO el menú de un toque (10-sep-2026).** La Familia tiene "Bistec (carne asada)" en 6
+  platillos; marcarla agotada uno por uno eran 6 vueltas. Ahora apagar (o prender) una opción
+  en un platillo la cambia en **todos los que traen el mismo grupo y la misma opción (por id)**.
+  Una opción con el mismo id en OTRO grupo (p. ej. "Extras: Bistec +$20") no se toca. La Caja
+  pinta al instante lo que ya tiene cargado y guarda leyendo el menú COMPLETO de Firestore
+  (también los platillos apagados, que la Caja no carga), en un solo lote y en fila (apagar y
+  prender rápido no llega al revés). Helper puro `applyOptionAvailabilityToMenu` (web) y su
+  espejo en Dart; candados en los mismos dos archivos de abajo.
 - **Menú del cliente:** la opción apagada se ve tachada con "Agotado hoy" y no se puede elegir.
   Si un grupo obligatorio queda TODO agotado, el botón dice "Sin carne hoy" y no deja agregar.
 - **Editor (`/vendor/menu`):** casilla "Agotado" por opción, por si lo prefiere desde ahí.

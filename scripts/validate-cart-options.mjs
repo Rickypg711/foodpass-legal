@@ -30,6 +30,7 @@ import {
   isOptionAvailable,
   groupHasAvailableOption,
   setOptionAvailability,
+  applyOptionAvailabilityToMenu,
 } from "../lib/menu/optionGroups.ts";
 
 let failed = 0;
@@ -210,7 +211,6 @@ check(
 );
 check("el grupo se sigue renderizando con key={g.id}", editorSrc.includes("key={g.id}"), true);
 
-if (failed) process.exit(1);
 // ── El TAMANO es la unica eleccion obligatoria QUE CUESTA ──────────────────
 // Una pizza sin tamano no es un pedido. Sin esto, "Elige tu tamano: Personal,
 // Grande +$90" quedaba opcional. Espejo del test de Dart.
@@ -253,4 +253,52 @@ if (failed) process.exit(1);
   check("un grupo que no existe se deja igual", setOptionAvailability(carne, "salsa", "x", false), carne);
 }
 
+// ------------------------------------------- agotado hoy en TODO el menu
+// 10-sep-2026: La Familia tiene "Bistec (carne asada)" en 6 platillos. Marcarla
+// agotada platillo por platillo eran 6 vueltas a media venta; ahora un toque la
+// apaga (o prende) en cada platillo que la trae. Espejo del test de Dart.
+{
+  const carne = () => [{
+    id: "carne", name: "Carne", required: true, min: 1, max: 1,
+    options: [
+      { id: "suadero", name: "Suadero", priceDelta: 0 },
+      { id: "bistec", name: "Bistec (carne asada)", priceDelta: 0 },
+    ],
+  }];
+  // Mismo id de opcion ("bistec") en OTRO grupo: no se debe tocar.
+  const extras = [{
+    id: "extras", name: "Extras", required: false, min: 0, max: 1,
+    options: [
+      { id: "bistec", name: "Bistec", priceDelta: 20 },
+      { id: "queso", name: "Queso", priceDelta: 15 },
+    ],
+  }];
+  const menu = [
+    { id: "tacos", groups: carne() },
+    { id: "torta", groups: carne() },
+    { id: "coca", groups: [] },
+    { id: "nachos", groups: extras },
+  ];
+  const apagar = applyOptionAvailabilityToMenu(menu, "carne", "bistec", false);
+  check("apaga en TODOS los platillos que la traen, y solo en esos", apagar.map((c) => c.id), ["tacos", "torta"]);
+  check("cada uno queda con available:false", apagar.every((c) => c.groups[0].options[1].available === false), true);
+  check("es pura: el menu original no cambia", menu[0].groups[0].options[1].available, undefined);
+  const medio = [
+    { id: "tacos", groups: setOptionAvailability(menu[0].groups, "carne", "bistec", false) },
+    menu[1], menu[2], menu[3],
+  ];
+  check("solo regresa los que CAMBIAN", applyOptionAvailabilityToMenu(medio, "carne", "bistec", false).map((c) => c.id), ["torta"]);
+  const prender = applyOptionAvailabilityToMenu(medio, "carne", "bistec", true);
+  check("prender regresa los apagados", prender.map((c) => c.id), ["tacos"]);
+  check("prender QUITA el campo", "available" in prender[0].groups[0].options[1], false);
+}
+
+// La Caja lo usa de verdad: un toque guarda en lote, no platillo por platillo.
+const posSrc = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
+check("la Caja web aplica el agotado a todo el menu", posSrc.includes("applyOptionAvailabilityToMenu("), true);
+check("la Caja web guarda en un lote (writeBatch)", posSrc.includes("writeBatch(db)"), true);
+
+// Al FINAL: antes el exit vivia a media hoja y los checks de tamano y de agotado
+// podian fallar sin tumbar el candado.
+if (failed) process.exit(1);
 console.log("validate-cart-options: OK");

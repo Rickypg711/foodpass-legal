@@ -95,7 +95,7 @@ export function ItemOptionsSheet({
             <h3 className="text-lg font-bold text-[#1C2526]">{itemName}</h3>
             <p className="text-sm text-[#1C2526]/50">
               {marcando
-                ? "Toca una opción para apagarla o prenderla. Se guarda al momento."
+                ? "Toca una opción para apagarla o prenderla en todos los platillos que la llevan. Se guarda al momento."
                 : "Elige cómo lo quieres"}
             </p>
           </div>

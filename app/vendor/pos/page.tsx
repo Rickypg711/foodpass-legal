@@ -14,9 +14,9 @@ import {
   doc,
   getDoc,
   runTransaction,
-  updateDoc,
   deleteField,
   setDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
@@ -48,6 +48,7 @@ import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 import {
   resolveOptionGroups,
   setOptionAvailability,
+  applyOptionAvailabilityToMenu,
   type MenuItemOptionGroup,
 } from "@/lib/menu/optionGroups";
 import { buildLineId, optionsPriceDelta, describeSelectedOptions } from "@/lib/cart/lineId";
@@ -1241,24 +1242,58 @@ export default function PosPage() {
 
   /**
    * "Marcar agotados" desde la hoja de opciones: el cajero apaga o prende una
-   * opción (se quedaron sin asada) sin borrarla del menú ni salir de la Caja.
-   * Se guarda en `optionGroups` del platillo al momento; si el grupo venía del
-   * parser de la descripción, este guardado lo vuelve la verdad (igual que el
-   * editor). El menú del cliente la pinta tachada en el siguiente refresh.
+   * opción (se quedaron sin asada) sin borrarla del menú ni salir de la Caja, y
+   * se aplica en TODOS los platillos que traen esa opción (10-sep-2026: La
+   * Familia tiene la asada en 6 platillos; eran 6 vueltas a media venta).
+   * Se guarda en `optionGroups` al momento; si el grupo venía del parser de la
+   * descripción, este guardado lo vuelve la verdad (igual que el editor). El
+   * menú del cliente la pinta tachada en el siguiente refresh.
    */
-  async function toggleOptionAvailability(groupId: string, optionId: string, available: boolean) {
+  const agotadosEnFila = useRef<Promise<void>>(Promise.resolve());
+  function toggleOptionAvailability(groupId: string, optionId: string, available: boolean) {
     if (!optionsFor || !restaurantId) return;
     const itemId = optionsFor.item.id;
-    const next = setOptionAvailability(optionsFor.groups, groupId, optionId, available);
+    const tocado = optionsFor.groups;
+    const next = setOptionAvailability(tocado, groupId, optionId, available);
     setOptionsFor({ item: { ...optionsFor.item, optionGroups: next }, groups: next });
-    setMenuItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, optionGroups: next } : i)));
-    try {
-      await updateDoc(doc(getFirebaseDb(), "restaurants", restaurantId, "menu", itemId), {
-        optionGroups: next,
-      });
-    } catch {
-      // Sin red: el siguiente toque lo reintenta y la recarga del menú manda.
-    }
+    // En pantalla al instante: los platillos que la Caja ya tiene cargados.
+    const locales = new Map(
+      applyOptionAvailabilityToMenu(
+        menuItems.map((i) => ({ id: i.id, groups: i.id === itemId ? tocado : resolveOptionGroups(i) })),
+        groupId,
+        optionId,
+        available,
+      ).map((c) => [c.id, c.groups]),
+    );
+    setMenuItems((prev) =>
+      prev.map((i) => {
+        const g = locales.get(i.id);
+        return g ? { ...i, optionGroups: g } : i;
+      }),
+    );
+    // En Firestore: en fila (apagar y prender rápido no debe llegar al revés) y
+    // leyendo el menú COMPLETO — también los platillos apagados, que la Caja no
+    // carga — para no pisar lo que otro teléfono editó. Un solo lote.
+    const rid = restaurantId;
+    agotadosEnFila.current = agotadosEnFila.current.then(async () => {
+      try {
+        const db = getFirebaseDb();
+        const menuRef = collection(db, "restaurants", rid, "menu");
+        const snap = await getDocs(menuRef);
+        const cambios = applyOptionAvailabilityToMenu(
+          snap.docs.map((d) => ({ id: d.id, groups: resolveOptionGroups(d.data()) })),
+          groupId,
+          optionId,
+          available,
+        );
+        if (cambios.length === 0) return;
+        const lote = writeBatch(db);
+        for (const c of cambios) lote.update(doc(menuRef, c.id), { optionGroups: c.groups });
+        await lote.commit();
+      } catch {
+        // Sin red: el siguiente toque lo reintenta y la recarga del menú manda.
+      }
+    });
   }
 
   /** El "+" del POS. Con opciones abre la hoja; sin opciones agrega directo

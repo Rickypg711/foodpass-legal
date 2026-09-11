@@ -182,3 +182,25 @@ export function setOptionAvailability(
     };
   });
 }
+
+/**
+ * "Agotado hoy" en TODO el menú de un jalón: cada platillo que trae la misma opción
+ * (mismo grupo y misma opción, por id) se apaga o se prende junto. Pura: recibe los
+ * grupos ya resueltos de cada platillo y devuelve SOLO los que cambian, con sus grupos
+ * nuevos. Nació el 10-sep-2026: La Familia tiene "Bistec (carne asada)" en 6 platillos
+ * y marcarla agotada platillo por platillo eran 6 vueltas a media venta.
+ */
+export function applyOptionAvailabilityToMenu(
+  items: { id: string; groups: MenuItemOptionGroup[] }[],
+  groupId: string,
+  optionId: string,
+  available: boolean,
+): { id: string; groups: MenuItemOptionGroup[] }[] {
+  const changed: { id: string; groups: MenuItemOptionGroup[] }[] = [];
+  for (const item of items) {
+    const opt = item.groups.find((g) => g.id === groupId)?.options.find((o) => o.id === optionId);
+    if (!opt || isOptionAvailable(opt) === available) continue;
+    changed.push({ id: item.id, groups: setOptionAvailability(item.groups, groupId, optionId, available) });
+  }
+  return changed;
+}
