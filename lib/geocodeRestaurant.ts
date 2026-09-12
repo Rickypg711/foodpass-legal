@@ -31,6 +31,8 @@
  * functions/geo/locality.js (regla de paridad): locality → postal_town →
  * municipio (administrative_area_level_2); estado = level_1 largo; país corto.
  */
+import {DO_AREA_CODES} from './phone/phoneCountry.ts';
+
 export type PlaceLocality = {city: string | null; state: string | null; countryCode: string | null};
 
 export type AddressComponent = {types?: string[]; long_name?: string; short_name?: string};
@@ -195,11 +197,42 @@ export function expectedCountryFromPhone(phone: string): string | null {
     if (digits.startsWith('502')) return 'GT';
     if (digits.startsWith('57')) return 'CO';
     if (digits.startsWith('52')) return 'MX';
-    if (digits.startsWith('1')) return 'US';
+    // El +1 no es un país, es el NANP: 809/829/849 son República Dominicana.
+    // Antes TODO +1 se daba por Estados Unidos, así que al dominicano que
+    // escribiera su número con "+" también se le caía el pin.
+    if (digits.startsWith('1')) {
+      return DO_AREA_CODES.includes(digits.slice(1, 4)) ? 'DO' : 'US';
+    }
     return null;
   }
-  if (digits.length === 10) return 'MX';
+  // 10 dígitos pelones: México es lo más probable, y la guarda de país es lo
+  // único que atrapa a Brasil y a California. PERO si esos 10 empiezan con
+  // lada dominicana, "México" es una MENTIRA — y una guarda que miente
+  // rechaza direcciones BUENAS para siempre (Central Fast Food, del 5 al
+  // 12-sep: "pais_no_coincide (tel MX, Google DO)"). Ahí preferimos no
+  // opinar: sin país esperado la guarda no corre. Es peor que acertar, y
+  // muchísimo mejor que dejar al dueño sin pin haga lo que haga.
+  if (digits.length === 10) {
+    return DO_AREA_CODES.includes(digits.slice(0, 3)) ? null : 'MX';
+  }
   return null;
+}
+
+/**
+ * El país esperado de verdad: lo que el dueño ELIGIÓ en Configuración, y sólo
+ * si no hay nada elegido, la corazonada del teléfono.
+ *
+ * Por qué existe (12-sep-2026): Zahir llevaba días con "🇩🇴 República
+ * Dominicana" guardado en su restaurante y el geocoder seguía preguntándole al
+ * número, que no sabe. Guardó su dirección real y se la rechazamos igual.
+ */
+export function expectedCountryFor(args: {
+  country?: string | null;
+  phone?: string | null;
+}): string | null {
+  const chosen = String(args.country || '').trim().toUpperCase();
+  if (/^[A-Z]{2}$/.test(chosen)) return chosen;
+  return expectedCountryFromPhone(String(args.phone || ''));
 }
 
 function countryOfResult(result: {

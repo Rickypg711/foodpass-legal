@@ -35,7 +35,7 @@ import { canAddPosStaff, parsePosStaff, type PosStaffMember, type PosStaffRole }
 import { PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP } from "@/lib/contactEmail";
 import { isUsableSlug, slugFromRestaurantData, slugify } from "@/lib/slug";
 import type { User } from "firebase/auth";
-import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, PHONE_COUNTRIES, isoCountryOf, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
 import { defaultSpendStepForCurrency, earnRuleLine, newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 
@@ -536,13 +536,23 @@ export default function ConfiguracionPage() {
       //
       // Sólo se dispara si la dirección REALMENTE cambió, para no gastar
       // llamadas a Google en cada guardado de horario o de meta diaria.
+      // Y TAMBIÉN cuando el pin sigue sin resolverse (12-sep-2026): el aviso
+      // amarillo le dice al dueño "guarda otra vez", pero si su dirección ya
+      // estaba bien escrita el texto no cambia, así que no se reintentaba nada
+      // y el consejo era mentira. Zahir guardó tres veces con la dirección
+      // correcta y su pin siguió en 0,0.
       const addressChanged = address.trim() !== (initialAddressRef.current ?? "").trim();
-      if (addressChanged) {
+      if (addressChanged || locationUnresolved) {
         try {
           const geoRes = await fetch("/api/geocode", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ address: address.trim(), phone: phone.trim() }),
+            body: JSON.stringify({
+              address: address.trim(),
+              phone: phone.trim(),
+              // El país que eligió el dueño, no el que adivine su número.
+              country: isoCountryOf({ phoneCountryCode: phoneCountry, currencyCode: currency }),
+            }),
           });
           const verdict = await geoRes.json();
           setLocationUnresolved(!verdict?.ok);

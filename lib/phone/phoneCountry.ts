@@ -21,20 +21,31 @@ export type PhoneCountry = {
   flag: string;
   /** Ejemplo local de 10 dígitos para el placeholder. */
   example: string;
+  /**
+   * País ISO-3166 alfa-2 — el mismo idioma que habla Google Maps.
+   *
+   * Nació el 12-sep-2026 con Zahir otra vez: la guarda de país del geocoder
+   * adivinaba "10 dígitos pelones = México", así que su dirección real de Las
+   * Matas de Farfán volvía de Google como DO, no coincidía, y su pin se quedó
+   * en 0,0 con el motivo "pais_no_coincide (tel MX, Google DO)" — aunque él ya
+   * había elegido República Dominicana en Configuración. El país que el dueño
+   * ELIGIÓ manda sobre cualquier corazonada sacada del número.
+   */
+  iso: string;
   /** Moneda del país (ISO 4217). El paso de puntos sale de aquí (earnPolicy.ts). */
   currency: string;
 };
 
 /** Sólo países con número nacional de 10 dígitos (ver nota arriba). */
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
-  { code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567", currency: "MXN" },
-  { code: "1", label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP" },
-  { code: "1", label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD" },
-  { code: "57", label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP" },
+  { code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567", currency: "MXN", iso: "MX" },
+  { code: "1", label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP", iso: "DO" },
+  { code: "1", label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD", iso: "US" },
+  { code: "57", label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP", iso: "CO" },
 ] as const;
 
 /** Ladas de República Dominicana dentro del +1 (NANP). */
-const DO_AREA_CODES = ["809", "829", "849"];
+export const DO_AREA_CODES = ["809", "829", "849"];
 
 /**
  * La entrada del selector que corresponde a un restaurante: por código de
@@ -119,4 +130,31 @@ export function formatPhoneForDisplay(raw: string, countryCode: string = DEFAULT
   const p = phoneLast10(raw);
   if (p.length !== 10) return raw;
   return `+${countryCode} ${p.slice(0, 3)} ${p.slice(3, 6)} ${p.slice(6)}`;
+}
+
+/**
+ * País ISO del restaurante, para hablarle a Google Maps.
+ *
+ * Lee lo que el dueño ELIGIÓ en Configuración (`phoneCountryCode` +
+ * `currencyCode`), que es la única verdad; el +1 se desempata con la moneda,
+ * igual que en el selector. Sin datos, México — el default de siempre.
+ */
+export function isoCountryOf(
+  data: { phoneCountryCode?: unknown; currencyCode?: unknown } | Record<string, unknown> | null | undefined,
+): string {
+  return phoneCountryEntryOf(data).iso;
+}
+
+/**
+ * País ISO de un número que el dueño escribió con "+" (ej. "+1 809 952 4637").
+ * Sin "+" devuelve null: 10 dígitos pelones NO dicen el país y adivinar fue
+ * justo el error que dejó a Central Fast Food sin pin.
+ */
+export function isoFromTypedPhone(raw: string): string | null {
+  const code = countryFromTypedPhone(raw);
+  if (!code) return null;
+  if (code === "1") {
+    return DO_AREA_CODES.includes(phoneLast10(raw).slice(0, 3)) ? "DO" : "US";
+  }
+  return PHONE_COUNTRIES.find((c) => c.code === code)?.iso ?? null;
 }

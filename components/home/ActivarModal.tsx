@@ -38,7 +38,7 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
-import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone } from "@/lib/phone/phoneCountry";
 import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -386,7 +386,13 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         const geoRes = await fetch("/api/geocode", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: address.trim(), phone: phone10 }),
+          body: JSON.stringify({
+            address: address.trim(),
+            phone: phone10,
+            // Si escribió su número con "+", ahí viene su país de verdad
+            // (12-sep-2026). Sin "+" va null y el servidor usa lo de siempre.
+            country: isoFromTypedPhone(phone),
+          }),
         });
         const verdict = await geoRes.json();
         const { updateDoc } = await import("firebase/firestore");

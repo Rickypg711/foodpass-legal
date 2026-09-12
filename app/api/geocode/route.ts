@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   evaluateGeocodeResult,
-  expectedCountryFromPhone,
+  expectedCountryFor,
   coordsInAddress,
   MIN_ADDRESS_CHARS,
   localityFromReverseResults,
@@ -38,14 +38,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "json_invalido" }, { status: 400 });
   }
 
-  const { address, phone, lat, lng } = (body ?? {}) as {
+  const { address, phone, country, lat, lng } = (body ?? {}) as {
     address?: string;
     phone?: string;
+    /**
+     * País ISO-3166 alfa-2 que el dueño ELIGIÓ (12-sep-2026). Manda sobre el
+     * teléfono: sin esto, "10 dígitos = México" le tumbó el pin a Central Fast
+     * Food durante una semana aunque tenía República Dominicana guardada.
+     */
+    country?: string;
     lat?: number;
     lng?: number;
   };
   const addr = String(address ?? "").trim();
   const tel = String(phone ?? "").trim();
+  const iso = String(country ?? "").trim();
 
   // REVERSE: el dueño confirmó el pin a mano (mapa). Google sabe la ciudad de
   // ese punto; la respuesta es SOLO ciudad/estado/país — el pin ya lo tiene él.
@@ -117,7 +124,7 @@ export async function POST(request: Request) {
     const geoData = await res.json();
     const verdict = evaluateGeocodeResult(
       geoData,
-      expectedCountryFromPhone(tel),
+      expectedCountryFor({ country: iso, phone: tel }),
       addr,
     );
     if (!verdict.ok) {
