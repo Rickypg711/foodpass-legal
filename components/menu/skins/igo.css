@@ -1,0 +1,57 @@
+/* Piel "IGO" (igo.tsx): IGO Pizzeria, Guadalajara. Vive junto a la piel (no en globals.css).
+   Todo sale de sus 4 hojas: el marco verde doble, el papel casi blanco, la etiqueta verde del precio con su barra
+   gris, el higo grabado de marca de agua y la franja verde del pie. Su verde es #0b652a (sacado de su propio PDF). */
+.igo-skin {
+  background-color: #e8e9e6;
+}
+
+/* Su hoja: blanca con el marco verde doble de su menú. */
+.igo-skin .igo-sheet {
+  background-color: #f7f8f8;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 30px 50px -38px rgba(0, 0, 0, 0.45);
+}
+.igo-skin .igo-frame {
+  border: 3px solid #0b652a;
+  outline: 1px solid #0b652a;
+  outline-offset: 4px;
+}
+
+/* El higo grabado que ellos ponen gigante y muy tenue al fondo de cada hoja. */
+.igo-skin .igo-marca {
+  background-image: url('/skins/igo/higo_marca.png');
+  background-repeat: no-repeat;
+  background-position: right -70px bottom -50px;
+  background-size: 260px auto;
+}
+@media (min-width: 1024px) {
+  .igo-skin .igo-marca { background-size: 420px auto; background-position: right -110px bottom -70px; }
+}
+
+/* La etiqueta del precio y su barra gris, como en su papel. */
+.igo-skin .igo-chip {
+  background-color: #0b652a;
+  color: #f7f8f8;
+}
+.igo-skin .igo-bar {
+  background-color: #e4e4e4;
+}
+
+/* Dos columnas en escritorio (su hoja es angosta; en pantalla grande se parte). */
+.igo-skin .igo-cols {
+  column-rule: 1px solid rgba(11, 101, 42, 0.18);
+}
+
+/* Sus títulos bailan: cada letra en una altura distinta. */
+.igo-skin .igo-bounce > span {
+  display: inline-block;
+}
+
+@keyframes igo-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.igo-skin .igo-rise { animation: igo-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .igo-skin .igo-rise { animation: none; }
+  .igo-skin .igo-bounce > span { transform: none !important; }
+}

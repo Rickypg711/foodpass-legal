@@ -178,10 +178,40 @@ const LOOK_TORTAS: SheetLook = {
   confirm: `${TP_DISPLAY} flex-1 rounded-full bg-[#cf1225] py-3 text-[14px] uppercase tracking-[0.08em] text-[#f4f1ea] transition-colors hover:bg-[#b3121a] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** IGO: su hoja blanca con marco verde y la etiqueta verde (components/menu/skins/igo.tsx). */
+const IGO_NAME = "[font-family:var(--igo-name),'Arial_Narrow',sans-serif]";
+const LOOK_IGO: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#08301a]/55 sm:items-center",
+  panel: "animate-sheet-up igo-sheet max-h-[85vh] w-full overflow-y-auto rounded-t-[18px] p-5 shadow-xl sm:max-w-md sm:rounded-[6px]",
+  title: `${IGO_NAME} text-[24px] font-medium uppercase leading-tight tracking-[0.02em] text-[#0b652a]`,
+  subtitle: "text-[14px] italic text-[#2b2b2b]/65",
+  groupName: `${IGO_NAME} text-[13px] font-medium uppercase tracking-[0.1em] text-[#2b2b2b]`,
+  status: (falta) => `text-[11px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#0b652a]" : "text-[#2b2b2b]/45"}`,
+  hasta: "text-[12px] text-[#2b2b2b]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-[1.5px] px-4 py-2.5 text-left text-[15px] transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#2b2b2b]/10 text-[#2b2b2b]/35 line-through"
+        : on
+          ? "border-[#0b652a] bg-[#0b652a] font-semibold text-[#f7f8f8]"
+          : "border-[#2b2b2b]/25 bg-transparent text-[#2b2b2b] hover:border-[#0b652a]"
+    }`,
+  delta: (on) => `text-[13px] font-semibold ${on ? "text-[#f7f8f8]" : "text-[#0b652a]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#0b652a]/20 bg-[#f7f8f8] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-medium text-[#2b2b2b]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-[1.5px] border-[#0b652a]/40 text-lg font-semibold text-[#0b652a] transition-colors hover:bg-[#0b652a]/10 disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-semibold tabular-nums text-[#0b652a]",
+  cancel:
+    "rounded-full border-[1.5px] border-[#2b2b2b]/30 px-4 py-3 text-sm font-medium text-[#2b2b2b]/80 transition-colors hover:bg-[#2b2b2b]/5",
+  confirm: `${IGO_NAME} flex-1 rounded-full bg-[#0b652a] py-3 text-[15px] font-medium uppercase tracking-[0.06em] text-[#f7f8f8] transition-colors hover:bg-[#094f21] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "mixteco") return LOOK_MIXTECO;
   if (skin === "laspic") return LOOK_LASPIC;
   if (skin === "tortasperras") return LOOK_TORTAS;
+  if (skin === "igo") return LOOK_IGO;
   return LOOK_DEFAULT;
 }
 

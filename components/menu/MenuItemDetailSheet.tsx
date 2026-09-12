@@ -98,6 +98,21 @@ const LOOK_TORTAS: DetailLook = {
   add: `${TP_DISPLAY} rounded-full bg-[#cf1225] px-6 py-3 text-[15px] uppercase tracking-[0.08em] text-[#f4f1ea] shadow-[0_10px_22px_-12px_rgba(120,10,15,0.9)] transition-all hover:bg-[#b3121a] active:scale-[0.98]`,
 };
 
+/** IGO: su hoja blanca con marco verde (components/menu/skins/igo.tsx). */
+const IGO_NAME_D = "[font-family:var(--igo-name),'Arial_Narrow',sans-serif]";
+const LOOK_IGO: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#08301a]/55 sm:items-center",
+  panel: "animate-sheet-up igo-sheet relative max-h-[90vh] w-full overflow-y-auto rounded-t-[18px] shadow-xl sm:max-w-md sm:rounded-[6px]",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#0b652a] bg-[#f7f8f8] text-lg text-[#0b652a] hover:bg-[#0b652a] hover:text-[#f7f8f8]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#e8e9e6] sm:rounded-t-[6px]",
+  title: `${IGO_NAME_D} text-[26px] font-medium uppercase leading-tight tracking-[0.02em] text-[#0b652a]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full border border-[#0b652a]/40 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[#0b652a]",
+  description: "mt-2 text-[16px] italic leading-relaxed text-[#2b2b2b]/80",
+  price: "text-[22px] font-semibold tabular-nums text-[#2b2b2b]",
+  add: `${IGO_NAME_D} rounded-full bg-[#0b652a] px-6 py-3 text-[15px] font-medium uppercase tracking-[0.06em] text-[#f7f8f8] shadow-[0_10px_22px_-12px_rgba(11,101,42,0.9)] transition-all hover:bg-[#094f21] active:scale-[0.98]`,
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -128,7 +143,9 @@ export function MenuItemDetailSheet({
         ? LOOK_LASPIC
         : skin === "tortasperras"
           ? LOOK_TORTAS
-          : LOOK_DEFAULT;
+          : skin === "igo"
+            ? LOOK_IGO
+            : LOOK_DEFAULT;
 
   return (
     <div
@@ -166,7 +183,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

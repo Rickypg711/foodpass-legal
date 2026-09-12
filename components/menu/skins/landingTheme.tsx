@@ -22,6 +22,7 @@ import { BL_ROOT_CLASS, BloomsHeader } from "@/components/menu/skins/blooms";
 import { MX_DISPLAY, MX_ROOT_CLASS, MixtecoHeader } from "@/components/menu/skins/mixteco";
 import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/laspic";
 import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins/tortasperras";
+import { IGO_DISPLAY, IGO_NAME, IGO_ROOT_CLASS, IGOHeader } from "@/components/menu/skins/igo";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -320,7 +321,41 @@ const TORTASPERRAS: LandingTheme = {
   photoPrice: "font-semibold text-[#2b2a28]/70",
 };
 
+/** IGO: su hoja blanca con marco verde, el higo grabado y los títulos con las letras gordas. */
+const IGO: LandingTheme = {
+  root: IGO_ROOT_CLASS,
+  Header: (p) => <IGOHeader {...p} />,
+  cta: `${IGO_NAME} block min-h-12 rounded-full bg-[#0b652a] py-3.5 text-center text-[16px] font-medium uppercase tracking-[0.06em] text-[#f7f8f8] shadow-[0_14px_30px_-16px_rgba(11,101,42,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#0b652a] bg-transparent px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#0b652a] transition-colors hover:bg-[#0b652a] hover:text-[#f7f8f8]",
+  btnNeutral:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#2b2b2b]/30 bg-transparent px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#2b2b2b] transition-colors hover:border-[#2b2b2b]",
+  descriptionCard: "igo-sheet igo-frame rounded-[2px] p-5 text-[15.5px] leading-relaxed text-[#2b2b2b]/85 sm:p-6",
+  card: "igo-sheet igo-frame rounded-[2px] px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${IGO_DISPLAY} mb-4 block text-center text-[24px] uppercase leading-none text-[#0b652a]`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+    </h2>
+  ),
+  link: "font-bold text-[#0b652a] underline decoration-[#0b652a]/35 underline-offset-4",
+  text: "text-[#2b2b2b]/85",
+  textSoft: "text-[#2b2b2b]/65",
+  todayRow: "bg-[#0b652a] font-semibold text-[#f7f8f8]",
+  row: "text-[#2b2b2b]/75",
+  closedText: "text-[#2b2b2b]/40",
+  faqOpen: "open:bg-[#0b652a]/[0.05]",
+  faqChevron: "text-[#0b652a]",
+  faqAnswer: "text-[#2b2b2b]/75",
+  seoText: "text-[#2b2b2b]/55",
+  signature: "text-[#2b2b2b]/55",
+  signatureLink: "font-bold text-[#0b652a] underline decoration-[#0b652a]/35 underline-offset-4",
+  loading: "igo-sheet igo-frame rounded-[2px] px-4 py-6 text-center text-sm text-[#2b2b2b]/60",
+  photoName: "text-[#2b2b2b]",
+  photoPrice: "font-semibold text-[#2b2b2b]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "igo") return IGO;
   if (skin === "tortasperras") return TORTASPERRAS;
   if (skin === "laspic") return LASPIC;
   if (skin === "mixteco") return MIXTECO;

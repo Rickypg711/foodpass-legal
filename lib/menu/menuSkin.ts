@@ -33,12 +33,15 @@
  *  - "tortasperras": Pinches Tortas Perras, Guadalajara — sus tres hojas de Instagram: la portada roja con fibras
  *    ("Pásele joven / ¿Que va a Querer?") y el papel hueso moteado con los óvalos TORTAS y TACOS
  *    (components/menu/skins/tortasperras.tsx). Séptima piel en código por pedido de Ricardo (12-sep).
+ *  - "igo": IGO Pizzeria, Guadalajara — sus hojas blancas con marco verde, el higo grabado, los títulos con las
+ *    letras bailando, su ilustración por sección y la etiqueta verde del precio con la barra gris
+ *    (components/menu/skins/igo.tsx). Octava piel en código por pedido de Ricardo (12-sep).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

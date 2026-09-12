@@ -104,6 +104,15 @@ import {
   tortasSortItems,
 } from "@/components/menu/skins/tortasperras";
 import {
+  IGO_ROOT_CLASS,
+  IGOCategorySection,
+  IGOHeader,
+  IGOItemRow,
+  IGOPanel,
+  IGOSheet,
+  igoSortItems,
+} from "@/components/menu/skins/igo";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -249,12 +258,13 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "mixteco") return MX_ROOT_CLASS;
   if (skin === "laspic") return LP_ROOT_CLASS;
   if (skin === "tortasperras") return TP_ROOT_CLASS;
+  if (skin === "igo") return IGO_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
-/** Ancho del menú. Mixteco, LasPic y Tortas Perras usan todo el escritorio: su papel va a dos columnas (11-sep). */
+/** Ancho del menú. Mixteco, LasPic, Tortas Perras e IGO usan todo el escritorio: su papel va a dos columnas (11-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
-  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras"
+  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
 }
@@ -313,6 +323,19 @@ function MenuRestaurantHeader({
   if (skin === "laspic") {
     return (
       <LaspicHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "igo") {
+    return (
+      <IGOHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -508,6 +531,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "laspic") return null;
   // Tortas Perras: su hoja roja ya es el encabezado.
   if (skin === "tortasperras") return null;
+  // IGO: su hoja 1 (marco verde con el higo) ya es el encabezado.
+  if (skin === "igo") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -649,6 +674,48 @@ function MenuCategoryList({
           );
         })}
       </LaspicSheet>
+    );
+  }
+  if (skin === "igo") {
+    // Su hoja blanca con marco verde (components/menu/skins/igo.tsx): título con las letras bailando, su
+    // ilustración por sección, y el orden de su papel.
+    return (
+      <IGOSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          return (
+            <IGOCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && igoSortItems(group.items).map((item) => (
+                <IGOItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  category={group.category}
+                />
+              ))}
+            </IGOCategorySection>
+          );
+        })}
+      </IGOSheet>
     );
   }
   if (skin === "tortasperras") {
@@ -994,6 +1061,21 @@ function MenuRewardsLadderSection({
       </LaspicPanel>
     );
   }
+  if (skin === "igo") {
+    return (
+      <IGOPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#0b652a] underline decoration-[#0b652a]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </IGOPanel>
+    );
+  }
   if (skin === "tortasperras") {
     return (
       <TortasPanel title="Premios">
@@ -1108,6 +1190,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#141414]/15 bg-[#fbf8f2]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.35)]"
               : skin === "tortasperras"
                 ? "border-[#cf1225]/20 bg-[#e9e7e2]/95 shadow-[0_-12px_36px_-16px_rgba(120,10,15,0.4)]"
+              : skin === "igo"
+                ? "border-[#0b652a]/20 bg-[#f7f8f8]/95 shadow-[0_-12px_36px_-16px_rgba(11,101,42,0.45)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
