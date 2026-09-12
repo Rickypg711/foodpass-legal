@@ -10,7 +10,8 @@
  * Lo que este candado cuida es que esa vista NO se vuelva una fuga: allowlist
  * (un campo nuevo en el pedido no sale solo), sin PIN (con el otro recogeria el
  * pedido), sin direccion, sin notas del pedido, sin quien cobro, sin descuento,
- * sin propina, solo el primer nombre, y solo pedidos de la Caja. Las reglas de
+ * sin propina, solo el primer nombre, y solo pedidos de la Caja y del menu web
+ * (12-sep-2026: el link del menu web tampoco abria sin sesion). Las reglas de
  * Firestore de orders NO se abren.
  *
  * Run: node scripts/validate-order-receipt.mjs
@@ -91,8 +92,40 @@ check("el platillo sale con su carne y su nota", v?.items, [
 check("puntos acreditados", v?.loyaltyAwarded, true);
 check("total", v?.total, 95);
 
-check("pedido del menú web => sin recibo público (ya abre con su sesión)",
-  receiptViewFromOrder({ ...pos, orderSource: "web" }), null);
+// ── Pedido del menú web (12-sep-2026, IGO #KGPAPR): el link de WhatsApp se abre SIN la sesión que lo hizo ──
+const web = {
+  orderSource: "customer_web",
+  status: "pending",
+  paymentMethod: "pay_at_pickup",
+  pickupPaymentMethod: "cash",
+  orderType: "delivery",
+  total: 280,
+  deliveryFee: 50,
+  customerName: "Ricardo Paredes Prueba",
+  customerPhone: "6145948544",
+  customerId: "uid-anonimo-del-comensal",
+  pickupPin: "8184",
+  deliveryAddress: "Río Tapachula 2705, Lomas de San Pedro",
+  campoNuevoSecreto: "no debe salir",
+  items: [{ name: "Pizza pepperoni", quantity: 1, subtotal: 195, price: 195, menuItemId: "p1" }],
+};
+const w = receiptViewFromOrder(web, "IGO Pizzeria");
+const wjson = JSON.stringify(w);
+check("pedido del menú web => SÍ hay recibo público", w !== null, true);
+check("menú web: orderSource se conserva", w?.orderSource, "customer_web");
+for (const campo of ["pickupPin", "deliveryAddress", "customerId", "campoNuevoSecreto", "menuItemId"]) {
+  check(`menú web: NO sale ${campo}`, wjson.includes(`"${campo}"`), false);
+}
+check("menú web: NO sale el PIN (valor)", wjson.includes("8184"), false);
+check("menú web: NO sale la dirección (valor)", wjson.includes("Tapachula"), false);
+check("menú web: solo el primer nombre", w?.customerName, "Ricardo");
+check("menú web: sí el envío (precio, no dato de nadie)", w?.deliveryFee, 50);
+check("menú web: sí cómo va a pagar", w?.pickupPaymentMethod, "cash");
+check("menú web: sí sabe que es a domicilio (sin dirección)", w?.orderType, "delivery");
+check("pedido de la app => sin recibo público (la app no manda link)",
+  receiptViewFromOrder({ ...web, orderSource: "customer_app" }), null);
+check("orderSource inventado => sin recibo público",
+  receiptViewFromOrder({ ...web, orderSource: "web" }), null);
 check("sin orderSource => sin recibo público", receiptViewFromOrder({ total: 1 }), null);
 check("sin pedido => null", receiptViewFromOrder(undefined), null);
 check("basura en items no truena",
@@ -108,6 +141,9 @@ check("la ruta NO regresa el doc crudo", /\.data\(\)\s*\}/.test(route) || /order
 
 const page = readFileSync(new URL("../app/menu/[restaurantId]/order/[orderId]/page.tsx", import.meta.url), "utf8");
 check("el recibo pide al servidor cuando las reglas niegan", page.includes("/api/order-receipt?"), true);
+check("recibo público: no enseña un PIN que no trae (ni se queda cargando)", page.includes("Viene en tu mensaje de WhatsApp"), true);
+check("recibo público: sin el botón de confirmar por WhatsApp (sin PIN no sirve)", page.includes("isPosOrder || publicReceipt ||"), true);
+check("recibo público: a domicilio se sabe por el tipo, no por la dirección", page.includes('order?.orderType === "delivery"'), true);
 
 // ── Las reglas de orders NO se abren ─────────────────────────────────────────
 const RULES = "/Users/ricardoparedes/projects/FOODPASS/firestore.rules";

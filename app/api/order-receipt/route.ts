@@ -5,13 +5,15 @@ import { receiptViewFromOrder } from "@/lib/order/receiptView";
 /**
  * GET /api/order-receipt?restaurantId=…&orderId=…
  *
- * El recibo de la Caja que le llega al cliente por WhatsApp. La venta de la Caja
- * no trae `customerId`, así que las reglas le niegan la lectura desde su teléfono
- * (10-sep-2026, La Familia: "No pudimos cargar tu pedido"). Aquí se lee con Admin
- * SDK y se regresa SOLO la vista de recibo (`receiptViewFromOrder`, allowlist).
+ * El recibo que llega por WhatsApp. Las reglas solo dejan leer el pedido al dueño del
+ * pedido o al local, y el link se abre SIN esa sesión: la venta de la Caja no trae
+ * `customerId` (10-sep-2026, La Familia) y el del menú web se abre desde WhatsApp o
+ * en el teléfono del dueño (12-sep-2026, IGO #KGPAPR) — los dos decían "No pudimos
+ * cargar tu pedido". Aquí se lee con Admin SDK y se regresa SOLO la vista de recibo
+ * (`receiptViewFromOrder`, allowlist).
  *
  * El link ES la llave: el id del pedido son 20 caracteres al azar, igual que un
- * recibo de Stripe. Solo pedidos de la Caja; nada de PIN ni dirección. Las reglas
+ * recibo de Stripe. Pedidos de la Caja y del menú web; nada de PIN ni dirección. Las reglas
  * de Firestore NO cambian: nadie puede listar pedidos.
  */
 export const dynamic = "force-dynamic";
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
       ? receiptViewFromOrder(orderSnap.data(), restaurantSnap.data()?.name)
       : null;
     if (!view) {
-      // No existe o no es de la Caja: mismo 404, para no confirmar qué ids hay.
+      // No existe o no tiene recibo público: mismo 404, para no confirmar qué ids hay.
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
     return NextResponse.json(

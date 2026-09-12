@@ -1,6 +1,6 @@
 /**
- * Vista de RECIBO de un pedido de la Caja, para quien abre el link que le llegó
- * por WhatsApp ("Tu recibo y tus puntos").
+ * Vista de RECIBO de un pedido (de la Caja o del menú web), para quien abre el
+ * link que le llegó por WhatsApp ("Tu recibo y tus puntos" / "Mi recibo y puntos").
  *
  * POR QUÉ EXISTE (10-sep-2026, La Familia): la venta de la Caja la crea el
  * restaurante y no trae `customerId`, así que las reglas (dueño del pedido o el
@@ -17,8 +17,16 @@
  * el saldo solo después de verificarlo (en pantalla sale "614 ··· 41"); el link
  * salió al WhatsApp de ese mismo número.
  *
- * Solo pedidos de la Caja (`orderSource: "pos"`): los del menú web ya abren con
- * la sesión de quien los hizo.
+ * Pedidos de la Caja (`orderSource: "pos"`) Y del menú web (`"customer_web"`).
+ * 12-sep-2026: al principio los del menú web quedaron fuera ("ya abren con la
+ * sesión de quien los hizo") y NO era cierto: el mensaje de WhatsApp lleva el
+ * link "Mi recibo y puntos" y WhatsApp lo abre en su propio navegador, sin esa
+ * sesión; el dueño lo abre en su teléfono, tampoco con sesión. Probado sin
+ * sesión con el pedido de prueba de IGO (#KGPAPR): "No pudimos cargar tu
+ * pedido". Mismas exclusiones para los dos: sin PIN (ya va en el mensaje de
+ * WhatsApp de quien pidió), sin dirección de entrega, sin `customerId`.
+ * Del menú web sí salen `deliveryFee` y `pickupPaymentMethod` (precio del envío
+ * y "pagas en efectivo / con tarjeta"): no son datos de nadie.
  *
  * Puro y sin imports con alias: lo prueba scripts/validate-order-receipt.mjs.
  */
@@ -34,14 +42,20 @@ export type ReceiptItem = {
   notes?: string;
 };
 
+export type ReceiptSource = "pos" | "customer_web";
+
 export type ReceiptView = {
-  orderSource: "pos";
+  orderSource: ReceiptSource;
   status?: string;
   paymentStatus?: string;
   paymentMethod?: string;
   orderType?: string;
   tableNumber?: string;
   total?: number;
+  /** Solo menú web: costo del envío a domicilio (la dirección NO sale). */
+  deliveryFee?: number;
+  /** Solo menú web: cómo dijo que va a pagar al recoger ("cash" | "card" | "transfer"). */
+  pickupPaymentMethod?: string;
   loyaltyAwarded?: boolean;
   redemptionRequest?: { tierId: string; name: string; points: number };
   redemptionResult?: string;
@@ -89,15 +103,19 @@ function item(raw: unknown): ReceiptItem | null {
   return out;
 }
 
-/** `null` = no hay recibo público para este pedido (no es de la Caja o no existe). */
+const RECEIPT_SOURCES: readonly ReceiptSource[] = ["pos", "customer_web"];
+
+/** `null` = no hay recibo público para este pedido (no es de la Caja ni del menú web, o no existe). */
 export function receiptViewFromOrder(
   order: Record<string, unknown> | undefined | null,
   restaurantName?: unknown,
 ): ReceiptView | null {
-  if (!order || order.orderSource !== "pos") return null;
+  if (!order) return null;
+  const source = RECEIPT_SOURCES.find((s) => s === order.orderSource);
+  if (!source) return null;
 
   const view: ReceiptView = {
-    orderSource: "pos",
+    orderSource: source,
     items: (Array.isArray(order.items) ? order.items : [])
       .map(item)
       .filter((i): i is ReceiptItem => i !== null),
@@ -115,6 +133,10 @@ export function receiptViewFromOrder(
   if (tableNumber) view.tableNumber = tableNumber;
   const total = num(order.total);
   if (total !== undefined) view.total = total;
+  const deliveryFee = num(order.deliveryFee);
+  if (deliveryFee !== undefined) view.deliveryFee = deliveryFee;
+  const pickupPaymentMethod = str(order.pickupPaymentMethod);
+  if (pickupPaymentMethod) view.pickupPaymentMethod = pickupPaymentMethod;
   if (typeof order.loyaltyAwarded === "boolean") view.loyaltyAwarded = order.loyaltyAwarded;
 
   const rr = order.redemptionRequest;

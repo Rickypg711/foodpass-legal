@@ -165,6 +165,11 @@ function OrderStatusPageContent() {
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   /**
+   * El pedido llegó por el recibo público (/api/order-receipt), no por la sesión de quien lo hizo: sin PIN ni
+   * dirección. Pasa al abrir el link desde WhatsApp o en el teléfono del dueño (12-sep-2026, IGO #KGPAPR).
+   */
+  const [publicReceipt, setPublicReceipt] = useState(false);
+  /**
    * Quien abre este recibo con la sesión del restaurante abierta (dueño o
    * equipo): el link llega al chat del local por WhatsApp (10-sep) y desde
    * aquí no se puede cobrar. Se le enseña el camino a Pedidos en un toque.
@@ -248,10 +253,11 @@ function OrderStatusPageContent() {
             }
           },
           (err) => {
-            // Recibo de la Caja por WhatsApp (10-sep-2026): el pedido lo creó el
-            // restaurante, no esta sesión, y las reglas no dejan leerlo desde el
-            // teléfono del cliente. El servidor da la vista de recibo (allowlist:
-            // sin PIN ni dirección) a quien tiene el link.
+            // Recibo por WhatsApp: el pedido de la Caja lo creó el restaurante
+            // (10-sep-2026) y el del menú web se abre desde WhatsApp o en el
+            // teléfono del dueño, sin la sesión que lo hizo (12-sep-2026). Las
+            // reglas no dejan leerlo; el servidor da la vista de recibo
+            // (allowlist: sin PIN ni dirección) a quien tiene el link.
             mpWebDebugClient("order_listener_error", {
               restaurantId,
               orderId,
@@ -264,6 +270,7 @@ function OrderStatusPageContent() {
                 const j = (await r.json()) as { order?: OrderDoc };
                 if (!j.order) throw new Error("receipt_empty");
                 setOrder(j.order);
+                setPublicReceipt(true);
                 setLoadError(null);
               })
               .catch(() => {
@@ -352,10 +359,12 @@ function OrderStatusPageContent() {
       : null;
   const envio =
     typeof order?.deliveryFee === "number" && order.deliveryFee > 0 ? order.deliveryFee : 0;
+  // En el recibo público la dirección no viaja: a domicilio se sabe por el tipo de pedido.
+  const esDomicilio = direccion !== null || order?.orderType === "delivery";
   const orderDisplay = customerOrderDisplay(status, paymentStatus, {
     tableLabel: mesaLabel,
     posReceipt: isPosOrder,
-    delivery: direccion !== null,
+    delivery: esDomicilio,
   });
 
   useEffect(() => {
@@ -567,7 +576,9 @@ function OrderStatusPageContent() {
               </p>
               {/* POS/counter orders have no pickup PIN — the customer is at the
                   restaurant already (this page is their WhatsApp receipt). */}
-              {isPosOrder ? null : direccion ? (
+              {isPosOrder ? null : publicReceipt && esDomicilio ? (
+                <p className="mt-3 text-base font-bold leading-snug">🛵 Pedido a domicilio</p>
+              ) : direccion ? (
                 <>
                   {/* 🛵 A domicilio no hay mostrador donde enseñar un PIN: lo
                       que el comensal necesita ver es que la dirección llegó
@@ -588,6 +599,11 @@ function OrderStatusPageContent() {
                       suppressHydrationWarning
                     >
                       {displayPin}
+                    </p>
+                  ) : publicReceipt ? (
+                    // El recibo público no trae el PIN (con él otro recogería el pedido): ya va en su WhatsApp.
+                    <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                      Viene en tu mensaje de WhatsApp
                     </p>
                   ) : (
                     <div
@@ -617,7 +633,7 @@ function OrderStatusPageContent() {
                 <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
                   {mesaLabel
                     ? "💵 Pagas al final, aquí en tu mesa"
-                    : direccion
+                    : esDomicilio
                       ? deliveryPaymentLine(order?.pickupPaymentMethod)
                       : pickupPaymentLine(order?.pickupPaymentMethod)}
                 </p>
@@ -682,7 +698,7 @@ function OrderStatusPageContent() {
               </ul>
             ) : null}
 
-            {isPosOrder || status === "completed" || status === "cancelled" ? null : whatsapp ? (
+            {isPosOrder || publicReceipt || status === "completed" || status === "cancelled" ? null : whatsapp ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
                 <p className="text-sm font-bold text-[#1C2526]">
                   📲 Confírmalo por WhatsApp
