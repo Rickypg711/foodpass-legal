@@ -3,7 +3,8 @@
 // 🖨️ Ticket para impresora térmica (10-sep-2026).
 //
 // POR QUÉ EXISTE: Zahir (Central Fast Food, RD) preguntó si podía conectar
-// su impresora Aokia de 80 mm con Bluetooth. La respuesta barata y que sirve
+// su impresora Aokia de 80 mm (12-sep: resultó AK-3280, USB + red, SIN
+// Bluetooth — ver docs/TICKET_IMPRESORA.md). La respuesta barata y que sirve
 // con CUALQUIER marca ESC/POS: una página de ticket limpia que el navegador
 // imprime con su propio diálogo. En Android, una app puente gratis (ESCPOS
 // Bluetooth Print Service, RawBT, Thermer) aparece como impresora y manda el

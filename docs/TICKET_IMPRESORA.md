@@ -3,8 +3,9 @@
 ## Por qué existe
 
 Zahir (Central Fast Food, Las Matas de Farfán, RD) preguntó si podía conectar
-su impresora **Aokia de 80 mm con Bluetooth**. Es una térmica ESC/POS normal,
-como el 95% de las que se venden en RD y MX (RD$3,800–5,500).
+su impresora **Aokia de 80 mm**. Es una térmica ESC/POS normal, como el 95% de
+las que se venden en RD y MX (RD$3,800–5,500). *(Se creyó Bluetooth; el 12-sep
+se confirmó que NO — ver la sección de abajo.)*
 
 ## El camino elegido: el navegador imprime, nosotros no tocamos Bluetooth
 
@@ -60,3 +61,45 @@ con su Aokia (primera impresión por videollamada con Ricardo).
 
 La app no imprime (viaja aparte: impresión Bluetooth nativa, solo si un dueño
 con app lo pide). El cobro cross-plataforma no cambia.
+
+## 12-sep-2026 — su impresora de verdad, y qué NO se construye
+
+**El modelo:** AOKIA **AK-3280**, 80 mm, corte automático, ESC/POS + STAR.
+Zahir mandó foto de los conectores: **corriente, RJ11 (gaveta), USB-B y RJ45 de
+red** con las luces prendidas. **No trae Bluetooth.** El fabricante (Shanghai
+Aokia) la publica "Interface: USB or LAN"; las tiendas de RD igual (Data
+Import, Fercomse, CM Store RD). Aokia sí nombra sus modelos con Bluetooth
+(ej. AK-3358 "58mm Bluetooth + USB"). → Los tres pasos de Bluetooth de
+Configuración **no aplican a su impresora**.
+
+**Cómo imprime con ella:**
+- **Computadora:** cable USB + su driver → Chrome la ve → Imprimir. Sin app
+  puente, sin IP.
+- **Celular:** cable de red al módem; la impresora imprime su IP si se prende
+  con el botón del papel apretado; esa IP va en **RawBT** (impresora de red,
+  puerto 9100). *ESCPOS Bluetooth Print Service NO sirve: es solo Bluetooth.*
+  El celular necesita la app puente porque Android no sabe hablarle a una
+  térmica de fábrica.
+
+**Lo que se descubrió en la misma foto:** en el suelo había un ticket de OTRO
+sistema ("COMANDA DE ANULACIÓN · Factura · CUENTA M14 · Camarero: CAJA ·
+FRANCO DELIVERY"). **Esa impresora ya la maneja su otro punto de venta.** O sea
+que ya está enchufada a un aparato que funciona. La pregunta correcta no es
+"cómo la conectamos" sino **"¿en qué aparato corre tu sistema de facturas?"** —
+si es computadora, abre Comeleal ahí e imprime, y ya.
+
+**Decisiones (Ricardo, 12-sep):**
+- **Cero código.** El botón y la hoja de ticket ya existen desde el 10-sep. Lo
+  que le falta a Zahir es configuración de su lado, no producto.
+- **No se cobra** ayudarle a dejarla andando: son ~15 minutos. La regla "las
+  manos se cobran" es para trabajo de horas (montar menú, piel).
+- **La impresora de nube (auto-print) NO se construye para él.** Sigue siendo
+  Pro futuro para un local con cocina separada que lo pida y pueda pagar. Él no
+  tiene cómo pagar (MP no existe en RD, es de puro navegador, y la reja de Pro
+  vive en la Caja que no usa).
+- **Además, la impresora no es su problema:** del 9 al 12-sep lleva cero
+  pedidos. Un ticket imprime pedidos que entran.
+
+**Pendiente (no urgente):** el texto de Configuración → Impresora de tickets
+solo explica Bluetooth. Cuando lo toque alguien, que diga los tres caminos
+(USB en computadora, red por IP en celular, Bluetooth en celular).

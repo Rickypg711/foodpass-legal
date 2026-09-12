@@ -1288,7 +1288,8 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── 🖨️ Impresora de tickets (10-sep-2026) ──
-                Zahir (RD) tiene una Aokia de 80 mm con Bluetooth. No hay nada
+                Zahir (RD) tiene una AOKIA AK-3280 de 80 mm (USB + red, SIN
+                Bluetooth — lo confirmó su foto el 12-sep). No hay nada
                 que "conectar" aquí: el celular empareja la impresora y una app
                 puente la presta a Chrome. Comeleal solo imprime una hoja
                 limpia. Esta sección: ancho del papel, los pasos y una prueba. */}
