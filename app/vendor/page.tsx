@@ -21,6 +21,14 @@ import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
 import { trialClockState } from "@/lib/subscription/trialClock";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { businessDayStartDaysAgo } from "@/lib/businessDay";
+import {
+  summarizeMenuSales,
+  showMenuSales,
+  menuSalesMoney,
+  menuSalesCaption,
+  menuUnpaidLine,
+  type MenuSalesSummary,
+} from "@/lib/order/menuSales";
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
@@ -88,6 +96,9 @@ interface DashboardData {
   nbaBody: string;
   nbaMetrics: NbaMetrics;
   lookback: LookbackStats;
+  /** "Vendiste por tu menú" (12-sep, el marcador de Owner.com): pedidos en
+   *  línea de los últimos 30 días — lib/order/menuSales.ts. */
+  menuSales: MenuSalesSummary;
   // Revenue goal
   dailyGoal: number | null;
   ventasHoy: number;
@@ -317,6 +328,19 @@ export default function VendorDashboard() {
           if (o.redemptionResult === "applied") phoneRedemptions30d++;
         });
         addPhoneSaleVisits(visitCounts, monthOrders);
+        // "Vendiste por tu menú" — mismo lote de 30 días, cero lecturas extra.
+        const menuSales = summarizeMenuSales(
+          monthOrders.map((o) => ({
+            orderSource: o.orderSource,
+            status: o.status,
+            paymentStatus: o.paymentStatus,
+            total: o.total,
+            isOpenTab: o.isOpenTab,
+            tabId: o.tabId,
+            createdAtMs: (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0,
+          })),
+          Date.now(),
+        );
         let returnedCustomers = 0;
         let visits30d = 0;
         visitCounts.forEach((count) => {
@@ -408,6 +432,7 @@ export default function VendorDashboard() {
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
           lookback,
+          menuSales,
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
           // Veredicto de meta contra el horario REAL (espejo de la app,
@@ -653,7 +678,7 @@ export default function VendorDashboard() {
 
           {/* ── 4 · Clientes · últimos 30 días ── */}
           {!firstDay && (
-            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} />
+            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} menuSales={data.menuSales} />
           )}
 
           {/* ── 5 · Pregúntale a Comeleal (compacto) ── */}
@@ -1206,12 +1231,44 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
 /** 4 · Clientes · últimos 30 días — espejo de OwnerLookbackCard (app):
  *  Con teléfono · Volvieron · % que volvió · Premios canjeados. Sin escáner
  *  ni promesa de puntos: "Cada venta con número suma aquí." */
-function OwnerLookbackCard({ stats, atRiskCount }: { stats: LookbackStats; atRiskCount: number }) {
+function OwnerLookbackCard({ stats, atRiskCount, menuSales }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary }) {
   const lowSample = stats.withPhone < 5;
   return (
     <section className="mb-6">
       <SectionKicker>Clientes · últimos 30 días</SectionKicker>
       <div className="rounded-2xl p-5" style={CARD_STYLE}>
+        {/* Vendiste por tu menú (12-sep): el dinero que trajo el menú en línea,
+            arriba de todo — es lo que hace que el dueño se quede. Sin pedidos
+            en línea no se pinta: un $0 no le dice nada. */}
+        {showMenuSales(menuSales) && (
+          <div className="mb-4 rounded-xl px-4 py-3"
+            style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)" }}>
+            {/* Sin nada cobrado todavía no se pinta "$0 · 0 pedidos": solo el aviso. */}
+            {menuSales.paidCount > 0 && (
+              <>
+                <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.6)" }}>
+                  🍽️ Vendiste por tu menú
+                </p>
+                <div className="mt-0.5 mb-2 flex items-baseline gap-2">
+                  <p className="text-[24px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "#15803D" }}>
+                    {menuSalesMoney(menuSales.paidTotal)}
+                  </p>
+                  <span className="text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+                    {menuSalesCaption(menuSales.paidCount)}
+                  </span>
+                </div>
+              </>
+            )}
+            {menuSales.unpaidCount > 0 && (
+              <Link href="/vendor/pedidos"
+                className="flex items-center gap-1 text-[12px] font-bold hover:underline"
+                style={{ color: "#B45309" }}>
+                {menuUnpaidLine(menuSales.unpaidCount, menuSales.unpaidTotal)}
+                <span className="ml-auto">›</span>
+              </Link>
+            )}
+          </div>
+        )}
         {lowSample && (
           <p className="mb-4 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
             Cada venta con número suma aquí.
