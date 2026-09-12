@@ -613,19 +613,24 @@ function OrderStatusPageContent() {
                   )}
                 </>
               )}
-              <p className="mt-3 text-sm">
-                Nombre:{" "}
-                {displayName ? (
-                  <span className="font-semibold" suppressHydrationWarning>
-                    {displayName}
-                  </span>
-                ) : (
-                  <span
-                    className="inline-block h-4 w-24 animate-pulse rounded bg-black/10 align-middle"
-                    aria-hidden
-                  />
-                )}
-              </p>
+              {/* Sin nombre (venta de la Caja cobrada sin nombre): la línea no sale. Antes quedaba "Nombre:" con el
+                  cuadrito de cargando para siempre (12-sep-2026, recibo #ZLN2JS de La Familia). El cuadrito solo
+                  mientras el pedido todavía no llega. */}
+              {displayName || !order ? (
+                <p className="mt-3 text-sm">
+                  Nombre:{" "}
+                  {displayName ? (
+                    <span className="font-semibold" suppressHydrationWarning>
+                      {displayName}
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-block h-4 w-24 animate-pulse rounded bg-black/10 align-middle"
+                      aria-hidden
+                    />
+                  )}
+                </p>
+              ) : null}
               <p className="mt-1 text-sm font-bold" suppressHydrationWarning>
                 Total: {formatPrice(displayTotal)}
               </p>

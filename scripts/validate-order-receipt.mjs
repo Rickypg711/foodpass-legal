@@ -144,6 +144,7 @@ check("el recibo pide al servidor cuando las reglas niegan", page.includes("/api
 check("recibo público: no enseña un PIN que no trae (ni se queda cargando)", page.includes("Viene en tu mensaje de WhatsApp"), true);
 check("recibo público: sin el botón de confirmar por WhatsApp (sin PIN no sirve)", page.includes("isPosOrder || publicReceipt ||"), true);
 check("recibo público: a domicilio se sabe por el tipo, no por la dirección", page.includes('order?.orderType === "delivery"'), true);
+check("recibo sin nombre: la línea no sale (no se queda cargando)", page.includes("{displayName || !order ? ("), true);
 
 // ── Las reglas de orders NO se abren ─────────────────────────────────────────
 const RULES = "/Users/ricardoparedes/projects/FOODPASS/firestore.rules";
