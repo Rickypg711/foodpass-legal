@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { rootMetadata } from "@/lib/siteMetadata";
 import { MetaPixelProvider } from "@/components/analytics/MetaPixelProvider";
+import { AttributionCapture } from "@/components/analytics/AttributionCapture";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,6 +29,7 @@ export default function RootLayout({
       >
         {children}
         <MetaPixelProvider />
+        <AttributionCapture />
       </body>
     </html>
   );

@@ -32,11 +32,14 @@ export async function generateMetadata({
     ? `${restaurant.description} Mira el menú de ${restaurant.name}, pide por WhatsApp y junta puntos con cada compra.`
     : `Mira el menú de ${restaurant.name} con fotos y precios, pide por WhatsApp y junta puntos con cada compra.`;
   const image = restaurant.bannerUrl ?? restaurant.logoUrl;
+  // Su logo en la pestaña (y en checkout y la página del pedido, que cuelgan de este layout).
+  const icon = restaurant.faviconUrl;
 
   return {
     title,
     description,
     alternates: { canonical: `/menu/${restaurantId}` },
+    ...(icon ? { icons: { icon: [{ url: icon }], apple: [{ url: icon }] } } : {}),
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
       description,

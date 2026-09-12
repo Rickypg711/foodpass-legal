@@ -11,7 +11,7 @@
  *  - hojas: título de sección en letra gorda con las letras bailando, su ilustración grabada al lado (ico_*.png),
  *    el NOMBRE en versales verdes, la ETIQUETA verde del precio seguida de la barra gris hasta la orilla, y la
  *    descripción en cursiva entre paréntesis;
- *  - el higo gigante y tenue de marca de agua al fondo (higo.png) y su monito "¡Tomen agüita!" (mascota.png).
+ *  - el higo gigante y tenue de marca de agua al fondo (higo_marca.png, al 10 %) y su monito "¡Tomen agüita!" (mascota.png).
  * Su verde es #0b652a, sacado del propio PDF. En escritorio la hoja se parte en dos columnas.
  * La lógica (carrito, opciones, detalle) es la de MenuView: aquí solo se pinta.
  */

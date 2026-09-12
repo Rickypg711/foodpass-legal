@@ -7,6 +7,7 @@ import {
 } from "@/lib/server/restaurantLanding";
 import { buildMenuJsonLd } from "@/lib/server/menuSchema";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { restaurantFaviconUrl } from "@/lib/menu/menuFavicon";
 import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
 import { buildFaq, buildLandingTitle, cityForRestaurant, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
@@ -74,11 +75,14 @@ export async function generateMetadata({
     ? `${description} Mira el menú de ${name}, checa el horario, pide por WhatsApp y junta puntos con cada compra.`
     : `Mira el menú de ${name} con fotos y precios, checa el horario y la ubicación, y pide por WhatsApp.`;
   const image = getRestaurantBannerUrl(data) ?? getRestaurantImageUrl(data);
+  // Su logo en la pestaña (lib/menu/menuFavicon.ts); sin logo propio, la flama de Comeleal.
+  const icon = restaurantFaviconUrl(data);
 
   return {
     title,
     description: metaDescription,
     alternates: { canonical: `/r/${restaurant.canonicalHandle}` },
+    ...(icon ? { icons: { icon: [{ url: icon }], apple: [{ url: icon }] } } : {}),
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
       description: metaDescription,

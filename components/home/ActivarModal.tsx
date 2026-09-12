@@ -11,6 +11,7 @@ import {
   addDoc,
   getDoc,
   serverTimestamp,
+  setDoc,
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
@@ -36,7 +37,7 @@ import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
-import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
+import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
 import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone } from "@/lib/phone/phoneCountry";
 import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
@@ -337,6 +338,29 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       });
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       await httpsCallable(functions, "ensureOwnerMember")({ restaurantId: restaurantRef.id });
+
+      // ── De dónde llegó (12-sep-2026) ───────────────────────────────────
+      // Sin esto no se podía saber si un alta vino de MENU_A, MENU_B, Google o
+      // del pie "Hecho con Comeleal". Va en private/ y NO en el doc público:
+      // los nombres de campaña son inteligencia comercial, como billing.
+      // Una sola vez, sin bloquear el alta si falla. Se lee con
+      // scripts/altasPorCampanaReadOnly.js (repo FOODPASS).
+      try {
+        const attribution = captureAttribution(window.location.search);
+        const u = attribution?.utms ?? {};
+        const acquisition: Record<string, unknown> = { createdAt: serverTimestamp() };
+        if (u.utm_source) acquisition.utmSource = u.utm_source;
+        if (u.utm_medium) acquisition.utmMedium = u.utm_medium;
+        if (u.utm_campaign) acquisition.utmCampaign = u.utm_campaign;
+        if (u.utm_content) acquisition.utmContent = u.utm_content;
+        if (u.utm_term) acquisition.utmTerm = u.utm_term;
+        if (attribution?.referrerHost) acquisition.referrerHost = attribution.referrerHost;
+        if (attribution?.landingPath) acquisition.landingPath = attribution.landingPath;
+        if (attribution?.capturedAt) acquisition.firstSeenAt = new Date(attribution.capturedAt);
+        await setDoc(doc(db, "restaurants", restaurantRef.id, "private", "acquisition"), acquisition);
+      } catch (acqErr) {
+        console.warn("[activar] acquisition no se guardó (no bloquea):", acqErr);
+      }
 
       // ── Conversion tracking — restaurant successfully created ──────────────
       // This is the real "Lead": Meta optimizes leads campaigns on this event.

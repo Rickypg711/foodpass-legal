@@ -7,6 +7,7 @@
 // Cached for an hour per restaurant; failures fall back to generic metadata.
 
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { restaurantFaviconUrl } from "@/lib/menu/menuFavicon";
 
 const PROJECT_ID = "foodpass-18b33";
 const API_KEY = "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk"; // public web config (same as lib/firebase.ts)
@@ -20,6 +21,8 @@ export type RestaurantMetadata = {
   categories: string[];
   /** Teléfono del negocio (campo `phone`) — para JSON-LD telephone. */
   phone: string | null;
+  /** Ícono de la pestaña (lib/menu/menuFavicon.ts); null = la flama de Comeleal. */
+  faviconUrl: string | null;
 };
 
 /** Flattens Firestore REST `fields` (stringValue only — all we need). */
@@ -73,6 +76,7 @@ export async function fetchRestaurantMetadata(
       description,
       categories,
       phone,
+      faviconUrl: restaurantFaviconUrl(data),
     };
   } catch {
     return null;
