@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney";
 import Link from "next/link";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
@@ -8,11 +9,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Punto de venta (POS) gratis para restaurantes",
-  description: "Caja / punto de venta gratis para tu restaurante: cobra en segundos, cuentas abiertas, recibo por WhatsApp y puntos de lealtad automáticos. Sin mensualidad.",
+  description: "Caja / punto de venta gratis para tu restaurante: cobra en segundos, recibo por WhatsApp y puntos de lealtad automáticos. Gratis para empezar; cuentas por mesa con Pro.",
   alternates: { canonical: "/punto-de-venta-gratis-restaurantes" },
   openGraph: {
     title: "Punto de venta (POS) gratis para restaurantes",
-    description: "Caja / punto de venta gratis para tu restaurante: cobra en segundos, cuentas abiertas, recibo por WhatsApp y puntos de lealtad automáticos. Sin mensualidad.",
+    description: "Caja / punto de venta gratis para tu restaurante: cobra en segundos, recibo por WhatsApp y puntos de lealtad automáticos. Gratis para empezar; cuentas por mesa con Pro.",
     locale: "es_MX",
     type: "website",
   },
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿La Caja de Comeleal es gratis de verdad?",
-    a: "Sí — sin mensualidad. Registrar ventas en efectivo no cuesta nada; solo los pagos digitales en línea (Mercado Pago) llevan un 3%. Otras plataformas de punto de venta cobran desde $749 MXN al mes.",
+    a: `Sí, gratis para empezar. Registrar ventas en efectivo o con tu terminal no cuesta nada; solo los pagos digitales en línea (Mercado Pago) llevan un 3%. Pro cuesta ${PRO_PRICE_LABEL} al mes, para cuando tu Caja crece (todo tu historial, tu equipo cobra con su PIN y llevas mesas), y lo pruebas 14 días gratis sin tarjeta. Otras plataformas de punto de venta cobran desde $749 MXN al mes.`,
   },
   {
     q: "¿Necesito comprar equipo?",
@@ -29,7 +30,7 @@ const FAQ = [
   },
   {
     q: "¿Puedo manejar cuentas abiertas por mesa?",
-    a: "Sí. Abres una cuenta con nombre (“Mesa 3”, “Juan”), le agregas platillos durante la visita y la cobras al final — y los puntos del cliente se aplican al cerrar.",
+    a: `Sí, con Pro (${PRO_PRICE_LABEL} al mes, 14 días de prueba gratis). Abres una cuenta con nombre (“Mesa 3”, “Juan”), le agregas platillos durante la visita y la cobras al final — y los puntos del cliente se aplican al cerrar.`,
   },
   {
     q: "¿Cómo funciona la lealtad en la Caja?",
@@ -69,7 +70,7 @@ export default function Page() {
             Punto de venta <span className="text-[#F28C38]">gratis</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            La Caja de Comeleal: cobra en segundos desde tu teléfono o tablet, con cuentas abiertas, recibo por WhatsApp y lealtad integrada. <b>Sin mensualidad y sin equipos caros.</b>
+            La Caja de Comeleal: cobra en segundos desde tu teléfono o tablet, con recibo por WhatsApp y lealtad integrada. <b>Gratis para empezar y sin equipos caros.</b>
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -92,7 +93,7 @@ export default function Page() {
             Otras plataformas cobran desde $749 MXN/mes por su punto de venta
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            La Caja de Comeleal es gratis: registras ventas en efectivo o tarjeta, abres cuentas por mesa, mandas el recibo por WhatsApp y cada venta suma puntos de lealtad automáticamente con el número del cliente. Funciona en el teléfono que ya tienes — sin terminales especiales ni contratos.
+            La Caja de Comeleal es gratis: registras ventas en efectivo o tarjeta, mandas el recibo por WhatsApp y cada venta suma puntos de lealtad automáticamente con el número del cliente. Funciona en el teléfono que ya tienes — sin terminales especiales ni contratos.
           </p>
         </div>
       </section>
@@ -112,7 +113,7 @@ export default function Page() {
               {
                 n: "2",
                 t: "Cobra como trabajes tú",
-                d: "Cobro inmediato en efectivo o tarjeta (con tu terminal de siempre), o cuenta abierta por mesa para cerrar al final. El recibo le llega al cliente por WhatsApp.",
+                d: "Cobro inmediato en efectivo o tarjeta (con tu terminal de siempre), o, con Pro, cuenta abierta por mesa para cerrar al final. El recibo le llega al cliente por WhatsApp.",
               },
               {
                 n: "3",

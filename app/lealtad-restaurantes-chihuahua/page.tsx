@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
@@ -12,12 +13,12 @@ import {
 export const metadata: Metadata = {
   title: "Programa de lealtad para restaurantes en Chihuahua — gratis",
   description:
-    "Menú QR gratis, pedidos por WhatsApp y programa de puntos para restaurantes en Chihuahua. Sin mensualidad. Hecho en Chihuahua. Empieza hoy por WhatsApp.",
+    "Menú QR, pedidos por WhatsApp y programa de puntos para restaurantes en Chihuahua. Gratis para empezar, sin tarjeta. Hecho en Chihuahua. Empieza hoy por WhatsApp.",
   alternates: { canonical: "/lealtad-restaurantes-chihuahua" },
   openGraph: {
     title: "Programa de lealtad para restaurantes en Chihuahua — Comeleal",
     description:
-      "Menú QR gratis, pedidos por WhatsApp y puntos que hacen volver a tus clientes. Sin mensualidad — hecho en Chihuahua.",
+      "Menú QR, pedidos por WhatsApp y puntos que hacen volver a tus clientes. Gratis para empezar — hecho en Chihuahua.",
     locale: "es_MX",
     type: "website",
   },
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Cuánto cuesta el programa de lealtad de Comeleal?",
-    a: "Empezar es gratis: menú QR, pedidos por WhatsApp y programa de puntos sin mensualidad. Otras plataformas de lealtad en México cobran desde $749 MXN al mes. En Comeleal solo pagas una comisión del 3% en pagos digitales — en efectivo, 0%.",
+    a: `Empezar es gratis y sin tarjeta: menú QR, pedidos por WhatsApp, Caja y puntos sin tope. Los pagos digitales en línea llevan 3%; en efectivo o con tu terminal, 0%. Pro cuesta ${PRO_PRICE_LABEL} al mes, para cuando tu Caja crece (todo tu historial, tu equipo cobra con su PIN y llevas mesas), y lo pruebas 14 días gratis sin tarjeta. Otras plataformas de lealtad en México cobran desde $749 MXN al mes.`,
   },
   {
     q: "¿Necesito que mis clientes descarguen una app?",
@@ -38,13 +39,13 @@ const FAQ = [
   },
   {
     q: "¿Cómo me ayuda a que mis clientes regresen?",
-    a: "Cada venta suma puntos automáticamente. La IA de Comeleal detecta clientes que dejaron de venir, les manda recordatorios automáticos y te dice a quién escribirle por WhatsApp — y te muestra cuántos clientes y cuántos pesos te regresó.",
+    a: "Cada venta con el número del cliente le suma sus puntos. Comeleal te dice quién dejó de venir: si tiene la app, le llega un recordatorio solo; si no, la IA te escribe el mensaje y tú se lo mandas por WhatsApp en un toque. Y te muestra cuántos clientes y cuántos pesos te regresaron.",
   },
   {
-    q: "¿Atienden en persona en Chihuahua?",
-    a: "Sí. Comeleal está hecho en Chihuahua y visitamos negocios locales para dejarte todo configurado: menú, horario y tu primera recompensa. Escríbenos por WhatsApp al " +
+    q: "¿Están en Chihuahua?",
+    a: "Sí, Comeleal es de Chihuahua y te contesta una persona. Mándanos la foto de tu menú por WhatsApp al " +
       PUBLIC_WHATSAPP_DISPLAY +
-      ".",
+      " y te lo dejamos listo, gratis. Si quieres que vayamos a tu negocio a tomar fotos de tus platillos y dejar todo listo con tu equipo, también se puede: te decimos el precio antes.",
   },
 ];
 
@@ -79,7 +80,7 @@ export default function LealtadRestaurantesChihuahua() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Menú QR gratis, pedidos por WhatsApp y puntos que hacen volver a tus
-            clientes. <b>Sin mensualidad.</b> Te lo dejamos funcionando en 10
+            clientes. <b>Gratis para empezar.</b> Te lo dejamos funcionando en 10
             minutos.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -140,7 +141,7 @@ export default function LealtadRestaurantesChihuahua() {
               {
                 n: "1",
                 t: "Tu menú QR gratis",
-                d: "Subimos tu menú con fotos y precios. Imprimes el QR y tus clientes piden por WhatsApp — sin apps de por medio.",
+                d: "Subimos tu menú con sus precios desde una foto. Imprimes el QR y tus clientes piden por WhatsApp — sin apps de por medio.",
               },
               {
                 n: "2",
@@ -150,7 +151,7 @@ export default function LealtadRestaurantesChihuahua() {
               {
                 n: "3",
                 t: "La IA los hace volver",
-                d: "Comeleal detecta quién dejó de venir, manda recordatorios automáticos y te muestra cuántos clientes y pesos te regresó.",
+                d: "Comeleal te dice quién dejó de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás y te muestra cuántos clientes te regresaron.",
               },
             ].map((step) => (
               <div
@@ -179,9 +180,9 @@ export default function LealtadRestaurantesChihuahua() {
             Somos de aquí — no una plataforma de Monterrey o CDMX
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-[#1C2526]/65">
-            Visitamos tu negocio en Chihuahua, configuramos tu menú, tu horario y
-            tu primera recompensa contigo, y te acompañamos por WhatsApp. Si algo
-            no jala, nos escribes y lo arreglamos — en persona si hace falta.
+            Nos mandas la foto de tu menú y te dejamos listos tu menú, tu QR y tus
+            puntos, y te acompañamos por WhatsApp. Si algo no jala, nos escribes y
+            lo arreglamos.
           </p>
           <div className="mt-6">
             <WhatsAppButton label={`💬 Escríbenos: ${PUBLIC_WHATSAPP_DISPLAY}`} />
@@ -219,8 +220,8 @@ export default function LealtadRestaurantesChihuahua() {
             Tu programa de lealtad puede estar listo hoy
           </h2>
           <p className="mt-2 text-[14px] text-[#1C2526]/55">
-            Mándanos un WhatsApp y te dejamos el menú QR, los puntos y tu primera
-            recompensa funcionando.
+            Mándanos un WhatsApp con la foto de tu menú y te dejamos tu menú QR y
+            tus puntos funcionando.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />

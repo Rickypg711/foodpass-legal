@@ -60,12 +60,12 @@ export const VERTICALES: Vertical[] = [
     emoji: "🌮",
     title: "Software para taquerías — punto de venta gratis y clientes que regresan | Comeleal",
     description:
-      "Punto de venta para taquerías sin mensualidad: cobra rápido en la hora pico, corta caja sin cuadrar a mano y haz que tus clientes regresen con puntos ligados a su teléfono. Gratis para operar.",
+      "Punto de venta para taquerías, gratis para empezar: cobra rápido en la hora pico, corta caja sin cuadrar a mano y haz que tus clientes regresen con puntos ligados a su teléfono. Gratis para operar.",
     h1pre: "Software para ",
     h1kw: "taquerías",
     h1post: " que cobra rápido y hace volver al cliente",
     heroP:
-      "En una taquería el sistema o te ayuda en la hora pico o estorba. Comeleal cobra en tres toques, manda la comanda solita y guarda al cliente con su número para que regrese. <b>Gratis para operar, sin mensualidad.</b>",
+      "En una taquería el sistema o te ayuda en la hora pico o estorba. Comeleal cobra en tres toques, manda la comanda solita y guarda al cliente con su número para que regrese. <b>Gratis para operar.</b>",
     dolorH2: "Tu problema no es vender tacos. Es que el de enfrente vende los mismos.",
     dolorP:
       "En taquería casi nadie tiene menú de precios estable, todos compiten por ubicación y antojo, y el cliente que vino hoy mañana se para en la esquina de junto. Lo único que te lo amarra es que aquí acumula algo. Comeleal guarda a cada cliente con su número al momento de cobrar — sin apps, sin tarjetitas, sin trabajo extra para tu taquero — y te avisa cuándo dejó de venir. Otras plataformas cobran desde $749 MXN al mes por esto.",
@@ -89,7 +89,7 @@ export const VERTICALES: Vertical[] = [
     nombre: "pizzerías",
     posesivo: "tu pizzería",
     emoji: "🍕",
-    title: "Software para pizzerías — pedidos, punto de venta y lealtad sin mensualidad | Comeleal",
+    title: "Software para pizzerías — pedidos, punto de venta y lealtad gratis | Comeleal",
     description:
       "Sistema para pizzerías: recibe pedidos a domicilio y para recoger sin comisiones de reparto, cobra en mostrador y haz que el cliente vuelva a pedirte a ti y no a la app. Gratis para operar.",
     h1pre: "Software para ",
@@ -122,17 +122,17 @@ export const VERTICALES: Vertical[] = [
     emoji: "☕",
     title: "Software para cafeterías — punto de venta y programa de lealtad gratis | Comeleal",
     description:
-      "Punto de venta para cafeterías y coffee shops: cobra rápido, maneja cuentas por mesa y premia al cliente que viene diario con puntos ligados a su teléfono. Sin mensualidad.",
+      "Punto de venta para cafeterías y coffee shops: cobra rápido, premia al cliente que viene diario con puntos ligados a su teléfono y, con Pro, lleva cuentas por mesa. Gratis para empezar.",
     h1pre: "Software para ",
     h1kw: "cafeterías",
     h1post: " donde el cliente de diario es el negocio",
     heroP:
-      "Una cafetería no vive del cliente nuevo, vive del que viene tres veces por semana. Comeleal cobra rápido, lleva las cuentas por mesa y le da puntos a ese cliente con su puro número — <b>gratis, sin tarjetitas de sellos.</b>",
+      "Una cafetería no vive del cliente nuevo, vive del que viene tres veces por semana. Comeleal cobra rápido y le da puntos a ese cliente con su puro número — <b>gratis, sin tarjetitas de sellos.</b>",
     dolorH2: "La tarjetita de sellos se moja, se pierde y se falsifica.",
     dolorP:
       "Todas las cafeterías tienen la tarjeta del décimo café gratis, y todas tienen el mismo problema: el cliente la pierde, el barista regala sellos de más, y tú nunca sabes cuántos clientes de verdad regresan. Con Comeleal el sello es el número de teléfono: no se pierde, no se falsifica, y a fin de mes ves cuántos clientes regresaron y cuánto te dejaron. Otras plataformas cobran desde $749 MXN al mes por eso.",
     razones: [
-      { t: "Cuentas abiertas por mesa", d: "Abres la cuenta, el cliente sigue pidiendo y cierras al final. Ideal para quien se queda a trabajar toda la mañana." },
+      { t: "Cuentas abiertas por mesa (Pro)", d: "Abres la cuenta, el cliente sigue pidiendo y cierras al final. Ideal para quien se queda a trabajar toda la mañana." },
       { t: "Tamaños y leches sin enredo", d: "Chico, mediano, grande, deslactosada, de avena — cada variante con su precio y sin que el barista tenga que calcular nada." },
       { t: "Puntos sin tarjetita", d: "El cliente da su teléfono y suma. El café gratis a los X puntos lo defines tú, y nadie puede falsificar sellos." },
       { t: "Propinas que sí llegan", d: "La propina se calcula sobre el neto y queda registrada por empleado, para que el reparto sea justo y sin discusiones." },
@@ -141,7 +141,7 @@ export const VERTICALES: Vertical[] = [
     ],
     faq: [
       { q: "¿Puedo vender también el grano y la mercancía?", a: "Sí, cualquier producto entra al menú: bolsas de café, tazas, pan. Se cobran en la misma caja y suman puntos igual." },
-      { q: "¿Sirve para el cliente que se queda a trabajar y va pidiendo?", a: "Para eso son las cuentas abiertas: abres la cuenta a nombre de la mesa, va sumando lo que pida y cierras cuando se va. Nada se pierde en el camino." },
+      { q: "¿Sirve para el cliente que se queda a trabajar y va pidiendo?", a: "Para eso son las cuentas abiertas de Pro: abres la cuenta a nombre de la mesa, va sumando lo que pida y cierras cuando se va. Nada se pierde en el camino." },
       { q: "¿Cómo hago que el cliente de diario se registre sin incomodarlo?", a: "Solo le pides su número al cobrar, una vez. No descarga nada ni llena formularios. La siguiente vez que dé el mismo número, sus puntos ya están ahí." },
       { q: "¿Puedo darle precio especial a mis empleados o a clientes frecuentes?", a: "Sí, con los descuentos especiales: asignas un perfil a un número de teléfono y la caja aplica el descuento sola al cobrar, sin que nadie tenga que autorizar nada." },
     ],
@@ -199,7 +199,7 @@ export const VERTICALES: Vertical[] = [
       { t: "Pedidos por WhatsApp para recoger", d: "El cliente arma su pedido desde el link y lo recoge listo. Menos fila en la ventanilla, más vueltas por hora." },
       { t: "Corte de caja sin cuadrar a mano", d: "Al cerrar te dice cuánto debería haber en efectivo. Se acabó contar billetes tratando de acordarte de las ventas." },
       { t: "Clientes que te siguen a donde vayas", d: "Cada cliente queda con su número y sus puntos. Cuando cambies de zona, sabes a quién avisarle." },
-      { t: "Sin mensualidad para operar", d: "Cobrar, el menú, los pedidos y tus clientes son gratis para siempre. Solo pagas 3% si te pagan con tarjeta en línea." },
+      { t: "Gratis para operar", d: "Cobrar, el menú, los pedidos y tus clientes son gratis para siempre. Pagas 3% solo si te pagan con tarjeta en línea, y Pro solo si lo quieres." },
     ],
     faq: [
       { q: "¿Funciona sin internet?", a: "El cobro necesita conexión, así que lo que recomendamos es un plan de datos en el celular de la caja — es lo más barato y lo que hace todo mundo. Si sabes que vas a una zona sin señal, avísanos y te decimos cómo prepararte." },
@@ -215,7 +215,7 @@ export const VERTICALES: Vertical[] = [
     emoji: "🍻",
     title: "Software para bares y antros — cuentas por mesa y control de caja | Comeleal",
     description:
-      "Punto de venta para bares: cuentas abiertas por mesa, control de caja por turno, ventas por empleado y programa de lealtad. Sin mensualidad para operar.",
+      "Punto de venta para bares: control de caja, programa de lealtad y, con Pro, cuentas por mesa y ventas por empleado. Gratis para empezar.",
     h1pre: "Software para ",
     h1kw: "bares y antros",
     h1post: " donde la caja tiene que cuadrar",
@@ -225,7 +225,7 @@ export const VERTICALES: Vertical[] = [
     dolorP:
       "En bar la barra se mueve rápido, hay cortesías, hay cuentas que se abren y se cierran toda la noche, y el corte casi nunca cuadra a la primera. El problema no es el dinero que falta, es no poder rastrearlo. Comeleal amarra cada venta al PIN del empleado que la cobró, registra cada descuento y cada cortesía, y te da el corte por turno con el detalle. Otras plataformas cobran desde $749 MXN al mes.",
     razones: [
-      { t: "Cuentas abiertas por mesa toda la noche", d: "Abres la cuenta, va sumando todo lo que pidan y la cierras al final. Nada se queda fuera del ticket." },
+      { t: "Cuentas abiertas por mesa toda la noche (Pro)", d: "Abres la cuenta, va sumando todo lo que pidan y la cierras al final. Nada se queda fuera del ticket." },
       { t: "Cada quien cobra con su PIN", d: "Meseros y barra entran con su código. Cada venta, cada descuento y cada cortesía quedan con nombre y hora." },
       { t: "Corte de caja por turno", d: "El sistema sabe cuánto entró en efectivo y cuánto en tarjeta. Si el corte no cuadra, ves exactamente en qué turno y con quién." },
       { t: "Descuentos y cortesías con control", d: "Defines quién puede aplicar precios especiales y a quién. Todo queda auditado en Reportes — sin discusiones al día siguiente." },
@@ -256,7 +256,7 @@ export const VERTICALES: Vertical[] = [
     dolorP:
       "Una familia que deja mil pesos en tu marisquería y no regresa en tres meses es la pérdida más cara del negocio, porque recuperarla cuesta más que cualquier promoción. Comeleal guarda a cada cliente con su número al cobrar, y cuando lleva demasiado sin volver te avisa y te deja listo el mensaje de WhatsApp. Con tickets de este tamaño, traer de vuelta a dos familias al mes ya te pagó el sistema varias veces.",
     razones: [
-      { t: "Cuentas por mesa con todo el detalle", d: "Mesas grandes, pedidos que van llegando por partes, y al final una cuenta clara. Nada se queda fuera." },
+      { t: "Cuentas por mesa con todo el detalle (Pro)", d: "Mesas grandes, pedidos que van llegando por partes, y al final una cuenta clara. Nada se queda fuera." },
       { t: "Precios por tamaño, orden y kilo", d: "Cada variante con su precio: chico, grande, kilo, media orden. Se cobra rápido y sin cuentas mentales." },
       { t: "Comandas separadas a cocina y barra", d: "Lo de cocina va a cocina, lo de la barra a la barra, cada uno con su tiempo corriendo." },
       { t: "Corte de caja que cuadra", d: "Efectivo, tarjeta y quién cobró cada venta. El corte del domingo deja de ser un dolor de cabeza." },
@@ -265,7 +265,7 @@ export const VERTICALES: Vertical[] = [
     ],
     faq: [
       { q: "¿Puedo manejar precio por kilo y por orden del mismo producto?", a: "Sí, cada presentación es su propia opción con su precio. El cajero solo elige cuál y el sistema hace la cuenta." },
-      { q: "¿Sirve para mesas grandes que piden por partes?", a: "Para eso son las cuentas abiertas: la mesa va sumando todo lo que pida durante la comida y cierras una sola vez al final." },
+      { q: "¿Sirve para mesas grandes que piden por partes?", a: "Para eso son las cuentas abiertas de Pro: la mesa va sumando todo lo que pida durante la comida y cierras una sola vez al final." },
       { q: "¿Cómo separo comandas de cocina y de barra?", a: "Cada área puede tener su propia pantalla o su impresora, y a cada una le llega solo lo que le toca preparar." },
       { q: "¿Vale la pena la lealtad si mis clientes vienen una vez al mes?", a: "Vale más justamente por eso. En negocios de ticket alto y baja frecuencia, subir de una visita cada tres meses a una cada dos meses cambia el año completo. Y como cada visita deja mucho, el premio se alcanza rápido y se siente." },
     ],

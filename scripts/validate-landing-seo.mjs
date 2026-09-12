@@ -118,4 +118,28 @@ assert.ok(view.includes("seoCategories("), "la vista filtra comodines en chips/F
 const dir = read("lib/server/restaurantDirectory.ts");
 assert.ok(dir.includes("seoCategories(") && dir.includes("cityForRestaurant("), "el directorio filtra comodines y expone la ciudad");
 
+// ── Copy de marketing honesto (12-sep-2026) ─────────────────────────────────
+// Las páginas SEO de julio prometían "sin mensualidad" (hay Pro), "recordatorios automáticos" a todos (solo le llegan
+// a quien tiene la app; el WhatsApp lo manda el dueño), "te visitamos" gratis (la visita es de paga) y cuentas por
+// mesa gratis (son Pro). Regla: "gratis para empezar".
+const MARKETING = [
+  "app/lealtad-restaurantes-chihuahua/page.tsx", "app/programa-de-lealtad-para-restaurantes/page.tsx",
+  "app/tarjeta-de-lealtad-digital/page.tsx", "app/clientes-que-regresan/page.tsx",
+  "app/como-vender-mas-en-mi-restaurante/page.tsx", "app/inteligencia-artificial-para-restaurantes/page.tsx",
+  "app/menu-qr-gratis-restaurantes/page.tsx", "app/pedidos-en-linea-restaurantes/page.tsx",
+  "app/pedidos-whatsapp-restaurantes/page.tsx", "app/punto-de-venta-gratis-restaurantes/page.tsx",
+  "app/software-para-restaurantes/page.tsx", "lib/marketing/verticals.ts", "app/llms.txt/route.ts",
+];
+for (const f of MARKETING) {
+  const src = read(f).replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(!/sin mensualidad/i.test(src), `${f}: no dice "sin mensualidad" (hay Pro) — usar "gratis para empezar"`);
+  assert.ok(!/recordatorios? automátic/i.test(src.replace(/recordatorios automáticos a usuarios de la app/gi, "")), `${f}: "recordatorios automáticos" solo si dice que es a quien tiene la app`);
+  assert.ok(!/te visitamos|visitamos (tu|negocios)/i.test(src), `${f}: la visita es de paga, no se promete gratis`);
+  assert.ok(!/\bliga\b/i.test(src), `${f}: "link", jamás "liga"`);
+}
+const pos = read("app/punto-de-venta-gratis-restaurantes/page.tsx");
+assert.ok(pos.includes("con Pro"), "punto de venta: las cuentas por mesa dicen que son de Pro");
+const llms = read("app/llms.txt/route.ts");
+assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no manda WhatsApp por su cuenta"), "llms.txt: precio de la constante y sin WhatsApp automático");
+
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

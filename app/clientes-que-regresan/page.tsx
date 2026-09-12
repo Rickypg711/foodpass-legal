@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
@@ -7,11 +8,11 @@ import {
 
 export const metadata: Metadata = {
   title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-  description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios automáticos los hace regresar — gratis.",
+  description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar — gratis para empezar.",
   alternates: { canonical: "/clientes-que-regresan" },
   openGraph: {
     title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-    description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios automáticos los hace regresar — gratis.",
+    description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar — gratis para empezar.",
     locale: "es_MX",
     type: "website",
   },
@@ -32,7 +33,7 @@ const FAQ = [
   },
   {
     q: "¿Cuánto cuesta el programa de lealtad de Comeleal?",
-    a: "Empezar es gratis, sin mensualidad: menú QR, pedidos por WhatsApp y puntos incluidos. Solo pagamos nosotros cuando cobras digital (3%); en efectivo, 0%.",
+    a: `Empezar es gratis y sin tarjeta: menú QR, pedidos por WhatsApp y puntos incluidos. Los pagos digitales en línea llevan 3%; en efectivo, 0%. Pro cuesta ${PRO_PRICE_LABEL} al mes, para cuando tu Caja crece (todo tu historial, tu equipo cobra con su PIN y llevas mesas), y lo pruebas 14 días gratis sin tarjeta.`,
   }
 ];
 
@@ -87,7 +88,7 @@ export default function Page() {
             La fórmula: puntos + recordatorio + premio
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Cada venta suma puntos con el número de teléfono del cliente. Cuando alguien deja de venir, Comeleal lo detecta y le manda un recordatorio automático — y a los que dejaron su WhatsApp, tú les escribes en un toque con un mensaje que la IA te redacta. El premio le da la razón para volver hoy y no “algún día”.
+            Cada venta suma puntos con el número de teléfono del cliente. Cuando alguien deja de venir, Comeleal lo detecta: si tiene la app, le llega un recordatorio solo — y a los que dejaron su WhatsApp, tú les escribes en un toque con un mensaje que la IA te redacta. El premio le da la razón para volver hoy y no “algún día”.
           </p>
         </div>
       </section>

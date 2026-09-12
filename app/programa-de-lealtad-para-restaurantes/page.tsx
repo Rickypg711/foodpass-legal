@@ -7,11 +7,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Programa de lealtad para restaurantes — puntos que hacen volver clientes",
-  description: "Programa de lealtad para tu restaurante sin mensualidad: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
+  description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
   alternates: { canonical: "/programa-de-lealtad-para-restaurantes" },
   openGraph: {
     title: "Programa de lealtad para restaurantes — puntos que hacen volver clientes",
-    description: "Programa de lealtad para tu restaurante sin mensualidad: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
+    description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
     locale: "es_MX",
     type: "website",
   },
@@ -68,7 +68,7 @@ export default function Page() {
             Programa de <span className="text-[#F28C38]">lealtad</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Puntos automáticos con el número de teléfono, premios ligados a tus platillos y una IA que trae de vuelta a los que dejaron de venir. <b>Sin mensualidad, sin apps obligatorias</b> — así compra México.
+            Puntos automáticos con el número de teléfono, premios ligados a tus platillos y una IA que trae de vuelta a los que dejaron de venir. <b>Gratis para empezar, sin apps obligatorias</b> — así compra México.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -116,7 +116,7 @@ export default function Page() {
               {
                 n: "3",
                 t: "La IA cierra el círculo",
-                d: "Cuando un cliente deja de venir, la IA lo detecta y actúa: recordatorios automáticos, mensajes de recuperación listos para enviar, y un reporte de cuántos clientes y pesos te regresó.",
+                d: "Cuando un cliente deja de venir, la IA lo detecta y actúa: un recordatorio solo si tiene la app, el mensaje de WhatsApp listo para que tú lo mandes a los demás, y un reporte de cuántos clientes y pesos te regresó.",
               }
             ].map((step) => (
               <div
@@ -166,7 +166,7 @@ export default function Page() {
             <WhatsAppButton />
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
-            <Link href="/lealtad-restaurantes-chihuahua" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">¿Estás en Chihuahua? Te visitamos →</Link>
+            <Link href="/lealtad-restaurantes-chihuahua" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">¿Estás en Chihuahua? Somos de aquí →</Link>
             <Link href="/tarjeta-de-lealtad-digital" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Tarjeta de lealtad digital →</Link>
             <Link href="/inteligencia-artificial-para-restaurantes" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">IA para restaurantes →</Link>
           </div>

@@ -7,11 +7,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
-  description: "IA para tu restaurante: detecta clientes que dejaron de venir, manda recordatorios automáticos, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
+  description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
   alternates: { canonical: "/inteligencia-artificial-para-restaurantes" },
   openGraph: {
     title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
-    description: "IA para tu restaurante: detecta clientes que dejaron de venir, manda recordatorios automáticos, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
+    description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
     locale: "es_MX",
     type: "website",
   },
@@ -64,7 +64,7 @@ export default function Page() {
             Inteligencia artificial para tu restaurante — <span className="text-[#F28C38]">el empleado que no duerme</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            La IA de Comeleal vigila tu negocio mientras tú cocinas: detecta quién dejó de venir, lo trae de vuelta con recordatorios automáticos, y cada día te dice <b>cuál es tu siguiente movimiento</b> — con resultados en pesos, no en promesas.
+            La IA de Comeleal vigila tu negocio mientras tú cocinas: detecta quién dejó de venir, le recuerda solo a quien tiene la app y te escribe el WhatsApp para los demás, y cada día te dice <b>cuál es tu siguiente movimiento</b> — con resultados en pesos, no en promesas.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -87,7 +87,7 @@ export default function Page() {
             No es un chatbot — es un empleado que trabaja solo
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Mientras otras plataformas te dan gráficas para que tú adivines, la IA de Comeleal actúa: manda los recordatorios, redacta los mensajes de recuperación, sugiere recompensas para tus platillos y digitaliza tu menú de una foto. Y te rinde cuentas: “Comeleal trabajó por ti: te recuperó N clientes ≈ $X MXN”. Todo incluido gratis.
+            Mientras otras plataformas te dan gráficas para que tú adivines, la IA de Comeleal actúa: manda los recordatorios a quien tiene la app, te redacta los mensajes de WhatsApp para los demás, sugiere recompensas para tus platillos y digitaliza tu menú de una foto. Y te rinde cuentas: “Comeleal trabajó por ti: te recuperó N clientes ≈ $X MXN”. Todo incluido gratis.
           </p>
         </div>
       </section>

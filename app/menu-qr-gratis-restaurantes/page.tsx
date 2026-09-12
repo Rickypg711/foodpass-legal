@@ -8,11 +8,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Menú digital QR gratis para restaurantes — crea el tuyo hoy",
-  description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Sin mensualidad. Hecho en Chihuahua.",
+  description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Gratis para empezar. Hecho en Chihuahua.",
   alternates: { canonical: "/menu-qr-gratis-restaurantes" },
   openGraph: {
     title: "Menú digital QR gratis para restaurantes — crea el tuyo hoy",
-    description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Sin mensualidad. Hecho en Chihuahua.",
+    description: "Crea tu menú digital gratis con código QR: fotos, precios, pedidos en línea que te llegan al WhatsApp y programa de puntos para que tus clientes regresen. Gratis para empezar. Hecho en Chihuahua.",
     locale: "es_MX",
     type: "website",
   },
@@ -77,7 +77,7 @@ export default function Page() {
             Menú digital QR <span className="text-[#F28C38]">gratis</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Sin mensualidad, sin comisión en efectivo.</b> Listo en 10 minutos.
+            Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Gratis para empezar, sin comisión en efectivo.</b> Listo en 10 minutos.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />

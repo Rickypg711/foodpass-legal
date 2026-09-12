@@ -10,12 +10,12 @@ import { VERTICALES } from "@/lib/marketing/verticals";
 export const metadata: Metadata = {
   title: "Software para restaurantes en México — punto de venta gratis | Comeleal",
   description:
-    "Software para restaurantes sin mensualidad: punto de venta, menú QR, pedidos en línea y programa de lealtad. Elige tu tipo de negocio — taquerías, pizzerías, cafeterías, bares, food trucks y más.",
+    "Software para restaurantes, gratis para empezar: punto de venta, menú QR, pedidos en línea y programa de lealtad. Elige tu tipo de negocio — taquerías, pizzerías, cafeterías, bares, food trucks y más.",
   alternates: { canonical: "/software-para-restaurantes" },
   openGraph: {
     title: "Software para restaurantes en México — punto de venta gratis | Comeleal",
     description:
-      "Punto de venta, menú QR, pedidos y lealtad. Gratis para operar, sin mensualidad. Elige tu tipo de negocio.",
+      "Punto de venta, menú QR, pedidos y lealtad. Gratis para operar. Elige tu tipo de negocio.",
     locale: "es_MX",
     type: "website",
   },
@@ -35,8 +35,8 @@ export default function Page() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Punto de venta, menú QR, pedidos en línea, tus clientes y tus
-            reportes: <b>gratis para siempre, sin mensualidad</b>. Lo que cobramos
-            es la máquina que hace que tus clientes regresen — y esa la pruebas 14
+            reportes: <b>gratis para empezar</b>. Pro es para cuando tu Caja crece:
+            todo tu historial, tu equipo con su PIN y mesas — y lo pruebas 14
             días sin tarjeta.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

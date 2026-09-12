@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Cuánto cuesta recibir pedidos en línea?",
-    a: "El sistema es gratis, sin mensualidad. Pago al recoger: 0% de comisión. Pago digital con Mercado Pago: 3%. Las apps de reparto cobran hasta 30% por pedido.",
+    a: "Empezar es gratis y sin tarjeta. Pago al recoger: 0% de comisión. Pago digital con Mercado Pago: 3%. Las apps de reparto cobran hasta 30% por pedido.",
   },
   {
     q: "¿Incluye repartidores?",

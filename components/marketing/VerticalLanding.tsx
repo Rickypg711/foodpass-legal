@@ -10,7 +10,7 @@
  *   · el mensaje "corte de caja a prueba de faltantes" (el miedo al robo del
  *     empleado es lo que vende POS en México; nosotros ya teníamos la feature
  *     completa —PIN, soldBy, arqueo— y no lo estábamos diciendo)
- *   · "no necesitas comprar equipo" con liga a /hardware (desarma la objeción #1
+ *   · "no necesitas comprar equipo" con link a /hardware (desarma la objeción #1
  *     del restaurantero tradicional)
  */
 

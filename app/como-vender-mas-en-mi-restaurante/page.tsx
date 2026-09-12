@@ -102,7 +102,7 @@ export default function Page() {
               {
                 n: "1",
                 t: "Palanca 1: que regresen",
-                d: "Puntos automáticos con el número de teléfono, premios ligados a tus platillos, y una IA que detecta quién dejó de venir y lo trae de vuelta con recordatorios — mientras tú cocinas.",
+                d: "Puntos automáticos con el número de teléfono, premios ligados a tus platillos, y una IA que detecta quién dejó de venir y te ayuda a traerlo de vuelta — mientras tú cocinas.",
               },
               {
                 n: "2",
