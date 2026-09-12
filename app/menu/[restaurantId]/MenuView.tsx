@@ -95,6 +95,15 @@ import {
   laspicSortItems,
 } from "@/components/menu/skins/laspic";
 import {
+  TP_ROOT_CLASS,
+  TortasCategorySection,
+  TortasHeader,
+  TortasItemRow,
+  TortasPanel,
+  TortasSheet,
+  tortasSortItems,
+} from "@/components/menu/skins/tortasperras";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -239,12 +248,15 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "blooms") return BL_ROOT_CLASS;
   if (skin === "mixteco") return MX_ROOT_CLASS;
   if (skin === "laspic") return LP_ROOT_CLASS;
+  if (skin === "tortasperras") return TP_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
-/** Ancho del menú. Mixteco y LasPic usan todo el escritorio: su papel va a dos columnas (11-sep). */
+/** Ancho del menú. Mixteco, LasPic y Tortas Perras usan todo el escritorio: su papel va a dos columnas (11-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
-  return skin === "mixteco" || skin === "laspic" ? "max-w-3xl lg:max-w-6xl" : "max-w-3xl lg:max-w-4xl";
+  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras"
+    ? "max-w-3xl lg:max-w-6xl"
+    : "max-w-3xl lg:max-w-4xl";
 }
 
 function MenuRestaurantHeader({
@@ -301,6 +313,19 @@ function MenuRestaurantHeader({
   if (skin === "laspic") {
     return (
       <LaspicHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "tortasperras") {
+    return (
+      <TortasHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -481,6 +506,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "mixteco") return null;
   // LasPic: su fachada ya es el encabezado.
   if (skin === "laspic") return null;
+  // Tortas Perras: su hoja roja ya es el encabezado.
+  if (skin === "tortasperras") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -622,6 +649,46 @@ function MenuCategoryList({
           );
         })}
       </LaspicSheet>
+    );
+  }
+  if (skin === "tortasperras") {
+    // Su hoja de papel hueso (components/menu/skins/tortasperras.tsx): óvalo por sección y el orden de su papel.
+    return (
+      <TortasSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          return (
+            <TortasCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && tortasSortItems(group.items).map((item) => (
+                <TortasItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                />
+              ))}
+            </TortasCategorySection>
+          );
+        })}
+      </TortasSheet>
     );
   }
   if (skin === "mixteco") {
@@ -927,6 +994,21 @@ function MenuRewardsLadderSection({
       </LaspicPanel>
     );
   }
+  if (skin === "tortasperras") {
+    return (
+      <TortasPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#cf1225] underline decoration-[#cf1225]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </TortasPanel>
+    );
+  }
   if (skin === "mixteco") {
     return (
       <MixtecoPanel title="Premios por regresar">
@@ -1024,6 +1106,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#234933]/15 bg-[#f6f5e0]/95 shadow-[0_-12px_36px_-16px_rgba(20,50,35,0.55)]"
               : skin === "laspic"
                 ? "border-[#141414]/15 bg-[#fbf8f2]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.35)]"
+              : skin === "tortasperras"
+                ? "border-[#cf1225]/20 bg-[#e9e7e2]/95 shadow-[0_-12px_36px_-16px_rgba(120,10,15,0.4)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}

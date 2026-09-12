@@ -37,6 +37,7 @@ export function MenuPoweredByFooter({
   const bl = skin === "blooms";
   const mx = skin === "mixteco";
   const lp = skin === "laspic";
+  const tp = skin === "tortasperras";
   const href = poweredByHref(restaurantId);
   return (
     <footer
@@ -54,6 +55,8 @@ export function MenuPoweredByFooter({
                   ? "border-[#f6f5e0]/20 text-[#f6f5e0]/70"
                   : lp
                     ? "border-[#141414]/15 text-[#141414]/60"
+                    : tp
+                      ? "border-[#2b2a28]/15 text-[#2b2a28]/60"
               : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
@@ -73,6 +76,8 @@ export function MenuPoweredByFooter({
                       ? "font-semibold text-[#f6f5e0]"
                       : lp
                         ? "font-semibold text-[#141414]"
+                        : tp
+                          ? "font-bold text-[#cf1225]"
                   : "font-semibold text-[#1C2526]/75"
           }
         >
@@ -97,6 +102,8 @@ export function MenuPoweredByFooter({
                       ? "text-[#9fd6b3] decoration-[#9fd6b3]/40 hover:decoration-[#9fd6b3]"
                       : lp
                         ? "text-[#d23f2c] decoration-[#d23f2c]/40 hover:decoration-[#d23f2c]"
+                        : tp
+                          ? "text-[#cf1225] decoration-[#cf1225]/40 hover:decoration-[#cf1225]"
                   : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >

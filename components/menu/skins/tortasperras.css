@@ -1,0 +1,52 @@
+/* Piel "Pinches Tortas Perras" (tortasperras.tsx). Vive junto a la piel (no en globals.css).
+   Sus tres hojas de Instagram: la portada ROJA con fibras ("Pásele joven / ¿Que va a Querer?") y las dos hojas de
+   papel HUESO moteado con los óvalos TORTAS y TACOS. */
+/* La página es el MISMO papel que la hoja: bajo la portada roja todo es hueso corrido, sin franjas de otro color
+   entre la portada, la barra de secciones y la hoja (la hoja se separa con su sombra, no con el fondo). */
+.tp-skin {
+  background-color: #e9e7e2;
+}
+
+/* Su portada: rojo con la fibra del papel (motas claras y oscuras, muy tenues). */
+.tp-skin .tp-cover {
+  background-color: #b3121a;
+  background-image:
+    radial-gradient(circle at 17% 23%, rgba(255, 255, 255, 0.07) 0 1.2px, transparent 1.3px),
+    radial-gradient(circle at 74% 61%, rgba(0, 0, 0, 0.1) 0 1.6px, transparent 1.7px),
+    radial-gradient(circle at 43% 86%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1.1px),
+    radial-gradient(circle at 91% 14%, rgba(0, 0, 0, 0.08) 0 1.3px, transparent 1.4px);
+  background-size: 137px 121px, 173px 149px, 109px 163px, 211px 187px;
+}
+
+/* Sus hojas: papel hueso con motas. */
+.tp-skin .tp-sheet {
+  background-color: #e9e7e2;
+  background-image:
+    radial-gradient(circle at 21% 31%, rgba(60, 55, 45, 0.09) 0 1.1px, transparent 1.2px),
+    radial-gradient(circle at 67% 72%, rgba(60, 55, 45, 0.07) 0 1.5px, transparent 1.6px),
+    radial-gradient(circle at 88% 22%, rgba(60, 55, 45, 0.06) 0 1px, transparent 1.1px);
+  background-size: 129px 113px, 167px 151px, 103px 179px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 30px 50px -38px rgba(0, 0, 0, 0.5);
+}
+
+/* Dos columnas en escritorio (su hoja es una sola columna; en pantalla grande se parte para no dejar el papel vacío). */
+.tp-skin .tp-cols {
+  column-rule: 1px solid rgba(43, 42, 40, 0.16);
+}
+
+/* El óvalo de sus títulos: elipse de línea, ligeramente chueca como el impreso. */
+.tp-skin .tp-oval {
+  border: 2.5px solid #cf1225;
+  border-radius: 50%;
+  transform: rotate(-1.2deg);
+}
+
+@keyframes tp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.tp-skin .tp-rise { animation: tp-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .tp-skin .tp-rise { animation: none; }
+  .tp-skin .tp-oval { transform: none; }
+}

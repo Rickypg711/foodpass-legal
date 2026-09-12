@@ -105,6 +105,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const bl = skin === "blooms";
   const mx = skin === "mixteco";
   const lp = skin === "laspic";
+  const tp = skin === "tortasperras";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -132,6 +133,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                   ? "bg-[#234933]/95 py-2.5 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md"
                   : lp
                     ? "bg-[#fbf8f2]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md"
+                    : tp
+                      ? "bg-[#e9e7e2]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(80,5,10,0.6)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -156,6 +159,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 (on
                   ? "border-[#141414] bg-[#141414] text-[#fbf8f2]"
                   : "border-[#141414]/35 bg-transparent text-[#141414] hover:border-[#141414]")
+            : tp
+              ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[13px] uppercase tracking-[0.06em] border-[1.5px] " +
+                (on
+                  ? "border-[#cf1225] bg-[#cf1225] text-[#f4f1ea]"
+                  : "border-[#cf1225]/35 bg-transparent text-[#cf1225] hover:border-[#cf1225]")
             : mx
               ? "[font-family:var(--mx-display),Impact,sans-serif] text-[11px] uppercase tracking-[0.12em] border-2 " +
                 (on
@@ -177,10 +185,10 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp || tp ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera || mx || lp ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
+              {tercera || mx || lp || tp ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

@@ -149,9 +149,39 @@ const LOOK_LASPIC: SheetLook = {
     "flex-1 rounded-full bg-[#141414] py-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#fffdf8] transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-45",
 };
 
+/** Tortas Perras: su papel hueso, nombres en rojo versales (components/menu/skins/tortasperras.tsx). */
+const TP_DISPLAY = "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] font-normal";
+const LOOK_TORTAS: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center",
+  panel: "animate-sheet-up tp-sheet max-h-[85vh] w-full overflow-y-auto rounded-t-[18px] p-5 shadow-xl sm:max-w-md sm:rounded-[6px]",
+  title: `${TP_DISPLAY} text-[26px] uppercase leading-tight tracking-[0.03em] text-[#cf1225]`,
+  subtitle: "text-[14px] text-[#2b2a28]/65",
+  groupName: "text-[12px] font-bold uppercase tracking-[0.14em] text-[#2b2a28]",
+  status: (falta) => `text-[11px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#cf1225]" : "text-[#2b2a28]/45"}`,
+  hasta: "text-[12px] text-[#2b2a28]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-[1.5px] px-4 py-2.5 text-left text-[15px] transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#2b2a28]/10 text-[#2b2a28]/35 line-through"
+        : on
+          ? "border-[#cf1225] bg-[#cf1225] font-semibold text-[#f4f1ea]"
+          : "border-[#2b2a28]/25 bg-transparent text-[#2b2a28] hover:border-[#cf1225]"
+    }`,
+  delta: (on) => `text-[13px] font-semibold ${on ? "text-[#f4f1ea]" : "text-[#cf1225]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#2b2a28]/15 bg-[#e9e7e2] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-medium text-[#2b2a28]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-[1.5px] border-[#2b2a28]/35 text-lg font-semibold text-[#2b2a28] transition-colors hover:bg-[#2b2a28]/5 disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-semibold tabular-nums text-[#2b2a28]",
+  cancel:
+    "rounded-full border-[1.5px] border-[#2b2a28]/30 px-4 py-3 text-sm font-medium text-[#2b2a28]/80 transition-colors hover:bg-[#2b2a28]/5",
+  confirm: `${TP_DISPLAY} flex-1 rounded-full bg-[#cf1225] py-3 text-[14px] uppercase tracking-[0.08em] text-[#f4f1ea] transition-colors hover:bg-[#b3121a] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "mixteco") return LOOK_MIXTECO;
   if (skin === "laspic") return LOOK_LASPIC;
+  if (skin === "tortasperras") return LOOK_TORTAS;
   return LOOK_DEFAULT;
 }
 

@@ -21,6 +21,7 @@ import { NB_MONO, NB_ROOT_CLASS, NBDots, NegroBlancoHeader } from "@/components/
 import { BL_ROOT_CLASS, BloomsHeader } from "@/components/menu/skins/blooms";
 import { MX_DISPLAY, MX_ROOT_CLASS, MixtecoHeader } from "@/components/menu/skins/mixteco";
 import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/laspic";
+import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins/tortasperras";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -284,7 +285,43 @@ const LASPIC: LandingTheme = {
   photoPrice: "font-medium text-[#141414]/70",
 };
 
+/** Tortas Perras: su portada roja y el papel hueso con los óvalos de sus títulos. */
+const TORTASPERRAS: LandingTheme = {
+  root: TP_ROOT_CLASS,
+  Header: (p) => <TortasHeader {...p} />,
+  cta: `${TP_DISPLAY} block min-h-12 rounded-full bg-[#cf1225] py-3.5 text-center text-[16px] uppercase tracking-[0.08em] text-[#f4f1ea] shadow-[0_14px_30px_-16px_rgba(120,10,15,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#cf1225] bg-transparent px-3 py-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[#cf1225] transition-colors hover:bg-[#cf1225] hover:text-[#f4f1ea]",
+  btnNeutral:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#2b2a28]/30 bg-transparent px-3 py-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[#2b2a28] transition-colors hover:border-[#2b2a28]",
+  descriptionCard: "tp-sheet rounded-[4px] p-5 text-[15.5px] leading-relaxed text-[#2b2a28]/85 sm:p-6",
+  card: "tp-sheet rounded-[4px] px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className="mb-4 text-center">
+      <span className={`${TP_DISPLAY} tp-oval inline-block px-7 py-1.5 text-[24px] uppercase leading-[1.15] tracking-[0.03em] text-[#cf1225]`}>
+        {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+      </span>
+    </h2>
+  ),
+  link: "font-bold text-[#cf1225] underline decoration-[#cf1225]/35 underline-offset-4",
+  text: "text-[#2b2a28]/85",
+  textSoft: "text-[#2b2a28]/65",
+  todayRow: "bg-[#cf1225] font-semibold text-[#f4f1ea]",
+  row: "text-[#2b2a28]/75",
+  closedText: "text-[#2b2a28]/40",
+  faqOpen: "open:bg-[#cf1225]/[0.05]",
+  faqChevron: "text-[#cf1225]",
+  faqAnswer: "text-[#2b2a28]/75",
+  seoText: "text-[#2b2a28]/55",
+  signature: "text-[#2b2a28]/55",
+  signatureLink: "font-bold text-[#cf1225] underline decoration-[#cf1225]/35 underline-offset-4",
+  loading: "tp-sheet rounded-[4px] px-4 py-6 text-center text-sm text-[#2b2a28]/60",
+  photoName: "text-[#2b2a28]",
+  photoPrice: "font-semibold text-[#2b2a28]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "tortasperras") return TORTASPERRAS;
   if (skin === "laspic") return LASPIC;
   if (skin === "mixteco") return MIXTECO;
   if (skin === "pecado") return PECADO;

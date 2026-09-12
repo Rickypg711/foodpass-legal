@@ -83,6 +83,21 @@ const LOOK_LASPIC: DetailLook = {
   add: "rounded-full bg-[#141414] px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[#fffdf8] transition-all hover:bg-black active:scale-[0.98]",
 };
 
+/** Tortas Perras: su papel hueso y el nombre en rojo versales (components/menu/skins/tortasperras.tsx). */
+const TP_DISPLAY = "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] font-normal";
+const LOOK_TORTAS: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#3a0509]/60 sm:items-center",
+  panel: "animate-sheet-up tp-sheet relative max-h-[90vh] w-full overflow-y-auto rounded-t-[18px] shadow-xl sm:max-w-md sm:rounded-[6px]",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#cf1225] bg-[#e9e7e2] text-lg text-[#cf1225] hover:bg-[#cf1225] hover:text-[#f4f1ea]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#dcd9d1] sm:rounded-t-[6px]",
+  title: `${TP_DISPLAY} text-[28px] uppercase leading-tight tracking-[0.03em] text-[#cf1225]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full border border-[#cf1225]/40 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#cf1225]",
+  description: "mt-2 text-[16px] leading-relaxed text-[#2b2a28]/85",
+  price: "text-[22px] font-semibold tabular-nums text-[#2b2a28]",
+  add: `${TP_DISPLAY} rounded-full bg-[#cf1225] px-6 py-3 text-[15px] uppercase tracking-[0.08em] text-[#f4f1ea] shadow-[0_10px_22px_-12px_rgba(120,10,15,0.9)] transition-all hover:bg-[#b3121a] active:scale-[0.98]`,
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -106,7 +121,14 @@ export function MenuItemDetailSheet({
   }, [open, onClose]);
 
   if (!open) return null;
-  const look = skin === "mixteco" ? LOOK_MIXTECO : skin === "laspic" ? LOOK_LASPIC : LOOK_DEFAULT;
+  const look =
+    skin === "mixteco"
+      ? LOOK_MIXTECO
+      : skin === "laspic"
+        ? LOOK_LASPIC
+        : skin === "tortasperras"
+          ? LOOK_TORTAS
+          : LOOK_DEFAULT;
 
   return (
     <div
@@ -144,7 +166,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>
