@@ -1,15 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ActivarModal } from "@/components/home/ActivarModal";
+import { safeVendorNext } from "@/lib/vendor/pedidoLink";
 
 export default async function ActivarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ modo?: string }>;
+  searchParams: Promise<{ modo?: string; next?: string }>;
 }) {
   // ?modo=entrar: quien llega por "Entrar", por el rebote de /vendor sin
   // sesión o por "Cerrar sesión" YA tiene cuenta → formulario en iniciar sesión.
-  const { modo } = await searchParams;
+  const { modo, next } = await searchParams;
+  // ?next=: el rebote de Pedidos sin sesión (link del recibo) regresa al mismo pedido. Solo rutas /vendor/.
+  const nextPath = safeVendorNext(next);
   const initialMode = modo === "entrar" ? "signin" : "signup";
   return (
     <div className="min-h-screen bg-[#141414]">
@@ -34,7 +37,7 @@ export default async function ActivarPage({
 
       {/* Inline (non-modal) signup flow */}
       <main className="px-4 py-12">
-        <ActivarModal asModal={false} initialMode={initialMode} />
+        <ActivarModal asModal={false} initialMode={initialMode} nextPath={nextPath} />
       </main>
     </div>
   );

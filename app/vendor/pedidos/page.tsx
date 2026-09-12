@@ -1,8 +1,8 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   collection,
   query,
@@ -37,6 +37,7 @@ import {
   shouldRemindLateOrders,
 } from "@/lib/order/orderAging";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
+import { entrarHref } from "@/lib/vendor/pedidoLink";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -112,7 +113,17 @@ function Spinner() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PedidosPage() {
+  // useSearchParams pide Suspense (?pedido= del link del recibo).
+  return (
+    <Suspense fallback={null}>
+      <PedidosPageContent />
+    </Suspense>
+  );
+}
+
+function PedidosPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
@@ -125,6 +136,13 @@ export default function PedidosPage() {
   const [paymentOptions, setPaymentOptions] = useState<typeof POS_PAYMENT_OPTIONS>(POS_PAYMENT_OPTIONS);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
+  // ?pedido=ID: llega del recibo por link ("Ir a Pedidos" / "¿Eres del local?"). Baja hasta esa
+  // tarjeta y la resalta; si ya no está en la bandeja, lo dice.
+  // Con useSearchParams, no window.location: al llegar con Link/router.replace la página se pinta ANTES de que
+  // cambie la URL del navegador y el pedido no se marcaba (visto en QA 12-sep). Cerrar el letrero lo apaga.
+  const pedidoParam = searchParams.get("pedido");
+  const [dismissedFocusId, setDismissedFocusId] = useState<string | null>(null);
+  const focusOrderId = pedidoParam && pedidoParam !== dismissedFocusId ? pedidoParam : null;
   const [error, setError] = useState<string | null>(null);
   const [chargingOrderId, setChargingOrderId] = useState<string | null>(null);
   // 🤝 "¿Ya te pagó?" (9-sep): cuando Entregar cae sobre un pedido sin
@@ -214,7 +232,7 @@ export default function PedidosPage() {
     async function init() {
       const u = await waitForAuthReady();
       if (!u || u.isAnonymous) {
-        router.push("/activar?modo=entrar");
+        router.push(entrarHref(window.location.pathname + window.location.search));
         return;
       }
 
@@ -222,6 +240,7 @@ export default function PedidosPage() {
       // Staff-aware: todo rol activo procesa pedidos (canProcessOrders).
       const ctx = await resolveVendorContext(db, u.uid);
       if (!ctx) {
+        // Con sesión pero sin local: SIN next, o Entrar lo regresaría aquí y rebotaría sin fin.
         router.push("/activar?modo=entrar");
         return;
       }
@@ -293,6 +312,16 @@ export default function PedidosPage() {
 
     return () => unsubscribe();
   }, [router]);
+
+  // ── ?pedido=ID: bajar hasta el pedido del link ─────────────────────────────
+  const focusScrolledId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusOrderId || loading || focusScrolledId.current === focusOrderId) return;
+    const el = document.getElementById(`pedido-${focusOrderId}`);
+    if (!el) return;
+    focusScrolledId.current = focusOrderId;
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }, [focusOrderId, loading, orders]);
 
   // ── Order State Transitions ──────────────────────────────────────────────────
 
@@ -471,6 +500,10 @@ export default function PedidosPage() {
     }),
   };
 
+  // El pedido del link ya no está en ninguna columna (entregado otro día, cancelado o de hace más de 2 días).
+  const focusMissing =
+    focusOrderId !== null && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
+
   /** Column definitions — color language: orange = needs attention,
    * blue = working, green = ready to hand over, gray = done. */
   const COLUMNS: {
@@ -550,6 +583,23 @@ export default function PedidosPage() {
           </div>
         )}
 
+        {!loading && focusOrderId && focusMissing && (
+          <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-2xl border border-[#1C2526]/10 bg-white px-4 py-3">
+            <p className="text-[13px] text-[#1C2526]/75">
+              El pedido <span className="font-bold">#{focusOrderId.slice(-6).toUpperCase()}</span> ya no está en la
+              bandeja. Puede que ya se haya entregado o cancelado.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDismissedFocusId(focusOrderId)}
+              aria-label="Cerrar"
+              className="shrink-0 text-[16px] font-bold leading-none text-[#1C2526]/40 hover:text-[#1C2526]"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : error ? (
@@ -611,8 +661,12 @@ export default function PedidosPage() {
                   return (
                     <div
                       key={order.id}
+                      id={`pedido-${order.id}`}
                       className="relative rounded-2xl p-5 bg-white flex flex-col justify-between"
                       style={{
+                        ...(order.id === focusOrderId
+                          ? { outline: "3px solid #F28C38", outlineOffset: "3px", scrollMarginTop: "96px" }
+                          : {}),
                         border: cardBorder,
                         boxShadow:
                           level === "late"

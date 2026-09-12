@@ -71,9 +71,11 @@ interface ActivarModalProps {
    *  cerrar sesión). Antes todo aterrizaba en "Crear mi cuenta" y el dueño
    *  tenía que adivinar el link chiquito (Ricardo, 9-sep). */
   initialMode?: "signup" | "signin";
+  /** A dónde regresar ya con sesión (rebote de Pedidos desde el link del recibo). Ya validado: solo /vendor/. */
+  nextPath?: string | null;
 }
 
-export function ActivarModal({ asModal = true, onClose, demo, initialMode = "signup" }: ActivarModalProps) {
+export function ActivarModal({ asModal = true, onClose, demo, initialMode = "signup", nextPath }: ActivarModalProps) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("idle");
   const [user, setUser] = useState<User | null>(null);
@@ -108,6 +110,16 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "signin">(initialMode);
+
+  // Ya con sesión: si venía de un link del panel (?next=, p. ej. el pedido del recibo), regresa ahí en
+  // vez de "Ya tienes un restaurante". Si no es del local, Pedidos lo manda a Entrar SIN next (sin bucle).
+  function afterSignedIn(hasRestaurant: boolean) {
+    if (nextPath && !demo) {
+      router.replace(nextPath);
+      return;
+    }
+    setStage(hasRestaurant ? "existing" : "form");
+  }
 
   // Escape cierra — pero jamás a media conexión/creación (in-flight). El
   // backdrop a propósito NO cierra: en teléfono un roce afuera de la tarjeta
@@ -158,7 +170,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       }
       setUser(cred.user);
       const snap = await getDoc(doc(getFirebaseDb(), "users", cred.user.uid));
-      setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
+      afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
     } catch (err: unknown) {
       console.error(err);
       const code = (err as { code?: string })?.code ?? "";
@@ -206,11 +218,12 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       setUser(u);
       try {
         const snap = await getDoc(doc(getFirebaseDb(), "users", u.uid));
-        setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
+        afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
       } catch {
         setStage("form");
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar; afterSignedIn lee props fijas
   }, []);
 
   // Close on Escape
@@ -257,7 +270,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       }
       setUser(u);
       const snap = await getDoc(doc(getFirebaseDb(), "users", u.uid));
-      setStage(snap.data()?.ownedRestaurantId ? "existing" : "form");
+      afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.includes("popup-closed") || msg.includes("cancelled")) {

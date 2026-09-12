@@ -19,6 +19,7 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { receiptViewFromOrder } from "../lib/order/receiptView.ts";
+import { entrarHref, pedidosHrefForOrder, safeVendorNext } from "../lib/vendor/pedidoLink.ts";
 
 let failed = 0;
 function check(label, actual, expected) {
@@ -145,6 +146,27 @@ check("recibo público: no enseña un PIN que no trae (ni se queda cargando)", p
 check("recibo público: sin el botón de confirmar por WhatsApp (sin PIN no sirve)", page.includes("isPosOrder || publicReceipt ||"), true);
 check("recibo público: a domicilio se sabe por el tipo, no por la dirección", page.includes('order?.orderType === "delivery"'), true);
 check("recibo sin nombre: la línea no sale (no se queda cargando)", page.includes("{displayName || !order ? ("), true);
+
+// ── Del recibo al pedido exacto en Pedidos (12-sep-2026) ─────────────────────
+// El dueño abre el link desde WhatsApp: con sesión, aviso naranja; sin sesión, "¿Eres del local?". Los dos van a
+// Pedidos con ?pedido=; sin sesión, Entrar con ?next= lo regresa ahí. next SOLO /vendor/ (nada de mandar a otro sitio).
+check("pedido del link → Pedidos con ?pedido=", pedidosHrefForOrder("abc123"), "/vendor/pedidos?pedido=abc123");
+check("next válido", safeVendorNext("/vendor/pedidos?pedido=abc"), "/vendor/pedidos?pedido=abc");
+check("next a otro sitio no", safeVendorNext("https://malo.com"), null);
+check("next //host no", safeVendorNext("//malo.com/vendor/"), null);
+check("next fuera del panel no", safeVendorNext("/activar"), null);
+check("next con \\ no", safeVendorNext("/vendor/\\malo.com"), null);
+check("next que no es texto no", safeVendorNext(undefined), null);
+check("Entrar con next", entrarHref("/vendor/pedidos?pedido=a"), "/activar?modo=entrar&next=%2Fvendor%2Fpedidos%3Fpedido%3Da");
+check("Entrar con next malo = Entrar a secas", entrarHref("https://malo.com"), "/activar?modo=entrar");
+check("aviso naranja lleva al pedido exacto", page.includes("href={pedidosHrefForOrder(orderId)}") && !page.includes('href="/vendor/pedidos"'), true);
+check("recibo público sin sesión: sale \"¿Eres del local?\"", page.includes("publicReceipt && !viewerIsStaff && !isPosOrder") && page.includes("¿Eres del local?"), true);
+const PEDIDOS = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
+check("Pedidos sin sesión rebota a Entrar CON next", PEDIDOS.includes("router.push(entrarHref(window.location.pathname + window.location.search))"), true);
+check("Pedidos con sesión pero sin local rebota SIN next (sin bucle)", /if \(!ctx\) \{[\s\S]{0,160}router\.push\("\/activar\?modo=entrar"\)/.test(PEDIDOS), true);
+check("Pedidos baja hasta ?pedido=", PEDIDOS.includes("id={`pedido-${order.id}`}") && PEDIDOS.includes('searchParams.get("pedido")'), true);
+const ACTIVAR = readFileSync(new URL("../app/activar/page.tsx", import.meta.url), "utf8");
+check("Entrar valida next antes de usarlo", ACTIVAR.includes("safeVendorNext(next)"), true);
 
 // ── Las reglas de orders NO se abren ─────────────────────────────────────────
 const RULES = "/Users/ricardoparedes/projects/FOODPASS/firestore.rules";

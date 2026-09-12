@@ -32,6 +32,7 @@ import { trackWhatsappOrderMessageSent } from "@/lib/analytics/orderEvents";
 import type { CartLine } from "@/lib/cart/types";
 import type { StoredOrderSnapshot } from "@/lib/types/order";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { pedidosHrefForOrder } from "@/lib/vendor/pedidoLink";
 
 type OrderDoc = {
   status?: string;
@@ -528,7 +529,7 @@ function OrderStatusPageContent() {
           <div className="space-y-4">
             {viewerIsStaff && !isPosOrder && status !== "cancelled" && order?.paymentStatus !== "paid" ? (
               <Link
-                href="/vendor/pedidos"
+                href={pedidosHrefForOrder(orderId)}
                 className="block rounded-xl border-2 border-[#F28C38] bg-[#FFF3E8] p-4 text-sm text-[#1C2526]"
               >
                 <p className="font-bold">Este pedido es de tu local y sigue sin cobrar.</p>
@@ -841,6 +842,18 @@ function OrderStatusPageContent() {
             Volver al menú
           </Link>
         )}
+
+        {/* El dueño que abre el link desde WhatsApp SIN sesión del local ve el recibo público: sin esto no había
+            nada que le recordara cobrarlo (12-sep-2026). Pedidos le pide entrar y lo regresa a este pedido. El
+            cliente que lo toque solo ve "Entrar". Con sesión del local sale el aviso naranja de arriba. */}
+        {publicReceipt && !viewerIsStaff && !isPosOrder && status !== "cancelled" && order?.paymentStatus !== "paid" ? (
+          <p className="mt-8 text-center text-xs text-[#1C2526]/45">
+            ¿Eres del local?{" "}
+            <Link href={pedidosHrefForOrder(orderId)} className="font-semibold underline">
+              Cóbralo en tu panel →
+            </Link>
+          </p>
+        ) : null}
       </main>
     </div>
   );
