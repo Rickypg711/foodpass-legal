@@ -20,6 +20,8 @@ export const RESERVED_SLUGS = new Set([
   "menu-qr-gratis-restaurantes", "pedidos-en-linea-restaurantes",
   "pedidos-whatsapp-restaurantes", "programa-de-lealtad-para-restaurantes",
   "punto-de-venta-gratis-restaurantes", "tarjeta-de-lealtad-digital",
+  // atajos de redes (next.config redirects) — nadie puede reclamarlos
+  "tiktok", "instagram", "facebook", "ig", "fb", "tt", "youtube", "whatsapp",
   // archivos/técnicos
   "sitemap.xml", "robots.txt", "favicon.ico", "download.html", "_next",
   // futuro probable

@@ -10,6 +10,19 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
+  // Atajos para redes sociales. En TikTok (cuenta normal, <1,000 seguidores)
+  // la bio NO es link: la gente lo TECLEA. "comeleal.com/tiktok" se teclea y
+  // se dice en voz alta; al llegar, la UTM cae en AttributionCapture (30 días)
+  // y el alta nace con su fuente. 307, no 308: si cambia el destino, cambia.
+  async redirects() {
+    return [
+      {
+        source: "/tiktok",
+        destination: "/?utm_source=tiktok&utm_medium=bio",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
