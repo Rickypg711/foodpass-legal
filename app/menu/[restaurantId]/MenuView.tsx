@@ -272,9 +272,11 @@ function pageClassFor(skin: MenuSkinId | null): string {
   return MENU_PAGE_BG;
 }
 
-/** Ancho del menú. Mixteco, LasPic, Tortas Perras e IGO usan todo el escritorio: su papel va a dos columnas (11-sep). */
+/** Ancho del menú. Mixteco, LasPic, Tortas Perras e IGO usan todo el escritorio: su papel va a dos columnas (11-sep).
+ *  Omu va a CUATRO columnas como su papel y necesita más hoja (13-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
-  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo" || skin === "omu"
+  if (skin === "omu") return "max-w-3xl lg:max-w-7xl";
+  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
 }

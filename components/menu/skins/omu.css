@@ -98,6 +98,10 @@
   .omu-skin .omu-grid > [data-omu="postres"] { grid-column: 3; grid-row: 4; }
   .omu-skin .omu-grid > [data-omu="extras"] { grid-column: 3; grid-row: 5; }
   .omu-skin .omu-grid > [data-omu="otra"] { grid-column: 3; }
+}
+/* Tablet: la hoja va a UNA columna y "Omu Premium" cabe a dos, como su papel. En escritorio la columna de Premium
+   es angosta (~420 px) y partirla en dos apretaba nombre, precio y "+" (visto en el Chrome de Ricardo, 13-sep). */
+@media (min-width: 640px) and (max-width: 1023px) {
   .omu-skin .omu-cols {
     columns: 2;
     column-gap: 28px;

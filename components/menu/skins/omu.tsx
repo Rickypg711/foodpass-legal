@@ -168,7 +168,7 @@ function Pill({ children, red = false, small = false }: { children: ReactNode; r
       <h2
         className={
           `${OMU_NAME} omu-pill ${red ? "omu-pill--red" : ""} leading-none tracking-[0.02em] ` +
-          (small ? "px-5 py-2 text-[17px] sm:text-[19px]" : "px-6 py-2.5 text-[21px] sm:px-8 sm:text-[26px]")
+          (small ? "px-5 py-2 text-[17px] sm:text-[19px] lg:text-[17px]" : "px-6 py-2.5 text-[21px] sm:px-8 sm:text-[26px] lg:px-5 lg:text-[19px]")
         }
       >
         {children}
@@ -179,7 +179,7 @@ function Pill({ children, red = false, small = false }: { children: ReactNode; r
 
 function CardHead({ children }: { children: ReactNode }) {
   return (
-    <h2 className={`${OMU_NAME} omu-card__head px-4 py-2.5 text-center text-[21px] leading-none tracking-[0.02em] sm:text-[24px]`}>
+    <h2 className={`${OMU_NAME} omu-card__head px-4 py-2.5 text-center text-[21px] leading-none tracking-[0.02em] sm:text-[24px] lg:text-[19px]`}>
       {children}
     </h2>
   );
@@ -518,7 +518,7 @@ export function OmuItemRow({
     return (
       <li className="flex items-center gap-2">
         <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="flex min-w-0 flex-1 cursor-pointer items-end gap-2 text-left">
-          <span className={`${ink} min-w-0 truncate text-[12px] font-bold uppercase leading-tight`}>{name}</span>
+          <span className={`${ink} min-w-0 text-[12px] font-bold uppercase leading-tight`}>{name}</span>
           <span className="omu-dots" aria-hidden />
           <span className={`${ink} shrink-0 text-[13px] font-extrabold tabular-nums`}>{money(price)}</span>
         </button>
