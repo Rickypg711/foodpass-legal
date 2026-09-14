@@ -36,12 +36,15 @@
  *  - "igo": IGO Pizzeria, Guadalajara — sus hojas blancas con marco verde, el higo grabado, los títulos con las
  *    letras bailando, su ilustración por sección y la etiqueta verde del precio con la barra gris
  *    (components/menu/skins/igo.tsx). Octava piel en código por pedido de Ricardo (12-sep).
+ *  - "omu": Omu Balls & Sushi, Chihuahua — su hoja negra con la foto oscura de sushi, "MENÜ" con los ojitos, sus
+ *    píldoras blancas de borde rojo, las tarjetas blancas con cabecera roja y los 4 pasos numerados de "¡Ármalas a
+ *    tu gusto!" (components/menu/skins/omu.tsx). Novena piel en código por pedido de Ricardo (13-sep).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

@@ -113,6 +113,21 @@ const LOOK_IGO: DetailLook = {
   add: `${IGO_NAME_D} rounded-full bg-[#0b652a] px-6 py-3 text-[15px] font-medium uppercase tracking-[0.06em] text-[#f7f8f8] shadow-[0_10px_22px_-12px_rgba(11,101,42,0.9)] transition-all hover:bg-[#094f21] active:scale-[0.98]`,
 };
 
+/** Omu: tarjeta blanca con cabecera roja sobre su hoja negra (components/menu/skins/omu.tsx). */
+const OMU_NAME_D = "[font-family:var(--omu-sans),Montserrat,system-ui,sans-serif]";
+const LOOK_OMU: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center",
+  panel: "animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-[18px] bg-[#f9f8f8] text-[#151311] shadow-xl sm:max-w-md sm:rounded-[10px]",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#f10809] bg-[#f9f8f8] text-lg text-[#d40607] hover:bg-[#f10809] hover:text-[#f9f8f8]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#151311] sm:rounded-t-[10px]",
+  title: `${OMU_NAME_D} text-[24px] font-extrabold uppercase leading-tight tracking-[0.01em] text-[#151311]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full border-2 border-[#f10809] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#d40607]",
+  description: "mt-2 text-[14px] font-medium uppercase leading-relaxed tracking-[0.02em] text-[#151311]/75",
+  price: "text-[22px] font-extrabold tabular-nums text-[#151311]",
+  add: `${OMU_NAME_D} rounded-full bg-[#f10809] px-6 py-3 text-[14px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8] shadow-[0_10px_22px_-12px_rgba(241,8,9,0.9)] transition-all hover:bg-[#d40607] active:scale-[0.98]`,
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -145,7 +160,9 @@ export function MenuItemDetailSheet({
           ? LOOK_TORTAS
           : skin === "igo"
             ? LOOK_IGO
-            : LOOK_DEFAULT;
+            : skin === "omu"
+              ? LOOK_OMU
+              : LOOK_DEFAULT;
 
   return (
     <div
@@ -183,7 +200,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

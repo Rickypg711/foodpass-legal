@@ -39,6 +39,7 @@ export function MenuPoweredByFooter({
   const lp = skin === "laspic";
   const tp = skin === "tortasperras";
   const ig = skin === "igo";
+  const om = skin === "omu";
   const href = poweredByHref(restaurantId);
   return (
     <footer
@@ -60,6 +61,8 @@ export function MenuPoweredByFooter({
                       ? "border-[#2b2a28]/15 text-[#2b2a28]/60"
                       : ig
                         ? "border-[#0b652a]/20 text-[#2b2b2b]/60"
+                      : om
+                        ? "border-[#f9f8f8]/15 text-[#f9f8f8]/60"
               : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
@@ -83,6 +86,8 @@ export function MenuPoweredByFooter({
                           ? "font-bold text-[#cf1225]"
                           : ig
                             ? "font-bold text-[#0b652a]"
+                          : om
+                            ? "font-extrabold text-[#f9f8f8]"
                   : "font-semibold text-[#1C2526]/75"
           }
         >
@@ -111,6 +116,8 @@ export function MenuPoweredByFooter({
                           ? "text-[#cf1225] decoration-[#cf1225]/40 hover:decoration-[#cf1225]"
                           : ig
                             ? "text-[#0b652a] decoration-[#0b652a]/40 hover:decoration-[#0b652a]"
+                          : om
+                            ? "text-[#f9f8f8] decoration-[#f10809]/60 hover:decoration-[#f10809]"
                   : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >

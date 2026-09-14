@@ -113,6 +113,15 @@ import {
   igoSortItems,
 } from "@/components/menu/skins/igo";
 import {
+  OMU_ROOT_CLASS,
+  OmuCategorySection,
+  OmuHeader,
+  OmuItemRow,
+  OmuPanel,
+  OmuSheet,
+  omuSortItems,
+} from "@/components/menu/skins/omu";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -259,12 +268,13 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "laspic") return LP_ROOT_CLASS;
   if (skin === "tortasperras") return TP_ROOT_CLASS;
   if (skin === "igo") return IGO_ROOT_CLASS;
+  if (skin === "omu") return OMU_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
 /** Ancho del menú. Mixteco, LasPic, Tortas Perras e IGO usan todo el escritorio: su papel va a dos columnas (11-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
-  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
+  return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo" || skin === "omu"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
 }
@@ -323,6 +333,19 @@ function MenuRestaurantHeader({
   if (skin === "laspic") {
     return (
       <LaspicHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "omu") {
+    return (
+      <OmuHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -533,6 +556,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "tortasperras") return null;
   // IGO: su hoja 1 (marco verde con el higo) ya es el encabezado.
   if (skin === "igo") return null;
+  // Omu: arriba de su hoja negra ya va todo.
+  if (skin === "omu") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -674,6 +699,51 @@ function MenuCategoryList({
           );
         })}
       </LaspicSheet>
+    );
+  }
+  if (skin === "omu") {
+    // Su hoja negra (components/menu/skins/omu.tsx): cada sección es el pedazo de su papel que le toca (pasos
+    // numerados, píldoras, tarjetas de cabecera roja); los pasos y tamaños salen de los optionGroups.
+    return (
+      <OmuSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const sorted = omuSortItems(group.items);
+          return (
+            <OmuCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              items={sorted.map((it) => ({ name: it.name, price: it.price, optionGroups: resolveOptionGroups(it) }))}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && sorted.map((item) => (
+                <OmuItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  category={group.category}
+                  groups={resolveOptionGroups(item)}
+                />
+              ))}
+            </OmuCategorySection>
+          );
+        })}
+      </OmuSheet>
     );
   }
   if (skin === "igo") {
@@ -1061,6 +1131,21 @@ function MenuRewardsLadderSection({
       </LaspicPanel>
     );
   }
+  if (skin === "omu") {
+    return (
+      <OmuPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-extrabold text-[#d40607] underline decoration-[#f10809]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </OmuPanel>
+    );
+  }
   if (skin === "igo") {
     return (
       <IGOPanel title="Premios">
@@ -1192,6 +1277,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#cf1225]/20 bg-[#e9e7e2]/95 shadow-[0_-12px_36px_-16px_rgba(120,10,15,0.4)]"
               : skin === "igo"
                 ? "border-[#0b652a]/20 bg-[#f7f8f8]/95 shadow-[0_-12px_36px_-16px_rgba(11,101,42,0.45)]"
+              : skin === "omu"
+                ? "border-[#f10809]/30 bg-[#151311]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}

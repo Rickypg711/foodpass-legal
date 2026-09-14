@@ -29,6 +29,7 @@ export function CartBar({
   const lp = skin === "laspic";
   const tp = skin === "tortasperras";
   const ig = skin === "igo";
+  const om = skin === "omu";
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
 
@@ -71,6 +72,8 @@ export function CartBar({
                     ? "border-[#cf1225]/20 bg-[#e9e7e2]/95 shadow-[0_-12px_36px_-16px_rgba(120,10,15,0.4)]"
                     : ig
                       ? "border-[#0b652a]/20 bg-[#f7f8f8]/95 shadow-[0_-12px_36px_-16px_rgba(11,101,42,0.45)]"
+                    : om
+                      ? "border-[#f10809]/30 bg-[#151311]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
             : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
@@ -91,6 +94,8 @@ export function CartBar({
                       ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#141414] px-5 py-3 text-[#fbf8f2] shadow-[0_10px_24px_-12px_rgba(0,0,0,0.8)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                       : ig
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#0b652a] px-5 py-3 text-[#f7f8f8] shadow-[0_10px_24px_-12px_rgba(11,101,42,0.9)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
+                      : om
+                        ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#f10809] px-5 py-3 text-[#f9f8f8] shadow-[0_10px_24px_-12px_rgba(241,8,9,0.9)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                       : tp
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#cf1225] px-5 py-3 text-[#f4f1ea] shadow-[0_10px_24px_-12px_rgba(120,10,15,0.9)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                 : "flex min-h-11 w-full items-center justify-between rounded-xl bg-[#F28C38] px-4 py-2.5 text-[#1C2526] shadow-md transition-colors hover:bg-[#c46644]"
@@ -110,6 +115,8 @@ export function CartBar({
                         ? "text-[12px] font-semibold uppercase tracking-[0.16em] text-[#fbf8f2]/80"
                         : ig
                           ? "[font-family:var(--igo-name),'Arial_Narrow',sans-serif] text-[12.5px] uppercase tracking-[0.12em] text-[#f7f8f8]/85"
+                        : om
+                          ? "text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#f9f8f8]/90"
                         : tp
                           ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[13px] uppercase tracking-[0.1em] text-[#f4f1ea]/85"
                   : "text-sm font-semibold"
@@ -131,6 +138,8 @@ export function CartBar({
                         ? "text-[15px] font-semibold tabular-nums tracking-[0.04em]"
                         : ig
                           ? "[font-family:var(--igo-name),'Arial_Narrow',sans-serif] text-[15px] font-medium tracking-[0.04em] tabular-nums"
+                        : om
+                          ? "text-[15px] font-extrabold tabular-nums"
                         : tp
                           ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[15px] tracking-[0.06em] tabular-nums"
                   : "text-sm font-bold tabular-nums"

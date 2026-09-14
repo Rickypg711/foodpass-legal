@@ -49,6 +49,7 @@ export function MenuAppRewardsCta({
   const pecado = skin === "pecado";
   const nb = skin === "negroblanco";
   const bl = skin === "blooms";
+  const om = skin === "omu";
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
   const reward = firstVisitRewardLabel?.trim() || null;
@@ -103,6 +104,8 @@ export function MenuAppRewardsCta({
             ? "overflow-hidden rounded-[28px] bg-[#0b0b0b] text-white"
             : bl
               ? "overflow-hidden rounded-[28px] border-l-[10px] border-[#ff5c9a] bg-white shadow-[0_18px_44px_-30px_rgba(232,64,127,0.6)]"
+            : om
+              ? "overflow-hidden rounded-[8px] bg-[#f9f8f8] text-[#151311] shadow-[0_18px_40px_-26px_rgba(0,0,0,0.9)]"
             : "overflow-hidden rounded-2xl border border-[#F28C38]/18 bg-gradient-to-br from-[#FFF8F2] to-white shadow-[0_1px_3px_rgba(28,37,38,0.05)]"
       }
     >
@@ -110,7 +113,7 @@ export function MenuAppRewardsCta({
         <span
           className={
             "grid h-10 w-10 shrink-0 place-items-center rounded-full text-[19px] " +
-            (pecado ? "bg-[#ffeecf]" : nb ? "bg-white/10" : bl ? "bg-[#ff5c9a]/12" : "bg-[#F28C38]/12")
+            (pecado ? "bg-[#ffeecf]" : nb ? "bg-white/10" : bl ? "bg-[#ff5c9a]/12" : om ? "bg-[#f10809]/12" : "bg-[#F28C38]/12")
           }
           aria-hidden
         >
@@ -118,7 +121,7 @@ export function MenuAppRewardsCta({
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className={"text-[10.5px] font-bold uppercase tracking-[0.09em] " + (pecado ? "text-[#a61c21]/75" : nb ? "text-white/55" : bl ? "text-[#e8407f]" : "text-[#F28C38]")}>
+          <p className={"text-[10.5px] font-bold uppercase tracking-[0.09em] " + (pecado ? "text-[#a61c21]/75" : nb ? "text-white/55" : bl ? "text-[#e8407f]" : om ? "text-[#d40607]" : "text-[#F28C38]")}>
             {eyebrow}
           </p>
           <p
@@ -129,36 +132,38 @@ export function MenuAppRewardsCta({
                   ? "mt-1 text-[20px] font-semibold leading-tight tracking-[-0.03em] text-white"
                   : bl
                     ? "mt-1 text-[18px] font-extrabold uppercase leading-tight tracking-[0.06em] text-[#1c1a1b]"
+                  : om
+                    ? "mt-1 text-[18px] font-extrabold uppercase leading-tight tracking-[0.02em] text-[#151311]"
                   : "mt-1 text-[17px] font-bold leading-tight text-[#1C2526]"
             }
           >
             {title}
           </p>
-          <p className={"mt-1.5 text-[13px] leading-relaxed " + (pecado ? "font-medium text-[#a61c21]/85" : nb ? "text-white/65" : bl ? "font-medium text-[#6d2f47]/85" : "text-[#1C2526]/65")}>{explain}</p>
+          <p className={"mt-1.5 text-[13px] leading-relaxed " + (pecado ? "font-medium text-[#a61c21]/85" : nb ? "text-white/65" : bl ? "font-medium text-[#6d2f47]/85" : om ? "font-medium text-[#151311]/70" : "text-[#1C2526]/65")}>{explain}</p>
         </div>
       </div>
 
       {/* Pie discreto: las dos salidas opcionales, al mismo peso. Ninguna es
           un botón — el botón de esta página es "Ordenar", no "Descargar". */}
       {restaurantId ? (
-        <div className={"flex items-stretch border-t text-[12.5px] font-semibold " + (pecado ? "border-[#a61c21]/20" : nb ? "border-white/10" : bl ? "border-[#ff5c9a]/20" : "border-[#1C2526]/[0.07]")}>
+        <div className={"flex items-stretch border-t text-[12.5px] font-semibold " + (pecado ? "border-[#a61c21]/20" : nb ? "border-white/10" : bl ? "border-[#ff5c9a]/20" : om ? "border-[#151311]/10" : "border-[#1C2526]/[0.07]")}>
           <a
             href={`/menu/${encodeURIComponent(restaurantId)}/puntos`}
             className={
               "flex-1 px-3 py-2.5 text-center transition-colors " +
-              (pecado ? "font-bold text-[#a61c21]/85 hover:bg-[#a61c21]/10" : nb ? "text-white/70 hover:bg-white/5 hover:text-white" : bl ? "font-bold text-[#e8407f] hover:bg-[#ff5c9a]/10" : "text-[#1C2526]/55 hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38]")
+              (pecado ? "font-bold text-[#a61c21]/85 hover:bg-[#a61c21]/10" : nb ? "text-white/70 hover:bg-white/5 hover:text-white" : bl ? "font-bold text-[#e8407f] hover:bg-[#ff5c9a]/10" : om ? "font-extrabold uppercase tracking-[0.06em] text-[#d40607] hover:bg-[#f10809]/10" : "text-[#1C2526]/55 hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38]")
             }
           >
             Ver mis puntos
           </a>
-          <span className={"my-2 w-px " + (pecado ? "bg-[#a61c21]/20" : nb ? "bg-white/10" : bl ? "bg-[#ff5c9a]/20" : "bg-[#1C2526]/[0.07]")} aria-hidden />
+          <span className={"my-2 w-px " + (pecado ? "bg-[#a61c21]/20" : nb ? "bg-white/10" : bl ? "bg-[#ff5c9a]/20" : om ? "bg-[#151311]/10" : "bg-[#1C2526]/[0.07]")} aria-hidden />
           <a
             href={href}
             onClick={handleClick}
             aria-disabled={isDisabled}
             className={
               "flex-1 px-3 py-2.5 text-center transition-colors " +
-              (pecado ? "font-bold text-[#a61c21]/85 hover:bg-[#a61c21]/10 " : nb ? "text-white/70 hover:bg-white/5 hover:text-white " : bl ? "font-bold text-[#e8407f] hover:bg-[#ff5c9a]/10 " : "text-[#1C2526]/55 hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38] ") +
+              (pecado ? "font-bold text-[#a61c21]/85 hover:bg-[#a61c21]/10 " : nb ? "text-white/70 hover:bg-white/5 hover:text-white " : bl ? "font-bold text-[#e8407f] hover:bg-[#ff5c9a]/10 " : om ? "font-extrabold uppercase tracking-[0.06em] text-[#d40607] hover:bg-[#f10809]/10 " : "text-[#1C2526]/55 hover:bg-[#F28C38]/[0.06] hover:text-[#F28C38] ") +
               (isDisabled ? "pointer-events-none opacity-50" : "")
             }
           >

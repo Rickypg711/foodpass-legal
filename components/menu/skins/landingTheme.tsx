@@ -23,6 +23,7 @@ import { MX_DISPLAY, MX_ROOT_CLASS, MixtecoHeader } from "@/components/menu/skin
 import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/laspic";
 import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins/tortasperras";
 import { IGO_DISPLAY, IGO_NAME, IGO_ROOT_CLASS, IGOHeader } from "@/components/menu/skins/igo";
+import { OMU_NAME, OMU_ROOT_CLASS, OmuHeader } from "@/components/menu/skins/omu";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -354,7 +355,41 @@ const IGO: LandingTheme = {
   photoPrice: "font-semibold text-[#2b2b2b]/70",
 };
 
+/** Omu: su hoja negra, tarjetas blancas con cabecera roja y letras gordas. */
+const OMU: LandingTheme = {
+  root: OMU_ROOT_CLASS,
+  Header: (p) => <OmuHeader {...p} />,
+  cta: `${OMU_NAME} block min-h-12 rounded-full bg-[#f10809] py-3.5 text-center text-[15px] tracking-[0.06em] text-[#f9f8f8] shadow-[0_14px_30px_-16px_rgba(241,8,9,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#f9f8f8] bg-transparent px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f9f8f8] transition-colors hover:bg-[#f9f8f8] hover:text-[#151311]",
+  btnNeutral:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#f9f8f8]/35 bg-transparent px-3 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f9f8f8] transition-colors hover:border-[#f9f8f8]",
+  descriptionCard: "omu-card p-5 text-[15px] leading-relaxed text-[#151311]/85 sm:p-6",
+  card: "omu-card px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${OMU_NAME} omu-card__head -mx-5 -mt-5 mb-4 block px-4 py-2.5 text-center text-[20px] leading-none sm:-mx-7 sm:-mt-6`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+    </h2>
+  ),
+  link: "font-extrabold text-[#d40607] underline decoration-[#f10809]/35 underline-offset-4",
+  text: "text-[#151311]/85",
+  textSoft: "text-[#151311]/65",
+  todayRow: "bg-[#f10809] font-extrabold text-[#f9f8f8]",
+  row: "text-[#151311]/75",
+  closedText: "text-[#151311]/40",
+  faqOpen: "open:bg-[#f10809]/[0.05]",
+  faqChevron: "text-[#d40607]",
+  faqAnswer: "text-[#151311]/75",
+  seoText: "text-[#f9f8f8]/55",
+  signature: "text-[#f9f8f8]/55",
+  signatureLink: "font-extrabold text-[#f9f8f8] underline decoration-[#f10809]/60 underline-offset-4",
+  loading: "omu-card px-4 py-6 text-center text-sm text-[#151311]/60",
+  photoName: "text-[#151311]",
+  photoPrice: "font-extrabold text-[#151311]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "omu") return OMU;
   if (skin === "igo") return IGO;
   if (skin === "tortasperras") return TORTASPERRAS;
   if (skin === "laspic") return LASPIC;

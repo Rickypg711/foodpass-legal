@@ -1,0 +1,121 @@
+/* Piel "Omu" (omu.tsx): Omu Balls & Sushi, Chihuahua. Vive junto a la piel (no en globals.css).
+   Todo sale de SU hoja (foto de WhatsApp del 13-sep-2026): fondo negro con la foto oscura de sushi, píldoras
+   blancas con borde rojo, tarjetas blancas con cabecera roja, números rojos en círculo y letras gordas blancas.
+   Su rojo es #f10809 y su negro #151311, sacados de la propia hoja. */
+.omu-skin {
+  background-color: #151311;
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(120, 60, 40, 0.28), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 85% 100%, rgba(241, 8, 9, 0.08), transparent 70%),
+    linear-gradient(180deg, #1a1614 0%, #151311 40%, #100e0d 100%);
+  background-attachment: fixed;
+}
+
+/* Píldora blanca con borde rojo: "OMU PREMIUM", "¡COMPLEMENTA!", "EXTRAS". */
+.omu-skin .omu-pill {
+  display: inline-block;
+  border: 2.5px solid #f10809;
+  border-radius: 999px;
+  background: #f9f8f8;
+  color: #151311;
+  box-shadow: 0 10px 24px -14px rgba(241, 8, 9, 0.6);
+}
+.omu-skin .omu-pill--red {
+  color: #d40607;
+}
+
+/* Tarjeta blanca: los 4 pasos, el boneless, para compartir, complementa. */
+.omu-skin .omu-card {
+  background: #f9f8f8;
+  color: #151311;
+  border-radius: 6px;
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.9);
+}
+.omu-skin .omu-card__head {
+  background: #f10809;
+  color: #f9f8f8;
+  border-radius: 6px 6px 0 0;
+}
+
+/* Etiqueta roja maciza: "¡AGREGA UN INGREDIENTE EXTRA POR SÓLO $25!", la nota de los premium. */
+.omu-skin .omu-badge {
+  background: #f10809;
+  color: #f9f8f8;
+  border-radius: 6px;
+}
+
+/* El número rojo en círculo que cuelga a la izquierda de cada paso. */
+.omu-skin .omu-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #f10809;
+  color: #f9f8f8;
+  box-shadow: 0 0 0 3px #f9f8f8, 0 8px 16px -8px rgba(0, 0, 0, 0.8);
+}
+
+/* Sus estrellas doradas bajo "MENÜ". */
+.omu-skin .omu-stars {
+  color: #f5b301;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Botón "+" rojo. */
+.omu-skin .omu-add {
+  background: #f10809;
+  color: #f9f8f8;
+  box-shadow: 0 8px 18px -8px rgba(241, 8, 9, 0.9);
+}
+.omu-skin .omu-add:hover {
+  background: #d40607;
+}
+
+/* Renglón de precio con puntitos hasta la orilla (las tarjetas blancas). */
+.omu-skin .omu-dots {
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 2px dotted rgba(21, 19, 17, 0.35);
+  transform: translateY(-4px);
+}
+
+/* Escritorio: la hoja se acomoda como su papel — pasos a la izquierda, premium al centro,
+   boneless / compartir / complementa / extras en la columna derecha. Las dos primeras columnas
+   abarcan TODAS las filas, así las alturas las dictan solo las tarjetas de la derecha. */
+.omu-skin .omu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+@media (min-width: 1024px) {
+  .omu-skin .omu-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 26px;
+    align-items: start;
+  }
+  .omu-skin .omu-grid > [data-omu="armalas"] { grid-column: 1; grid-row: 1 / 7; }
+  .omu-skin .omu-grid > [data-omu="premium"] { grid-column: 2; grid-row: 1 / 7; }
+  .omu-skin .omu-grid > [data-omu="boneless"] { grid-column: 3; grid-row: 1; }
+  .omu-skin .omu-grid > [data-omu="compartir"] { grid-column: 3; grid-row: 2; }
+  .omu-skin .omu-grid > [data-omu="refrescos"] { grid-column: 3; grid-row: 3; }
+  .omu-skin .omu-grid > [data-omu="postres"] { grid-column: 3; grid-row: 4; }
+  .omu-skin .omu-grid > [data-omu="extras"] { grid-column: 3; grid-row: 5; }
+  .omu-skin .omu-grid > [data-omu="otra"] { grid-column: 3; }
+  .omu-skin .omu-cols {
+    columns: 2;
+    column-gap: 28px;
+  }
+}
+
+@keyframes omu-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.omu-skin .omu-rise { animation: omu-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .omu-skin .omu-rise { animation: none; }
+}

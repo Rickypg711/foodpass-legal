@@ -207,11 +207,41 @@ const LOOK_IGO: SheetLook = {
   confirm: `${IGO_NAME} flex-1 rounded-full bg-[#0b652a] py-3 text-[15px] font-medium uppercase tracking-[0.06em] text-[#f7f8f8] transition-colors hover:bg-[#094f21] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** Omu: tarjeta blanca con cabecera roja sobre su hoja negra (components/menu/skins/omu.tsx). */
+const OMU_NAME_S = "[font-family:var(--omu-sans),Montserrat,system-ui,sans-serif]";
+const LOOK_OMU: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-[18px] bg-[#f9f8f8] p-5 text-[#151311] shadow-xl sm:max-w-md sm:rounded-[10px]",
+  title: `${OMU_NAME_S} text-[22px] font-extrabold uppercase leading-tight tracking-[0.01em] text-[#151311]`,
+  subtitle: "text-[13px] font-medium uppercase tracking-[0.03em] text-[#151311]/65",
+  groupName: `${OMU_NAME_S} text-[12px] font-extrabold uppercase tracking-[0.08em] text-[#d40607]`,
+  status: (falta) => `text-[11px] font-extrabold uppercase tracking-[0.1em] ${falta ? "text-[#d40607]" : "text-[#151311]/45"}`,
+  hasta: "text-[12px] text-[#151311]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-2 px-4 py-2.5 text-left text-[14px] font-bold uppercase tracking-[0.01em] transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#151311]/10 text-[#151311]/35 line-through"
+        : on
+          ? "border-[#f10809] bg-[#f10809] text-[#f9f8f8]"
+          : "border-[#151311]/20 bg-transparent text-[#151311] hover:border-[#f10809]"
+    }`,
+  delta: (on) => `text-[13px] font-extrabold ${on ? "text-[#f9f8f8]" : "text-[#d40607]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#151311]/10 bg-[#f9f8f8] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-semibold text-[#151311]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-2 border-[#151311]/30 text-lg font-bold text-[#151311] transition-colors hover:bg-[#151311]/5 disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-extrabold tabular-nums text-[#151311]",
+  cancel:
+    "rounded-full border-2 border-[#151311]/25 px-4 py-3 text-sm font-semibold text-[#151311]/80 transition-colors hover:bg-[#151311]/5",
+  confirm: `${OMU_NAME_S} flex-1 rounded-full bg-[#f10809] py-3 text-[14px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8] transition-colors hover:bg-[#d40607] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "mixteco") return LOOK_MIXTECO;
   if (skin === "laspic") return LOOK_LASPIC;
   if (skin === "tortasperras") return LOOK_TORTAS;
   if (skin === "igo") return LOOK_IGO;
+  if (skin === "omu") return LOOK_OMU;
   return LOOK_DEFAULT;
 }
 
