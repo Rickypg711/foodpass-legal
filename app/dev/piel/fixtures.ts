@@ -142,10 +142,6 @@ const OMU_TAMANO_BONELESS = og("tamano", "Tamaño", true, 1, [
 const OMU_SALSA_BONELESS = og("salsa", "Salsa", true, 1, [
   ["bufalo", "Búfalo"], ["bbq", "BBQ"], ["fresa_chipotle", "Fresa chipotle"], ["buffalo_habanero", "Búffalo habanero"], ["pimienta_limon", "Pimienta limón"],
 ]);
-const OMU_ROLLOS_PRES = og("presentacion_rollos", "Presentación de los rollos", true, 1, [
-  ["naturales", "Naturales"], ["empanizados", "Empanizados"],
-]);
-const OMU_ROLLOS_ING = og("ingrediente_rollos", "Ingrediente de los rollos", true, 1, PROTEINAS);
 const omuRollo = (n: number): OG[] => [
   og(`rollo${n}_ing`, `Rollo ${n} · ingrediente`, true, 1, PROTEINAS),
   og(`rollo${n}_pres`, `Rollo ${n} · presentación`, true, 1, [["natural", "Natural"], ["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"]]),
@@ -186,7 +182,7 @@ const OMU_ROWS: OmuRow[] = [
   ["Omu Boneless", "Omu Boneless", 135, "Todas las porciones incluyen papas y verduras. Escoge tu salsa: búfalo, BBQ, fresa chipotle, búffalo habanero o pimienta limón.", [OMU_TAMANO_BONELESS, OMU_SALSA_BONELESS]],
 
   ["Para compartir", "Omu Box Sushi & Boneless", 465, "3 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + 500 gr de boneless con 1 o 2 salsas al gusto + 6 aderezos. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), OMU_SALSAS_BOX, OMU_ADEREZOS_BOX]],
-  ["Para compartir", "Omu Box Sushi", 414, "5 rollos de 1 ingrediente, naturales o empanizados + zanahoria y pepino + chipotle, soya y salsa anguila. Incluye papas y verduras.", [OMU_ROLLOS_PRES, OMU_ROLLOS_ING]],
+  ["Para compartir", "Omu Box Sushi", 414, "5 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + zanahoria y pepino + chipotle, soya y salsa anguila. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), ...omuRollo(4), ...omuRollo(5)]],
 
   ["Refrescos", "Coca Cola 355 ml", 30, "", []],
   ["Refrescos", "Pepsi 400 ml", 30, "", []],
