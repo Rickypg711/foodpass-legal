@@ -5,8 +5,8 @@
  * Chihuahua; FB "Omu Balls & Sushi" 4.8K, IG @omuballsandsushi). Novena piel (13-sep-2026).
  *
  * Fuente única: SU HOJA de menú (foto de WhatsApp del 13-sep), una sola página negra con la foto oscura de sushi:
- *  - arriba a la izquierda "MENÜ" en letra fina con los ojitos de su logo, cinco estrellas doradas y
- *    "EL FAVORITO DE LOS OMU LOVERS";
+ *  - arriba a la izquierda "MENÜ" en letra fina con los ojitos de su logo (sus estrellas y "El favorito de los
+ *    Omu Lovers" NO se pintan: decisión de Ricardo, 13-sep);
  *  - "¡ÁRMALAS A TU GUSTO!" en píldora blanca con letras rojas, y sus 4 PASOS numerados en tarjetas blancas
  *    (1 cubierta con las dos columnas BALL | SUSHI, 2 proteína, 3 aderezos, 4 vegetales);
  *  - "OMU PREMIUM" en píldora blanca de borde rojo: NOMBRE gordo en blanco, precio a la derecha, descripción en
@@ -105,12 +105,11 @@ export function OmuHeader({
         <h1 className={`${OMU_DISPLAY} mt-3 text-[64px] uppercase leading-none tracking-[0.1em] text-[#f9f8f8] sm:text-[84px]`}>
           MENÜ
         </h1>
-        <p className="omu-stars mt-1 text-[16px] leading-none" aria-hidden>
-          ★★★★★
-        </p>
-        <p className="mt-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#f9f8f8] sm:text-[12px]">
-          {tagline?.trim() || "El favorito de los Omu Lovers"}
-        </p>
+        {/* Su papel trae cinco estrellas y "El favorito de los Omu Lovers" bajo el MENÜ; Ricardo las quitó el 13-sep:
+            en una página las estrellas se leen como calificación. */}
+        {tagline?.trim() ? (
+          <p className="mt-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#f9f8f8] sm:text-[12px]">{tagline.trim()}</p>
+        ) : null}
         {!loading ? (
           <div className="mt-4 flex flex-col items-center gap-2">
             {schedule ? (

@@ -57,13 +57,6 @@
   box-shadow: 0 0 0 3px #f9f8f8, 0 8px 16px -8px rgba(0, 0, 0, 0.8);
 }
 
-/* Sus estrellas doradas bajo "MENÜ". */
-.omu-skin .omu-stars {
-  color: #f5b301;
-  letter-spacing: 0.08em;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
-}
-
 /* Botón "+" rojo. */
 .omu-skin .omu-add {
   background: #f10809;

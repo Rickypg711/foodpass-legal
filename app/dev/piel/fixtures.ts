@@ -198,7 +198,6 @@ const OMU: PielFixture = {
   initial: {
     raw: {
       name: "Omu Balls & Sushi",
-      tagline: "El favorito de los Omu Lovers",
       description: "Bolas de arroz y sushi armados a tu gusto, boneless y boxes para compartir. Zona norte de Chihuahua.",
       menuSkin: "omu",
       address: "Calle Juana de Arco y Av. Colonias Populares (puesto rojo), Miguel Sigala, 31137 Chihuahua, Chih.",
