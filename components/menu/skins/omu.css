@@ -103,6 +103,19 @@
     column-gap: 28px;
   }
 }
+/* Pantalla ancha: las CUATRO columnas de su papel — pasos | premium | boneless y compartir | complementa y extras.
+   "Para compartir" abarca dos filas para que la altura de la 4ª columna no le abra huecos a la 3ª. */
+@media (min-width: 1280px) {
+  .omu-skin .omu-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 0.95fr);
+  }
+  .omu-skin .omu-grid > [data-omu="boneless"] { grid-column: 3; grid-row: 1; }
+  .omu-skin .omu-grid > [data-omu="compartir"] { grid-column: 3; grid-row: 2 / 4; }
+  .omu-skin .omu-grid > [data-omu="refrescos"] { grid-column: 4; grid-row: 1; }
+  .omu-skin .omu-grid > [data-omu="postres"] { grid-column: 4; grid-row: 2; }
+  .omu-skin .omu-grid > [data-omu="extras"] { grid-column: 4; grid-row: 3; }
+  .omu-skin .omu-grid > [data-omu="otra"] { grid-column: 4; }
+}
 
 @keyframes omu-rise {
   from { opacity: 0; transform: translateY(14px); }
