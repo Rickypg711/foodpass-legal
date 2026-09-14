@@ -133,8 +133,8 @@ const OMU_EXTRA = og("ingrediente_extra", "Ingrediente extra", false, 5, [
   ["pastor", "Pastor", 25], ["cebolla_dulce", "Cebolla dulce", 25], ["ostion_ahumado", "Ostión ahumado", 25],
   ["salsa_buffalo_habanero", "Salsa búffalo habanero", 25], ["salsa_bufalo", "Salsa búfalo", 25], ["salsa_bbq", "Salsa BBQ", 25],
   ["salsa_pimienta_limon", "Salsa pimienta limón", 25], ["salsa_fresa_chipotle", "Salsa fresa chipotle", 25],
-  ["aderezo_sriracha", "Aderezo sriracha", 25], ["aderezo_chipotle", "Aderezo chipotle", 25], ["aderezo_soya", "Aderezo soya", 25],
-  ["aderezo_anguila", "Aderezo anguila", 25], ["aderezo_ranch", "Aderezo ranch", 25], ["aderezo_pasta_tampico", "Aderezo pasta Tampico", 25],
+  ["aderezo_sriracha", "Aderezo sriracha", 10], ["aderezo_chipotle", "Aderezo chipotle", 10], ["aderezo_soya", "Aderezo soya", 10],
+  ["aderezo_anguila", "Aderezo anguila", 10], ["aderezo_ranch", "Aderezo ranch", 15], ["aderezo_pasta_tampico", "Aderezo pasta Tampico", 10],
 ]);
 const OMU_BOLA_SUSHI = og("presentacion", "Presentación", true, 1, [["bola", "Bola"], ["sushi", "Sushi"]]);
 const OMU_ESTILO = og("estilo", "Estilo", true, 1, [["natural", "Natural (frío)"], ["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"]]);
@@ -160,7 +160,7 @@ const OMU_SALSA_APARTE = og("salsa", "Salsa", true, 1, [
   ["bufalo", "Búfalo"], ["bbq", "BBQ"], ["fresa_chipotle", "Fresa chipotle"], ["buffalo_habanero", "Búffalo habanero"], ["pimienta_limon", "Pimienta limón"],
 ]);
 const OMU_ADEREZO_APARTE = og("aderezo", "Aderezo", true, 1, [
-  ["sriracha", "Sriracha"], ["chipotle", "Chipotle"], ["soya", "Soya"], ["anguila", "Anguila"], ["ranch", "Ranch"], ["pasta_tampico", "Pasta Tampico"],
+  ["sriracha", "Sriracha"], ["chipotle", "Chipotle"], ["soya", "Soya"], ["anguila", "Anguila"], ["ranch", "Ranch", 5], ["pasta_tampico", "Pasta Tampico"],
 ]);
 
 type OmuRow = [category: string, name: string, price: number, description: string, groups: OG[]];
@@ -196,7 +196,7 @@ const OMU_ROWS: OmuRow[] = [
   ["Postres", "Omu galleta", 20, "", []],
 
   ["Extras", "Salsa extra", 25, "Para acompañar: búffalo habanero, búfalo, BBQ, pimienta limón o fresa chipotle.", [OMU_SALSA_APARTE]],
-  ["Extras", "Aderezo extra", 25, "Para acompañar: sriracha, chipotle, soya, anguila, ranch o pasta Tampico.", [OMU_ADEREZO_APARTE]],
+  ["Extras", "Aderezo extra", 10, "Para acompañar: sriracha, chipotle, soya, anguila o pasta Tampico $10; ranch $15.", [OMU_ADEREZO_APARTE]],
 
 ];
 

@@ -185,20 +185,31 @@ function OmuExtrasLists({ group }: { group: MenuItemOptionGroup }) {
     ["Salsas", salsas],
     ["Aderezos", aderezos],
   ];
+  // Cada lista con su precio: si todas las opciones cuestan lo mismo va junto al título; si no (ranch $15), en cada renglón.
   return (
     <div className="mt-4 grid grid-cols-3 gap-3">
       {cols
         .filter(([, list]) => list.length)
-        .map(([title, list]) => (
-          <div key={title}>
-            <h3 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">{title}</h3>
-            <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
-              {list.map((o) => (
-                <li key={o.id}>{o.name.replace(/^(salsa|aderezo)\s+/i, "")}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        .map(([title, list]) => {
+          const deltas = new Set(list.map((o) => o.priceDelta));
+          const uniform = deltas.size === 1 ? list[0]!.priceDelta : null;
+          return (
+            <div key={title}>
+              <h3 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">
+                {title}
+                {uniform ? <span className="ml-1 font-bold text-[#f9f8f8]/60">+{money(uniform)}</span> : null}
+              </h3>
+              <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
+                {list.map((o) => (
+                  <li key={o.id}>
+                    {o.name.replace(/^(salsa|aderezo)\s+/i, "")}
+                    {uniform === null && o.priceDelta ? <span className="ml-1 text-[#f9f8f8]/55">+{money(o.priceDelta)}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
     </div>
   );
 }
