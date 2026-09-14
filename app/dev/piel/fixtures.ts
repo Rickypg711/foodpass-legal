@@ -137,8 +137,7 @@ const OMU_EXTRA = og("ingrediente_extra", "Ingrediente extra", false, 5, [
   ["aderezo_anguila", "Aderezo anguila", 25], ["aderezo_ranch", "Aderezo ranch", 25], ["aderezo_pasta_tampico", "Aderezo pasta Tampico", 25],
 ]);
 const OMU_BOLA_SUSHI = og("presentacion", "Presentación", true, 1, [["bola", "Bola"], ["sushi", "Sushi"]]);
-const OMU_EMP_FH = og("estilo", "Estilo", true, 1, [["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"]]);
-const OMU_EMP_FH_NAT = og("estilo", "Estilo", true, 1, [["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"], ["natural", "Natural (frío)"]]);
+const OMU_ESTILO = og("estilo", "Estilo", true, 1, [["natural", "Natural (frío)"], ["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"]]);
 const OMU_SALSA_BONELESS_PREMIUM = og("salsa", "Salsa", true, 1, [["chipotle", "Chipotle"], ["buffalo", "Búffalo"], ["ranch", "Ranch"]]);
 const OMU_TAMANO_BONELESS = og("tamano", "Tamaño", true, 1, [
   ["individual", "Individual 300 gr"], ["pareja", "Pareja 600 gr", 74], ["familiar", "Familiar 1 kg", 174],
@@ -169,18 +168,18 @@ const OMU_ROWS: OmuRow[] = [
   ["Ármalas a tu gusto", "Omu Ball", 95, "Elige 1 cubierta, 1 proteína, 2 aderezos y 2 vegetales.", [OMU_CUBIERTA_BALL, OMU_PROTEINA, OMU_ADEREZOS, OMU_VEGETALES, OMU_EXTRA]],
   ["Ármalas a tu gusto", "Omu Sushi", 105, "Elige 1 cubierta, 1 proteína, 2 aderezos y 2 vegetales.", [OMU_CUBIERTA_SUSHI, OMU_PROTEINA, OMU_ADEREZOS, OMU_VEGETALES, OMU_EXTRA]],
 
-  ["Omu Premium", "Omu Queen", 119, "Empanizado o Flamin' Hot con camarones y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_EMP_FH, OMU_EXTRA]],
-  ["Omu Premium", "Omu King", 119, "Empanizado o Flamin' Hot con carne de res y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_EMP_FH, OMU_EXTRA]],
-  ["Omu Premium", "Omu Mar y Tierra", 129, "Empanizado o Flamin' Hot con deliciosa carne de res y camarones.", [OMU_BOLA_SUSHI, OMU_EMP_FH, OMU_EXTRA]],
+  ["Omu Premium", "Omu Queen", 119, "Natural, empanizado o Flamin' Hot con camarones y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu King", 119, "Natural, empanizado o Flamin' Hot con carne de res y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Mar y Tierra", 129, "Natural, empanizado o Flamin' Hot con deliciosa carne de res y camarones.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
   ["Omu Premium", "Omu Boneless", 119, "Bola empanizada con boneless bañados en salsa chipotle, búffalo o ranch.", [OMU_SALSA_BONELESS_PREMIUM, OMU_EXTRA]],
-  ["Omu Premium", "Omu Veggie", 89, "Empanizado o Flamin' Hot con aguacate, pepino, zanahoria y ajonjolí.", [OMU_BOLA_SUSHI, OMU_EMP_FH, OMU_EXTRA]],
-  ["Omu Premium", "Omu Bacon", 129, "Empanizado o Flamin' Hot con tocino y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_EMP_FH, OMU_EXTRA]],
-  ["Omu Premium", "Omu Squid", 124, "Empanizado, Flamin' Hot o natural (frío) con delicioso calamar frito.", [OMU_BOLA_SUSHI, OMU_EMP_FH_NAT, OMU_EXTRA]],
-  ["Omu Premium", "Omu Salmón", 119, "Natural (frío) con rico salmón y ajonjolí.", [OMU_BOLA_SUSHI, OMU_EXTRA]],
-  ["Omu Premium", "Omu Mango Especial", 119, "Natural (frío) con mango, camarón, ajonjolí y salsa fresa chipotle.", [OMU_BOLA_SUSHI, OMU_EXTRA]],
+  ["Omu Premium", "Omu Veggie", 89, "Natural, empanizado o Flamin' Hot con aguacate, pepino, zanahoria y ajonjolí.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Bacon", 129, "Natural, empanizado o Flamin' Hot con tocino y deliciosa salsa Tampico.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Squid", 124, "Natural, empanizado o Flamin' Hot con delicioso calamar frito.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Salmón", 119, "Natural (frío) con rico salmón y ajonjolí.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Mango Especial", 119, "Natural (frío) con mango, camarón, ajonjolí y salsa fresa chipotle.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
   ["Omu Premium", "Omu Doble Empanizado", 109, "Empanizado con camarones empanizados.", [OMU_BOLA_SUSHI, OMU_EXTRA]],
-  ["Omu Premium", "Omu Atún Especial", 124, "Rellena de delicioso lomo de atún.", [OMU_BOLA_SUSHI, OMU_EXTRA]],
-  ["Omu Premium", "Omu Frut", 114, "Natural (frío) cubierta con fruta de temporada, queso crema y fresa chipotle.", [OMU_BOLA_SUSHI, OMU_EXTRA]],
+  ["Omu Premium", "Omu Atún Especial", 124, "Rellena de delicioso lomo de atún.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
+  ["Omu Premium", "Omu Frut", 114, "Natural (frío) cubierta con fruta de temporada, queso crema y fresa chipotle.", [OMU_BOLA_SUSHI, OMU_ESTILO, OMU_EXTRA]],
 
   ["Omu Boneless", "Omu Boneless", 135, "Todas las porciones incluyen papas y verduras. Escoge tu salsa: búfalo, BBQ, fresa chipotle, búffalo habanero o pimienta limón.", [OMU_TAMANO_BONELESS, OMU_SALSA_BONELESS]],
 
