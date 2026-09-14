@@ -706,8 +706,16 @@ function MenuCategoryList({
   if (skin === "omu") {
     // Su hoja negra (components/menu/skins/omu.tsx): cada sección es el pedazo de su papel que le toca (pasos
     // numerados, píldoras, tarjetas de cabecera roja); los pasos y tamaños salen de los optionGroups.
+    // El bloque EXTRAS de su papel sale del grupo "Ingrediente extra" que traen los Omu (no es platillo).
+    const omuExtras = (() => {
+      for (const g of groups) for (const it of g.items) {
+        const og = resolveOptionGroups(it).find((x) => /ingrediente extra/i.test(x.name));
+        if (og) return og;
+      }
+      return null;
+    })();
     return (
-      <OmuSheet>
+      <OmuSheet extras={omuExtras}>
         {groups.map((group, index) => {
           const { closed, note } = availabilityOf(group.category);
           const sorted = omuSortItems(group.items);

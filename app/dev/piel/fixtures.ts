@@ -128,9 +128,13 @@ const OMU_ADEREZOS = og("aderezos", "Aderezos", true, 2, [
 const OMU_VEGETALES = og("vegetales", "Vegetales", true, 2, [
   ["jicama", "Jícama"], ["pepino", "Pepino"], ["zanahoria", "Zanahoria"], ["chiles_toreados", "Chiles toreados"],
 ]);
-const OMU_EXTRA = og("ingrediente_extra", "Ingrediente extra", false, 3, [
+const OMU_EXTRA = og("ingrediente_extra", "Ingrediente extra", false, 5, [
   ["pollo", "Pollo", 25], ["res", "Res", 25], ["tocino", "Tocino", 25], ["camaron", "Camarón", 25], ["cangrejo", "Cangrejo", 25],
   ["pastor", "Pastor", 25], ["cebolla_dulce", "Cebolla dulce", 25], ["ostion_ahumado", "Ostión ahumado", 25],
+  ["salsa_buffalo_habanero", "Salsa búffalo habanero", 25], ["salsa_bufalo", "Salsa búfalo", 25], ["salsa_bbq", "Salsa BBQ", 25],
+  ["salsa_pimienta_limon", "Salsa pimienta limón", 25], ["salsa_fresa_chipotle", "Salsa fresa chipotle", 25],
+  ["aderezo_sriracha", "Aderezo sriracha", 25], ["aderezo_chipotle", "Aderezo chipotle", 25], ["aderezo_soya", "Aderezo soya", 25],
+  ["aderezo_anguila", "Aderezo anguila", 25], ["aderezo_ranch", "Aderezo ranch", 25], ["aderezo_pasta_tampico", "Aderezo pasta Tampico", 25],
 ]);
 const OMU_BOLA_SUSHI = og("presentacion", "Presentación", true, 1, [["bola", "Bola"], ["sushi", "Sushi"]]);
 const OMU_EMP_FH = og("estilo", "Estilo", true, 1, [["empanizado", "Empanizado"], ["flamin_hot", "Flamin' Hot"]]);
@@ -151,14 +155,6 @@ const OMU_ADEREZOS_BOX = og("aderezos_box", "Aderezos (van 6, elige cuáles)", t
 ]);
 const OMU_SALSAS_BOX = og("salsas_boneless", "Salsas del boneless", true, 2, [
   ["bufalo", "Búfalo"], ["bbq", "BBQ"], ["fresa_chipotle", "Fresa chipotle"], ["buffalo_habanero", "Búffalo habanero"], ["pimienta_limon", "Pimienta limón"],
-]);
-const OMU_EXTRA_CUAL = og("cual", "Cuál", true, 1, [
-  ["pollo", "Pollo"], ["res", "Res"], ["tocino", "Tocino"], ["camaron", "Camarón"], ["cangrejo", "Cangrejo"], ["pastor", "Pastor"],
-  ["cebolla_dulce", "Cebolla dulce"], ["ostion_ahumado", "Ostión ahumado"],
-  ["salsa_buffalo_habanero", "Salsa búffalo habanero"], ["salsa_bufalo", "Salsa búfalo"], ["salsa_bbq", "Salsa BBQ"],
-  ["salsa_pimienta_limon", "Salsa pimienta limón"], ["salsa_fresa_chipotle", "Salsa fresa chipotle"],
-  ["aderezo_sriracha", "Aderezo sriracha"], ["aderezo_chipotle", "Aderezo chipotle"], ["aderezo_soya", "Aderezo soya"],
-  ["aderezo_anguila", "Aderezo anguila"], ["aderezo_ranch", "Aderezo ranch"], ["aderezo_pasta_tampico", "Aderezo pasta Tampico"],
 ]);
 
 type OmuRow = [category: string, name: string, price: number, description: string, groups: OG[]];
@@ -181,8 +177,8 @@ const OMU_ROWS: OmuRow[] = [
 
   ["Omu Boneless", "Omu Boneless", 135, "Todas las porciones incluyen papas y verduras. Escoge tu salsa: búfalo, BBQ, fresa chipotle, búffalo habanero o pimienta limón.", [OMU_TAMANO_BONELESS, OMU_SALSA_BONELESS]],
 
-  ["Para compartir", "Omu Box Sushi & Boneless", 465, "3 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + 500 gr de boneless con 1 o 2 salsas al gusto + 6 aderezos. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), OMU_SALSAS_BOX, OMU_ADEREZOS_BOX]],
-  ["Para compartir", "Omu Box Sushi", 414, "5 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + zanahoria y pepino + chipotle, soya y salsa anguila. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), ...omuRollo(4), ...omuRollo(5)]],
+  ["Para compartir", "Omu Box Sushi & Boneless", 465, "3 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + 500 gr de boneless con 1 o 2 salsas al gusto + 6 aderezos. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), OMU_SALSAS_BOX, OMU_ADEREZOS_BOX, OMU_EXTRA]],
+  ["Para compartir", "Omu Box Sushi", 414, "5 rollos, cada uno con su ingrediente y su presentación (natural, empanizado o Flamin' Hot) + zanahoria y pepino + chipotle, soya y salsa anguila. Incluye papas y verduras.", [...omuRollo(1), ...omuRollo(2), ...omuRollo(3), ...omuRollo(4), ...omuRollo(5), OMU_EXTRA]],
 
   ["Refrescos", "Coca Cola 355 ml", 30, "", []],
   ["Refrescos", "Pepsi 400 ml", 30, "", []],
@@ -193,7 +189,6 @@ const OMU_ROWS: OmuRow[] = [
   ["Postres", "Rebanada de pastel", 30, "", []],
   ["Postres", "Omu galleta", 20, "", []],
 
-  ["Extras", "Ingrediente extra", 25, "Proteína, salsa o aderezo extra para tu Omu.", [OMU_EXTRA_CUAL]],
 ];
 
 const OMU: PielFixture = {
@@ -207,7 +202,7 @@ const OMU: PielFixture = {
       phone: "6143245009",
       whatsapp: "6143245009",
       categories: ["Sushi"],
-      menuCategoryOrder: ["Ármalas a tu gusto", "Omu Premium", "Omu Boneless", "Para compartir", "Refrescos", "Postres", "Extras"],
+      menuCategoryOrder: ["Ármalas a tu gusto", "Omu Premium", "Omu Boneless", "Para compartir", "Refrescos", "Postres"],
       businessHours: {
         monday: day([14, 0], [22, 0]),
         tuesday: day([14, 0], [22, 0]),

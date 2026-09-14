@@ -156,8 +156,58 @@ export function OmuCover() {
 
 /* ─────────────────────────── Su hoja ─────────────────────────── */
 
-export function OmuSheet({ children }: { children: ReactNode }) {
-  return <div className="omu-grid omu-rise pb-6 pt-2">{children}</div>;
+/**
+ * La hoja. `extras` es el grupo "Ingrediente extra" que traen los Omu (13-sep, Ricardo: el extra se agrega al rollo o a la
+ * bola, no se pide solo): aquí se pinta como su bloque EXTRAS del papel — la etiqueta roja del precio y las tres listas —
+ * sin botón; la compra va en la hoja de opciones de cada platillo.
+ */
+export function OmuSheet({ children, extras = null }: { children: ReactNode; extras?: MenuItemOptionGroup | null }) {
+  return (
+    <div className="omu-grid omu-rise pb-6 pt-2">
+      {children}
+      {extras ? <OmuExtrasInfo group={extras} /> : null}
+    </div>
+  );
+}
+
+function OmuExtrasInfo({ group }: { group: MenuItemOptionGroup }) {
+  const opts = group.options;
+  const salsas = opts.filter((o) => /^salsa/i.test(o.name));
+  const aderezos = opts.filter((o) => /^aderezo/i.test(o.name));
+  const proteinas = opts.filter((o) => !/^salsa|^aderezo/i.test(o.name));
+  const cols: [string, typeof opts][] = [
+    ["Proteínas", proteinas],
+    ["Salsas", salsas],
+    ["Aderezos", aderezos],
+  ];
+  const price = opts.find((o) => o.priceDelta > 0)?.priceDelta;
+  return (
+    <section data-omu="extras" aria-label="Extras">
+      {typeof price === "number" ? (
+        <p className="omu-badge mx-auto mb-3 max-w-xs px-4 py-2 text-center text-[11px] font-extrabold uppercase leading-snug tracking-[0.04em]">
+          ¡Agrega un ingrediente extra por sólo {money(price)}!
+        </p>
+      ) : null}
+      <Pill small>Extras</Pill>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {cols
+          .filter(([, list]) => list.length)
+          .map(([title, list]) => (
+            <div key={title}>
+              <h3 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">{title}</h3>
+              <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
+                {list.map((o) => (
+                  <li key={o.id}>{o.name.replace(/^(salsa|aderezo)\s+/i, "")}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+      </div>
+      <p className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#f9f8f8]/55">
+        Se agregan al armar tu Omu, en “Ingrediente extra”.
+      </p>
+    </section>
+  );
 }
 
 /* ─────────────────────────── Piezas ─────────────────────────── */
