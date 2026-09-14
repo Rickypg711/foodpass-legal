@@ -97,12 +97,11 @@ export function OmuHeader({
           src="/skins/omu/logo.png"
           alt={loading ? "Omu Balls & Sushi" : restaurantName || "Omu Balls & Sushi"}
           width={720}
-          height={414}
+          height={493}
           priority
           unoptimized
-          className="mx-auto h-14 w-auto sm:h-16"
+          className="mx-auto h-[76px] w-auto sm:h-[88px]"
         />
-        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.42em] text-[#f9f8f8]/80 sm:text-[11px]">Balls &amp; Sushi</p>
         <h1 className={`${OMU_DISPLAY} mt-3 text-[64px] uppercase leading-none tracking-[0.1em] text-[#f9f8f8] sm:text-[84px]`}>
           MENÜ
         </h1>
