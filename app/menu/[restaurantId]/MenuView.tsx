@@ -730,6 +730,7 @@ function MenuCategoryList({
               collapsed={closed && !opened[group.category]}
               itemCount={group.items.length}
               onToggle={() => toggle(group.category)}
+              extras={omuExtras}
             >
               {(!closed || opened[group.category]) && sorted.map((item) => (
                 <OmuItemRow

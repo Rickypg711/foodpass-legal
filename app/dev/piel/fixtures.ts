@@ -157,6 +157,13 @@ const OMU_SALSAS_BOX = og("salsas_boneless", "Salsas del boneless", true, 2, [
   ["bufalo", "Búfalo"], ["bbq", "BBQ"], ["fresa_chipotle", "Fresa chipotle"], ["buffalo_habanero", "Búffalo habanero"], ["pimienta_limon", "Pimienta limón"],
 ]);
 
+const OMU_SALSA_APARTE = og("salsa", "Salsa", true, 1, [
+  ["bufalo", "Búfalo"], ["bbq", "BBQ"], ["fresa_chipotle", "Fresa chipotle"], ["buffalo_habanero", "Búffalo habanero"], ["pimienta_limon", "Pimienta limón"],
+]);
+const OMU_ADEREZO_APARTE = og("aderezo", "Aderezo", true, 1, [
+  ["sriracha", "Sriracha"], ["chipotle", "Chipotle"], ["soya", "Soya"], ["anguila", "Anguila"], ["ranch", "Ranch"], ["pasta_tampico", "Pasta Tampico"],
+]);
+
 type OmuRow = [category: string, name: string, price: number, description: string, groups: OG[]];
 const OMU_ROWS: OmuRow[] = [
   ["Ármalas a tu gusto", "Omu Ball", 95, "Elige 1 cubierta, 1 proteína, 2 aderezos y 2 vegetales.", [OMU_CUBIERTA_BALL, OMU_PROTEINA, OMU_ADEREZOS, OMU_VEGETALES, OMU_EXTRA]],
@@ -189,6 +196,9 @@ const OMU_ROWS: OmuRow[] = [
   ["Postres", "Rebanada de pastel", 30, "", []],
   ["Postres", "Omu galleta", 20, "", []],
 
+  ["Extras", "Salsa extra", 25, "Para acompañar: búffalo habanero, búfalo, BBQ, pimienta limón o fresa chipotle.", [OMU_SALSA_APARTE]],
+  ["Extras", "Aderezo extra", 25, "Para acompañar: sriracha, chipotle, soya, anguila, ranch o pasta Tampico.", [OMU_ADEREZO_APARTE]],
+
 ];
 
 const OMU: PielFixture = {
@@ -202,7 +212,7 @@ const OMU: PielFixture = {
       phone: "6143245009",
       whatsapp: "6143245009",
       categories: ["Sushi"],
-      menuCategoryOrder: ["Ármalas a tu gusto", "Omu Premium", "Omu Boneless", "Para compartir", "Refrescos", "Postres"],
+      menuCategoryOrder: ["Ármalas a tu gusto", "Omu Premium", "Omu Boneless", "Para compartir", "Refrescos", "Postres", "Extras"],
       businessHours: {
         monday: day([14, 0], [22, 0]),
         tuesday: day([14, 0], [22, 0]),

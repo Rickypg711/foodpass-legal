@@ -23,7 +23,7 @@
  */
 
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { Children, isValidElement, type ReactNode } from "react";
 import { Montserrat, Bodoni_Moda } from "next/font/google";
 import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
@@ -162,15 +162,20 @@ export function OmuCover() {
  * sin botón; la compra va en la hoja de opciones de cada platillo.
  */
 export function OmuSheet({ children, extras = null }: { children: ReactNode; extras?: MenuItemOptionGroup | null }) {
+  // Si el menú ya trae una sección "Extras" (salsas y aderezos aparte), las listas van adentro de ella.
+  const hasExtrasSection = Children.toArray(children).some(
+    (c) => isValidElement<{ category?: string }>(c) && typeof c.props.category === "string" && omuBlockOf(c.props.category) === "extras",
+  );
   return (
     <div className="omu-grid omu-rise pb-6 pt-2">
       {children}
-      {extras ? <OmuExtrasInfo group={extras} /> : null}
+      {extras && !hasExtrasSection ? <OmuExtrasInfo group={extras} /> : null}
     </div>
   );
 }
 
-function OmuExtrasInfo({ group }: { group: MenuItemOptionGroup }) {
+/** Las tres listas de EXTRAS de su papel, desde el grupo "Ingrediente extra". */
+function OmuExtrasLists({ group }: { group: MenuItemOptionGroup }) {
   const opts = group.options;
   const salsas = opts.filter((o) => /^salsa/i.test(o.name));
   const aderezos = opts.filter((o) => /^aderezo/i.test(o.name));
@@ -180,7 +185,26 @@ function OmuExtrasInfo({ group }: { group: MenuItemOptionGroup }) {
     ["Salsas", salsas],
     ["Aderezos", aderezos],
   ];
-  const price = opts.find((o) => o.priceDelta > 0)?.priceDelta;
+  return (
+    <div className="mt-4 grid grid-cols-3 gap-3">
+      {cols
+        .filter(([, list]) => list.length)
+        .map(([title, list]) => (
+          <div key={title}>
+            <h3 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">{title}</h3>
+            <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
+              {list.map((o) => (
+                <li key={o.id}>{o.name.replace(/^(salsa|aderezo)\s+/i, "")}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+function OmuExtrasInfo({ group }: { group: MenuItemOptionGroup }) {
+  const price = group.options.find((o) => o.priceDelta > 0)?.priceDelta;
   return (
     <section data-omu="extras" aria-label="Extras">
       {typeof price === "number" ? (
@@ -189,20 +213,7 @@ function OmuExtrasInfo({ group }: { group: MenuItemOptionGroup }) {
         </p>
       ) : null}
       <Pill small>Extras</Pill>
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {cols
-          .filter(([, list]) => list.length)
-          .map(([title, list]) => (
-            <div key={title}>
-              <h3 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">{title}</h3>
-              <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
-                {list.map((o) => (
-                  <li key={o.id}>{o.name.replace(/^(salsa|aderezo)\s+/i, "")}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-      </div>
+      <OmuExtrasLists group={group} />
       <p className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#f9f8f8]/55">
         Se agregan al armar tu Omu, en “Ingrediente extra”.
       </p>
@@ -359,7 +370,7 @@ const PAPER_ORDER = [
   "Omu Box Sushi & Boneless", "Omu Box Sushi",
   "Coca Cola 355 ml", "Pepsi 400 ml", "Mirinda 400 ml", "Manzanita 400 ml",
   "Rebanada de pay", "Rebanada de pastel", "Omu galleta",
-  "Ingrediente extra",
+  "Salsa extra", "Aderezo extra",
 ].map(omuKeyOf);
 
 export function omuSortItems<T extends { name: string }>(items: T[]): T[] {
@@ -383,12 +394,15 @@ export function OmuCategorySection({
   collapsed = false,
   itemCount = 0,
   onToggle,
+  extras = null,
 }: {
   category: string;
   index: number;
   children: ReactNode;
   /** Los platillos de la sección (nombre, precio y grupos): los pasos y las notas salen de aquí. */
   items?: OmuItemLite[];
+  /** El grupo "Ingrediente extra" de los Omu: la sección Extras pinta sus tres listas antes de lo que se vende aparte. */
+  extras?: MenuItemOptionGroup | null;
   note?: string | null;
   closed?: boolean;
   collapsed?: boolean;
@@ -398,7 +412,7 @@ export function OmuCategorySection({
   const id = `menu-cat-${index}`;
   const block = omuBlockOf(category);
   const dark = block === "armalas" || block === "premium" || block === "extras";
-  const extraPrice = block === "extras" ? items[0]?.price : undefined;
+  const extraPrice = block === "extras" ? (extras?.options.find((o) => o.priceDelta > 0)?.priceDelta ?? items[0]?.price) : undefined;
 
   const windowNote = note ? (
     <p className={"mt-2 text-center text-[10.5px] font-extrabold uppercase tracking-[0.12em] " + (dark ? "text-[#f9f8f8]/80" : "text-[#d40607]")}>
@@ -513,9 +527,15 @@ export function OmuCategorySection({
         <div id={id}>
           <Pill small>{category}</Pill>
         </div>
+        {extras ? <OmuExtrasLists group={extras} /> : null}
+        {extras ? (
+          <p className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#f9f8f8]/55">
+            Se agregan al armar tu Omu, en “Ingrediente extra”. O pide aparte:
+          </p>
+        ) : null}
         {windowNote}
         {toggle}
-        {collapsed ? null : <ul className="mt-4 space-y-3">{body}</ul>}
+        {collapsed ? null : <ul className="mt-4 space-y-4">{body}</ul>}
       </>,
     );
   }
@@ -599,45 +619,6 @@ export function OmuItemRow({
         </button>
         <div className="mt-3 flex items-center justify-end gap-2">
           {quantity > 0 ? null : <span className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#151311]/60">Pedir</span>}
-          {control}
-        </div>
-      </li>
-    );
-  }
-
-  /* Extras: las tres listas de su papel (proteínas · salsas · aderezos) desde el grupo "Cuál". */
-  if (block === "extras" && groups[0]) {
-    const opts = groups[0].options;
-    const salsas = opts.filter((o) => /^salsa/i.test(o.name));
-    const aderezos = opts.filter((o) => /^aderezo/i.test(o.name));
-    const proteinas = opts.filter((o) => !/^salsa|^aderezo/i.test(o.name));
-    const cols: [string, typeof opts][] = [
-      ["Proteínas", proteinas],
-      ["Salsas", salsas],
-      ["Aderezos", aderezos],
-    ];
-    return (
-      <li>
-        <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="block w-full cursor-pointer text-left">
-          <div className="grid grid-cols-3 gap-3">
-            {cols
-              .filter(([, list]) => list.length)
-              .map(([title, list]) => (
-                <div key={title}>
-                  <h4 className="mb-1 text-[11.5px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8]">{title}</h4>
-                  <ul className="space-y-[2px] text-[10.5px] font-medium uppercase leading-tight text-[#f9f8f8]/75">
-                    {list.map((o) => (
-                      <li key={o.id}>{o.name.replace(/^(salsa|aderezo)\s+/i, "")}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-          </div>
-        </button>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-[12px] font-extrabold uppercase text-[#f9f8f8]">
-            {name} · {money(price)}
-          </span>
           {control}
         </div>
       </li>
