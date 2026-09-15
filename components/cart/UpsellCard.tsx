@@ -14,6 +14,7 @@
 // it can never break the checkout flow.
 
 import { useEffect, useRef, useState } from "react";
+import { DEFAULT_FLOW, type FlowTheme } from "@/components/menu/skins/flowTheme";
 import { useCart } from "@/lib/cart/CartProvider";
 import {
   isUpsellDismissed,
@@ -42,9 +43,12 @@ export type UpsellGoalContext = {
 };
 
 export function UpsellCard({
+  theme: th = DEFAULT_FLOW,
   restaurantId,
   goal = null,
 }: {
+  /** Ropa del flujo (piel del local); sin piel, el naranja de siempre. */
+  theme?: FlowTheme;
   restaurantId: string;
   goal?: UpsellGoalContext | null;
 }) {
@@ -129,8 +133,8 @@ export function UpsellCard({
           : `🎯 Quedarás a solo ${goalGap} pts de tu ${goal.nextTierName} GRATIS`;
     }
     return (
-      <div className="mb-4 rounded-xl border border-[#F28C38] bg-[#FFF3E8] p-4">
-        <p className="text-sm font-bold text-[#B05E14]">{headline}</p>
+      <div className={th.upsellBoxStrong}>
+        <p className={`text-sm font-bold ${th.accentDeep}`}>{headline}</p>
         <p className="text-xs text-black/70">
           {added.bonus > 0
             ? "Se suman a tus puntos cuando el restaurante confirme tu pago."
@@ -139,7 +143,7 @@ export function UpsellCard({
         {added.bonus > 0 && goalLine ? (
           <p
             className="mt-1 text-xs font-bold"
-            style={{ color: (goalGap ?? 1) <= 0 ? "#16A34A" : "#B05E14" }}
+            style={(goalGap ?? 1) <= 0 ? { color: "#16A34A" } : th.accentDeepStyle}
           >
             {goalLine}
           </p>
@@ -147,7 +151,7 @@ export function UpsellCard({
         {added.bonus > 0 ? (
           <div className="mt-2 h-3 overflow-hidden rounded-full bg-black/10">
             <div
-              className="h-full rounded-full bg-[#F28C38] shadow-[0_0_8px_rgba(242,140,56,0.6)] transition-[width] duration-700 ease-out"
+              className={th.progressBar}
               style={{ width: barFilled ? `${goalPct ?? 100}%` : "35%" }}
             />
           </div>
@@ -165,7 +169,7 @@ export function UpsellCard({
   const surprise = suggestion.surprise === true;
 
   return (
-    <div className="relative mb-4 rounded-xl border border-[#F28C38]/40 bg-[#FFF3E8] p-4">
+    <div className={`relative ${th.upsellBox}`}>
       {/* "No, gracias" — el rechazo SE RECUERDA (14 días). Una máquina que
           insiste con lo que ya le dijiste que no, deja de ser un mesero
           atento y se vuelve un vendedor necio. */}
@@ -203,18 +207,18 @@ export function UpsellCard({
             });
             setAdded({ bonus, surprise });
           }}
-          className="shrink-0 rounded-lg bg-[#F28C38] px-4 py-2 text-sm font-semibold text-[#1C2526]"
+          className={`shrink-0 ${th.btnSmall}`}
         >
           + ${Math.round(delta)}
         </button>
       </div>
       {bonus > 0 ? (
         surprise ? (
-          <span className="mt-2 inline-block rounded-full bg-gradient-to-r from-[#F28C38] to-[#E85D75] px-3 py-1 text-xs font-bold text-[#1C2526]">
+          <span className={`mt-2 inline-block ${th.chipHot}`}>
             🎰 ¡DOBLE PUNTOS! +{bonus} puntos si lo agregas
           </span>
         ) : (
-          <span className="mt-2 inline-block rounded-full bg-[#F28C38]/15 px-3 py-1 text-xs font-semibold text-[#B05E14]">
+          <span className={`mt-2 inline-block ${th.chip}`}>
             +{bonus} puntos para tu recompensa ⭐
           </span>
         )
@@ -239,7 +243,7 @@ export function UpsellCard({
           goal.balance + estimateEarn(goal.cartTotal + delta) + bonus;
         const gap = goal.nextTierPoints - prospective;
         return (
-          <p className="mt-2 text-xs font-bold" style={{ color: gap <= 0 ? "#16A34A" : "#B05E14" }}>
+          <p className="mt-2 text-xs font-bold" style={gap <= 0 ? { color: "#16A34A" } : th.accentDeepStyle}>
             {gap <= 0
               ? `🎉 ¡Con esto DESBLOQUEAS tu ${goal.nextTierName} GRATIS!`
               : `🎯 Con esto te faltarían solo ${gap} pts para tu ${goal.nextTierName} GRATIS`}

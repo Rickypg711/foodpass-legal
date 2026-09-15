@@ -9,6 +9,7 @@
 // NEVER in the earn path.
 
 import { useRef, useState } from "react";
+import { DEFAULT_FLOW, type FlowTheme } from "@/components/menu/skins/flowTheme";
 import {
   linkWithPhoneNumber,
   signInWithCredential,
@@ -65,11 +66,14 @@ function last10(digits: string): string {
 }
 
 export function PhonePointsCard({
+  theme: th = DEFAULT_FLOW,
   restaurantId,
   restaurantName,
   phone,
   phoneCountryCode = DEFAULT_PHONE_COUNTRY,
 }: {
+  /** Ropa del flujo (piel del local); sin piel, el naranja de siempre. */
+  theme?: FlowTheme;
   restaurantId: string;
   restaurantName: string;
   phone: string;
@@ -194,17 +198,17 @@ export function PhonePointsCard({
   }
 
   return (
-    <div className="rounded-2xl border border-[#F28C38]/35 bg-white p-4">
+    <div className={th.pointsCard}>
       <div ref={recaptchaHostRef} />
       {step === "done" ? (
         <>
         {balance ? (
           <div className="text-center">
-            <p className="text-base font-bold text-[#1C2526]">
+            <p className={`text-base font-bold ${th.ink}`}>
               ⭐ Tienes {balance.points} punto{balance.points !== 1 ? "s" : ""} en{" "}
               {restaurantName}
             </p>
-            <p className="mt-1 text-xs text-[#1C2526]/60">
+            <p className={`mt-1 text-xs ${th.ink}/60`}>
               {balance.visits} visita{balance.visits !== 1 ? "s" : ""}
               {balance.firstVisitRewardUnlocked
                 ? " · 🎁 Tienes tu premio de bienvenida — pídelo al pagar"
@@ -215,20 +219,20 @@ export function PhonePointsCard({
               const next = tiers.find((t) => balance.points < t.points);
               if (unlocked.length === 0 && !next) return null;
               return (
-                <div className="mt-3 space-y-1.5 border-t border-[#F28C38]/15 pt-3 text-left">
+                <div className={`mt-3 space-y-1.5 border-t ${th.dividerAccent} pt-3 text-left`}>
                   {unlocked.map((t) => (
-                    <p key={t.id} className="text-xs font-semibold text-[#1C2526]">
+                    <p key={t.id} className={`text-xs font-semibold ${th.ink}`}>
                       🎁 Ya puedes canjear:{" "}
-                      <span style={{ color: "#F28C38" }}>{t.name}</span>{" "}
-                      <span className="text-[#1C2526]/50">
+                      <span style={th.accentStyle}>{t.name}</span>{" "}
+                      <span className={`${th.ink}/50`}>
                         ({t.points} pts) — pídelo al pagar en el local
                       </span>
                     </p>
                   ))}
                   {next ? (
-                    <p className="text-xs text-[#1C2526]/60">
+                    <p className={`text-xs ${th.ink}/60`}>
                       ⏳ Te faltan{" "}
-                      <span className="font-bold" style={{ color: "#F28C38" }}>
+                      <span className="font-bold" style={th.accentStyle}>
                         {next.points - balance.points} puntos
                       </span>{" "}
                       para: {next.name}
@@ -247,7 +251,7 @@ export function PhonePointsCard({
             })()}
           </div>
         ) : (
-          <p className="text-center text-sm text-[#1C2526]/70">
+          <p className={`text-center text-sm ${th.ink}/70`}>
             Aún no tienes puntos aquí — se acreditan cuando el restaurante
             confirma tu pago. ⭐
           </p>
@@ -259,7 +263,7 @@ export function PhonePointsCard({
         </>
       ) : step === "code" || step === "verifying" ? (
         <div className="text-center">
-          <p className="text-sm font-semibold text-[#1C2526]">
+          <p className={`text-sm font-semibold ${th.ink}`}>
             Te enviamos un código por SMS a tu número
           </p>
           <div className="mt-3 flex items-center justify-center gap-2">
@@ -270,14 +274,14 @@ export function PhonePointsCard({
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               placeholder="000000"
-              className="w-32 rounded-xl border border-[#1C2526]/15 bg-[#FAF7F2] px-3 py-2.5 text-center text-lg font-bold tracking-[0.3em] outline-none focus:border-[#F28C38]"
+              className={`w-32 text-lg tracking-[0.3em] ${th.inputCode}`}
               disabled={step === "verifying"}
             />
             <button
               type="button"
               onClick={confirmCode}
               disabled={step === "verifying" || code.length < 6}
-              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
+              className={th.btn}
             >
               {step === "verifying" ? "Verificando…" : "Ver puntos"}
             </button>
@@ -286,10 +290,10 @@ export function PhonePointsCard({
         </div>
       ) : (
         <div className="text-center">
-          <p className="text-sm font-semibold text-[#1C2526]">
+          <p className={`text-sm font-semibold ${th.ink}`}>
             ⭐ Tus puntos quedan guardados en tu número
           </p>
-          <p className="mt-1 text-xs text-[#1C2526]/60">
+          <p className={`mt-1 text-xs ${th.ink}/60`}>
             Verifica tu WhatsApp ({phone10.slice(0, 3)} ··· {phone10.slice(-2)}) y
             ve tu saldo en {restaurantName}.
           </p>
@@ -297,7 +301,7 @@ export function PhonePointsCard({
             type="button"
             onClick={sendCode}
             disabled={step === "sending"}
-            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-[#F28C38] bg-white px-5 py-2 text-sm font-bold text-[#F28C38] disabled:opacity-50"
+            className={`mt-3 inline-flex min-h-10 items-center justify-center ${th.btnOutlineAccent}`}
           >
             {step === "sending" ? "Enviando código…" : "Ver mis puntos"}
           </button>

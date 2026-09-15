@@ -1,7 +1,6 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -61,71 +60,7 @@ import {
 import { isPositivelyClosedNow, scheduleStatus } from "@/lib/schedule";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { formatPrice } from "@/lib/priceFormat";
-
-/**
- * Same dark brand app bar as the menu (same container widths, same glow,
- * same divider), personalized with the restaurant's logo. One header
- * language across the whole ordering flow.
- */
-function CheckoutHeader({
-  restaurantId,
-  restaurantName,
-  logoUrl,
-  modeLabel = "Recoger en local",
-}: {
-  restaurantId: string;
-  restaurantName: string;
-  logoUrl?: string | null;
-  /** "Recoger en local" · "A domicilio" · "En tu mesa" — lo que el comensal eligió. */
-  modeLabel?: string;
-}) {
-  return (
-    <header className="relative overflow-hidden bg-[#141414] shadow-md">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_0%_0%,rgba(242,140,56,0.22),transparent_55%)]"
-        aria-hidden
-      />
-      <div className="relative mx-auto flex max-w-3xl items-center gap-3.5 px-4 py-4 sm:px-6 lg:max-w-4xl">
-        <Link
-          href={`/menu/${encodeURIComponent(restaurantId)}`}
-          aria-label="Volver al menú"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white ring-1 ring-white/15 transition-colors hover:bg-white/20"
-        >
-          ←
-        </Link>
-        {logoUrl ? (
-          <Image
-            src={logoUrl}
-            alt=""
-            width={44}
-            height={44}
-            unoptimized
-            className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-lg ring-2 ring-white/15"
-          />
-        ) : (
-          <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/15 text-xl ring-2 ring-white/10"
-            aria-hidden
-          >
-            🍽
-          </div>
-        )}
-        <div className="min-w-0">
-          <h1 className="text-lg font-bold leading-tight tracking-tight text-white">
-            Confirmar pedido
-          </h1>
-          <p className="truncate text-xs text-white/55">
-            {restaurantName} · {modeLabel}
-          </p>
-        </div>
-      </div>
-      <div
-        className="h-px bg-gradient-to-r from-transparent via-[#F28C38]/50 to-transparent"
-        aria-hidden
-      />
-    </header>
-  );
-}
+import { flowThemeFor } from "@/components/menu/skins/flowTheme";
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -147,6 +82,8 @@ export default function CheckoutPage() {
   /** Doc del local, para decir ANTES cuántos puntos junta ESTE pedido
    *  (robo 5-sep: Fluxsales "Acumulas 37 Boras con este pedido"). */
   const [restaurantData, setRestaurantData] = useState<Record<string, unknown> | null>(null);
+  /** Ropa del flujo según la piel del local (components/menu/skins/flowTheme.tsx); sin piel, el naranja de siempre. */
+  const th = flowThemeFor(restaurantData);
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string | null>(null);
   /**
    * 📲 WhatsApp del local, para abrirle el chat al comensal EN EL MISMO TOQUE
@@ -324,14 +261,10 @@ export default function CheckoutPage() {
 
   if (!cartReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-        <CheckoutHeader
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          logoUrl={restaurantImageUrl}
-        />
+      <div className={th.root} style={th.rootStyle}>
+        <th.Header page="checkout" restaurantId={restaurantId} restaurantName={restaurantName} logoUrl={restaurantImageUrl} title="Confirmar pedido" subtitle={`${restaurantName} · Recoger en local`} />
         <main className="mx-auto max-w-md px-4 py-10">
-          <p className="text-center text-sm text-[#1C2526]/70">Cargando carrito…</p>
+          <p className={`text-center text-sm ${th.ink}/70`}>Cargando carrito…</p>
         </main>
       </div>
     );
@@ -339,12 +272,8 @@ export default function CheckoutPage() {
 
   if (itemCount === 0 && !checkoutOrder) {
     return (
-      <div className="flex min-h-screen flex-col bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-        <CheckoutHeader
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          logoUrl={restaurantImageUrl}
-        />
+      <div className={`flex flex-col ${th.root}`} style={th.rootStyle}>
+        <th.Header page="checkout" restaurantId={restaurantId} restaurantName={restaurantName} logoUrl={restaurantImageUrl} title="Confirmar pedido" subtitle={`${restaurantName} · Recoger en local`} />
         <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
           <div
             className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-4xl shadow-sm"
@@ -352,13 +281,13 @@ export default function CheckoutPage() {
           >
             🛒
           </div>
-          <p className="mt-5 text-lg font-bold text-[#1C2526]">Tu carrito está vacío</p>
-          <p className="mt-1 text-sm text-[#1C2526]/60">
+          <p className={`mt-5 text-lg font-bold ${th.ink}`}>Tu carrito está vacío</p>
+          <p className={`mt-1 text-sm ${th.ink}/60`}>
             Agrega algo delicioso del menú para continuar.
           </p>
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}`}
-            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F28C38] px-8 py-3 text-sm font-semibold text-[#1C2526] shadow-md transition-colors hover:bg-[#d67428]"
+            className={`mt-6 inline-flex items-center justify-center px-8 ${th.cta}`}
           >
             Ver el menú
           </Link>
@@ -662,24 +591,26 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAF7F2] to-[#F0E3D2] text-[#1C2526]">
-      <CheckoutHeader
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          logoUrl={restaurantImageUrl}
-          modeLabel={tableNumber ? "En tu mesa" : esDomicilio ? "A domicilio" : "Recoger en local"}
-        />
+    <div className={th.root} style={th.rootStyle}>
+      <th.Header
+        page="checkout"
+        restaurantId={restaurantId}
+        restaurantName={restaurantName}
+        logoUrl={restaurantImageUrl}
+        title="Confirmar pedido"
+        subtitle={`${restaurantName} · ${tableNumber ? "En tu mesa" : esDomicilio ? "A domicilio" : "Recoger en local"}`}
+      />
 
       <main className="mx-auto max-w-md px-4 py-6">
         {checkoutOrder?.mpPopupBlocked && checkoutOrder.mpRedirectUrl ? (
           <div
-            className="mb-4 rounded-xl border border-amber-400/50 bg-white p-4 text-sm text-[#1C2526]"
+            className={`mb-4 ${th.cardFlat} border border-amber-400/50 text-sm`}
             role="status"
           >
             <p className="font-medium">
               No se pudo abrir Mercado Pago automáticamente. Usa el botón para continuar el pago.
             </p>
-            <p className="mt-2 text-xs text-[#1C2526]/70">
+            <p className={`mt-2 text-xs ${th.ink}/70`}>
               Orden: <span className="font-mono">{checkoutOrder.orderId}</span>
               {checkoutOrder.redirectUrlHost ? (
                 <>
@@ -699,21 +630,21 @@ export default function CheckoutPage() {
             </a>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 ml-3 inline-block text-sm font-semibold text-[#F28C38] underline"
+              className={`mt-3 ml-3 inline-block ${th.link}`}
             >
               Ver estado del pedido
             </Link>
           </div>
         ) : checkoutOrder?.mpNewTab ? (
           <div
-            className="mb-4 rounded-xl border border-[#009EE3]/40 bg-white p-4 text-sm text-[#1C2526]"
+            className={`mb-4 ${th.cardFlat} border border-[#009EE3]/40 text-sm`}
             role="status"
           >
             <p className="font-medium">
               Mercado Pago se abrió en otra pestaña. Mantén esta página abierta para ver el
               estado.
             </p>
-            <p className="mt-2 text-xs text-[#1C2526]/70">
+            <p className={`mt-2 text-xs ${th.ink}/70`}>
               Orden: <span className="font-mono">{checkoutOrder.orderId}</span>
               {checkoutOrder.redirectUrlHost ? (
                 <>
@@ -724,29 +655,29 @@ export default function CheckoutPage() {
             </p>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline"
+              className={`mt-3 inline-block ${th.link}`}
             >
               Ver estado del pedido
             </Link>
           </div>
         ) : checkoutOrder && itemCount === 0 ? (
           <div
-            className="mb-4 rounded-xl border border-[#F28C38]/30 bg-white p-4 text-sm text-[#1C2526]"
+            className={`mb-4 ${th.cardFlat} text-sm`}
             role="status"
           >
             <p className="font-medium">Pedido creado.</p>
-            <p className="mt-2 text-xs text-[#1C2526]/70">
+            <p className={`mt-2 text-xs ${th.ink}/70`}>
               Orden: <span className="font-mono">{checkoutOrder.orderId}</span>
             </p>
             <Link
               href={`/menu/${encodeURIComponent(restaurantId)}/order/${encodeURIComponent(checkoutOrder.orderId)}`}
-              className="mt-3 inline-block text-sm font-semibold text-[#F28C38] underline"
+              className={`mt-3 inline-block ${th.link}`}
             >
               Ver estado del pedido
             </Link>
           </div>
         ) : null}
-        <CheckoutCartLines />
+        <CheckoutCartLines theme={th} />
 
         {/* Identity-first checkout: the PHONE is the key — it activates the
             redemption block and personalizes the upsell (goal-gradient).
@@ -755,24 +686,21 @@ export default function CheckoutPage() {
           {/* ── Comiendo aquí: llegó por el QR de su mesa ── */}
           {tableNumber ? (
             <div
-              className="rounded-2xl p-4"
-              style={{
-                background: "rgba(242,140,56,0.08)",
-                border: "1px solid rgba(242,140,56,0.35)",
-              }}
+              className={th.tableBox}
+              style={th.tableBoxStyle}
             >
-              <p className="text-[15px] font-bold text-[#1C2526]">
+              <p className={`text-[15px] font-bold ${th.ink}`}>
                 🍽️ Estás ordenando para la mesa{" "}
-                <span className="text-[#F28C38]">{tableNumber}</span>
+                <span className={th.accent}>{tableNumber}</span>
               </p>
-              <p className="mt-1 text-xs text-[#1C2526]/60">
+              <p className={`mt-1 text-xs ${th.ink}/60`}>
                 Tu pedido llega directo a la cocina y te lo llevamos a tu mesa.
                 No tienes que formarte.
               </p>
               <label className="mt-3 block">
                 <span className="text-sm font-semibold">
                   ¿Cuántas personas son?{" "}
-                  <span className="font-normal text-[#1C2526]/45">(opcional)</span>
+                  <span className={`font-normal ${th.ink}/45`}>(opcional)</span>
                 </span>
                 <input
                   type="number"
@@ -782,7 +710,7 @@ export default function CheckoutPage() {
                   value={diners}
                   onChange={(e) => setDiners(e.target.value)}
                   placeholder="Ej. 4"
-                  className="mt-1.5 w-28 rounded-xl border border-[#1C2526]/15 bg-white px-3 py-2 text-[15px] outline-none focus:border-[#F28C38]"
+                  className={th.inputSmall}
                 />
               </label>
             </div>
@@ -794,8 +722,8 @@ export default function CheckoutPage() {
               de pago, el total (envío) y si se pide dirección. Dos botones
               grandes, no un select: es un celular en la mano. */}
           {deliveryOffered && !tableNumber ? (
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <p className="text-sm font-semibold">¿Cómo quieres tu pedido?</p>
+            <div className={th.card}>
+              <p className={th.label}>¿Cómo quieres tu pedido?</p>
               <div className="mt-2.5 grid grid-cols-2 gap-2">
                 {(
                   [
@@ -811,25 +739,21 @@ export default function CheckoutPage() {
                       disabled={submitting}
                       onClick={() => setFulfillment(opt.key)}
                       aria-pressed={on}
-                      className={`flex flex-col items-center rounded-xl border px-3 py-3 text-center transition-colors ${
-                        on
-                          ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                          : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                      }`}
+                      className={`flex flex-col items-center rounded-xl border px-3 py-3 text-center transition-colors ${th.option(on)}`}
                     >
                       <span className="text-2xl" aria-hidden>{opt.emoji}</span>
                       <span className="mt-1 text-sm font-semibold">{opt.title}</span>
-                      <span className="text-xs text-[#1C2526]/55">{opt.sub}</span>
+                      <span className={th.optionSub}>{opt.sub}</span>
                     </button>
                   );
                 })}
               </div>
               {esDomicilio ? (
                 <label className="mt-3 block">
-                  <span className="text-sm font-semibold">
-                    ¿Dónde te lo llevamos? <span className="text-[#F28C38]">*</span>
+                  <span className={th.label}>
+                    ¿Dónde te lo llevamos? <span className={th.accent}>*</span>
                   </span>
-                  <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+                  <span className={th.hint}>
                     {deliveryZone
                       ? `${deliveryZone}. Escribe calle, casa y una referencia.`
                       : "Escribe calle, casa y una referencia para encontrarte."}
@@ -840,7 +764,7 @@ export default function CheckoutPage() {
                     maxLength={DELIVERY_ADDRESS_MAX}
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
-                    className="mt-2.5 w-full resize-none rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                    className={`resize-none ${th.input}`}
                     placeholder="Ej. Calle Duarte #12, casa azul frente al colmado"
                     autoComplete="street-address"
                     disabled={submitting}
@@ -850,10 +774,10 @@ export default function CheckoutPage() {
             </div>
           ) : null}
 
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className={th.card}>
             <label className="block">
-              <span className="text-sm font-semibold">
-                Tu WhatsApp <span className="text-[#F28C38]">*</span>
+              <span className={th.label}>
+                Tu WhatsApp <span className={th.accent}>*</span>
               </span>
               {/* Lo que GANA con este pedido, dicho ANTES del campo y con el
                   número de ESTE pedido — la razón para soltar el teléfono. La
@@ -867,15 +791,15 @@ export default function CheckoutPage() {
                     ? welcomePreviewLine(buildEarnPreview(restaurantData, totalConEnvio))
                     : null;
                 return (
-                  <span className="mt-1 block rounded-xl bg-[#F28C38]/10 px-3 py-2 text-[13px] text-[#1C2526]">
+                  <span className={`mt-1 block px-3 py-2 text-[13px] ${th.softBox} ${th.ink}`}>
                     <span className="font-bold">{"⭐ "}{earnLine}</span>
                     {welcomeLine ? (
-                      <span className="mt-0.5 block text-xs text-[#1C2526]/70">{"🎁 "}{welcomeLine}.</span>
+                      <span className={`mt-0.5 block text-xs ${th.ink}/70`}>{"🎁 "}{welcomeLine}.</span>
                     ) : null}
                   </span>
                 );
               })()}
-              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+              <span className={th.hint}>
                 {/* Con el preview arriba, aquí ya no se repite "tus puntos". */}
                 {earnLine
                   ? "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."
@@ -889,7 +813,7 @@ export default function CheckoutPage() {
                 required
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                className={th.input}
                 placeholder="Ej. 614 123 4567"
                 autoComplete="tel"
                 maxLength={16}
@@ -897,15 +821,15 @@ export default function CheckoutPage() {
               />
             </label>
             <label className="mt-4 block">
-              <span className="text-sm font-semibold">
+              <span className={th.label}>
                 Tu nombre{" "}
                 {enMesa ? (
-                  <span className="font-normal text-[#1C2526]/45">(opcional)</span>
+                  <span className={`font-normal ${th.ink}/45`}>(opcional)</span>
                 ) : (
-                  <span className="text-[#F28C38]">*</span>
+                  <span className={th.accent}>*</span>
                 )}
               </span>
-              <span className="mt-0.5 block text-xs text-[#1C2526]/55">
+              <span className={th.hint}>
                 {/* En la mesa nadie recoge nada: la comida va hacia él. El
                     nombre sirve para que el mesero sepa de quién es cada plato
                     cuando la mesa pidió varias cosas, no para gritarlo. */}
@@ -921,7 +845,7 @@ export default function CheckoutPage() {
                 minLength={enMesa ? 0 : 2}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="mt-2.5 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-[15px] outline-none transition-colors placeholder:text-[#1C2526]/35 focus:border-[#F28C38] focus:bg-white focus:ring-2 focus:ring-[#F28C38]/25"
+                className={th.input}
                 placeholder="Ej. Juan Pérez"
                 autoComplete="name"
                 disabled={submitting}
@@ -931,6 +855,7 @@ export default function CheckoutPage() {
 
           {/* Redemption: use unlocked rewards on THIS order (phone-verified). */}
           <CheckoutRedemption
+            theme={th}
             restaurantId={restaurantId}
             phoneDigits={customerPhone}
             selected={redemption}
@@ -954,6 +879,7 @@ export default function CheckoutPage() {
               ("te faltarían solo N pts para tu X GRATIS") is live when the
               customer reaches it. */}
           <UpsellCard
+            theme={th}
             restaurantId={restaurantId}
             goal={(() => {
               if (!loyalty || loyalty.tiers.length === 0) return null;
@@ -996,8 +922,8 @@ export default function CheckoutPage() {
               a payment method"). Solo lo que el dueño acepta. Con una sola
               opción en total no hay nada que elegir y no se enseña. */}
           {enMesa ? null : mpChecked && paymentChoiceCount > 1 ? (
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <p className="text-sm font-semibold">Forma de pago</p>
+            <div className={th.card}>
+              <p className={th.label}>Forma de pago</p>
               <div className="mt-2.5 flex flex-col gap-2">
                 {mercadoPagoAvailable ? (
                   <button
@@ -1005,18 +931,14 @@ export default function CheckoutPage() {
                     disabled={submitting}
                     onClick={() => setPayMethod(PAYMENT_METHOD_MERCADO_PAGO)}
                     aria-pressed={payMethod === PAYMENT_METHOD_MERCADO_PAGO}
-                    className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                      payMethod === PAYMENT_METHOD_MERCADO_PAGO
-                        ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                        : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                    }`}
+                    className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${th.option(payMethod === PAYMENT_METHOD_MERCADO_PAGO)}`}
                   >
                     {/* 🌐 y no 💳: "Tarjeta al recoger" también lleva 💳 y
                         las dos opciones se veían iguales (Ricardo, 10-sep). */}
                     <span className="text-xl" aria-hidden>🌐</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">Pagar en línea</span>
-                      <span className="block text-xs text-[#1C2526]/55">
+                      <span className={`block ${th.optionSub}`}>
                         Mercado Pago · tarjeta, OXXO y más
                       </span>
                     </span>
@@ -1036,11 +958,7 @@ export default function CheckoutPage() {
                             setPickupPayMethod(o.key);
                           }}
                           aria-pressed={on}
-                          className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                            on
-                              ? "border-[#F28C38] bg-[#FFF3E8] ring-2 ring-[#F28C38]/25"
-                              : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#F28C38]/50"
-                          }`}
+                          className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${th.option(on)}`}
                         >
                           <span className="text-xl" aria-hidden>{o.emoji}</span>
                           <span className="min-w-0">
@@ -1049,7 +967,7 @@ export default function CheckoutPage() {
                             <span className="block text-sm font-semibold">
                               {esDomicilio ? DELIVERY_CHOICE_COPY[o.key].title : PICKUP_CHOICE_COPY[o.key].title}
                             </span>
-                            <span className="block text-xs text-[#1C2526]/55">
+                            <span className={`block ${th.optionSub}`}>
                               {esDomicilio ? DELIVERY_CHOICE_COPY[o.key].sub : PICKUP_CHOICE_COPY[o.key].sub}
                             </span>
                           </span>
@@ -1060,11 +978,11 @@ export default function CheckoutPage() {
               </div>
             </div>
           ) : mpChecked && !mercadoPagoAvailable && !payAtPickupAvailable ? (
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <div className={th.card}>
               <p className="text-sm text-red-800">{ORDERING_UNAVAILABLE_MESSAGE}</p>
             </div>
           ) : mpSandboxUi && payMethod !== PAYMENT_METHOD_PAY_AT_PICKUP ? (
-            <p className="text-center text-xs text-[#1C2526]/45">
+            <p className={`text-center text-xs ${th.ink}/45`}>
               {mercadoPagoCheckoutTitle(mpSandboxUi)} · modo prueba
             </p>
           ) : null}
@@ -1076,13 +994,13 @@ export default function CheckoutPage() {
           ) : null}
           {/* 🛵 El envío se dice ANTES del botón, no escondido en el total. */}
           {envio > 0 ? (
-            <div className="-mb-1 flex items-center justify-between rounded-xl bg-white px-3.5 py-2.5 text-sm shadow-sm">
-              <span className="text-[#1C2526]/70">🛵 Envío a domicilio</span>
+            <div className={`-mb-1 flex items-center justify-between ${th.cardFlat} px-3.5 py-2.5 text-sm shadow-sm`}>
+              <span className={`${th.ink}/70`}>🛵 Envío a domicilio</span>
               <span className="font-semibold">{formatPrice(envio)}</span>
             </div>
           ) : null}
           {closedNow ? (
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <div className={th.card}>
               <p className="text-sm text-red-800">
                 😴 El restaurante está cerrado por ahora
                 {closedLabel ? ` — ${closedLabel.toLowerCase()}` : ""}. Tu carrito se
@@ -1093,7 +1011,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting || closedNow || (!mercadoPagoAvailable && !payAtPickupAvailable)}
-            className="min-h-12 rounded-xl bg-[#F28C38] py-3.5 text-base font-bold text-[#1C2526] shadow-md transition-colors hover:bg-[#d67428] disabled:opacity-60"
+            className={th.cta}
           >
             {submitting
               ? enMesa
@@ -1115,7 +1033,7 @@ export default function CheckoutPage() {
                     }`
                   : `Pagar ${formatPrice(totalConEnvio)} · Mercado Pago`}
           </button>
-          <p className="-mt-1 text-center text-xs text-[#1C2526]/50">
+          <p className={`-mt-1 text-center text-xs ${th.ink}/50`}>
             {enMesa
               ? "🍽️ Se agrega a la cuenta de tu mesa. Pagas al final."
               : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
@@ -1124,7 +1042,7 @@ export default function CheckoutPage() {
                   : pickupPaymentLine(effectivePickupPayMethod)
                 : "🔒 Pago procesado de forma segura por Mercado Pago"}
           </p>
-          <p className="-mt-2 text-center text-[11px] text-[#1C2526]/40">
+          <p className={`-mt-2 text-center text-[11px] ${th.ink}/40`}>
             Al ordenar aceptas nuestro{" "}
             <a
               href="/privacy-policy.html"
@@ -1143,7 +1061,7 @@ export default function CheckoutPage() {
 
         <Link
           href={`/menu/${encodeURIComponent(restaurantId)}`}
-          className="mt-4 block text-center text-sm text-[#1C2526]/70 underline"
+          className={`mt-4 block text-center ${th.linkMuted}`}
         >
           Volver al menú
         </Link>

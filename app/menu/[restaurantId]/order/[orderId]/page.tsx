@@ -33,6 +33,7 @@ import type { CartLine } from "@/lib/cart/types";
 import type { StoredOrderSnapshot } from "@/lib/types/order";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { pedidosHrefForOrder } from "@/lib/vendor/pedidoLink";
+import { DEFAULT_FLOW, flowThemeFor, type FlowTheme } from "@/components/menu/skins/flowTheme";
 
 type OrderDoc = {
   status?: string;
@@ -107,14 +108,14 @@ function earnPolicyFromRestaurant(d: Record<string, unknown>): { base: number; s
   return { base: 1, step: cc === "USD" ? 2 : 30 };
 }
 
-function OrderStatusSkeleton() {
+function OrderStatusSkeleton({ theme = DEFAULT_FLOW }: { theme?: FlowTheme }) {
   return (
     <div className="space-y-4 animate-pulse" aria-busy="true" aria-label="Cargando pedido">
-      <div className="rounded-xl bg-white p-4">
+      <div className={theme.skeletonBlock}>
         <div className="mx-auto h-4 w-16 rounded bg-black/10" />
         <div className="mx-auto mt-2 h-8 w-32 rounded bg-black/10" />
       </div>
-      <div className="rounded-xl bg-white p-4 space-y-3">
+      <div className={`${theme.skeletonBlock} space-y-3`}>
         <div className="h-3 w-28 rounded bg-black/10" />
         <div className="h-4 w-full rounded bg-black/10" />
         <div className="h-3 w-24 rounded bg-black/10" />
@@ -157,6 +158,9 @@ function OrderStatusPageContent() {
   // no estorbar.
   const [reviewAskSeen, setReviewAskSeen] = useState(false);
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
+  /** Doc del local: la ropa del flujo (piel) sale de aquí. */
+  const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
+  const th = flowThemeFor(rdata);
   /** Premios apagados (5-sep): la página no promete puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState(true);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({
@@ -284,6 +288,7 @@ function OrderStatusPageContent() {
         const rSnap = await getDoc(doc(db, "restaurants", restaurantId));
         if (rSnap.exists()) {
           const d = rSnap.data() as Record<string, unknown>;
+          setRdata(d);
           if (!viewer.isAnonymous) {
             let staff = d.ownerId === viewer.uid || d.billingOwnerUserId === viewer.uid;
             if (!staff) {
@@ -481,38 +486,22 @@ function OrderStatusPageContent() {
   }
 
   return (
-    <div className="min-h-screen text-[#1C2526]" style={{ backgroundColor: "#F0E3D2" }}>
-      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
-        <div className="mx-auto flex max-w-md items-center gap-3">
-          {restaurantLogo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={restaurantLogo}
-              alt=""
-              className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-md ring-2 ring-white/25"
-            />
-          ) : (
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-xl"
-              aria-hidden
-            >
-              🍽
-            </div>
-          )}
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold leading-tight text-white">
-              {displayRestaurant}
-            </h1>
-            <p className="text-xs text-white/75">{loyaltyLive ? "Tu pedido y tus puntos" : "Tu pedido"}</p>
-          </div>
-        </div>
-      </header>
+    <div className={th.rootFlat} style={th.rootFlatStyle}>
+      <th.Header
+        page="order"
+        restaurantId={restaurantId}
+        restaurantName={displayRestaurant}
+        logoUrl={restaurantLogo}
+        title={displayRestaurant}
+        subtitle={loyaltyLive ? "Tu pedido y tus puntos" : "Tu pedido"}
+        back={false}
+      />
 
       <main className="mx-auto max-w-md px-4 py-6">
         {showLoading ? (
-          <OrderStatusSkeleton />
+          <OrderStatusSkeleton theme={th} />
         ) : loadError ? (
-          <div className="rounded-xl bg-white p-4 text-sm">
+          <div className={`${th.cardFlat} text-sm`}>
             <p className="text-red-700">{loadError}</p>
             {mounted && snapshot?.orderId === orderId && snapshot.pickupPin ? (
               <div className="mt-4 space-y-2">
@@ -530,30 +519,30 @@ function OrderStatusPageContent() {
             {viewerIsStaff && !isPosOrder && status !== "cancelled" && order?.paymentStatus !== "paid" ? (
               <Link
                 href={pedidosHrefForOrder(orderId)}
-                className="block rounded-xl border-2 border-[#F28C38] bg-[#FFF3E8] p-4 text-sm text-[#1C2526]"
+                className={th.staffBox}
               >
                 <p className="font-bold">Este pedido es de tu local y sigue sin cobrar.</p>
-                <p className="mt-1 text-[#1C2526]/75">
+                <p className={`mt-1 ${th.ink}/75`}>
                   Cóbralo en Pedidos: toca con qué te pagó y queda cobrado, entregado y con sus puntos.
                 </p>
-                <p className="mt-2 font-semibold text-[#F28C38]">Ir a Pedidos →</p>
+                <p className={th.staffLink}>Ir a Pedidos →</p>
               </Link>
             ) : null}
             {returnBanner ? (
               <div
-                className="rounded-xl border border-[#009EE3]/40 bg-white p-4 text-sm text-[#1C2526]"
+                className={`${th.cardFlat} border border-[#009EE3]/40 text-sm`}
                 role="status"
               >
                 {returnBanner}
               </div>
             ) : null}
-            <div className="rounded-xl bg-white p-4 text-center">
-              <p className="text-sm text-[#1C2526]/70">Estado del pedido</p>
-              <p className="mt-1 text-xl font-bold" style={{ color: "#F28C38" }}>
+            <div className={`${th.cardFlat} text-center`}>
+              <p className={`text-sm ${th.ink}/70`}>Estado del pedido</p>
+              <p className="mt-1 text-xl font-bold" style={th.statusStyle}>
                 {orderDisplay.title}
               </p>
               {orderDisplay.subtitle ? (
-                <p className="mt-2 text-sm text-[#1C2526]/80">{orderDisplay.subtitle}</p>
+                <p className={`mt-2 text-sm ${th.ink}/80`}>{orderDisplay.subtitle}</p>
               ) : null}
               {/* Abandoned MP checkout → reopen the payment (web parity with
                   the app's "Pagar ahora"). Reuses the same preference flow. */}
@@ -570,8 +559,8 @@ function OrderStatusPageContent() {
               ) : null}
             </div>
 
-            <div className="rounded-xl bg-white p-4">
-              <p className="text-xs text-[#1C2526]/60">Pedido</p>
+            <div className={th.cardFlat}>
+              <p className={`text-xs ${th.ink}/60`}>Pedido</p>
               <p className="font-mono text-lg font-bold tracking-wider">
                 #{shortOrderCode(orderId)}
               </p>
@@ -584,26 +573,26 @@ function OrderStatusPageContent() {
                   {/* 🛵 A domicilio no hay mostrador donde enseñar un PIN: lo
                       que el comensal necesita ver es que la dirección llegó
                       bien, y corregirla por WhatsApp si no. */}
-                  <p className="mt-3 text-xs text-[#1C2526]/60">Te lo llevamos a</p>
+                  <p className={`mt-3 text-xs ${th.ink}/60`}>Te lo llevamos a</p>
                   <p className="text-base font-bold leading-snug" suppressHydrationWarning>
                     🛵 {direccion}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="mt-3 text-xs text-[#1C2526]/60">
+                  <p className={`mt-3 text-xs ${th.ink}/60`}>
                     {mesaLabel ? "Folio del pedido" : "PIN de recogida"}
                   </p>
                   {displayPin ? (
                     <p
-                      className="text-3xl font-bold tracking-widest"
+                      className={th.pin}
                       suppressHydrationWarning
                     >
                       {displayPin}
                     </p>
                   ) : publicReceipt ? (
                     // El recibo público no trae el PIN (con él otro recogería el pedido): ya va en su WhatsApp.
-                    <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                    <p className={`mt-1 text-sm font-semibold ${th.ink}/75`}>
                       Viene en tu mensaje de WhatsApp
                     </p>
                   ) : (
@@ -636,7 +625,7 @@ function OrderStatusPageContent() {
                 Total: {formatPrice(displayTotal)}
               </p>
               {order?.paymentMethod === "pay_at_pickup" && paymentStatus !== "paid" ? (
-                <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                <p className={`mt-1 text-sm font-semibold ${th.ink}/75`}>
                   {mesaLabel
                     ? "💵 Pagas al final, aquí en tu mesa"
                     : esDomicilio
@@ -648,7 +637,7 @@ function OrderStatusPageContent() {
                   transferencia"), lo que registró el cajero — no lo que el
                   comensal dijo al ordenar. */}
               {mounted && paymentStatus === "paid" && !isPosOrder ? (
-                <p className="mt-1 text-sm font-semibold text-[#1C2526]/75">
+                <p className={`mt-1 text-sm font-semibold ${th.ink}/75`}>
                   {paidWithLine(order?.paymentMethod)}
                 </p>
               ) : null}
@@ -656,8 +645,8 @@ function OrderStatusPageContent() {
                   queda esperando su comida — el lugar exacto donde necesita
                   llamar al mesero o pedir la cuenta (feedback Ricardo 25-ago). */}
               {mesaLabel ? (
-                <div className="mt-3 border-t border-[#1C2526]/8 pt-3">
-                  <p className="text-xs font-semibold text-[#1C2526]/60">
+                <div className={`mt-3 border-t ${th.divider} pt-3`}>
+                  <p className={`text-xs font-semibold ${th.ink}/60`}>
                     ¿Necesitas algo? El equipo lo ve al momento:
                   </p>
                   <TableServiceButtons
@@ -674,7 +663,7 @@ function OrderStatusPageContent() {
             </div>
 
             {order?.items?.length ? (
-              <ul className="rounded-xl bg-white p-4 text-sm">
+              <ul className={`${th.cardFlat} text-sm`}>
                 {order.items.map((it, i) => (
                   <li key={i} className="flex justify-between gap-3 py-1">
                     <span className="min-w-0">
@@ -682,21 +671,21 @@ function OrderStatusPageContent() {
                       {/* Sin esto el cliente lee "1x KAMARONZA $89" sobre un
                           platillo de $74 y no sabe de donde salieron los $15. */}
                       {it.selectedModifiers?.length ? (
-                        <span className="block text-xs text-[#F28C38]">
+                        <span className={th.modifiers}>
                           {it.selectedModifiers
                             .map((m) => `${m.modifierName}: ${m.selectedOptions.join(", ")}`)
                             .join(" · ")}
                         </span>
                       ) : null}
                       {it.notes?.trim() ? (
-                        <span className="block text-xs text-[#1C2526]/55">{it.notes.trim()}</span>
+                        <span className={`block text-xs ${th.ink}/55`}>{it.notes.trim()}</span>
                       ) : null}
                     </span>
                     <span className="shrink-0">{formatPrice(it.subtotal ?? 0)}</span>
                   </li>
                 ))}
                 {envio > 0 ? (
-                  <li className="flex justify-between gap-3 border-t border-[#1C2526]/8 py-1 pt-2 text-[#1C2526]/70">
+                  <li className={`flex justify-between gap-3 border-t ${th.divider} py-1 pt-2 ${th.ink}/70`}>
                     <span>🛵 Envío a domicilio</span>
                     <span className="shrink-0">{formatPrice(envio)}</span>
                   </li>
@@ -706,10 +695,10 @@ function OrderStatusPageContent() {
 
             {isPosOrder || publicReceipt || status === "completed" || status === "cancelled" ? null : whatsapp ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
-                <p className="text-sm font-bold text-[#1C2526]">
+                <p className={`text-sm font-bold ${th.ink}`}>
                   📲 Confírmalo por WhatsApp
                 </p>
-                <p className="mt-1 text-xs text-[#1C2526]/60">
+                <p className={`mt-1 text-xs ${th.ink}/60`}>
                   {direccion
                     ? "El restaurante ya tiene tu pedido y tu dirección — con el WhatsApp seguro lo ven al momento, y te queda tu recibo en el chat."
                     : "El restaurante ya tiene tu pedido — con el WhatsApp seguro lo ven al momento, y te queda tu recibo con PIN en el chat."}
@@ -723,7 +712,7 @@ function OrderStatusPageContent() {
                 </button>
               </div>
             ) : (
-              <p className="text-center text-xs text-[#1C2526]/60">
+              <p className={`text-center text-xs ${th.ink}/60`}>
                 El restaurante no tiene WhatsApp registrado.
               </p>
             )}
@@ -733,6 +722,7 @@ function OrderStatusPageContent() {
                 that, the estimate banner below sets the expectation. */}
             {loyaltyLive && order?.customerPhone && order?.loyaltyAwarded === true ? (
               <PhonePointsCard
+                theme={th}
                 restaurantId={restaurantId}
                 restaurantName={displayRestaurant}
                 phone={order.customerPhone}
@@ -748,7 +738,7 @@ function OrderStatusPageContent() {
                 the customer's NUMBER on confirmed payment; no app required.
                 Pre-payment: future tense promise. Post-credit: the app is
                 pitched as the wallet (see + notifications), never the gate. */}
-            <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
+            <div className={th.highlightBox}>
               {(() => {
                 const pts = mounted
                   ? estimateOrderPoints(displayTotal, order?.items, earnPolicy)
@@ -757,17 +747,17 @@ function OrderStatusPageContent() {
                 if (credited) {
                   return (
                     <>
-                      <p className="text-base font-bold text-[#1C2526]">
+                      <p className={`text-base font-bold ${th.ink}`}>
                         ⭐ Tus puntos ya están guardados en tu número
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                      <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
                         Llévalos contigo: con la app Comeleal entras con tu
                         número, ves tus puntos de todos tus lugares y te
                         avisamos cuando tengas premios. 🔔
                       </p>
                       <a
                         href={downloadHref}
-                        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-colors hover:bg-[#d67428]"
+                        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center ${th.btn}`}
                       >
                         Descargar Comeleal
                       </a>
@@ -786,7 +776,7 @@ function OrderStatusPageContent() {
                             } catch { /* sin localStorage no hay throttle */ }
                             setReviewAskSeen(true);
                           }}
-                          className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#F28C38]/50 bg-white px-4 py-2.5 text-sm font-bold text-[#1C2526] transition-colors hover:bg-[#FFF3E8]"
+                          className={`mt-2 inline-flex min-h-11 w-full items-center justify-center ${th.btnOutline}`}
                         >
                           ¿Te gustó? Déjale una reseña en Google ⭐
                         </a>
@@ -796,12 +786,12 @@ function OrderStatusPageContent() {
                 }
                 return (
                   <>
-                    <p className="text-base font-bold text-[#1C2526]">
+                    <p className={`text-base font-bold ${th.ink}`}>
                       {pts > 0
                         ? `🎉 Esta orden te va a dar ${pts} puntos en ${displayRestaurant} ⭐`
                         : "Esta orden te da puntos en Comeleal"}
                     </p>
-                    <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+                    <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
                       Se guardan solitos en tu número cuando pagues — sin apps,
                       sin tarjetitas.
                       {firstVisitReward
@@ -829,15 +819,14 @@ function OrderStatusPageContent() {
           // re-engancha la sesión y la ronda cae en la MISMA cuenta.
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}?mesa=${encodeURIComponent(mesaLabel)}`}
-            className="mt-6 flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold text-[#1C2526]"
-            style={{ background: "#F28C38" }}
+            className={`mt-6 flex min-h-11 w-full items-center justify-center ${th.btn}`}
           >
             🍽️ Pedir más — va a la misma cuenta
           </Link>
         ) : (
           <Link
             href={`/menu/${encodeURIComponent(restaurantId)}`}
-            className="mt-6 block text-center text-sm underline text-[#1C2526]/70"
+            className={`mt-6 block text-center ${th.linkMuted}`}
           >
             Volver al menú
           </Link>
@@ -847,7 +836,7 @@ function OrderStatusPageContent() {
             nada que le recordara cobrarlo (12-sep-2026). Pedidos le pide entrar y lo regresa a este pedido. El
             cliente que lo toque solo ve "Entrar". Con sesión del local sale el aviso naranja de arriba. */}
         {publicReceipt && !viewerIsStaff && !isPosOrder && status !== "cancelled" && order?.paymentStatus !== "paid" ? (
-          <p className="mt-8 text-center text-xs text-[#1C2526]/45">
+          <p className={`mt-8 text-center text-xs ${th.ink}/45`}>
             ¿Eres del local?{" "}
             <Link href={pedidosHrefForOrder(orderId)} className="font-semibold underline">
               Cóbralo en tu panel →

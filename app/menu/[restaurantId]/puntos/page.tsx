@@ -13,6 +13,7 @@ import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { DEFAULT_FLOW, flowThemeFor } from "@/components/menu/skins/flowTheme";
 
 export default function PuntosPage() {
   const params = useParams();
@@ -40,41 +41,30 @@ export default function PuntosPage() {
 
   const digits = phoneInput.replace(/\D/g, "");
   const valid = digits.length >= 10;
+  /** Ropa del flujo según la piel del local; sin piel, el naranja de siempre. */
+  const th = flowThemeFor(rdata);
 
   return (
-    <div
-      className="min-h-screen text-[#1C2526]"
-      style={{ backgroundColor: "#F0E3D2" }}
-    >
-      <header className="px-4 py-3 shadow-sm" style={{ backgroundColor: "#F28C38" }}>
-        <div className="mx-auto flex max-w-md items-center gap-3">
-          <Link
-            href={`/menu/${encodeURIComponent(restaurantId)}`}
-            aria-label="Volver al menú"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-lg text-white"
-          >
-            ←
-          </Link>
-          <h1 className="text-lg font-bold text-white">⭐ Mis puntos</h1>
-        </div>
-      </header>
+    <div className={th.rootFlat} style={th.rootFlatStyle}>
+      <th.Header page="puntos" restaurantId={restaurantId} restaurantName={restaurantName} logoUrl={logoUrl} title="⭐ Mis puntos" />
 
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        {logoUrl ? (
+        {/* Con piel, el logo ya va en el encabezado de marca. */}
+        {logoUrl && th === DEFAULT_FLOW ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={logoUrl}
             alt={restaurantName}
-            className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-md ring-1 ring-[#1C2526]/10"
+            className={`mx-auto h-16 w-16 rounded-2xl object-cover shadow-md ring-1 ${th.ringSoft}`}
           />
         ) : null}
 
         {!phone ? (
-          <div className="rounded-2xl bg-white p-5 text-center">
-            <p className="text-base font-bold">
+          <div className={`${th.cardFlat} rounded-2xl p-5 text-center`}>
+            <p className={`text-base font-bold ${th.ink}`}>
               Consulta tus puntos en {restaurantName}
             </p>
-            <p className="mt-1 text-xs text-[#1C2526]/60">
+            <p className={`mt-1 text-xs ${th.ink}/60`}>
               Escribe el número con el que has comprado — te mandamos un código
               por SMS para verificar que eres tú.
             </p>
@@ -85,13 +75,13 @@ export default function PuntosPage() {
               onChange={(e) => setPhoneInput(e.target.value)}
               placeholder="Ej. 614 123 4567"
               maxLength={16}
-              className="mt-4 w-full rounded-xl border border-[#1C2526]/12 bg-[#FAF7F2] px-3.5 py-3 text-center text-[15px] outline-none focus:border-[#F28C38]"
+              className={`mt-4 w-full text-center ${th.inputPlain}`}
             />
             <button
               type="button"
               disabled={!valid}
               onClick={() => setPhone(digits)}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
+              className={`mt-3 inline-flex min-h-11 w-full items-center justify-center ${th.btn}`}
             >
               Continuar
             </button>
@@ -99,8 +89,8 @@ export default function PuntosPage() {
                 enseñar la comida gratis que te espera = la razón para
                 verificar, no un premio por haberlo hecho). */}
             {rdata && hasRewardLadder(rdata) ? (
-              <div className="mt-5 border-t border-[#1C2526]/8 pt-4 text-left">
-                <p className="mb-3 text-sm font-bold text-[#1C2526]">
+              <div className={`mt-5 border-t ${th.divider} pt-4 text-left`}>
+                <p className={`mb-3 text-sm font-bold ${th.ink}`}>
                   Lo que te puedes ganar aquí 👀
                 </p>
                 <RewardLadder restaurantData={rdata} />
@@ -110,6 +100,7 @@ export default function PuntosPage() {
         ) : (
           <>
             <PhonePointsCard
+              theme={th}
               restaurantId={restaurantId}
               restaurantName={restaurantName}
               phone={phone}
@@ -117,17 +108,17 @@ export default function PuntosPage() {
             />
             {/* App-as-wallet upsell — post-value moment, same pitch as the
                 receipt banner. Never a requirement, always an upgrade. */}
-            <div className="rounded-2xl border border-[#F28C38]/35 bg-[#FFF3E8] p-4 text-center">
-              <p className="text-sm font-bold text-[#1C2526]">
+            <div className={th.highlightBox}>
+              <p className={`text-sm font-bold ${th.ink}`}>
                 Llévate tus puntos contigo 🔔
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-[#1C2526]/65">
+              <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
                 Con la app Comeleal entras con tu número, ves tus puntos de
                 todos tus lugares y te avisamos cuando tengas premios.
               </p>
               <a
                 href={`/download.html?type=menu&restaurantId=${encodeURIComponent(restaurantId)}`}
-                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-colors hover:bg-[#d67428]"
+                className={`mt-3 inline-flex min-h-11 w-full items-center justify-center ${th.btn}`}
               >
                 Descargar Comeleal
               </a>
@@ -138,7 +129,7 @@ export default function PuntosPage() {
                 setPhone(null);
                 setPhoneInput("");
               }}
-              className="block w-full text-center text-sm text-[#1C2526]/60 underline"
+              className={`block w-full text-center ${th.linkMuted}`}
             >
               Usar otro número
             </button>
@@ -147,7 +138,7 @@ export default function PuntosPage() {
 
         <Link
           href={`/menu/${encodeURIComponent(restaurantId)}`}
-          className="block text-center text-sm text-[#1C2526]/70 underline"
+          className={`block text-center ${th.linkMuted}`}
         >
           Volver al menú
         </Link>

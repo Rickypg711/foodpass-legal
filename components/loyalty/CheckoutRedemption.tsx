@@ -9,6 +9,7 @@
 // touch balances and neither can a tampered client.
 
 import { useEffect, useRef, useState } from "react";
+import { DEFAULT_FLOW, type FlowTheme } from "@/components/menu/skins/flowTheme";
 import {
   linkWithPhoneNumber,
   signInWithCredential,
@@ -53,12 +54,15 @@ function last10(digits: string): string {
 }
 
 export function CheckoutRedemption({
+  theme: th = DEFAULT_FLOW,
   restaurantId,
   phoneDigits,
   selected,
   onSelect,
   onLoyalty,
 }: {
+  /** Ropa del flujo (piel del local); sin piel, el naranja de siempre. */
+  theme?: FlowTheme;
   restaurantId: string;
   /** Digits from the checkout phone field (>= 10 to activate). */
   phoneDigits: string;
@@ -214,11 +218,11 @@ export function CheckoutRedemption({
   if (!active) return null;
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className={th.card}>
       <div ref={recaptchaHostRef} />
       {state === "verified" ? (
         <>
-          <p className="text-sm font-semibold">
+          <p className={th.label}>
             🎁 Tienes {points} puntos aquí — ¿usar un premio en este pedido?
           </p>
           <div className="mt-2.5 flex flex-col gap-2">
@@ -244,7 +248,7 @@ export function CheckoutRedemption({
                     <span className="block text-sm font-semibold">
                       {isSel ? "✓ " : ""}{t.name} GRATIS
                     </span>
-                    <span className="block text-xs text-[#1C2526]/55">
+                    <span className={`block text-xs ${th.ink}/55`}>
                       Canje de {t.points} puntos — te quedarían {points - t.points}
                     </span>
                   </span>
@@ -254,7 +258,7 @@ export function CheckoutRedemption({
             })}
           </div>
           {selected ? (
-            <p className="mt-2 text-xs text-[#1C2526]/55">
+            <p className={`mt-2 text-xs ${th.ink}/55`}>
               El restaurante confirma tu premio al cobrar — lo verás en tu
               pedido.
             </p>
@@ -262,7 +266,7 @@ export function CheckoutRedemption({
         </>
       ) : state === "otp_code" || state === "otp_verifying" ? (
         <>
-          <p className="text-sm font-semibold">
+          <p className={th.label}>
             Te enviamos un código por SMS para ver tus premios
           </p>
           <div className="mt-2.5 flex items-center gap-2">
@@ -273,14 +277,14 @@ export function CheckoutRedemption({
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               placeholder="000000"
-              className="w-28 rounded-xl border border-[#1C2526]/15 bg-[#FAF7F2] px-3 py-2.5 text-center text-base font-bold tracking-[0.25em] outline-none focus:border-[#F28C38]"
+              className={`w-28 text-base tracking-[0.25em] ${th.inputCode}`}
               disabled={state === "otp_verifying"}
             />
             <button
               type="button"
               onClick={confirmOtp}
               disabled={state === "otp_verifying" || code.length < 6}
-              className="rounded-xl bg-[#F28C38] px-4 py-2.5 text-sm font-bold text-[#1C2526] disabled:opacity-50"
+              className={th.btn}
             >
               {state === "otp_verifying" ? "…" : "Ver premios"}
             </button>
@@ -288,7 +292,7 @@ export function CheckoutRedemption({
           {errMsg ? <p className="mt-2 text-xs text-red-700">{errMsg}</p> : null}
         </>
       ) : state === "none" ? (
-        <p className="text-xs text-[#1C2526]/55">
+        <p className={`text-xs ${th.ink}/55`}>
           ⭐ Este número aún no tiene premios canjeables aquí — este pedido te
           suma puntos.
         </p>
@@ -297,7 +301,7 @@ export function CheckoutRedemption({
           type="button"
           onClick={startOtp}
           disabled={state === "otp_sending"}
-          className="text-left text-xs font-semibold text-[#F28C38] underline underline-offset-2 disabled:opacity-60"
+          className={`text-left text-xs ${th.link} disabled:opacity-60`}
         >
           {state === "otp_sending"
             ? "Enviando código…"
