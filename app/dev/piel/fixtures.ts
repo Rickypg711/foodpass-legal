@@ -247,35 +247,36 @@ const FR_COB3 = fg("cobertura", "Cobertura", true, 1, [fo("chocolate", "Chocolat
 const FR_COB2 = fg("cobertura", "Cobertura", true, 1, [fo("chocolate", "Chocolate"), fo("caramelo", "Caramelo")]);
 const FR_PANES = (max = 1, name = "Pan") => fg("pan", name, true, max, [fo("pinguino", "Pingüino"), fo("gansito", "Gansito"), fo("chocorrol", "Chocorrol")]);
 const FR_TOP_OPTS = [fo("chispas", "Chispas de chocolate"), fo("cacahuate", "Cacahuate garapiñado"), fo("arandanos", "Arándanos"), fo("granola", "Granola"), fo("almendras", "Almendras"), fo("nuez", "Nuez"), fo("coco", "Coco rallado"), fo("oreo", "Galleta Oreo"), fo("chocoretas", "Chocoretas")];
-const FR_TOP2 = fg("toppings", "Toppings (dos por vaso)", true, 2, FR_TOP_OPTS);
-const FR_TOP1 = fg("toppings", "Topping", true, 1, FR_TOP_OPTS);
+const FR_TOP2 = fg("toppings", "Toppings (dos incluidos)", true, 2, FR_TOP_OPTS);
+const FR_TOP1 = fg("toppings", "Topping (uno incluido)", true, 1, FR_TOP_OPTS);
+const FR_TOP_EXTRA = fg("topping_extra", "Topping extra (+$5 c/u)", false, 4, FR_TOP_OPTS.map((o) => fo(o.id, o.name, 5)));
 const FR_REB = fg("rebanada", "Rebanada", true, 1, [fo("tortuga", "Tortuga"), fo("limon", "Limón"), fo("queso", "Queso horneado")]);
 const FR_SABOR = fg("sabor", "Sabor", true, 1, [fo("fresas_crema", "Fresas con crema"), fo("pistache", "Pistache"), fo("vainilla", "Vainilla"), fo("coco", "Coco"), fo("crema_chispas", "Crema con chispas"), fo("yogurt_zanahoria", "Yogurt con zanahoria"), fo("zarzamora", "Zarzamora"), fo("crema_galleta", "Crema con galleta")]);
-const FR_EXTRAS = fg("extras", "Extras", false, 8, [fo("nieve", "Nieve", 15), fo("topping", "Topping", 5), fo("pay_costco", "Pay de Costco", 30), fo("pay_casero", "Pay casero", 25), fo("waffer", "Waffer", 5), fo("chocolate", "Chocolate", 5), fo("crema_pistache", "Crema de pistache", 15), fo("cereza", "Cereza", 5), fo("panecito", "Panecito Marinela", 10), fo("rafaello", "Rafaello", 15), fo("caramelo", "Caramelo", 5), fo("galleta_biscoff", "Galleta Biscoff", 5), fo("gomitas", "Gomitas enchiladas", 5), fo("serpentinas", "Serpentinas", 5), fo("banderilla", "Banderilla de chile", 10)]);
+const FR_EXTRAS = fg("extras", "Extras", false, 8, [fo("nieve", "Nieve", 15), fo("pay_costco", "Pay de Costco", 30), fo("pay_casero", "Pay casero", 25), fo("waffer", "Waffer", 5), fo("chocolate", "Chocolate", 5), fo("crema_pistache", "Crema de pistache", 15), fo("cereza", "Cereza", 5), fo("panecito", "Panecito Marinela", 10), fo("rafaello", "Rafaello", 15), fo("caramelo", "Caramelo", 5), fo("galleta_biscoff", "Galleta Biscoff", 5), fo("gomitas", "Gomitas enchiladas", 5), fo("serpentinas", "Serpentinas", 5), fo("banderilla", "Banderilla de chile", 10)]);
 const FR_P = "Postres con crema";
 const FR_ROWS: OmuRow[] = [
   ...(["Oreo", 70, "Moka", 70, "Café", 75, "Fresa (dulce)", 80, "Mango (dulce)", 80, "Chili mango", 90, "Chili fresa", 90, "Pingüino", 80, "Gansito", 80, "Chocorrol", 80, "Lotus", 95, "Nutella", 80, "Rafaello", 95] as (string | number)[])
     .reduce<OmuRow[]>((acc, v, i, arr) => (i % 2 === 0 ? [...acc, ["Frappés", `Frappé ${v}`, arr[i + 1] as number, "", []]] : acc), []),
   ["Malteadas", "Malteada", 80, "Pregunta los sabores de nieve disponibles para tu malteada.", []],
-  ["FreshePops", "FreshePop", 45, "Paleta de crema bañada en chocolate y espolvoreada en tu topping favorito.", [FR_SABOR, FR_TOP1]],
-  ["Nieves", "Nieve sencilla", 55, "Incluye 1 panecito Marinela, 1 sabor de nieve, 1 topping y 1 waffer. Pregunta por los sabores de nieve disponibles.", [FR_COB2, FR_PANES(), FR_TOP1]],
-  ["Nieves", "Nieve especial", 70, "Incluye 1 panecito Marinela, 2 sabores de nieve, 1 topping y 1 waffer. Pregunta por los sabores de nieve disponibles.", [FR_COB2, FR_PANES(), FR_TOP1]],
+  ["FreshePops", "FreshePop", 45, "Paleta de crema bañada en chocolate y espolvoreada en tu topping favorito.", [FR_SABOR, FR_TOP1, FR_TOP_EXTRA]],
+  ["Nieves", "Nieve sencilla", 55, "Incluye 1 panecito Marinela, 1 sabor de nieve, 1 topping y 1 waffer. Pregunta por los sabores de nieve disponibles.", [FR_COB2, FR_PANES(), FR_TOP1, FR_TOP_EXTRA]],
+  ["Nieves", "Nieve especial", 70, "Incluye 1 panecito Marinela, 2 sabores de nieve, 1 topping y 1 waffer. Pregunta por los sabores de nieve disponibles.", [FR_COB2, FR_PANES(), FR_TOP1, FR_TOP_EXTRA]],
   ["Enchilados", "Fresas enchiladas", 75, "Fresas con chamoy, tico y Tajín, acompañadas de churros lokos, gomitas, serpentina y banderilla de chile.", [frTam(20, 110), FR_EXTRAS]],
   ["Enchilados", "Mango enchilado", 80, "Mango con chamoy, tico y Tajín, acompañado de churros lokos, gomitas, serpentina y banderilla de chile.", [frTam(20, 115), FR_EXTRAS]],
   ["Rebanadas", "Rebanada", 65, "Tortuga, limón o queso horneado.", [FR_REB]],
-  ["Rebanadas", "Rebanada preparada", 110, "2 frutas a elección, 1 rebanada a elección, 2 toppings, chocolate o caramelo (solo 1) y 2 waffers.", [FR_FRUTA(2), FR_REB, FR_TOP2, FR_COB2, FR_EXTRAS]],
-  [FR_P, "Freshoncho", 165, "Tu bebida favorita, frutas a elegir con crema, una cobertura, dos toppings, una rebanada a elegir y waffer de chocolate.", [FR_FRUTA(), FR_COB3, FR_TOP2, FR_REB, FR_EXTRAS]],
-  [FR_P, "Sencillas", 60, "Tus frutas favoritas con crema, una cobertura, dos toppings y un waffer de chocolate.", [frTam(20, 95), FR_FRUTA(), FR_COB3, FR_TOP2, FR_EXTRAS]],
-  [FR_P, "Fresheras", 65, "Tus frutas favoritas con crema, una cobertura, dos toppings, panecito Marinela y un waffer de chocolate.", [frTam(20, 100), FR_FRUTA(), FR_COB3, FR_PANES(), FR_TOP2, FR_EXTRAS]],
-  [FR_P, "Hersheys", 70, "Tus frutas favoritas con crema, una cobertura de chocolate Hersheys, dos toppings, pan Hersheys y un waffer de chocolate.", [frTam(20, 105), FR_FRUTA(), FR_TOP2, FR_EXTRAS]],
-  [FR_P, "De nieve", 75, "Tus frutas favoritas con crema, una cobertura, dos toppings, una bola de nieve y un waffer de chocolate. Pregunta por los sabores de nieve disponibles.", [frTam(20, 110), FR_FRUTA(), FR_COB3, FR_TOP2, FR_EXTRAS]],
+  ["Rebanadas", "Rebanada preparada", 110, "2 frutas a elección, 1 rebanada a elección, 2 toppings, chocolate o caramelo (solo 1) y 2 waffers.", [FR_FRUTA(2), FR_REB, FR_TOP2, FR_TOP_EXTRA, FR_COB2, FR_EXTRAS]],
+  [FR_P, "Freshoncho", 165, "Tu bebida favorita, frutas a elegir con crema, una cobertura, dos toppings, una rebanada a elegir y waffer de chocolate.", [FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_REB, FR_EXTRAS]],
+  [FR_P, "Sencillas", 60, "Tus frutas favoritas con crema, una cobertura, dos toppings y un waffer de chocolate.", [frTam(20, 95), FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
+  [FR_P, "Fresheras", 65, "Tus frutas favoritas con crema, una cobertura, dos toppings, panecito Marinela y un waffer de chocolate.", [frTam(20, 100), FR_FRUTA(), FR_COB3, FR_PANES(), FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
+  [FR_P, "Hersheys", 70, "Tus frutas favoritas con crema, una cobertura de chocolate Hersheys, dos toppings, pan Hersheys y un waffer de chocolate.", [frTam(20, 105), FR_FRUTA(), FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
+  [FR_P, "De nieve", 75, "Tus frutas favoritas con crema, una cobertura, dos toppings, una bola de nieve y un waffer de chocolate. Pregunta por los sabores de nieve disponibles.", [frTam(20, 110), FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
   [FR_P, "Lotus Biscoff", 85, "Tus frutas favoritas con crema, cobertura de crema Biscoff, galleta Biscoff al centro y arriba y una galleta entera con más crema.", [frTam(25, 130), FR_FRUTA(), FR_EXTRAS]],
-  [FR_P, "Chocolatadas", 75, "Tus frutas favoritas con crema, una cobertura de chocolate alrededor, al centro y arriba, dos toppings y un waffer de chocolate.", [frTam(20, 110), FR_FRUTA(), FR_TOP2, FR_EXTRAS]],
+  [FR_P, "Chocolatadas", 75, "Tus frutas favoritas con crema, una cobertura de chocolate alrededor, al centro y arriba, dos toppings y un waffer de chocolate.", [frTam(20, 110), FR_FRUTA(), FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
   [FR_P, "Rafaello", 85, "Tus frutas favoritas con crema, cobertura de crema Rafaello alrededor, al centro y arriba, con almendra, coco y un chocolate Rafaello arriba.", [frTam(50, 180), FR_FRUTA(), FR_EXTRAS]],
   [FR_P, "Dubai", 85, "Tus frutas favoritas con crema de pistache, una cobertura de chocolate alrededor, al centro y arriba, con crema de pistache, cataifi y una cereza arriba.", [frTam(40, 160), FR_FRUTA(), FR_EXTRAS]],
-  [FR_P, "De Costco", 80, "Tus frutas favoritas con crema, una cobertura, dos toppings, una rebanada a elegir y waffer de chocolate.", [frTam(25, 125), FR_FRUTA(), FR_COB3, FR_TOP2, FR_REB, FR_EXTRAS]],
-  [FR_P, "De queso horneado", 80, "Tus frutas favoritas con crema de pistache, una cobertura, dos toppings, pay de queso horneado y waffer de chocolate.", [frTam(20, 115), FR_FRUTA(), FR_COB3, FR_TOP2, FR_EXTRAS]],
-  [FR_P, "Mega", 115, "Tus frutas favoritas con crema, una cobertura, dos toppings, panecito Marinela (1 pan en mediano, 2 en litro), una rebanada a elegir y waffer de chocolate.", [fg("tamano", "Tamaño", true, 1, [fo("m", "Mediano (M) · 1 pan"), fo("lt", "Litro (LT) · 2 panes", 110)]), FR_FRUTA(), FR_COB3, FR_TOP2, FR_PANES(2, "Panes (1 en mediano, 2 en litro)"), FR_REB, FR_EXTRAS]],
+  [FR_P, "De Costco", 80, "Tus frutas favoritas con crema, una cobertura, dos toppings, una rebanada a elegir y waffer de chocolate.", [frTam(25, 125), FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_REB, FR_EXTRAS]],
+  [FR_P, "De queso horneado", 80, "Tus frutas favoritas con crema de pistache, una cobertura, dos toppings, pay de queso horneado y waffer de chocolate.", [frTam(20, 115), FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_EXTRAS]],
+  [FR_P, "Mega", 115, "Tus frutas favoritas con crema, una cobertura, dos toppings, panecito Marinela (1 pan en mediano, 2 en litro), una rebanada a elegir y waffer de chocolate.", [fg("tamano", "Tamaño", true, 1, [fo("m", "Mediano (M) · 1 pan"), fo("lt", "Litro (LT) · 2 panes", 110)]), FR_FRUTA(), FR_COB3, FR_TOP2, FR_TOP_EXTRA, FR_PANES(2, "Panes (1 en mediano, 2 en litro)"), FR_REB, FR_EXTRAS]],
 ];
 
 const FRESHERIA: PielFixture = {

@@ -390,12 +390,21 @@ export function FresheriaCover() {
  * "Topings" después de Malteadas; `extras` (grupo "Extras") pinta su última página. Ninguno es platillo: se piden
  * dentro de cada vaso.
  */
-export function FresheriaSheet({ children, toppings = null, extras = null }: { children: ReactNode; toppings?: MenuItemOptionGroup | null; extras?: MenuItemOptionGroup | null }) {
+export function FresheriaSheet({
+  children,
+  extras = null,
+  toppingExtra = null,
+}: {
+  children: ReactNode;
+  toppings?: MenuItemOptionGroup | null;
+  extras?: MenuItemOptionGroup | null;
+  /** El grupo "Topping extra": su papel lo lista en Extras como "Toping $5"; aquí sale como un renglón más. */
+  toppingExtra?: MenuItemOptionGroup | null;
+}) {
   return (
     <div className="fr-grid fr-rise pb-6 pt-1">
       {children}
-      {extras ? <ExtrasPage group={extras} /> : null}
-      {toppings ? null : null}
+      {extras ? <ExtrasPage group={extras} toppingExtra={toppingExtra} /> : null}
     </div>
   );
 }
@@ -413,13 +422,14 @@ export function ToppingsPage({ group }: { group: MenuItemOptionGroup }) {
           </li>
         ))}
       </ul>
-      <p className={`${FR_NAME} mt-3 text-[17px] text-[#56052d]`}>({group.max === 1 ? "Un toping por vaso" : `${group.max === 2 ? "Dos" : group.max} topings por vaso`})</p>
+      <p className={`${FR_NAME} mt-3 text-[17px] text-[#56052d]`}>({group.max === 1 ? "Un toping por vaso" : `${group.max === 2 ? "Dos" : group.max} topings por vaso`}; el extra, $5)</p>
     </section>
   );
 }
 
 /** Su última página, "Extras": lista con precio y las fresas a línea detrás. */
-function ExtrasPage({ group }: { group: MenuItemOptionGroup }) {
+function ExtrasPage({ group, toppingExtra = null }: { group: MenuItemOptionGroup; toppingExtra?: MenuItemOptionGroup | null }) {
+  const toppingPrice = toppingExtra?.options.find((o) => o.priceDelta > 0)?.priceDelta ?? null;
   return (
     <section aria-label="Extras" data-fr="extras" className="fr-page overflow-hidden px-6 pb-6 pt-4 sm:px-10">
       <Sparkle className="fr-twinkle absolute right-6 top-5 h-5 w-5" />
@@ -432,6 +442,12 @@ function ExtrasPage({ group }: { group: MenuItemOptionGroup }) {
               <span className="tabular-nums">{money(o.priceDelta)}</span>
             </li>
           ))}
+          {toppingPrice != null ? (
+            <li className="flex items-baseline justify-between gap-3 [break-inside:avoid]">
+              <span>Topping extra</span>
+              <span className="tabular-nums">{money(toppingPrice)}</span>
+            </li>
+          ) : null}
         </ul>
         <p className="mt-3 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[#56052d]/60">Se agregan a tu vaso al pedirlo, en “Extras”.</p>
       </div>

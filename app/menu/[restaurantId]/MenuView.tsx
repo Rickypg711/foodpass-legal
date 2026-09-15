@@ -742,10 +742,11 @@ function MenuCategoryList({
       return null;
     };
     // La página "Topings" dice "dos topings por vaso": el grupo de los vasos (max 2) manda sobre el de la paleta (1).
-    const frToppings = grupoDe(/dos por vaso|toppings\s*\(/i) ?? grupoDe(/topping/i);
+    const frToppings = grupoDe(/dos (por vaso|incluidos)|toppings\s*\(/i) ?? grupoDe(/^topping/i);
     const frExtras = grupoDe(/^extras?$/i);
+    const frToppingExtra = grupoDe(/topping extra/i);
     return (
-      <FresheriaSheet toppings={frToppings} extras={frExtras}>
+      <FresheriaSheet toppings={frToppings} extras={frExtras} toppingExtra={frToppingExtra}>
         {groups.map((group, index) => {
           const { closed, note } = availabilityOf(group.category);
           const sorted = frSortItems(group.items);
