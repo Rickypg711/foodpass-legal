@@ -262,6 +262,16 @@ function EmojiBox({ title, group, join = false }: { title: string; group: MenuIt
   );
 }
 
+/** Una línea por elección, para los vasos que no son el primero de su sección: "Cobertura 🍫 Chocolate · 🍬 Caramelo · 🥛 Lechera". */
+function ChoiceLine({ title, group }: { title: string; group: MenuItemOptionGroup }) {
+  return (
+    <p className={`${FR_NAME} text-[14px] leading-snug text-[#56052d]/85`}>
+      <span className={`${FR_SCRIPT} mr-2 text-[22px] leading-none text-[#70244f]`}>{title}</span>
+      {group.options.map((o) => `${emojiFor(o.name)} ${o.name}${o.priceDelta ? ` +$${o.priceDelta}` : ""}`.trim()).join(" · ")}
+    </p>
+  );
+}
+
 /** Caja "Rebanadas": los tres pays con su foto (del grupo Rebanada). */
 function RebanadasBox({ group }: { group: MenuItemOptionGroup }) {
   return (
@@ -835,16 +845,27 @@ export function FresheriaItemRow({
           </div>
         </div>
       </div>
+      {/* Su papel repite las cajas Rebanadas / Cobertura / Panes en casi cada página; en el teléfono, un vaso tras
+          otro, cansa (Ricardo, 15-sep). Las cajas completas van solo en el PRIMER vaso de la sección; en los demás,
+          una línea por elección. La hoja de opciones sigue teniendo todo. */}
       {isPostre && (rebanada || cobertura || panes) ? (
-        <div className="mt-4 space-y-3">
-          {rebanada ? <RebanadasBox group={rebanada} /> : null}
-          {cobertura || panes ? (
-            <div className="flex gap-3">
-              {cobertura ? <EmojiBox title="Cobertura" group={cobertura} /> : null}
-              {panes ? <EmojiBox title="Panes" group={panes} /> : null}
-            </div>
-          ) : null}
-        </div>
+        first ? (
+          <div className="mt-4 space-y-3">
+            {rebanada ? <RebanadasBox group={rebanada} /> : null}
+            {cobertura || panes ? (
+              <div className="flex gap-3">
+                {cobertura ? <EmojiBox title="Cobertura" group={cobertura} /> : null}
+                {panes ? <EmojiBox title="Panes" group={panes} /> : null}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-3 space-y-1">
+            {rebanada ? <ChoiceLine title="Rebanada" group={rebanada} /> : null}
+            {cobertura ? <ChoiceLine title="Cobertura" group={cobertura} /> : null}
+            {panes ? <ChoiceLine title="Panes" group={panes} /> : null}
+          </div>
+        )
       ) : null}
     </>
   );
