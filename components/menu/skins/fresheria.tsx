@@ -272,26 +272,6 @@ function ChoiceLine({ title, group }: { title: string; group: MenuItemOptionGrou
   );
 }
 
-/** Caja "Rebanadas": los tres pays con su foto (del grupo Rebanada). */
-function RebanadasBox({ group }: { group: MenuItemOptionGroup }) {
-  return (
-    <div className="text-center">
-      <ScriptSub className="mb-1.5">Rebanadas</ScriptSub>
-      <div className="fr-box flex items-end justify-around gap-2 px-3 py-2.5">
-        {group.options.map((o) => {
-          const art = payFor(o.name);
-          return (
-            <span key={o.id} className="flex min-w-0 flex-col items-center gap-1">
-              {art ? <Image src={art.src} alt="" width={art.w} height={art.h} unoptimized aria-hidden className="h-12 w-auto object-contain sm:h-14" /> : null}
-              <span className={`${FR_NAME} text-[13px] leading-tight text-[#56052d] sm:text-[14px]`}>{o.name}</span>
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────────────────── Portada ─────────────────────────── */
 
 export function FresheriaHeader({
@@ -861,27 +841,15 @@ export function FresheriaItemRow({
           </div>
         </div>
       </div>
-      {/* Su papel repite las cajas Rebanadas / Cobertura / Panes en casi cada página; en el teléfono, un vaso tras
-          otro, cansa (Ricardo, 15-sep). Las cajas completas van solo en el PRIMER vaso de la sección; en los demás,
-          una línea por elección. La hoja de opciones sigue teniendo todo. */}
+      {/* Su papel repite las cajas Rebanadas / Cobertura / Panes en casi cada página; en pantalla, un vaso tras otro,
+          cansa y con dos estilos parece error (Ricardo, 15-sep). En TODOS los vasos va una línea por elección; las
+          fotos de los pays viven solo en la sección Rebanadas. La hoja de opciones sigue teniendo todo. */}
       {isPostre && (rebanada || cobertura || panes) ? (
-        first ? (
-          <div className="mt-4 space-y-3">
-            {rebanada ? <RebanadasBox group={rebanada} /> : null}
-            {cobertura || panes ? (
-              <div className="flex gap-3">
-                {cobertura ? <EmojiBox title="Cobertura" group={cobertura} /> : null}
-                {panes ? <EmojiBox title="Panes" group={panes} /> : null}
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="mt-3 space-y-1">
-            {rebanada ? <ChoiceLine title="Rebanada" group={rebanada} /> : null}
-            {cobertura ? <ChoiceLine title="Cobertura" group={cobertura} /> : null}
-            {panes ? <ChoiceLine title="Panes" group={panes} /> : null}
-          </div>
-        )
+        <div className="mt-3 space-y-1">
+          {rebanada ? <ChoiceLine title="Rebanada" group={rebanada} /> : null}
+          {cobertura ? <ChoiceLine title="Cobertura" group={cobertura} /> : null}
+          {panes ? <ChoiceLine title="Panes" group={panes} /> : null}
+        </div>
       ) : null}
     </>
   );
