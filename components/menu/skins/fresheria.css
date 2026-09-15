@@ -84,7 +84,7 @@
 }
 
 /* Escritorio: las páginas se acomodan a dos columnas como si el PDF estuviera abierto; "Postres con crema"
-   (13 vasos) ocupa todo el ancho y adentro sus páginas van a dos columnas. */
+   (12 vasos) ocupa todo el ancho y adentro sus páginas van a dos columnas. */
 .fr-skin .fr-grid {
   display: flex;
   flex-direction: column;

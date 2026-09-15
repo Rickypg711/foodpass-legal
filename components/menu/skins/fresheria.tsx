@@ -719,7 +719,7 @@ export function FresheriaItemRow({
           </span>
         </button>
         <div className="flex items-center gap-2">
-          {quantity > 0 ? null : <span className={`${FR_NAME} text-[14px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir {label}</span>}
+          {quantity > 0 || !control ? null : <span className={`${FR_NAME} text-[14px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir {label}</span>}
           {control}
         </div>
       </li>
@@ -751,7 +751,7 @@ export function FresheriaItemRow({
             ) : null}
           </button>
           <div className="mt-2 flex items-center justify-end gap-2">
-            {quantity > 0 ? null : <span className={`${FR_NAME} text-[13px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir</span>}
+            {quantity > 0 || !control ? null : <span className={`${FR_NAME} text-[13px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir</span>}
             {control}
           </div>
         </div>
@@ -830,7 +830,7 @@ export function FresheriaItemRow({
             ) : null}
           </button>
           <div className="mt-3 flex items-center justify-end gap-2">
-            {quantity > 0 ? null : <span className={`${FR_NAME} text-[13px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir</span>}
+            {quantity > 0 || !control ? null : <span className={`${FR_NAME} text-[13px] uppercase tracking-[0.12em] text-[#56052d]/70`}>Pedir</span>}
             {control}
           </div>
         </div>
