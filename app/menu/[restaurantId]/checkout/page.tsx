@@ -853,7 +853,10 @@ export default function CheckoutPage() {
             </label>
           </div>
 
-          {/* Redemption: use unlocked rewards on THIS order (phone-verified). */}
+          {/* Redemption: use unlocked rewards on THIS order (phone-verified).
+              Regla del 5-sep: sin premios (`loyaltyReady: false`) no se promete nada — ni "¿ya tienes puntos?"
+              (cazado el 15-sep con La Fresheria: el bloque se prendía con solo teclear 10 dígitos). */}
+          {loyaltyLive ? (
           <CheckoutRedemption
             theme={th}
             restaurantId={restaurantId}
@@ -869,6 +872,7 @@ export default function CheckoutPage() {
               }
             }}
           />
+          ) : null}
           {redemption ? (
             <p className="-mt-2 rounded-xl bg-[#F0FBF4] px-3.5 py-2.5 text-sm font-semibold text-[#16A34A]">
               🎁 En este pedido: {redemption.name} GRATIS (canje de {redemption.points} pts)
