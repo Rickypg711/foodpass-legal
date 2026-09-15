@@ -28,6 +28,21 @@ export type MenuItemDetailSheetProps = {
   skin?: MenuSkinId | null;
 };
 
+/** Fresheria: página rosa con marco dorado, cursiva vino y botón magenta (components/menu/skins/fresheria.tsx). */
+const FR_NAME_D = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif]";
+const LOOK_FRESHERIA: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#56052d]/55 sm:items-center",
+  panel: "animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-[28px] border-t-2 border-[#9e6036] bg-[#feeef8] text-[#56052d] shadow-xl sm:max-w-md sm:rounded-[34px] sm:border-2",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#9e6036] bg-[#fffbfd] text-lg text-[#56052d] hover:bg-[#cb0465] hover:text-[#fffbfd]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[26px] bg-[#fffbfd] sm:rounded-t-[32px]",
+  title: `${FR_NAME_D} text-[26px] leading-tight text-[#56052d]`,
+  hint: "mt-2 inline-flex w-fit items-center rounded-full border-[1.5px] border-[#9e6036] bg-[#fffbfd] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#56052d]",
+  description: "mt-2 text-[15px] leading-relaxed text-[#56052d]/80",
+  price: "text-[22px] font-semibold tabular-nums text-[#56052d]",
+  add: `${FR_NAME_D} rounded-full bg-[#cb0465] px-6 py-3 text-[16px] tracking-[0.04em] text-[#fffbfd] shadow-[0_10px_22px_-12px_rgba(203,4,101,0.9)] transition-all hover:bg-[#a80353] active:scale-[0.98]`,
+};
+
 type DetailLook = {
   backdrop: string;
   panel: string;
@@ -162,7 +177,9 @@ export function MenuItemDetailSheet({
             ? LOOK_IGO
             : skin === "omu"
               ? LOOK_OMU
-              : LOOK_DEFAULT;
+              : skin === "fresheria"
+                ? LOOK_FRESHERIA
+                : LOOK_DEFAULT;
 
   return (
     <div
@@ -200,7 +217,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu" && skin !== "fresheria") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

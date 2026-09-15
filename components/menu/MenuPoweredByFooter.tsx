@@ -40,6 +40,7 @@ export function MenuPoweredByFooter({
   const tp = skin === "tortasperras";
   const ig = skin === "igo";
   const om = skin === "omu";
+  const fr = skin === "fresheria";
   const href = poweredByHref(restaurantId);
   return (
     <footer
@@ -63,6 +64,8 @@ export function MenuPoweredByFooter({
                         ? "border-[#0b652a]/20 text-[#2b2b2b]/60"
                       : om
                         ? "border-[#f9f8f8]/15 text-[#f9f8f8]/60"
+                      : fr
+                        ? "border-[#9e6036]/40 text-[#56052d]/65"
               : "border-[#1C2526]/10 text-[#1C2526]/55")
       }
     >
@@ -88,6 +91,8 @@ export function MenuPoweredByFooter({
                             ? "font-bold text-[#0b652a]"
                           : om
                             ? "font-extrabold text-[#f9f8f8]"
+                          : fr
+                            ? "font-semibold text-[#56052d]"
                   : "font-semibold text-[#1C2526]/75"
           }
         >

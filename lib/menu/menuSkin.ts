@@ -39,12 +39,16 @@
  *  - "omu": Omu Balls & Sushi, Chihuahua — su hoja negra con la foto oscura de sushi, "MENÜ" con los ojitos, sus
  *    píldoras blancas de borde rojo, las tarjetas blancas con cabecera roja y los 4 pasos numerados de "¡Ármalas a
  *    tu gusto!" (components/menu/skins/omu.tsx). Novena piel en código por pedido de Ricardo (13-sep).
+ *  - "fresheria": La Fresheria, postres y snacks, Chihuahua — su PDF rosa con marco dorado de esquinas redondas,
+ *    títulos cursivos vino, píldoras blancas de precio, sus fotos de vasos y sus fresas a línea; tamaños, fruta,
+ *    coberturas, panes, toppings y extras pintados desde los optionGroups (components/menu/skins/fresheria.tsx).
+ *    Décima piel en código por pedido de Ricardo (15-sep).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

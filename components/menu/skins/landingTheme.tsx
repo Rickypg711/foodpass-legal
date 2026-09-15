@@ -24,6 +24,7 @@ import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/l
 import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins/tortasperras";
 import { IGO_DISPLAY, IGO_NAME, IGO_ROOT_CLASS, IGOHeader } from "@/components/menu/skins/igo";
 import { OMU_NAME, OMU_ROOT_CLASS, OmuHeader } from "@/components/menu/skins/omu";
+import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT, FresheriaHeader } from "@/components/menu/skins/fresheria";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -388,7 +389,41 @@ const OMU: LandingTheme = {
   photoPrice: "font-extrabold text-[#151311]/70",
 };
 
+/** Fresheria: sus páginas rosas con marco dorado, títulos cursivos vino y botones magenta. */
+const FRESHERIA: LandingTheme = {
+  root: FR_ROOT_CLASS,
+  Header: (p) => <FresheriaHeader {...p} />,
+  cta: `${FR_NAME} block min-h-12 rounded-full bg-[#cb0465] py-3.5 text-center text-[17px] tracking-[0.04em] text-[#fffbfd] shadow-[0_14px_30px_-16px_rgba(203,4,101,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#9e6036] bg-[#fffbfd] px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#56052d] transition-colors hover:bg-[#cb0465] hover:text-[#fffbfd]",
+  btnNeutral:
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#9e6036]/60 bg-transparent px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[#56052d] transition-colors hover:border-[#cb0465]",
+  descriptionCard: "fr-page p-5 text-[15px] leading-relaxed text-[#56052d]/85 sm:p-6",
+  card: "fr-page px-5 pt-4 pb-5 sm:px-7",
+  cardTitle: (title) => (
+    <h2 className={`${FR_SCRIPT} mb-3 block text-center text-[38px] leading-none text-[#56052d]`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+    </h2>
+  ),
+  link: "font-semibold text-[#cb0465] underline decoration-[#cb0465]/35 underline-offset-4",
+  text: "text-[#56052d]/85",
+  textSoft: "text-[#56052d]/65",
+  todayRow: "bg-[#cb0465] font-semibold text-[#fffbfd]",
+  row: "text-[#56052d]/75",
+  closedText: "text-[#56052d]/40",
+  faqOpen: "open:bg-[#cb0465]/[0.05]",
+  faqChevron: "text-[#cb0465]",
+  faqAnswer: "text-[#56052d]/75",
+  seoText: "text-[#56052d]/55",
+  signature: "text-[#56052d]/55",
+  signatureLink: "font-semibold text-[#cb0465] underline decoration-[#cb0465]/35 underline-offset-4",
+  loading: "fr-page px-4 py-6 text-center text-sm text-[#56052d]/60",
+  photoName: "text-[#56052d]",
+  photoPrice: "font-semibold text-[#56052d]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "fresheria") return FRESHERIA;
   if (skin === "omu") return OMU;
   if (skin === "igo") return IGO;
   if (skin === "tortasperras") return TORTASPERRAS;

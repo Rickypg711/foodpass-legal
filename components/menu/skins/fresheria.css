@@ -1,0 +1,122 @@
+/* Piel "Fresheria" (fresheria.tsx): La Fresheria — postres y snacks, Chihuahua. Vive junto a la piel (no en
+   globals.css). Todo sale de SU PDF de 19 páginas (15-sep-2026): cada página es rosa pálido con un marco de esquinas
+   redondas en dorado, títulos en letra cursiva vino, nombres en serif condensada, precios en píldoras blancas de
+   borde dorado y sus fresas dibujadas a línea muy tenues al fondo. Su rosa es #feeef8, su vino #56052d, su magenta
+   #cb0465 y su dorado #9e6036 (histograma del propio PDF). */
+.fr-skin {
+  background-color: #feeef8;
+  background-image:
+    radial-gradient(40rem 26rem at 8% 0%, rgba(255, 255, 255, 0.55), transparent 65%),
+    radial-gradient(34rem 24rem at 96% 100%, rgba(203, 4, 101, 0.06), transparent 65%);
+}
+
+/* Su página: rosa con el marco dorado de esquinas muy redondas. */
+.fr-skin .fr-page {
+  position: relative;
+  background-color: #feeef8;
+  border: 2px solid #9e6036;
+  border-radius: 34px;
+  box-shadow: 0 22px 44px -34px rgba(86, 5, 45, 0.45);
+}
+@media (min-width: 640px) {
+  .fr-skin .fr-page { border-radius: 44px; }
+}
+
+/* Sus fresas a línea, muy tenues, detrás de las listas (Frappes, Extras). */
+.fr-skin .fr-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.fr-skin .fr-art > img {
+  position: absolute;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+/* Píldora blanca de borde dorado con el precio en negro, como su papel. */
+.fr-skin .fr-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1.5px solid #9e6036;
+  border-radius: 999px;
+  background: #fffbfd;
+  color: #141414;
+  white-space: nowrap;
+}
+
+/* Caja blanca redonda de borde dorado (Topings, Rebanadas, la fruta, Preparada). */
+.fr-skin .fr-box {
+  border: 1.5px solid #9e6036;
+  border-radius: 22px;
+  background: #fffbfd;
+}
+/* Caja blanca sin borde (Cobertura, Panes). */
+.fr-skin .fr-soft {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+/* La foto de su papel: esquinas redondas con borde dorado fino. */
+.fr-skin .fr-photo {
+  border: 1.5px solid #9e6036;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fffbfd;
+}
+
+/* Botón "+" magenta. */
+.fr-skin .fr-add {
+  background: #cb0465;
+  color: #fffbfd;
+  box-shadow: 0 8px 18px -8px rgba(203, 4, 101, 0.9);
+}
+.fr-skin .fr-add:hover { background: #a80353; }
+
+/* La raya dorada entre dos platillos en una misma página (Hersheys / De Nieve). */
+.fr-skin .fr-rule {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #9e6036 18%, #9e6036 82%, transparent);
+}
+
+/* Escritorio: las páginas se acomodan a dos columnas como si el PDF estuviera abierto; "Postres con crema"
+   (13 vasos) ocupa todo el ancho y adentro sus páginas van a dos columnas. */
+.fr-skin .fr-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+@media (min-width: 1024px) {
+  .fr-skin .fr-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .fr-skin .fr-grid > [data-fr="postres"],
+  .fr-skin .fr-grid > [data-fr="extras"] { grid-column: 1 / -1; }
+  .fr-skin .fr-postres {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+@keyframes fr-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.fr-skin .fr-rise { animation: fr-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes fr-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.7) rotate(18deg); opacity: 0.7; }
+}
+.fr-skin .fr-twinkle { animation: fr-twinkle 2.8s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) {
+  .fr-skin .fr-rise, .fr-skin .fr-twinkle { animation: none; }
+}

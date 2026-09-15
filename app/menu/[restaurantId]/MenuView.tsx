@@ -122,6 +122,15 @@ import {
   omuSortItems,
 } from "@/components/menu/skins/omu";
 import {
+  FR_ROOT_CLASS,
+  FresheriaCategorySection,
+  FresheriaHeader,
+  FresheriaItemRow,
+  FresheriaPanel,
+  FresheriaSheet,
+  frSortItems,
+} from "@/components/menu/skins/fresheria";
+import {
   isPositivelyClosedNow,
   scheduleStatus,
   type ScheduleStatus,
@@ -269,6 +278,7 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "tortasperras") return TP_ROOT_CLASS;
   if (skin === "igo") return IGO_ROOT_CLASS;
   if (skin === "omu") return OMU_ROOT_CLASS;
+  if (skin === "fresheria") return FR_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -276,6 +286,8 @@ function pageClassFor(skin: MenuSkinId | null): string {
  *  Omu va a CUATRO columnas como su papel y necesita más hoja (13-sep). */
 function mainWidthFor(skin: MenuSkinId | null): string {
   if (skin === "omu") return "max-w-3xl lg:max-w-7xl";
+  // Fresheria: sus páginas a dos columnas, como el PDF abierto (15-sep).
+  if (skin === "fresheria") return "max-w-3xl lg:max-w-6xl";
   return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
@@ -335,6 +347,19 @@ function MenuRestaurantHeader({
   if (skin === "laspic") {
     return (
       <LaspicHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "fresheria") {
+    return (
+      <FresheriaHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -560,6 +585,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "igo") return null;
   // Omu: arriba de su hoja negra ya va todo.
   if (skin === "omu") return null;
+  // Fresheria: su portada rosa ya es el encabezado.
+  if (skin === "fresheria") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -701,6 +728,64 @@ function MenuCategoryList({
           );
         })}
       </LaspicSheet>
+    );
+  }
+  if (skin === "fresheria") {
+    // Sus páginas rosas (components/menu/skins/fresheria.tsx): una por sección, con las cajas de fruta, cobertura,
+    // panes, rebanadas, toppings y extras pintadas desde los optionGroups de los vasos. Topings y Extras NO son
+    // platillos: la página "Topings" va después de Malteadas y la de "Extras" al final, desde el grupo de cualquier vaso.
+    const grupoDe = (re: RegExp) => {
+      for (const g of groups) for (const it of g.items) {
+        const og = resolveOptionGroups(it).find((x) => re.test(x.name));
+        if (og) return og;
+      }
+      return null;
+    };
+    // La página "Topings" dice "dos topings por vaso": el grupo de los vasos (max 2) manda sobre el de la paleta (1).
+    const frToppings = grupoDe(/dos por vaso|toppings\s*\(/i) ?? grupoDe(/topping/i);
+    const frExtras = grupoDe(/^extras?$/i);
+    return (
+      <FresheriaSheet toppings={frToppings} extras={frExtras}>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const sorted = frSortItems(group.items);
+          return (
+            <FresheriaCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              items={sorted.map((it) => ({ name: it.name, price: it.price, optionGroups: resolveOptionGroups(it) }))}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+              toppings={frToppings}
+            >
+              {(!closed || opened[group.category]) && sorted.map((item, i) => (
+                <FresheriaItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  category={group.category}
+                  groups={resolveOptionGroups(item)}
+                  first={i === 0}
+                />
+              ))}
+            </FresheriaCategorySection>
+          );
+        })}
+      </FresheriaSheet>
     );
   }
   if (skin === "omu") {
@@ -1142,6 +1227,21 @@ function MenuRewardsLadderSection({
       </LaspicPanel>
     );
   }
+  if (skin === "fresheria") {
+    return (
+      <FresheriaPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-semibold text-[#cb0465] underline decoration-[#cb0465]/35 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </FresheriaPanel>
+    );
+  }
   if (skin === "omu") {
     return (
       <OmuPanel title="Premios">
@@ -1290,6 +1390,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#0b652a]/20 bg-[#f7f8f8]/95 shadow-[0_-12px_36px_-16px_rgba(11,101,42,0.45)]"
               : skin === "omu"
                 ? "border-[#f10809]/30 bg-[#151311]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
+              : skin === "fresheria"
+                ? "border-[#9e6036]/40 bg-[#feeef8]/95 shadow-[0_-12px_36px_-16px_rgba(86,5,45,0.35)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
       }
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}

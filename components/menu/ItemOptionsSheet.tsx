@@ -236,7 +236,37 @@ const LOOK_OMU: SheetLook = {
   confirm: `${OMU_NAME_S} flex-1 rounded-full bg-[#f10809] py-3 text-[14px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8] transition-colors hover:bg-[#d40607] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** Fresheria: página rosa con marco dorado, cursiva vino y píldoras magenta (components/menu/skins/fresheria.tsx). */
+const FR_NAME_S = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif]";
+const LOOK_FRESHERIA: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#56052d]/55 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-[28px] border-t-2 border-[#9e6036] bg-[#feeef8] p-5 text-[#56052d] shadow-xl sm:max-w-md sm:rounded-[34px] sm:border-2",
+  title: `${FR_NAME_S} text-[24px] leading-tight text-[#56052d]`,
+  subtitle: "text-[13px] font-medium text-[#56052d]/65",
+  groupName: `${FR_NAME_S} text-[15px] text-[#70244f]`,
+  status: (falta) => `text-[11px] font-semibold uppercase tracking-[0.1em] ${falta ? "text-[#cb0465]" : "text-[#56052d]/45"}`,
+  hasta: "text-[12px] text-[#56052d]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-[1.5px] px-4 py-2.5 text-left text-[14.5px] font-medium transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#56052d]/10 text-[#56052d]/35 line-through"
+        : on
+          ? "border-[#cb0465] bg-[#cb0465] text-[#fffbfd]"
+          : "border-[#9e6036] bg-[#fffbfd] text-[#56052d] hover:border-[#cb0465]"
+    }`,
+  delta: (on) => `text-[13px] font-semibold ${on ? "text-[#fffbfd]" : "text-[#cb0465]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#9e6036]/40 bg-[#feeef8] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-medium text-[#56052d]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-[1.5px] border-[#9e6036] bg-[#fffbfd] text-lg font-semibold text-[#56052d] transition-colors hover:border-[#cb0465] disabled:opacity-30",
+  qtyNum: "w-7 text-center text-base font-semibold tabular-nums text-[#56052d]",
+  cancel:
+    "rounded-full border-[1.5px] border-[#9e6036]/60 px-4 py-3 text-sm font-medium text-[#56052d]/80 transition-colors hover:bg-[#fffbfd]",
+  confirm: `${FR_NAME_S} flex-1 rounded-full bg-[#cb0465] py-3 text-[16px] text-[#fffbfd] transition-colors hover:bg-[#a80353] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
+  if (skin === "fresheria") return LOOK_FRESHERIA;
   if (skin === "mixteco") return LOOK_MIXTECO;
   if (skin === "laspic") return LOOK_LASPIC;
   if (skin === "tortasperras") return LOOK_TORTAS;

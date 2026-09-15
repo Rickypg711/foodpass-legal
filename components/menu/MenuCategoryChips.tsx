@@ -108,6 +108,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const tp = skin === "tortasperras";
   const ig = skin === "igo";
   const om = skin === "omu";
+  const fr = skin === "fresheria";
 
   const jump = (index: number) => {
     const el = document.getElementById(`menu-cat-${index}`);
@@ -141,6 +142,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                         ? "bg-[#f7f8f8]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(11,101,42,0.5)] backdrop-blur-md"
                       : om
                         ? "bg-[#151311]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                      : fr
+                        ? "bg-[#feeef8]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(86,5,45,0.35)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -175,6 +178,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 (on
                   ? "border-[#f10809] bg-[#f9f8f8] text-[#d40607]"
                   : "border-[#f9f8f8]/35 bg-transparent text-[#f9f8f8] hover:border-[#f10809]")
+            : fr
+              ? "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif] text-[14px] border-[1.5px] " +
+                (on
+                  ? "border-[#cb0465] bg-[#cb0465] text-[#fffbfd]"
+                  : "border-[#9e6036] bg-[#fffbfd] text-[#56052d] hover:border-[#cb0465]")
             : tp
               ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[13px] uppercase tracking-[0.06em] border-[1.5px] " +
                 (on
@@ -201,10 +209,10 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp || tp || ig || om ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp || tp || ig || om || fr ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera || mx || lp || tp || ig || om ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
+              {tercera || mx || lp || tp || ig || om || fr ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

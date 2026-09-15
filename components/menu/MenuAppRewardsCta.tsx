@@ -50,6 +50,7 @@ export function MenuAppRewardsCta({
   const nb = skin === "negroblanco";
   const bl = skin === "blooms";
   const om = skin === "omu";
+  const fr = skin === "fresheria";
   const href = restaurantId ? menuDownloadHref(restaurantId) : "#";
   const isDisabled = disabled || !restaurantId;
   const reward = firstVisitRewardLabel?.trim() || null;
@@ -106,6 +107,8 @@ export function MenuAppRewardsCta({
               ? "overflow-hidden rounded-[28px] border-l-[10px] border-[#ff5c9a] bg-white shadow-[0_18px_44px_-30px_rgba(232,64,127,0.6)]"
             : om
               ? "overflow-hidden rounded-[8px] bg-[#f9f8f8] text-[#151311] shadow-[0_18px_40px_-26px_rgba(0,0,0,0.9)]"
+            : fr
+              ? "overflow-hidden rounded-[28px] border-[1.5px] border-[#9e6036] bg-[#fffbfd] text-[#56052d] shadow-[0_18px_40px_-30px_rgba(86,5,45,0.45)]"
             : "overflow-hidden rounded-2xl border border-[#F28C38]/18 bg-gradient-to-br from-[#FFF8F2] to-white shadow-[0_1px_3px_rgba(28,37,38,0.05)]"
       }
     >
