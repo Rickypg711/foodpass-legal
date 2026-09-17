@@ -12,8 +12,13 @@ const NAV_LINKS = [
   { href: "#preguntas", label: "Preguntas" },
   // Customer door on a vendor-first homepage: diners who land here reach
   // their balance without touching the vendor funnel.
-  { href: "/puntos", label: "⭐ Mis puntos" },
+  { href: "/puntos", label: "Mis puntos" },
 ] as const;
+
+// 17-sep-2026 (Ricardo, paso 1 de la portada contenida): header blanco, sin
+// color de marca, sin emoji en la nav. Sigue sin "Empieza gratis" (10-sep):
+// el único CTA de alta es el botón del hero; aquí solo "Entrar".
+const PILL = "shrink-0 rounded-full border border-[#1A1816]/15 px-4 py-1.5 text-[13px] font-medium text-[#1A1816]/80 transition-colors hover:border-[#1A1816]/40 hover:text-[#1A1816]";
 
 export function HomeHeader() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
@@ -31,26 +36,21 @@ export function HomeHeader() {
     setLoggedIn(false);
   }
 
-  // 10-sep-2026 (Ricardo): el header ya no trae "Empieza gratis". El único
-  // CTA de alta es el botón naranja del hero (foto → menú); el header solo
-  // deja "Entrar" para el dueño que ya tiene cuenta.
-
   return (
-    <>
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#141414]/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-[#1A1816]/8 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <Image src="/comeleal-app-icon.png" alt="Comeleal" width={36} height={36}
-            className="h-9 w-9 rounded-[10px] ring-1 ring-white/15" />
-          <span className="text-lg font-bold tracking-tight text-white">Comeleal</span>
+          <Image src="/comeleal-app-icon.png" alt="Comeleal" width={28} height={28}
+            className="h-7 w-7 rounded-[8px]" />
+          <span className="text-[15px] font-semibold tracking-tight text-[#1A1816]">Comeleal</span>
         </Link>
 
         <nav className="hidden md:block" aria-label="Principal">
-          <ul className="flex items-center gap-6">
+          <ul className="flex items-center gap-7">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href}
-                  className="text-sm font-medium text-white/85 transition-colors hover:text-white">
+                  className="text-[13px] font-medium text-[#1A1816]/70 transition-colors hover:text-[#1A1816]">
                   {link.label}
                 </Link>
               </li>
@@ -59,61 +59,46 @@ export function HomeHeader() {
         </nav>
 
         {/* Desktop auth CTAs — hidden until auth state known to avoid flash */}
-        <div className="hidden items-center gap-3 sm:flex">
+        <div className="hidden items-center gap-2 sm:flex">
           {loggedIn === true ? (
             <>
-              <Link href="/vendor"
-                className="shrink-0 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white">
-                Mi panel
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="shrink-0 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/50 transition-colors hover:text-white/80">
-                Cerrar sesión
-              </button>
+              <Link href="/vendor" className={PILL}>Mi panel</Link>
+              <button onClick={handleSignOut} className={`${PILL} text-[#1A1816]/50`}>Cerrar sesión</button>
             </>
           ) : (
-            <>
-              <Link href="/activar?modo=entrar"
-                className="shrink-0 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white">
-                Entrar
-              </Link>
-            </>
+            <Link href="/activar?modo=entrar" className={PILL}>Entrar</Link>
           )}
         </div>
 
         {/* Mobile menu */}
         <details className="relative md:hidden">
-          <summary className="min-h-11 cursor-pointer list-none rounded-lg border border-white/15 px-3 py-2.5 text-sm font-medium leading-none text-white [&::-webkit-details-marker]:hidden">
+          <summary className="min-h-11 cursor-pointer list-none rounded-full border border-[#1A1816]/15 px-4 py-2.5 text-[13px] font-medium leading-none text-[#1A1816]/80 [&::-webkit-details-marker]:hidden">
             Menú
           </summary>
-          <div className="absolute right-0 mt-2 w-52 rounded-xl border border-white/10 bg-[#1a1a1a] p-4 shadow-xl">
+          <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#1A1816]/10 bg-white p-4 shadow-xl">
             <ul className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href}
-                    className="block py-2 text-sm font-medium text-white/85 hover:text-white">
+                    className="block py-2 text-sm font-medium text-[#1A1816]/80 hover:text-[#1A1816]">
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
+            <div className="mt-4 flex flex-col gap-2 border-t border-[#1A1816]/10 pt-4">
               {loggedIn === true ? (
                 <>
-                  <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Mi panel</Link>
-                  <button onClick={handleSignOut} className="block rounded-lg px-3 py-2 text-left text-sm text-white/50 hover:text-white/80">Cerrar sesión</button>
+                  <Link href="/vendor" className="block rounded-lg px-3 py-2 text-sm text-[#1A1816]/70 hover:text-[#1A1816]">Mi panel</Link>
+                  <button onClick={handleSignOut} className="block rounded-lg px-3 py-2 text-left text-sm text-[#1A1816]/50 hover:text-[#1A1816]">Cerrar sesión</button>
                 </>
               ) : (
-                <>
-                  <Link href="/activar?modo=entrar" className="block rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white">Entrar</Link>
-                </>
+                <Link href="/activar?modo=entrar" className="block rounded-lg px-3 py-2 text-sm text-[#1A1816]/70 hover:text-[#1A1816]">Entrar</Link>
               )}
             </div>
           </div>
         </details>
       </div>
     </header>
-    </>
   );
 }

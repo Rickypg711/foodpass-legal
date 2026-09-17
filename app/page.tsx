@@ -61,17 +61,14 @@ const PROBLEM_CARDS = [
   {
     title: "No sabes quién te compró",
     body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 214 ventas en un mes se quedó con 1 teléfono. Con 1 no traes a nadie de vuelta.",
-    icon: "🧾",
   },
   {
     title: "El que no vuelve, no avisa",
     body: "Nadie te dice \"ya no vengo\". Solo dejas de verlo. Sin su número no hay forma de recordarle que existes.",
-    icon: "🔄",
   },
   {
     title: "La app de reparto se queda con tu cliente",
     body: "Te cobra comisión por cada pedido y además se queda con el nombre, el número y la costumbre. El cliente es de ellos, no tuyo.",
-    icon: "📉",
   },
 ] as const;
 
@@ -142,7 +139,7 @@ const FAQ_ITEMS = [
 ] as const;
 
 const FOOTER_LINKS = [
-  { href: "/puntos", label: "⭐ Mis puntos" },
+  { href: "/puntos", label: "Mis puntos" },
   { href: "/support.html", label: "Soporte" },
   { href: "/privacy-policy.html", label: "Privacy Policy" },
   { href: "/terms-of-use.html", label: "Terms of Use" },
@@ -150,84 +147,96 @@ const FOOTER_LINKS = [
 ] as const;
 
 
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#F28C38]" aria-hidden />
+      {children}
+    </p>
+  );
+}
+
+const H2 = "mt-4 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#1A1816] sm:text-4xl";
+const LEAD = "mt-4 max-w-xl text-[#1A1816]/60";
+const SECTION = "border-t border-[#1A1816]/8 px-5 py-20 sm:px-6 sm:py-24";
+
 export default function Home() {
   // Conteo vivo de restaurantes en el hero: Ricardo lo quiere hasta ~50
   // activos (5-sep: "me da pena, esperemos"). fetchPlatformStats ya existe.
+  //
+  // 17-sep-2026, paso 1 de la portada contenida (decisión Ricardo tras ver
+  // capturas de /dev/portada): un solo fondo blanco, sin bandas; el naranja
+  // solo en el botón y en puntitos; cero emojis; mock de líneas finas y
+  // mono; título apretado. MISMO copy. Paso 2 (pendiente): foto real de un
+  // menú de papel en lugar del mock, cuando un dueño diga que sí.
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1C2526]">
+    <div className="min-h-screen bg-white text-[#1A1816] antialiased">
       <VendorPageAnalytics />
 
       <HomeHeader />
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative overflow-hidden bg-[#141414] px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(242,140,56,0.18),transparent)]" aria-hidden />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+        <section className="px-5 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
             <div>
-              <p className="mb-4 inline-block rounded-full border border-[#F28C38]/30 bg-[#F28C38]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#F28C38]">
-                Para restaurantes locales
-              </p>
-              <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.2rem] lg:leading-[1.1]">
-                Tu menú de papel,{" "}
-                <span className="text-[#F28C38]">digital y gratis en 1 minuto.</span>
+              <Eyebrow>Para restaurantes locales</Eyebrow>
+              <h1 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-[3.4rem]">
+                Tu menú de papel,<br />digital y gratis<br />en 1 minuto.
               </h1>
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl">
-                <span className="font-semibold text-white/90">Que te pidan, que regresen, que lo veas.</span>{" "}
+              <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#1A1816]/65">
+                <span className="font-medium text-[#1A1816]">Que te pidan, que regresen, que lo veas.</span>{" "}
                 Menú con QR, pedidos por WhatsApp y puntos. Sin cambiar tu caja.
               </p>
               <HomeCta />
               {/* Robado de Last.app (10-sep-2026): "si sabes usar WhatsApp ya
                   sabes usarlo". Nivel secundaria, cero jerga, y quita el miedo
                   a "otro sistema" antes de que el dueño lo diga. */}
-              <p className="mt-4 text-sm text-white/60">Si sabes mandar un WhatsApp, ya sabes usar Comeleal.</p>
-              <p className="mt-2 text-xs text-white/35">Sin tarjeta de crédito · Sin contrato</p>
+              <p className="mt-6 text-sm text-[#1A1816]/55">Si sabes mandar un WhatsApp, ya sabes usar Comeleal.</p>
+              <p className="mt-1.5 text-xs text-[#1A1816]/35">Sin tarjeta de crédito · Sin contrato</p>
             </div>
 
             <div className="flex justify-center lg:justify-end">
               {/* El mock ES la promesa del CTA: un MENÚ digital en un
                   teléfono, recién leído del papel (decisión Ricardo, 26-ago;
-                  antes era un panel de dueño avanzado). */}
-              <div className="relative w-full max-w-[300px]">
-                <div className="overflow-hidden rounded-[2rem] border border-white/12 bg-[#faf9f5] shadow-2xl">
-                  {/* Header del menú */}
-                  <div className="bg-[#1C2526] px-4 pb-3 pt-4">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Menú digital</p>
-                    <p className="mt-0.5 text-lg font-extrabold text-white">Tacos El Güero</p>
-                    <span className="mt-1.5 inline-block rounded-full bg-green-500/15 px-2 py-0.5 text-[9px] font-bold text-green-400">
-                      🟢 Abierto · cierra 11 pm
-                    </span>
+                  antes era un panel de dueño avanzado). 17-sep: líneas finas
+                  y mono, un solo punto naranja. */}
+              <div className="w-full max-w-[340px] overflow-hidden rounded-2xl border border-[#1A1816]/12 bg-white shadow-[0_1px_2px_rgba(26,24,22,0.04),0_12px_40px_-12px_rgba(26,24,22,0.12)]">
+                <div className="flex items-center justify-between border-b border-[#1A1816]/8 px-4 py-3">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1A1816]/40">Menú digital</p>
+                    <p className="mt-0.5 text-[15px] font-semibold">Tacos El Güero</p>
                   </div>
-                  {/* Platillos */}
-                  <div className="space-y-2 p-3">
-                    {[
-                      { name: "Taco de pastor", price: "$28", chip: null },
-                      { name: "Quesadilla", price: "$45", chip: "Elige tu salsa" },
-                      { name: "Torta cubana", price: "$85", chip: "Elige tamaño" },
-                    ].map((it) => (
-                      <div key={it.name} className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm">
-                        <div>
-                          <p className="text-[12px] font-bold text-[#1C2526]">{it.name}</p>
-                          {it.chip && (
-                            <span className="mt-0.5 inline-block rounded-full bg-[#F28C38]/12 px-1.5 py-0.5 text-[8px] font-bold text-[#B45309]">
-                              {it.chip}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-[12px] font-extrabold text-[#1C2526]">{it.price}</p>
-                          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F28C38] text-[12px] font-bold text-[#1C2526]">+</div>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="rounded-xl bg-[#1C2526] px-3 py-2 text-center text-[10px] font-bold text-white">
-                      🛒 Ordenar por WhatsApp
-                    </div>
-                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-[#1A1816]/10 px-2 py-0.5 font-mono text-[10px] text-[#1A1816]/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#F28C38]" aria-hidden />
+                    Abierto · 11 pm
+                  </span>
                 </div>
-                {/* El badge que cuenta la historia */}
-                <div className="absolute -left-3 -top-3 rounded-full bg-[#F28C38] px-3 py-1.5 text-[10px] font-extrabold text-[#1C2526] shadow-lg">
-                  📸 Leído de su menú de papel
+                <div className="px-4 pt-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1A1816]/40">Leído de su menú de papel</p>
+                </div>
+                <ul className="divide-y divide-[#1A1816]/8 px-4">
+                  {[
+                    { name: "Taco de pastor", price: "$28", chip: null },
+                    { name: "Quesadilla", price: "$45", chip: "Elige tu salsa" },
+                    { name: "Torta cubana", price: "$85", chip: "Elige tamaño" },
+                  ].map((it) => (
+                    <li key={it.name} className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-[13px] font-medium">{it.name}</p>
+                        {it.chip && <p className="mt-0.5 text-[11px] text-[#1A1816]/50">{it.chip}</p>}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="font-mono text-[13px]">{it.price}</p>
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#1A1816]/20 text-[13px] leading-none">+</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="p-4">
+                  <div className="rounded-full bg-[#1A1816] py-2.5 text-center text-[12px] font-semibold text-white">
+                    Ordenar por WhatsApp
+                  </div>
                 </div>
               </div>
             </div>
@@ -237,32 +246,32 @@ export default function Home() {
         {/* ── Números reales (5-sep-2026) ── Cifras de restaurantes reales en
             Comeleal, sin nombres (eso lo decide Ricardo). Regla: solo números
             que existan — jamás prometer lo que no existe. */}
-        <section className="border-b border-[#1C2526]/8 bg-white px-4 py-8 sm:px-6" aria-label="Números reales">
-          <ul className="mx-auto grid max-w-5xl grid-cols-1 gap-6 text-center sm:grid-cols-3">
+        <section className="border-y border-[#1A1816]/8 px-5 py-10 sm:px-6" aria-label="Números reales">
+          <ul className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-3">
             {PROOF_POINTS.map((p) => (
               <li key={p.figure}>
-                <p className="text-3xl font-extrabold tracking-tight text-[#1C2526] sm:text-4xl">{p.figure}</p>
-                <p className="mt-1 text-sm text-[#1C2526]/65">{p.body}</p>
+                <p className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{p.figure}</p>
+                <p className="mt-1.5 text-sm text-[#1A1816]/55">{p.body}</p>
               </li>
             ))}
           </ul>
+          <p className="mx-auto mt-6 max-w-6xl font-mono text-[11px] text-[#1A1816]/40">Cifras reales de locales en Comeleal, agosto 2026.</p>
         </section>
 
         {/* ── Problem ── */}
-        <section className="px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="problema-heading">
+        <section className="px-5 py-20 sm:px-6 sm:py-24" aria-labelledby="problema-heading">
           <div className="mx-auto max-w-6xl">
-            <h2 id="problema-heading" className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
-              Lo que te está costando hoy
-            </h2>
-            <p className="mt-3 max-w-2xl text-[#1C2526]/70">
+            <Eyebrow>01 · El problema</Eyebrow>
+            <h2 id="problema-heading" className={H2}>Lo que te está costando hoy</h2>
+            <p className={LEAD}>
               No es la comida. Es que no sabes quién te compró, y por eso no puedes hacer que vuelva.
             </p>
-            <div className="mt-10 grid gap-6 md:grid-cols-3">
-              {PROBLEM_CARDS.map((card) => (
-                <article key={card.title} className="rounded-2xl border border-[#1C2526]/8 bg-white p-6 shadow-sm">
-                  <span className="text-2xl" aria-hidden>{card.icon}</span>
-                  <h3 className="mt-4 text-lg font-bold text-[#1C2526]">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#1C2526]/70">{card.body}</p>
+            <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-[#1A1816]/10 bg-[#1A1816]/10 md:grid-cols-3">
+              {PROBLEM_CARDS.map((card, i) => (
+                <article key={card.title} className="bg-white p-7">
+                  <p className="font-mono text-[11px] text-[#1A1816]/40">0{i + 1}</p>
+                  <h3 className="mt-5 text-[17px] font-semibold leading-snug">{card.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#1A1816]/60">{card.body}</p>
                 </article>
               ))}
             </div>
@@ -270,20 +279,18 @@ export default function Home() {
         </section>
 
         {/* ── Value props ── */}
-        <section className="border-y border-[#1C2526]/8 bg-white px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="valor-heading">
+        <section className={SECTION} aria-labelledby="valor-heading">
           <div className="mx-auto max-w-6xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#F28C38]">Qué incluye</p>
-            <h2 id="valor-heading" className="mt-2 text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
-              Todo lo que necesitas para que tus clientes regresen
-            </h2>
-            <p className="mt-3 max-w-2xl text-[#1C2526]/70">
+            <Eyebrow>02 · Qué incluye</Eyebrow>
+            <h2 id="valor-heading" className={H2}>Todo lo que necesitas para que tus clientes regresen</h2>
+            <p className={LEAD}>
               Activo en unos 5 minutos, sin contratos. Comeleal funciona junto a tu punto de venta actual.
             </p>
-            <ul className="mt-10 grid gap-6 sm:grid-cols-2">
+            <ul className="mt-12 grid gap-10 md:grid-cols-3">
               {VALUE_POINTS.map((point) => (
-                <li key={point.title} className="rounded-2xl border border-[#1C2526]/8 bg-[#FAF7F2] p-5">
-                  <h3 className="font-bold text-[#1C2526]">{point.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#1C2526]/70">{point.body}</p>
+                <li key={point.title} className="border-t border-[#1A1816]/15 pt-5">
+                  <h3 className="text-[17px] font-semibold leading-snug">{point.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#1A1816]/60">{point.body}</p>
                 </li>
               ))}
             </ul>
@@ -291,22 +298,19 @@ export default function Home() {
         </section>
 
         {/* ── How it works ── */}
-        <section id="como-funciona" className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="como-funciona-heading">
+        <section id="como-funciona" className={`scroll-mt-20 ${SECTION}`} aria-labelledby="como-funciona-heading">
           <div className="mx-auto max-w-6xl">
-            <h2 id="como-funciona-heading" className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
-              Cómo funciona
-            </h2>
-            <p className="mt-3 max-w-2xl text-[#1C2526]/70">
-              Cuatro pasos para dejar tu negocio listo y empezar a escanear clientes hoy.
+            <Eyebrow>03 · Cómo funciona</Eyebrow>
+            <h2 id="como-funciona-heading" className={H2}>Cuatro pasos y a vender</h2>
+            <p className={LEAD}>
+              Para dejar tu negocio listo y empezar a escanear clientes hoy.
             </p>
-            <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
-                <li key={item.step} className="relative rounded-2xl border border-[#1C2526]/8 bg-white p-5 shadow-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F28C38] text-sm font-bold text-[#1C2526]">
-                    {item.step}
-                  </span>
-                  <h3 className="mt-4 font-bold text-[#1C2526]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#1C2526]/70">{item.body}</p>
+                <li key={item.step}>
+                  <p className="font-mono text-[11px] text-[#1A1816]/40">0{item.step}</p>
+                  <h3 className="mt-4 text-[16px] font-semibold leading-snug">{item.title}</h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#1A1816]/60">{item.body}</p>
                 </li>
               ))}
             </ol>
@@ -314,15 +318,14 @@ export default function Home() {
         </section>
 
         {/* ── Benefits ── */}
-        <section id="beneficios" className="scroll-mt-20 border-y border-[#1C2526]/8 bg-[#141414] px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="beneficios-heading">
+        <section id="beneficios" className={`scroll-mt-20 ${SECTION}`} aria-labelledby="beneficios-heading">
           <div className="mx-auto max-w-6xl">
-            <h2 id="beneficios-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Por qué Comeleal
-            </h2>
-            <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+            <Eyebrow>04 · Por qué Comeleal</Eyebrow>
+            <h2 id="beneficios-heading" className="sr-only">Por qué Comeleal</h2>
+            <ul className="mt-8 grid gap-x-12 gap-y-4 sm:grid-cols-2">
               {BENEFITS.map((benefit) => (
-                <li key={benefit} className="flex gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed text-white/80">
-                  <span className="shrink-0 text-[#F28C38]" aria-hidden>✓</span>
+                <li key={benefit} className="flex gap-3 border-b border-[#1A1816]/8 pb-4 text-[15px] leading-relaxed text-[#1A1816]/80">
+                  <span className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#F28C38]" aria-hidden />
                   {benefit}
                 </li>
               ))}
@@ -331,29 +334,28 @@ export default function Home() {
         </section>
 
         {/* ── Final CTA ── */}
-        <section className="border-t border-[#1C2526]/8 bg-[#141414] px-4 py-16 sm:px-6 sm:py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Empieza gratis hoy.
-            </h2>
-            <p className="mt-4 text-lg text-white/65">
+        <section className="border-t border-[#1A1816]/8 px-5 py-24 sm:px-6 sm:py-32">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">Empieza gratis hoy.</h2>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#1A1816]/60">
               Sube la foto de tu menú. En 1 minuto lo ves digital. En 5 tienes tu QR y tu primer premio. Y desde la primera venta empiezas a saber quién te compró.
             </p>
-            <HomeCta />
+            <HomeCta section="home_final" />
           </div>
         </section>
 
         {/* ── FAQ ── */}
-        <section id="preguntas" className="scroll-mt-20 border-t border-[#1C2526]/8 px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="faq-heading">
-          <div className="mx-auto max-w-6xl">
-            <h2 id="faq-heading" className="text-2xl font-bold tracking-tight text-[#1C2526] sm:text-3xl">
-              Preguntas frecuentes
-            </h2>
-            <dl className="mt-10 divide-y divide-[#1C2526]/10 rounded-2xl border border-[#1C2526]/8 bg-white">
+        <section id="preguntas" className={`scroll-mt-20 ${SECTION}`} aria-labelledby="faq-heading">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <Eyebrow>Preguntas</Eyebrow>
+              <h2 id="faq-heading" className={H2}>Lo que preguntan primero.</h2>
+            </div>
+            <dl className="divide-y divide-[#1A1816]/8 border-y border-[#1A1816]/8">
               {FAQ_ITEMS.map((item) => (
-                <div key={item.q} className="px-5 py-5 sm:px-6">
-                  <dt className="font-bold text-[#1C2526]">{item.q}</dt>
-                  <dd className="mt-2 text-sm leading-relaxed text-[#1C2526]/70">{item.a}</dd>
+                <div key={item.q} className="py-5">
+                  <dt className="text-[15px] font-semibold">{item.q}</dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-[#1A1816]/60">{item.a}</dd>
                 </div>
               ))}
             </dl>
@@ -362,11 +364,11 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1C2526]/10 bg-[#141414] px-4 py-10 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+      <footer className="border-t border-[#1A1816]/8 px-5 py-12 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
-            <p className="text-lg font-bold text-white">Comeleal</p>
-            <p className="mt-2 max-w-xs text-sm text-white/55">
+            <p className="text-[15px] font-semibold">Comeleal</p>
+            <p className="mt-2 max-w-xs text-sm text-[#1A1816]/55">
               Herramientas para que tus clientes te encuentren, acumulen puntos y regresen.
             </p>
           </div>
@@ -374,8 +376,8 @@ export default function Home() {
               (Ricardo-approved Jul 18). Flows homepage authority to the
               marketing pages so Google crawls/ranks the cluster. */}
           <nav aria-label="Para restaurantes">
-            <p className="text-sm font-semibold text-white/70">Para restaurantes</p>
-            <ul className="mt-2 flex flex-col gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">Para restaurantes</p>
+            <ul className="mt-3 space-y-1.5 text-sm">
               {[
                 { href: "/menu-qr-gratis-restaurantes", label: "Menú digital QR gratis" },
                 { href: "/programa-de-lealtad-para-restaurantes", label: "Programa de lealtad" },
@@ -390,7 +392,7 @@ export default function Home() {
                 { href: "/precios", label: "Precios" },
               ].map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="block py-1 text-sm text-white/55 transition-colors hover:text-white">
+                  <Link href={link.href} className="text-[#1A1816]/60 hover:text-[#1A1816]">
                     {link.label}
                   </Link>
                 </li>
@@ -398,10 +400,11 @@ export default function Home() {
             </ul>
           </nav>
           <nav aria-label="Legal y soporte">
-            <ul className="flex flex-col gap-2 sm:items-end">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">Comeleal</p>
+            <ul className="mt-3 space-y-1.5 text-sm">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="block py-1.5 text-sm text-white/65 transition-colors hover:text-white">
+                  <Link href={link.href} className="text-[#1A1816]/60 hover:text-[#1A1816]">
                     {link.label}
                   </Link>
                 </li>
@@ -409,7 +412,7 @@ export default function Home() {
             </ul>
           </nav>
         </div>
-        <p className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-center text-xs text-white/45 sm:text-left">
+        <p className="mx-auto mt-10 max-w-6xl text-xs text-[#1A1816]/40">
           © 2026 Comeleal. Todos los derechos reservados.
         </p>
       </footer>
