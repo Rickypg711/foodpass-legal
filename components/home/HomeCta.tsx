@@ -10,7 +10,7 @@ import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 // 17-sep-2026 (Ricardo, paso 1 de la portada contenida): el botón es lo único
 // grande en naranja de toda la página, sin emoji. Texto oscuro sobre naranja
 // (regla de contraste del 25-ago).
-const BUTTON = "inline-flex items-center gap-2 rounded-full bg-[#F28C38] px-6 py-3 text-[15px] font-semibold text-[#1A1816] transition-colors hover:bg-[#E07B2A]";
+const BUTTON = "inline-flex items-center gap-2 rounded-full bg-[#F28C38] px-6 py-3 text-[15px] font-semibold text-[#1C2526] transition-colors hover:bg-[#E07B2A]";
 
 export function HomeCta({ section = "home_hero" }: { section?: "home_hero" | "home_final" }) {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);

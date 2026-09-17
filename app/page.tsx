@@ -149,28 +149,30 @@ const FOOTER_LINKS = [
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">
+    <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1C2526]/45">
       <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#F28C38]" aria-hidden />
       {children}
     </p>
   );
 }
 
-const H2 = "mt-4 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#1A1816] sm:text-4xl";
-const LEAD = "mt-4 max-w-xl text-[#1A1816]/60";
-const SECTION = "border-t border-[#1A1816]/8 px-5 py-20 sm:px-6 sm:py-24";
+const H2 = "mt-4 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#1C2526] sm:text-4xl";
+const LEAD = "mt-4 max-w-xl text-[#1C2526]/60";
+const SECTION = "border-t border-[#1C2526]/8 px-5 py-20 sm:px-6 sm:py-24";
 
 export default function Home() {
   // Conteo vivo de restaurantes en el hero: Ricardo lo quiere hasta ~50
   // activos (5-sep: "me da pena, esperemos"). fetchPlatformStats ya existe.
   //
+  // 17-sep-2026 (tarde): fondo crema #FAF7F2 y texto #1C2526 del estándar de
+  // marca (skill comeleal-brand-creative-director); tarjetas y mock en blanco.
   // 17-sep-2026, paso 1 de la portada contenida (decisión Ricardo tras ver
   // capturas de /dev/portada): un solo fondo blanco, sin bandas; el naranja
   // solo en el botón y en puntitos; cero emojis; mock de líneas finas y
   // mono; título apretado. MISMO copy. Paso 2 (pendiente): foto real de un
   // menú de papel en lugar del mock, cuando un dueño diga que sí.
   return (
-    <div className="min-h-screen bg-white text-[#1A1816] antialiased">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C2526] antialiased">
       <VendorPageAnalytics />
 
       <HomeHeader />
@@ -184,16 +186,16 @@ export default function Home() {
               <h1 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-[3.4rem]">
                 Tu menú de papel,<br />digital y gratis<br />en 1 minuto.
               </h1>
-              <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#1A1816]/65">
-                <span className="font-medium text-[#1A1816]">Que te pidan, que regresen, que lo veas.</span>{" "}
+              <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#1C2526]/65">
+                <span className="font-medium text-[#1C2526]">Que te pidan, que regresen, que lo veas.</span>{" "}
                 Menú con QR, pedidos por WhatsApp y puntos. Sin cambiar tu caja.
               </p>
               <HomeCta />
               {/* Robado de Last.app (10-sep-2026): "si sabes usar WhatsApp ya
                   sabes usarlo". Nivel secundaria, cero jerga, y quita el miedo
                   a "otro sistema" antes de que el dueño lo diga. */}
-              <p className="mt-6 text-sm text-[#1A1816]/55">Si sabes mandar un WhatsApp, ya sabes usar Comeleal.</p>
-              <p className="mt-1.5 text-xs text-[#1A1816]/35">Sin tarjeta de crédito · Sin contrato</p>
+              <p className="mt-6 text-sm text-[#1C2526]/55">Si sabes mandar un WhatsApp, ya sabes usar Comeleal.</p>
+              <p className="mt-1.5 text-xs text-[#1C2526]/35">Sin tarjeta de crédito · Sin contrato</p>
             </div>
 
             <div className="flex justify-center lg:justify-end">
@@ -201,21 +203,21 @@ export default function Home() {
                   teléfono, recién leído del papel (decisión Ricardo, 26-ago;
                   antes era un panel de dueño avanzado). 17-sep: líneas finas
                   y mono, un solo punto naranja. */}
-              <div className="w-full max-w-[340px] overflow-hidden rounded-2xl border border-[#1A1816]/12 bg-white shadow-[0_1px_2px_rgba(26,24,22,0.04),0_12px_40px_-12px_rgba(26,24,22,0.12)]">
-                <div className="flex items-center justify-between border-b border-[#1A1816]/8 px-4 py-3">
+              <div className="w-full max-w-[340px] overflow-hidden rounded-2xl border border-[#1C2526]/12 bg-white shadow-[0_1px_2px_rgba(28,37,38,0.04),0_12px_40px_-12px_rgba(28,37,38,0.12)]">
+                <div className="flex items-center justify-between border-b border-[#1C2526]/8 px-4 py-3">
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1A1816]/40">Menú digital</p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1C2526]/40">Menú digital</p>
                     <p className="mt-0.5 text-[15px] font-semibold">Tacos El Güero</p>
                   </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-[#1A1816]/10 px-2 py-0.5 font-mono text-[10px] text-[#1A1816]/60">
+                  <span className="flex items-center gap-1.5 rounded-full border border-[#1C2526]/10 px-2 py-0.5 font-mono text-[10px] text-[#1C2526]/60">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#F28C38]" aria-hidden />
                     Abierto · 11 pm
                   </span>
                 </div>
                 <div className="px-4 pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1A1816]/40">Leído de su menú de papel</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#1C2526]/40">Leído de su menú de papel</p>
                 </div>
-                <ul className="divide-y divide-[#1A1816]/8 px-4">
+                <ul className="divide-y divide-[#1C2526]/8 px-4">
                   {[
                     { name: "Taco de pastor", price: "$28", chip: null },
                     { name: "Quesadilla", price: "$45", chip: "Elige tu salsa" },
@@ -224,17 +226,17 @@ export default function Home() {
                     <li key={it.name} className="flex items-center justify-between py-3">
                       <div>
                         <p className="text-[13px] font-medium">{it.name}</p>
-                        {it.chip && <p className="mt-0.5 text-[11px] text-[#1A1816]/50">{it.chip}</p>}
+                        {it.chip && <p className="mt-0.5 text-[11px] text-[#1C2526]/50">{it.chip}</p>}
                       </div>
                       <div className="flex items-center gap-3">
                         <p className="font-mono text-[13px]">{it.price}</p>
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#1A1816]/20 text-[13px] leading-none">+</span>
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#1C2526]/20 text-[13px] leading-none">+</span>
                       </div>
                     </li>
                   ))}
                 </ul>
                 <div className="p-4">
-                  <div className="rounded-full bg-[#1A1816] py-2.5 text-center text-[12px] font-semibold text-white">
+                  <div className="rounded-full bg-[#1C2526] py-2.5 text-center text-[12px] font-semibold text-white">
                     Ordenar por WhatsApp
                   </div>
                 </div>
@@ -246,16 +248,16 @@ export default function Home() {
         {/* ── Números reales (5-sep-2026) ── Cifras de restaurantes reales en
             Comeleal, sin nombres (eso lo decide Ricardo). Regla: solo números
             que existan — jamás prometer lo que no existe. */}
-        <section className="border-y border-[#1A1816]/8 px-5 py-10 sm:px-6" aria-label="Números reales">
+        <section className="border-y border-[#1C2526]/8 px-5 py-10 sm:px-6" aria-label="Números reales">
           <ul className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-3">
             {PROOF_POINTS.map((p) => (
               <li key={p.figure}>
                 <p className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{p.figure}</p>
-                <p className="mt-1.5 text-sm text-[#1A1816]/55">{p.body}</p>
+                <p className="mt-1.5 text-sm text-[#1C2526]/55">{p.body}</p>
               </li>
             ))}
           </ul>
-          <p className="mx-auto mt-6 max-w-6xl font-mono text-[11px] text-[#1A1816]/40">Cifras reales de locales en Comeleal, agosto 2026.</p>
+          <p className="mx-auto mt-6 max-w-6xl font-mono text-[11px] text-[#1C2526]/40">Cifras reales de locales en Comeleal, agosto 2026.</p>
         </section>
 
         {/* ── Problem ── */}
@@ -266,12 +268,12 @@ export default function Home() {
             <p className={LEAD}>
               No es la comida. Es que no sabes quién te compró, y por eso no puedes hacer que vuelva.
             </p>
-            <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-[#1A1816]/10 bg-[#1A1816]/10 md:grid-cols-3">
+            <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-[#1C2526]/10 bg-[#1C2526]/10 md:grid-cols-3">
               {PROBLEM_CARDS.map((card, i) => (
                 <article key={card.title} className="bg-white p-7">
-                  <p className="font-mono text-[11px] text-[#1A1816]/40">0{i + 1}</p>
+                  <p className="font-mono text-[11px] text-[#1C2526]/40">0{i + 1}</p>
                   <h3 className="mt-5 text-[17px] font-semibold leading-snug">{card.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#1A1816]/60">{card.body}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-[#1C2526]/60">{card.body}</p>
                 </article>
               ))}
             </div>
@@ -288,9 +290,9 @@ export default function Home() {
             </p>
             <ul className="mt-12 grid gap-10 md:grid-cols-3">
               {VALUE_POINTS.map((point) => (
-                <li key={point.title} className="border-t border-[#1A1816]/15 pt-5">
+                <li key={point.title} className="border-t border-[#1C2526]/15 pt-5">
                   <h3 className="text-[17px] font-semibold leading-snug">{point.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#1A1816]/60">{point.body}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-[#1C2526]/60">{point.body}</p>
                 </li>
               ))}
             </ul>
@@ -308,9 +310,9 @@ export default function Home() {
             <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
                 <li key={item.step}>
-                  <p className="font-mono text-[11px] text-[#1A1816]/40">0{item.step}</p>
+                  <p className="font-mono text-[11px] text-[#1C2526]/40">0{item.step}</p>
                   <h3 className="mt-4 text-[16px] font-semibold leading-snug">{item.title}</h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-[#1A1816]/60">{item.body}</p>
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#1C2526]/60">{item.body}</p>
                 </li>
               ))}
             </ol>
@@ -324,7 +326,7 @@ export default function Home() {
             <h2 id="beneficios-heading" className="sr-only">Por qué Comeleal</h2>
             <ul className="mt-8 grid gap-x-12 gap-y-4 sm:grid-cols-2">
               {BENEFITS.map((benefit) => (
-                <li key={benefit} className="flex gap-3 border-b border-[#1A1816]/8 pb-4 text-[15px] leading-relaxed text-[#1A1816]/80">
+                <li key={benefit} className="flex gap-3 border-b border-[#1C2526]/8 pb-4 text-[15px] leading-relaxed text-[#1C2526]/80">
                   <span className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#F28C38]" aria-hidden />
                   {benefit}
                 </li>
@@ -334,10 +336,10 @@ export default function Home() {
         </section>
 
         {/* ── Final CTA ── */}
-        <section className="border-t border-[#1A1816]/8 px-5 py-24 sm:px-6 sm:py-32">
+        <section className="border-t border-[#1C2526]/8 px-5 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">Empieza gratis hoy.</h2>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#1A1816]/60">
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#1C2526]/60">
               Sube la foto de tu menú. En 1 minuto lo ves digital. En 5 tienes tu QR y tu primer premio. Y desde la primera venta empiezas a saber quién te compró.
             </p>
             <HomeCta section="home_final" />
@@ -351,11 +353,11 @@ export default function Home() {
               <Eyebrow>Preguntas</Eyebrow>
               <h2 id="faq-heading" className={H2}>Lo que preguntan primero.</h2>
             </div>
-            <dl className="divide-y divide-[#1A1816]/8 border-y border-[#1A1816]/8">
+            <dl className="divide-y divide-[#1C2526]/8 border-y border-[#1C2526]/8">
               {FAQ_ITEMS.map((item) => (
                 <div key={item.q} className="py-5">
                   <dt className="text-[15px] font-semibold">{item.q}</dt>
-                  <dd className="mt-2 text-sm leading-relaxed text-[#1A1816]/60">{item.a}</dd>
+                  <dd className="mt-2 text-sm leading-relaxed text-[#1C2526]/60">{item.a}</dd>
                 </div>
               ))}
             </dl>
@@ -364,11 +366,11 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1A1816]/8 px-5 py-12 sm:px-6">
+      <footer className="border-t border-[#1C2526]/8 px-5 py-12 sm:px-6">
         <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
             <p className="text-[15px] font-semibold">Comeleal</p>
-            <p className="mt-2 max-w-xs text-sm text-[#1A1816]/55">
+            <p className="mt-2 max-w-xs text-sm text-[#1C2526]/55">
               Herramientas para que tus clientes te encuentren, acumulen puntos y regresen.
             </p>
           </div>
@@ -376,7 +378,7 @@ export default function Home() {
               (Ricardo-approved Jul 18). Flows homepage authority to the
               marketing pages so Google crawls/ranks the cluster. */}
           <nav aria-label="Para restaurantes">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">Para restaurantes</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1C2526]/45">Para restaurantes</p>
             <ul className="mt-3 space-y-1.5 text-sm">
               {[
                 { href: "/menu-qr-gratis-restaurantes", label: "Menú digital QR gratis" },
@@ -392,7 +394,7 @@ export default function Home() {
                 { href: "/precios", label: "Precios" },
               ].map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-[#1A1816]/60 hover:text-[#1A1816]">
+                  <Link href={link.href} className="text-[#1C2526]/60 hover:text-[#1C2526]">
                     {link.label}
                   </Link>
                 </li>
@@ -400,11 +402,11 @@ export default function Home() {
             </ul>
           </nav>
           <nav aria-label="Legal y soporte">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A1816]/45">Comeleal</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1C2526]/45">Comeleal</p>
             <ul className="mt-3 space-y-1.5 text-sm">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-[#1A1816]/60 hover:text-[#1A1816]">
+                  <Link href={link.href} className="text-[#1C2526]/60 hover:text-[#1C2526]">
                     {link.label}
                   </Link>
                 </li>
@@ -412,7 +414,7 @@ export default function Home() {
             </ul>
           </nav>
         </div>
-        <p className="mx-auto mt-10 max-w-6xl text-xs text-[#1A1816]/40">
+        <p className="mx-auto mt-10 max-w-6xl text-xs text-[#1C2526]/40">
           © 2026 Comeleal. Todos los derechos reservados.
         </p>
       </footer>
