@@ -1218,8 +1218,8 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
           </div>
           <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
             {data.weekPaidSales > 0
-              ? `esta semana · ${data.weekIdentifiedSales} de ${data.weekPaidSales}`
-              : "Aún ninguna esta semana · pídelo al cobrar"}
+              ? `últimos 7 días · ${data.weekIdentifiedSales} de ${data.weekPaidSales}`
+              : "Aún ninguna en los últimos 7 días · pídelo al cobrar"}
           </p>
         </div>
         <span className="shrink-0 text-[12px] font-bold text-[#F28C38] group-hover:underline">Cobrar con número →</span>

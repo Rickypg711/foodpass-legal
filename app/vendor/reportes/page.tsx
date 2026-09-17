@@ -600,8 +600,8 @@ export default function ReportesPage() {
 
         {/* 7-Day Performance Title */}
         <div className="pt-4">
-          <h2 className="text-[20px] font-black tracking-tight" style={{ color: "#1C2526" }}>Rendimiento semanal</h2>
-          <p className="text-[12px] text-gray-400">Resultados e historial de los últimos 7 días</p>
+          <h2 className="text-[20px] font-black tracking-tight" style={{ color: "#1C2526" }}>Últimos 7 días</h2>
+          <p className="text-[12px] text-gray-400">Hoy y los 6 días anteriores</p>
         </div>
 
         {/* Charts Section */}
@@ -610,7 +610,7 @@ export default function ReportesPage() {
           {/* Sales chart */}
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <div>
-              <p className="text-[14px] font-bold text-[#1C2526]">Ingresos de la semana</p>
+              <p className="text-[14px] font-bold text-[#1C2526]">Ingresos · últimos 7 días</p>
               <p className="text-[22px] font-black text-[#F28C38]">{fmt(data.weeklyRevenueTotal)}</p>
             </div>
             
@@ -643,7 +643,7 @@ export default function ReportesPage() {
           {/* Visits/Scans chart */}
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <div>
-              <p className="text-[14px] font-bold text-[#1C2526]">Clientes Comeleal — semana</p>
+              <p className="text-[14px] font-bold text-[#1C2526]">Clientes Comeleal · últimos 7 días</p>
               <p className="text-[22px] font-black text-[#1C2526]">{data.weeklyScansTotal} visitas</p>
               <p className="text-[11px] text-gray-400">Con app o con número — los que puedes traer de vuelta</p>
             </div>
@@ -850,10 +850,10 @@ export default function ReportesPage() {
 
           {/* Top selling items */}
           <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">Top 5 productos más vendidos (semana)</p>
+            <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">Top 5 productos más vendidos (últimos 7 días)</p>
             {data.topProducts.length === 0 ? (
               <div className="py-12 text-center text-gray-400 text-[13px]">
-                No se registraron ventas esta semana
+                No se registraron ventas en los últimos 7 días
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
