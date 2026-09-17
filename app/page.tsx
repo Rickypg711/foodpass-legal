@@ -112,9 +112,16 @@ const FAQ_ITEMS = [
     q: "¿Cuánto cuesta?",
     a: `Operar es gratis: menú digital, Caja/POS, pedidos, puntos para tus clientes sin tope, tus clientes y reportes. Pro (${PRO_PRICE_LABEL}/mes) es para cuando tu Caja crece: todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.`,
   },
+  // 17-sep-2026: la FAQ contesta MIEDOS, no funciones (espejo de la portada
+  // de CarSignal, YC S26). Fuera "¿Qué es Apple Wallet?" (ya está en valor);
+  // entran "¿y si la IA lee mal?" y "¿le escriben a un robot?".
   {
-    q: "¿Qué es Apple Wallet / Google Wallet y cómo lo usan mis clientes?",
-    a: "Tus clientes guardan su tarjeta de puntos en Apple Wallet (iPhone) o Google Wallet (Android). La próxima visita la abren sin descargar ninguna app — más rápido para ellos, más visitas para ti.",
+    q: "¿Y si la IA lee mal mi menú?",
+    a: "Lo ves antes de quedártelo y lo corriges tú desde tu panel: nombres, precios, salsas y tamaños. Nada les sale a tus clientes sin que tú lo apruebes.",
+  },
+  {
+    q: "¿Mis clientes le escriben a un robot?",
+    a: "No. El pedido llega a TU WhatsApp y les contestas tú, como siempre. Comeleal no manda mensajes por ti ni le contesta a nadie en tu nombre.",
   },
   {
     q: "¿Necesito Mercado Pago?",
