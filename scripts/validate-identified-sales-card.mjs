@@ -13,8 +13,8 @@ assert.ok(panel.includes('>Ventas con teléfono</span>'), "panel: tarjeta 'Venta
 assert.ok(panel.includes("businessDayStartDaysAgo(6)"), "panel: ventana = 7 jornadas de negocio (corte 4 AM)");
 assert.ok(panel.includes('if (o.paymentStatus !== "paid") return;'), "panel: solo ventas pagadas");
 assert.ok(panel.includes("if (ph.length >= 10) weekIdentifiedSales++;"), "panel: identificada = teléfono de 10 dígitos");
-assert.ok(panel.includes("esta semana · ${data.weekIdentifiedSales} de ${data.weekPaidSales}"), "panel: copy 'esta semana · M de N'");
-assert.ok(panel.includes("Aún ninguna esta semana · pídelo al cobrar"), "panel: estado cero honesto");
+assert.ok(panel.includes("últimos 7 días · ${data.weekIdentifiedSales} de ${data.weekPaidSales}"), "panel: copy 'últimos 7 días · M de N' (ventana rodante, 98da0db)");
+assert.ok(panel.includes("Aún ninguna en los últimos 7 días · pídelo al cobrar"), "panel: estado cero honesto");
 assert.ok(!panel.includes("Clientes Comeleal hoy"), "panel: la tarjeta vieja 'Clientes Comeleal hoy' se fue (el marcador la reemplaza)");
 
 console.log("validate-identified-sales-card: OK");
