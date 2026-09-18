@@ -53,6 +53,7 @@ function ContrasenaInner() {
   // Para pedir otro link cuando el de este correo ya no sirve.
   const [again, setAgain] = useState("");
   const [againState, setAgainState] = useState<"idle" | "sending" | "sent" | "wait">("idle");
+  const [againError, setAgainError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -126,7 +127,11 @@ function ContrasenaInner() {
 
   async function handleAgain(ev: FormEvent) {
     ev.preventDefault();
-    if (!again.trim()) return;
+    if (!again.trim()) {
+      setAgainError("Escribe tu correo.");
+      return;
+    }
+    setAgainError(null);
     setAgainState("sending");
     const r = await requestPasswordReset(again);
     setAgainState(r === "wait" ? "wait" : "sent");
@@ -238,16 +243,14 @@ function ContrasenaInner() {
                     onChange={(e) => setAgain(e.target.value)}
                     placeholder="tucorreo@gmail.com"
                   />
+                  {againError && <div className={ERROR}>{againError}</div>}
                   {againState === "wait" && (
                     <div className={ERROR}>
                       Ya te mandamos varios correos. Revisa spam o espera una hora.
                     </div>
                   )}
-                  <button
-                    type="submit"
-                    className={`${BUTTON} mt-5`}
-                    disabled={againState === "sending" || !again.trim()}
-                  >
+                  {/* Siempre vivo: un botón apagado parece roto. Si falta el correo, se dice. */}
+                  <button type="submit" className={`${BUTTON} mt-5`} disabled={againState === "sending"}>
                     {againState === "sending" ? "Mandando…" : "Mándame otro link"}
                   </button>
                 </form>
