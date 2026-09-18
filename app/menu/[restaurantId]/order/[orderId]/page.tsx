@@ -26,6 +26,7 @@ import { customerOrderDisplay } from "@/lib/order/orderDisplayLabels";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { isGoogleReviewUrl } from "@/lib/googleReviewUrl";
 import { PhonePointsCard } from "@/components/loyalty/PhonePointsCard";
+import ReceiptRewardsBlock from "@/components/loyalty/ReceiptRewardsBlock";
 import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
@@ -762,6 +763,20 @@ function OrderStatusPageContent() {
                 restaurantName={displayRestaurant}
                 phone={order.customerPhone}
                 phoneCountryCode={phoneCountry}
+              />
+            ) : null}
+
+            {/* REFERIDOS (docs/REFERIDOS_POR_TELEFONO.md §3, §7, §9): sus tacos
+                vivos con hasta cuándo puede pedirlos, y el botón de invitar.
+                AQUÍ ARRANCA EL RELOJ: cuando este bloque se dibuja de verdad en
+                su pantalla se marca "visto" y el taco vive 7 días desde ese
+                momento — el preview de WhatsApp no cuenta porque no corre
+                scripts. Si el local no está en esto, no pinta nada. */}
+            {order?.customerPhone ? (
+              <ReceiptRewardsBlock
+                restaurantId={restaurantId}
+                orderId={orderId}
+                restaurantName={displayRestaurant}
               />
             ) : null}
 

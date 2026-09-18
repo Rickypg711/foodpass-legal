@@ -36,7 +36,7 @@ const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
 const MAX_TRIES = 5;
 
 export async function POST(request: Request) {
-  let body: { restaurantId?: unknown; orderId?: unknown } = {};
+  let body: { restaurantId?: unknown; orderId?: unknown; tapped?: unknown } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -44,6 +44,9 @@ export async function POST(request: Request) {
   }
   const restaurantId = typeof body.restaurantId === "string" ? body.restaurantId : "";
   const orderId = typeof body.orderId === "string" ? body.orderId : "";
+  // `tapped` = el que invita TOCÓ el botón de WhatsApp (no solo lo vio). Es la
+  // primera medida del embudo del referido (§10).
+  const tapped = body.tapped === true;
   if (!ID_RE.test(restaurantId) || !ID_RE.test(orderId)) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
@@ -76,6 +79,13 @@ export async function POST(request: Request) {
 
     const phoneRef = db.doc(`restaurants/${restaurantId}/phoneCustomers/${phone}`);
     const phoneSnap = await phoneRef.get();
+
+    if (tapped) {
+      // No bloquea la respuesta: si falla, el link se manda igual.
+      phoneRef
+        .set({ inviteTappedAt: Timestamp.now() }, { merge: true })
+        .catch(() => {});
+    }
 
     // ¿Ya tenía código? Se valida que apunte de vuelta a este teléfono: si el
     // puntero viniera torcido, se acuña uno nuevo en vez de devolver basura.
