@@ -39,6 +39,15 @@ export type ReceiptWhatsappInput = {
    * línea "ganaste" ni "y tus puntos" en el link). Default true.
    */
   promisesPoints?: boolean;
+  /**
+   * Link de invitación del que compró (docs/REFERIDOS_POR_TELEFONO.md §3 y §5).
+   * Si viene, el recibo cierra con "Invita a un amigo y los dos ganan: {link}".
+   *
+   * Es OPCIONAL a propósito: el código lo acuña el servidor y puede no llegar a
+   * tiempo (o el local no estar en esto). Sin él, el recibo sale exactamente
+   * como siempre — nunca se manda un recibo a medias por esperar esta línea.
+   */
+  inviteLink?: string | null;
 };
 
 const fmt = (n: number) =>
@@ -69,6 +78,11 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
       : []),
     "",
     `${promises ? "Tu recibo y tus puntos" : "Tu recibo"}: ${url}`,
+    // La invitación va AL FINAL, después del recibo: primero lo que pidió, y
+    // ya luego lo que puede ganar. Nunca antes del total.
+    ...(r.inviteLink
+      ? ["", `🎁 Invita a un amigo y los dos ganan: ${r.inviteLink}`]
+      : []),
   ].join("\n");
 }
 

@@ -28,6 +28,7 @@ import {
   timestampToMillis,
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
+import { expiryLabel, liveRows, toMs } from "@/lib/loyalty/freeItems";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
@@ -48,6 +49,12 @@ type Balance = {
   unlockedTier: string | null;
   /** Next tier not yet reached: name + points missing. */
   nextTier: { name: string; missing: number } | null;
+  /**
+   * Tacos gratis vivos (docs/REFERIDOS_POR_TELEFONO.md §6): cada uno con su
+   * nombre, de dónde salió y hasta cuándo. Se LEE `expiresAt`, que ya calculó
+   * el servidor — aquí nadie recalcula nada.
+   */
+  freeItems: { id: string; itemName: string; source: string; expiresAtMs: number | null; referredName?: string }[];
 };
 
 /** rewardTiers parse (visitsRequired = POINTS, legacy key). */
@@ -191,6 +198,13 @@ export default function PuntosGlobalPage() {
           rewardUnlocked:
             data.firstVisitRewardUnlocked === true &&
             welcomeStillClaimable(timestampToMillis(data.createdAt)),
+          freeItems: liveRows(data.freeItems).map((r) => ({
+            id: r.id,
+            itemName: r.itemName,
+            source: String(r.source),
+            expiresAtMs: toMs(r.expiresAt),
+            ...(r.referredName ? { referredName: r.referredName } : {}),
+          })),
           logoUrl: null,
           unlockedTier: null,
           nextTier: null,
@@ -273,10 +287,33 @@ export default function PuntosGlobalPage() {
                       <p className="truncate text-[15px] font-bold">{b.restaurantName}</p>
                       <p className="mt-0.5 text-xs text-[#1C2526]/60">
                         {b.visits} visita{b.visits !== 1 ? "s" : ""}
-                        {b.rewardUnlocked
+                        {/* Con filas manda la lista de abajo (dice CUÁNTOS y
+                            hasta cuándo); sin filas, el texto de siempre. */}
+                        {b.freeItems.length === 0 && b.rewardUnlocked
                           ? " · 🎁 premio de bienvenida disponible"
                           : ""}
                       </p>
+                      {b.freeItems.length > 0 ? (
+                        <ul className="mt-1 space-y-0.5">
+                          {b.freeItems.map((f) => (
+                            <li
+                              key={f.id}
+                              className="text-xs font-semibold"
+                              style={{ color: "#16A34A" }}
+                            >
+                              🎁 {f.itemName} gratis
+                              {f.source === "referral"
+                                ? f.referredName
+                                  ? ` — porque ${f.referredName} vino por tu link`
+                                  : " — porque tu amigo vino por tu link"
+                                : ""}
+                              {f.expiresAtMs
+                                ? ` · ${expiryLabel({ id: f.id, source: f.source, itemName: f.itemName, expiresAt: f.expiresAtMs })}`
+                                : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                       {b.unlockedTier ? (
                         <p className="mt-0.5 text-xs font-semibold" style={{ color: "#16A34A" }}>
                           🎁 Puedes canjear: {b.unlockedTier} — pídelo al pagar

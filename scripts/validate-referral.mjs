@@ -28,6 +28,13 @@ import {
   notifyTextFallback,
 } from "../lib/referral/referralLink.ts";
 
+/**
+ * Quita comentarios antes de revisar el copy: lo que le llega al comensal son
+ * los textos, y un comentario que DICE "nunca automático" no es una promesa.
+ */
+const soloCopy = (src) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+
 const RID = "gn3bKaysYnHIU3r8tun1";
 const TEL = "6141112233";
 
@@ -156,7 +163,8 @@ const avisa = notifyTextFallback({
   expiryLabel: "vence el 25 de septiembre",
 });
 const claimBar = readFileSync(new URL("../components/loyalty/ReferralClaimBar.tsx", import.meta.url), "utf8");
-for (const texto of [invita, avisa, claimBar]) {
+const bloque = readFileSync(new URL("../components/loyalty/ReceiptRewardsBlock.tsx", import.meta.url), "utf8");
+for (const texto of [invita, avisa, soloCopy(claimBar), soloCopy(bloque)]) {
   assert.ok(!/\bliga\b/i.test(texto), 'jamás "liga": se dice "link"');
   assert.ok(!/autom[áa]tic/i.test(texto), 'jamás prometer "automático": lo manda una persona');
   assert.ok(!/vi que (entraste|abriste|viste)/i.test(texto), 'jamás "vi que entraste"');
@@ -173,6 +181,52 @@ assert.ok(
 assert.ok(
   /No te\s+mandamos mensajes|No te mandamos mensajes/.test(claimBar.replace(/\s+/g, " ")),
   "la barra debe decir que no le vamos a mandar mensajes por dejar su número",
+);
+
+// ── El recibo de WhatsApp cierra con la invitación, nunca antes del total ──
+const receiptSrc = readFileSync(new URL("../lib/receiptWhatsapp.ts", import.meta.url), "utf8");
+assert.ok(
+  /inviteLink\?:\s*string \| null;/.test(receiptSrc),
+  "el recibo debe aceptar inviteLink OPCIONAL: sin él sale como siempre",
+);
+const idxLink = receiptSrc.indexOf("Tu recibo y tus puntos");
+// Con el emoji: así se busca la LÍNEA del mensaje, no el comentario del tipo.
+const idxInvita = receiptSrc.indexOf("🎁 Invita a un amigo y los dos ganan:");
+assert.ok(idxInvita > idxLink && idxLink > 0, "la invitación va DESPUÉS del link del recibo");
+const idxTotal = receiptSrc.indexOf("*Total:");
+assert.ok(idxInvita > idxTotal && idxTotal > 0, "y nunca antes del total");
+
+// El cobro no puede quedarse esperando el código.
+const posSrc = readFileSync(new URL("../app/vendor/pos/page.tsx", import.meta.url), "utf8");
+assert.ok(
+  /Promise\.race\(\[[\s\S]{0,400}referral-code[\s\S]{0,400}setTimeout/.test(posSrc),
+  "el link de invitación del recibo va con tope de tiempo: el cobro no espera por él",
+);
+
+// ── /puntos lee las filas, no recalcula ───────────────────────────────────
+const puntosSrc = readFileSync(new URL("../app/puntos/page.tsx", import.meta.url), "utf8");
+assert.ok(
+  /liveRows\(data\.freeItems\)/.test(puntosSrc),
+  "/puntos debe listar los tacos vivos desde las filas",
+);
+assert.ok(
+  /b\.freeItems\.length === 0 && b\.rewardUnlocked/.test(puntosSrc),
+  "/puntos: con filas manda la lista; SIN filas, el texto de siempre (nadie pierde su premio)",
+);
+
+// ── La Caja dice qué está entregando ──────────────────────────────────────
+assert.ok(
+  /freeItemSource === "referral"/.test(posSrc),
+  'la Caja debe distinguir "(referido)" de "(bienvenida)": no es el mismo premio',
+);
+const notifySrc = readFileSync(new URL("../components/loyalty/ReferralNotifyButton.tsx", import.meta.url), "utf8");
+assert.ok(
+  /notifiedAt/.test(notifySrc),
+  '"Avísale" debe marcar notifiedAt: si no, se le avisa dos veces al mismo',
+);
+assert.ok(
+  !/autom[áa]tic/i.test(soloCopy(notifySrc)),
+  '"Avísale" lo manda una PERSONA: jamás decir automático en pantalla',
 );
 
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");
