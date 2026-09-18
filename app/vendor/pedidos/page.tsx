@@ -28,6 +28,7 @@ import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
 import { primeChime, playNewOrderChime, flashTabTitle } from "@/lib/vendor/newOrderChime";
+import { IN_TRAY_STATUSES, mergeOrdersById } from "@/lib/order/trayOrders";
 import {
   isWaitingOrder,
   lateOrdersBanner,
@@ -255,54 +256,97 @@ function PedidosPageContent() {
         // Sin lectura, las tres: nunca un cobro sin botones.
       }
 
-      // Fetch last 48 hours to ensure all active orders are visible
+      // Dos lecturas que se unen en una sola bandeja:
+      //  1. Últimas 48 h: lo de hoy y ayer, entregados incluidos (la columna
+      //     "Entregados hoy" sale de aquí).
+      //  2. TODO lo que sigue en bandeja (pending / preparing / ready / open_tab)
+      //     sin importar la fecha. Antes solo existía la ventana de 48 h y un
+      //     pedido pendiente de 3+ días desaparecía de Pedidos aunque el Panel
+      //     lo siguiera contando como "sin cobrar" (18-sep-2026, Luzz Pizza:
+      //     5 pedidos, $370, y "Cobrarlos en Pedidos" caía en una bandeja
+      //     vacía). La app siempre leyó por estado sin fecha; esto la iguala.
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
       twoDaysAgo.setHours(0, 0, 0, 0);
 
-      const q = query(
-        collection(db, "restaurants", rid, "orders"),
+      const ordersRef = collection(db, "restaurants", rid, "orders");
+      const recentQ = query(
+        ordersRef,
         where("createdAt", ">=", Timestamp.fromDate(twoDaysAgo)),
         orderBy("createdAt", "desc")
       );
+      const inTrayQ = query(ordersRef, where("status", "in", IN_TRAY_STATUSES));
 
-      unsubscribe = onSnapshot(
-        q,
-        (snap) => {
-          const list: Order[] = snap.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Omit<Order, "id">),
-          }));
+      const recent = new Map<string, Order>();
+      const inTray = new Map<string, Order>();
+      let recentReady = false;
+      let inTrayReady = false;
 
-          // La campana: suena todo pedido que aparece en la bandeja
-          // (pending/open_tab) DESPUÉS del primer snapshot. Desde el 10-sep
-          // también los de la Caja: en La Familia uno cobra en la Caja y otro
-          // prepara con Pedidos abierto en otra pantalla, y tiene que oírlo al
-          // instante (antes la venta de la Caja caía en silencio).
-          const incoming = list.filter(
-            (o) => o.status === "pending" || o.status === "open_tab",
-          );
-          if (seenIncomingIds.current === null) {
-            seenIncomingIds.current = new Set(incoming.map((o) => o.id));
-          } else {
-            const seen = seenIncomingIds.current;
-            const fresh = incoming.filter((o) => !seen.has(o.id));
-            incoming.forEach((o) => seen.add(o.id));
-            if (fresh.length > 0) {
-              playNewOrderChime();
-              flashTabTitle();
-            }
+      const publish = () => {
+        // Los dos snapshots llegan por separado; la bandeja se pinta cuando
+        // ya están ambos, o el pedido viejo parpadearía al cargar.
+        if (!recentReady || !inTrayReady) return;
+        const list = mergeOrdersById([...recent.values()], [...inTray.values()]);
+
+        // La campana: suena todo pedido que aparece en la bandeja
+        // (pending/open_tab) DESPUÉS del primer snapshot. Desde el 10-sep
+        // también los de la Caja: en La Familia uno cobra en la Caja y otro
+        // prepara con Pedidos abierto en otra pantalla, y tiene que oírlo al
+        // instante (antes la venta de la Caja caía en silencio).
+        const incoming = list.filter(
+          (o) => o.status === "pending" || o.status === "open_tab",
+        );
+        if (seenIncomingIds.current === null) {
+          seenIncomingIds.current = new Set(incoming.map((o) => o.id));
+        } else {
+          const seen = seenIncomingIds.current;
+          const fresh = incoming.filter((o) => !seen.has(o.id));
+          incoming.forEach((o) => seen.add(o.id));
+          if (fresh.length > 0) {
+            playNewOrderChime();
+            flashTabTitle();
           }
-
-          setOrders(list);
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Orders listener error", err);
-          setError("Error de conexión con la base de datos.");
-          setLoading(false);
         }
+
+        setOrders(list);
+        setLoading(false);
+      };
+
+      const onListenerError = (err: unknown) => {
+        console.error("Orders listener error", err);
+        setError("Error de conexión con la base de datos.");
+        setLoading(false);
+      };
+
+      const toOrder = (d: { id: string; data: () => unknown }): Order => ({
+        id: d.id,
+        ...(d.data() as Omit<Order, "id">),
+      });
+
+      const unsubRecent = onSnapshot(
+        recentQ,
+        (snap) => {
+          recent.clear();
+          snap.docs.forEach((d) => recent.set(d.id, toOrder(d)));
+          recentReady = true;
+          publish();
+        },
+        onListenerError
       );
+      const unsubInTray = onSnapshot(
+        inTrayQ,
+        (snap) => {
+          inTray.clear();
+          snap.docs.forEach((d) => inTray.set(d.id, toOrder(d)));
+          inTrayReady = true;
+          publish();
+        },
+        onListenerError
+      );
+      unsubscribe = () => {
+        unsubRecent();
+        unsubInTray();
+      };
     }
 
     init().catch((err) => {
@@ -500,7 +544,7 @@ function PedidosPageContent() {
     }),
   };
 
-  // El pedido del link ya no está en ninguna columna (entregado otro día, cancelado o de hace más de 2 días).
+  // El pedido del link ya no está en ninguna columna (entregado otro día o cancelado; lo que sigue en bandeja siempre sale).
   const focusMissing =
     focusOrderId !== null && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
 
