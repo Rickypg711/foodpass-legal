@@ -1,0 +1,178 @@
+// 🎁 Referidos por teléfono — candado del 18-sep-2026 (docs/REFERIDOS_POR_TELEFONO.md §4, §5, §9).
+//
+// Cinco reglas que no se pueden volver a romper:
+//   1. El teléfono de quien invita NUNCA viaja en el link ni en el pedido.
+//      Viaja un código que solo el servidor puede resolver.
+//   2. El código no trae letras que se dicten mal por teléfono (0/O, 1/I/L,
+//      2/Z, 5/S, 8/B), y se lee aunque lo teclen en minúsculas o con espacios.
+//      Su alfabeto es el MISMO que en FOODPASS/functions/referral.js: si uno
+//      cambia, el link de un volante deja de resolver.
+//   3. El código aguanta 30 días en el navegador del amigo (abre el link hoy y
+//      viene el viernes), y el pedido lo recoge de ahí.
+//   4. La reclamación de mostrador contesta 204 SIEMPRE: decir por qué no se
+//      pudo le diría a un curioso si un número ya compró en el local.
+//   5. El copy no miente: nunca "liga", nunca "automático", nunca "vi que".
+// Run: node --experimental-strip-types scripts/validate-referral.mjs
+
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import {
+  CODE_ALPHABET,
+  CODE_LEN,
+  REF_TTL_DAYS,
+  parseReferralCode,
+  parseStoredRef,
+  storedRefValue,
+  referralLink,
+  inviteTextFallback,
+  notifyTextFallback,
+} from "../lib/referral/referralLink.ts";
+
+const RID = "gn3bKaysYnHIU3r8tun1";
+const TEL = "6141112233";
+
+// ── 1. El número no viaja ──────────────────────────────────────────────────
+const link = referralLink(RID, "ACDEFG", "https://comeleal.com");
+assert.equal(link, `https://comeleal.com/menu/${RID}?ref=ACDEFG`);
+assert.ok(!link.includes(TEL), "el link JAMÁS puede llevar el teléfono");
+assert.ok(!/\d{10}/.test(new URL(link).search), "ni algo con forma de teléfono en la query");
+assert.equal(
+  referralLink(RID, "no-sirve"),
+  `https://comeleal.com/menu/${RID}`,
+  "con un código inválido sale el menú pelón, no un link roto",
+);
+
+// ── 2. El alfabeto del código ──────────────────────────────────────────────
+assert.equal(CODE_LEN, 6);
+for (const malo of ["0", "O", "1", "I", "L", "2", "Z", "5", "S", "8", "B"]) {
+  assert.ok(!CODE_ALPHABET.includes(malo), `el alfabeto no debe traer ${malo}`);
+}
+// Espejo exacto con el servidor: si esto falla, los códigos dejan de resolver.
+const serverSrc = readFileSync(
+  "/Users/ricardoparedes/projects/FOODPASS/functions/referral.js",
+  "utf8",
+);
+const serverAlphabet = /CODE_ALPHABET\s*=\s*'([A-Z0-9]+)'/.exec(serverSrc)?.[1];
+assert.equal(
+  serverAlphabet,
+  CODE_ALPHABET,
+  "el alfabeto de la web y el de functions/referral.js tienen que ser IDÉNTICOS",
+);
+const serverLen = /CODE_LEN\s*=\s*(\d+)/.exec(serverSrc)?.[1];
+assert.equal(Number(serverLen), CODE_LEN, "el largo del código también tiene que coincidir");
+
+assert.equal(parseReferralCode("acdefg"), "ACDEFG", "tecleado en minúsculas vale");
+assert.equal(parseReferralCode("  ACDEFG  "), "ACDEFG", "con espacios pegados vale");
+for (const malo of ["", "ABC", "ABCDEFG", "ABCDE0", "ABCDE1", "../../x", "ABC DEF", null, 7, {}]) {
+  assert.equal(parseReferralCode(malo), null, JSON.stringify(malo));
+}
+
+// ── 3. Los 30 días en el navegador del amigo ───────────────────────────────
+assert.equal(REF_TTL_DAYS, 30);
+const NOW = Date.parse("2026-09-18T20:00:00Z");
+const guardado = storedRefValue("ACDEFG", NOW);
+assert.equal(parseStoredRef(guardado, NOW), "ACDEFG");
+assert.equal(
+  parseStoredRef(guardado, NOW + 29 * 86400000),
+  "ACDEFG",
+  "a los 29 días todavía vale",
+);
+assert.equal(
+  parseStoredRef(guardado, NOW + 31 * 86400000),
+  null,
+  "a los 31 días se olvida: no se le cuelga un referido viejo a un pedido nuevo",
+);
+assert.equal(parseStoredRef("ACDEFG", NOW), "ACDEFG", "formato viejo sin fecha: se acepta");
+assert.equal(parseStoredRef("basura{", NOW), null);
+assert.equal(parseStoredRef(null, NOW), null);
+
+// ── El código llega al pedido ──────────────────────────────────────────────
+// (por fuente, como validate-order-payload.mjs: buildOrderPayload importa con
+//  el alias "@/" y node no lo resuelve fuera de Next)
+const payloadSrc = readFileSync(new URL("../lib/order/buildOrderPayload.ts", import.meta.url), "utf8");
+assert.ok(
+  /const ref = parseReferralCode\(input\.referralCode\)/.test(payloadSrc),
+  "buildOrderPayload debe pasar el referido por parseReferralCode: basura no se guarda",
+);
+assert.ok(
+  /if \(ref\) \{\s*payload\.referralCode = ref;/.test(payloadSrc),
+  "buildOrderPayload solo escribe referralCode cuando el código es válido",
+);
+const createSrc = readFileSync(new URL("../lib/order/createCustomerOrder.ts", import.meta.url), "utf8");
+assert.ok(
+  /referralCode: readStoredRef\(params\.restaurantId\)/.test(createSrc),
+  "el pedido debe leer el código guardado en el navegador del amigo, o su amigo no gana nada",
+);
+// Y nunca el teléfono de quien invita.
+assert.ok(
+  !/referrerPhone/.test(payloadSrc) && !/referrerPhone/.test(createSrc),
+  "el teléfono de quien invita jamás se arma en el navegador",
+);
+
+// ── 4. La reclamación contesta 204 siempre ─────────────────────────────────
+const claims = readFileSync(new URL("../app/api/referral-claims/route.ts", import.meta.url), "utf8");
+assert.ok(
+  !/status:\s*(4\d\d|5\d\d)/.test(claims),
+  "referral-claims NO debe contestar 4xx ni 5xx: siempre 204, o se filtra quién ya es cliente",
+);
+assert.ok(
+  /visits\s*\?\?\s*0\s*\)\s*>\s*0\)\s*return noContent\(\)/.test(claims.replace(/\s+/g, " ")) ||
+    /visits[^\n]*>\s*0/.test(claims),
+  "referral-claims debe descartar a un teléfono que ya le compró al local (candado 1 de §5)",
+);
+assert.ok(
+  /referrerPhone === phone/.test(claims),
+  "referral-claims debe impedir que alguien se refiera a sí mismo",
+);
+
+// El endpoint del código exige pedido PAGADO (§2: su prueba de que ya compró).
+const codeRoute = readFileSync(new URL("../app/api/referral-code/route.ts", import.meta.url), "utf8");
+assert.ok(
+  /paymentStatus !== "paid"/.test(codeRoute),
+  "referral-code solo entrega código si ese pedido está pagado",
+);
+assert.ok(
+  /receiptViewFromOrder/.test(codeRoute),
+  "referral-code debe exigir recibo público: el link es la llave",
+);
+
+// Ninguna de las dos rutas confía en un teléfono que venga del navegador para
+// decidir de QUIÉN es el premio: el de quien invita sale del doc del código.
+assert.ok(
+  !/body\.referrerPhone|body\.phone.*referrer/.test(claims),
+  "el teléfono de quien invita jamás se acepta desde el navegador",
+);
+
+// ── 5. El copy ─────────────────────────────────────────────────────────────
+const invita = inviteTextFallback({
+  itemName: "Taco suelto",
+  restaurantName: "Tacos de Suadero La Familia",
+  link,
+});
+const avisa = notifyTextFallback({
+  itemName: "Taco suelto",
+  restaurantName: "Tacos de Suadero La Familia",
+  friendName: "Ysendi",
+  expiryLabel: "vence el 25 de septiembre",
+});
+const claimBar = readFileSync(new URL("../components/loyalty/ReferralClaimBar.tsx", import.meta.url), "utf8");
+for (const texto of [invita, avisa, claimBar]) {
+  assert.ok(!/\bliga\b/i.test(texto), 'jamás "liga": se dice "link"');
+  assert.ok(!/autom[áa]tic/i.test(texto), 'jamás prometer "automático": lo manda una persona');
+  assert.ok(!/vi que (entraste|abriste|viste)/i.test(texto), 'jamás "vi que entraste"');
+}
+assert.ok(invita.includes(link), "el texto de invitación lleva el link");
+assert.ok(invita.includes("Taco suelto"), "y dice qué se regala, con su nombre");
+assert.ok(avisa.includes("Ysendi"), "el aviso dice quién vino");
+assert.ok(avisa.includes("vence el 25 de septiembre"), "y hasta cuándo puede pedirlo");
+// La barra del amigo no promete lo que los candados pueden negar.
+assert.ok(
+  /primera vez/i.test(claimBar),
+  'la barra debe decir "si es tu primera vez": un cliente viejo no califica',
+);
+assert.ok(
+  /No te\s+mandamos mensajes|No te mandamos mensajes/.test(claimBar.replace(/\s+/g, " ")),
+  "la barra debe decir que no le vamos a mandar mensajes por dejar su número",
+);
+
+console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");

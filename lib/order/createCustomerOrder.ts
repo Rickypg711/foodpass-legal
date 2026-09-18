@@ -12,6 +12,7 @@ import {
 import { generatePickupPin } from "@/lib/order/pickupPin";
 import { saveOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import { saveDinerIdentity } from "@/lib/order/dinerIdentity";
+import { readStoredRef } from "@/lib/referral/refSession";
 import type { CartLine } from "@/lib/cart/types";
 
 export type CreateOrderResult = {
@@ -78,6 +79,11 @@ export async function createCustomerWebOrder(params: {
     fulfillment: params.fulfillment ?? null,
     deliveryAddress: params.deliveryAddress ?? null,
     deliveryFee: params.deliveryFee ?? null,
+    // Referido (§4): el amigo abrió /menu/{rid}?ref=ACDEFG y el código quedó
+    // guardado en SU navegador (30 días). Se lee aquí, en el último momento,
+    // para que ningún camino del checkout se lo olvide. Si no hay, el pedido
+    // sale igual que siempre.
+    referralCode: readStoredRef(params.restaurantId),
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {

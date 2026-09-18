@@ -52,6 +52,13 @@ export type OrderRedemptionRequest = {
 export type PickupPaymentMethod = "cash" | "card" | "transfer";
 
 export type CustomerOrderPayload = {
+  /**
+   * Código de referido (§4 de docs/REFERIDOS_POR_TELEFONO.md): el amigo abrió
+   * /menu/{rid}?ref=ACDEFG. El servidor lo resuelve para saber a quién darle su
+   * taco cuando este pedido quede pagado. El número de quien invita NUNCA
+   * viaja en el pedido ni en la URL: solo este código.
+   */
+  referralCode?: string;
   restaurantId: string;
   customerId: string;
   items: OrderItemPayload[];

@@ -29,6 +29,8 @@ import { getRestaurantSnapOnce } from "@/lib/restaurantDocCache";
 import { warmUpsellSuggestion } from "@/lib/upsellSuggestionCache";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
+import { resolveRefFromLocation } from "@/lib/referral/refSession";
+import ReferralClaimBar from "@/components/loyalty/ReferralClaimBar";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
 import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
@@ -1518,6 +1520,17 @@ function PublicMenuPageWithOrdering({
     setTableNumber(resolveTableFromLocation(restaurantId));
   }, [restaurantId]);
 
+  /** Código de referido del link del que invita (?ref=ACDEFG). Vacío = nadie lo trajo. */
+  const [refCode, setRefCode] = useState("");
+  // Mismo problema que la mesa: el amigo aterriza con ?ref=ACDEFG, navega, y el
+  // parámetro se pierde de la URL. Se guarda en SU navegador (30 días, cruza
+  // pestañas: puede abrir el link hoy y venir el viernes) y el pedido lo
+  // recoge de ahí. Si esto no corre, su amigo no gana su taco (§4).
+  useEffect(() => {
+    if (!restaurantId) return;
+    setRefCode(resolveRefFromLocation(restaurantId));
+  }, [restaurantId]);
+
   useEffect(() => {
     if (!restaurantId) {
       setError("Falta el id del restaurante");
@@ -1671,6 +1684,15 @@ function PublicMenuPageWithOrdering({
       {/* §6.10: si quien mira es EL DUEÑO y no hay horario, la ausencia se
           le señala en su propia vitrina. Invisible para clientes. */}
       <OwnerHoursStrip rdata={rdata} />
+
+      {/* Lo trajo un amigo (?ref=): pone su número y su taco queda apuntado.
+          Es el camino de MOSTRADOR — sin esto el referido solo serviría para
+          quien pide en línea, y en Suadero casi todo se pide en la ventanilla. */}
+      <ReferralClaimBar
+        restaurantId={restaurantId}
+        refCode={refCode}
+        itemName={firstVisitReward}
+      />
 
       {/* Llegó por el QR de su mesa: se le dice de una, para que sepa que el
           pedido va a su mesa y no tiene que ir por él. */}
@@ -2043,6 +2065,16 @@ function PublicMenuPageBrowseOnly({
     };
   }, [restaurantId, initial, preview]);
 
+  /** Código de referido del link del que invita (?ref=). Vacío = nadie lo trajo. */
+  const [refCode, setRefCode] = useState("");
+  // El local sin pedidos en línea es JUSTO el caso de mostrador: el amigo abre
+  // el link, deja su número y pide en la ventanilla. Sin esto, en un menú de
+  // solo mirar el referido no existiría (§4).
+  useEffect(() => {
+    if (!restaurantId) return;
+    setRefCode(resolveRefFromLocation(restaurantId));
+  }, [restaurantId]);
+
   const categoryGroups = groupMenuByCategory(items);
 
   return (
@@ -2057,6 +2089,13 @@ function PublicMenuPageBrowseOnly({
         brand={brand}
         tagline={tagline}
         skin={skin}
+      />
+
+      {/* Lo trajo un amigo: pone su número y su taco queda apuntado. */}
+      <ReferralClaimBar
+        restaurantId={restaurantId}
+        refCode={refCode}
+        itemName={firstVisitReward}
       />
 
       <main className={"mx-auto w-full " + mainWidthFor(skin) + " px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]"}>

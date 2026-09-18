@@ -23,6 +23,7 @@ import {
   normalizeTableNumber,
   tableLabel,
 } from "@/lib/order/tableSession";
+import { parseReferralCode } from "@/lib/referral/referralLink";
 
 export type BuildOrderInput = {
   restaurantId: string;
@@ -30,6 +31,13 @@ export type BuildOrderInput = {
   customerName: string;
   /** Digits-only customer phone/WhatsApp (already normalized by the caller). */
   customerPhone?: string;
+  /**
+   * Código de referido (§4 de docs/REFERIDOS_POR_TELEFONO.md): el amigo abrió
+   * /menu/{rid}?ref=ACDEFG. Viaja en el pedido para que el servidor resuelva a
+   * QUIÉN darle su taco cuando esto quede pagado. El número de quien invita
+   * NUNCA viaja: solo este código, que únicamente el servidor puede resolver.
+   */
+  referralCode?: string | null;
   pickupPin: string;
   cartLines: CartLine[];
   restaurantName: string;
@@ -227,6 +235,13 @@ export function buildCustomerWebOrderPayload(
   if (phone.length > 10) phone = phone.slice(-10);
   if (phone) {
     payload.customerPhone = phone;
+  }
+
+  // El referido: solo si tiene forma de código. Basura no se guarda, y el
+  // grant de todos modos lo rechazaría (§5).
+  const ref = parseReferralCode(input.referralCode);
+  if (ref) {
+    payload.referralCode = ref;
   }
 
   const r = input.redemptionRequest;
