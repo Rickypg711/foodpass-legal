@@ -11,6 +11,7 @@
  */
 
 import { isInternalConversion } from "@/lib/meta/internal";
+import { buildFbcFromStored } from "@/lib/vendorLead/utmStore";
 
 export type BrowserCapiEventName =
   | "Lead"
@@ -88,7 +89,8 @@ export function sendBrowserCapiEvents(
   const body = {
     events,
     fbp: readCookie("_fbp"),
-    fbc: readCookie("_fbc"),
+    // Cookie del pixel primero; si no está, el fbclid guardado del clic.
+    fbc: readCookie("_fbc") ?? buildFbcFromStored(),
     client_user_agent: navigator.userAgent,
     ...(identity
       ? {

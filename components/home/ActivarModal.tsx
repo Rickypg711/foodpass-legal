@@ -370,6 +370,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         if (u.utm_term) acquisition.utmTerm = u.utm_term;
         if (attribution?.referrerHost) acquisition.referrerHost = attribution.referrerHost;
         if (attribution?.landingPath) acquisition.landingPath = attribution.landingPath;
+        if (attribution?.fbclid) acquisition.fbclid = attribution.fbclid;
         if (attribution?.capturedAt) acquisition.firstSeenAt = new Date(attribution.capturedAt);
         await setDoc(doc(db, "restaurants", restaurantRef.id, "private", "acquisition"), acquisition);
       } catch (acqErr) {

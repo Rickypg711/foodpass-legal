@@ -157,7 +157,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       safeString(request.headers.get("user-agent")) ??
       safeString(body.client_user_agent),
     fbp: safeString(body.fbp, 200),
-    fbc: safeString(body.fbc, 200),
+    fbc: safeString(body.fbc, 500),
     ...hashedIdentity({
       email: identityEmail,
       phone: safeString(body.identity?.phone, 40),

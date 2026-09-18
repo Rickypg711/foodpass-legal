@@ -43,7 +43,24 @@ export type StoredAttribution = {
   landingPath?: string;
   /** Epoch ms of the touch that set this record. */
   capturedAt: number;
+  /**
+   * Meta click id (?fbclid=…) del último clic en un anuncio (17-sep-2026).
+   * El pixel lo guarda en la cookie _fbc, pero si la cookie no está (in-app
+   * browser, bloqueada, o el pixel cargó después) el evento del servidor
+   * llega sin él. Con esto se arma fbc = fb.1.<fbclidAt>.<fbclid>.
+   */
+  fbclid?: string;
+  fbclidAt?: number;
 };
+
+function parseFbclid(search: string): string | undefined {
+  try {
+    const v = new URLSearchParams(search).get("fbclid");
+    return v && v.length > 0 ? v.slice(0, 400) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function cleanUtms(raw: unknown): VendorUtmParams {
   const out: VendorUtmParams = {};
@@ -82,6 +99,8 @@ function readStored(): StoredAttribution | null {
           landingPath:
             typeof parsed.landingPath === "string" ? parsed.landingPath.slice(0, 200) : undefined,
           capturedAt,
+          fbclid: typeof parsed.fbclid === "string" ? parsed.fbclid.slice(0, 400) : undefined,
+          fbclidAt: typeof parsed.fbclidAt === "number" ? parsed.fbclidAt : undefined,
         };
       }
       localStorage.removeItem(STORE_KEY);
@@ -118,21 +137,42 @@ export function captureAttribution(search: string): StoredAttribution | null {
   if (typeof window === "undefined") return null;
 
   const fromUrl = parseUtmsFromSearch(search);
+  const fbclid = parseFbclid(search);
   const referrerHost = externalReferrerHost();
   const landingPath = window.location.pathname.slice(0, 200);
 
   if (Object.keys(fromUrl).length > 0) {
+    const prev = readStored();
     const record: StoredAttribution = {
       utms: fromUrl,
       referrerHost,
       landingPath,
       capturedAt: Date.now(),
+      // El clic nuevo trae su fbclid; si no, se conserva el anterior.
+      fbclid: fbclid ?? prev?.fbclid,
+      fbclidAt: fbclid ? Date.now() : prev?.fbclidAt,
     };
     writeStored(record);
     return record;
   }
 
   const stored = readStored();
+
+  // Un fbclid sin UTMs (link del anuncio sin parámetros, o compartido desde
+  // el anuncio): se guarda el clic sin borrar la campaña que ya había.
+  if (fbclid && fbclid !== stored?.fbclid) {
+    const record: StoredAttribution = {
+      utms: stored?.utms ?? {},
+      referrerHost: stored?.referrerHost ?? referrerHost,
+      landingPath: stored?.landingPath ?? landingPath,
+      capturedAt: stored?.capturedAt ?? Date.now(),
+      fbclid,
+      fbclidAt: Date.now(),
+    };
+    writeStored(record);
+    return record;
+  }
+
   if (stored) return stored;
 
   if (referrerHost) {
@@ -151,4 +191,15 @@ export function captureAttribution(search: string): StoredAttribution | null {
  */
 export function readAndPersistUtms(search: string): VendorUtmParams {
   return captureAttribution(search)?.utms ?? {};
+}
+
+/**
+ * fbc para Conversions API cuando la cookie _fbc no existe (17-sep-2026).
+ * Formato oficial de Meta: fb.<subdomainIndex>.<creationTime ms>.<fbclid>;
+ * subdomainIndex 1 = dominio raíz (comeleal.com).
+ */
+export function buildFbcFromStored(): string | undefined {
+  const stored = readStored();
+  if (!stored?.fbclid || !stored.fbclidAt) return undefined;
+  return `fb.1.${stored.fbclidAt}.${stored.fbclid}`;
 }

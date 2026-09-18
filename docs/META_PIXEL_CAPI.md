@@ -19,6 +19,14 @@ La identidad viaja CRUDA solo del navegador a `/api/meta/events` (misma origin) 
 servidor la hashea SHA-256 (`em`, `ph`, `external_id`) antes de hablar con Meta.
 Un teléfono de 10 dígitos sin país conocido NO se manda (regla: jamás coser 52).
 
+## Click id (fbc)
+
+El pixel guarda el `fbclid` del anuncio en la cookie `_fbc`. Si la cookie no está
+(navegador dentro de Facebook, bloqueada, o el pixel cargó tarde), el servidor
+arma `fbc = fb.1.<ms>.<fbclid>` con el fbclid que `AttributionCapture` guardó en
+`localStorage` (30 días, `lib/vendorLead/utmStore.ts`). Diagnóstico de Meta del
+17-sep: "low coverage of fbc through Conversions API".
+
 ## Lo que NO cuenta (17-sep-2026)
 
 - **Cuentas internas:** `comeleal+…@gmail.com`, `comeleal@gmail.com`, `paredesricardog@gmail.com`
@@ -39,11 +47,13 @@ formulario de contacto también disparaba Lead, y cada montaje de Ricardo era un
 Con esa señal, optimizar MENU_B por Lead habría hecho que Meta buscara gente
 parecida a Ricardo.
 
-## Pendiente de Ricardo (un clic, sin código)
+## Events Manager (hecho 17-sep-2026)
 
-Events Manager → Comeleal Pixel → Configuración → activar
-**"Coincidencias avanzadas automáticas"**. Sube la calidad de coincidencia del pixel
-del navegador sin tocar nada aquí.
+- "Coincidencias avanzadas automáticas": ON (correo, teléfono, id externo…).
+- "Automatic events": OFF. Meta había creado solo un `InitiateCheckout` con el
+  botón "Comenzar" de una página del panel; se borró.
+- Allow list de dominios: `comeleal.com` y subdominios. Antes localhost mandaba
+  eventos al pixel real (426 en un día de QA).
 
 ## Cómo usarlo en la pauta
 

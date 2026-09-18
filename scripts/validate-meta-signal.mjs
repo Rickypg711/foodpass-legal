@@ -70,4 +70,10 @@ assert.ok(/<InternalBrowserMarker \/>/.test(layout), "layout monta InternalBrows
 const marker = read("components/analytics/InternalBrowserMarker.tsx");
 assert.ok(/markInternalBrowser\(\)/.test(marker) && /onAuthStateChanged/.test(marker), "el marcador escucha la sesión y marca");
 
+// 7. fbc: si no hay cookie _fbc, se arma del fbclid guardado (Meta: "low fbc coverage")
+const store = read("lib/vendorLead/utmStore.ts");
+assert.ok(/fbclid/.test(store) && /buildFbcFromStored/.test(store), "utmStore guarda fbclid y arma fbc");
+const browser = read("lib/meta/capiBrowser.ts");
+assert.ok(/readCookie\("_fbc"\) \?\? buildFbcFromStored\(\)/.test(browser), "capiBrowser usa la cookie y si no, el fbclid guardado");
+
 console.log("meta-signal OK");
