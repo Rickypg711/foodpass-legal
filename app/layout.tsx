@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { rootMetadata } from "@/lib/siteMetadata";
 import { MetaPixelProvider } from "@/components/analytics/MetaPixelProvider";
 import { AttributionCapture } from "@/components/analytics/AttributionCapture";
+import { InternalBrowserMarker } from "@/components/analytics/InternalBrowserMarker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
         {children}
         <MetaPixelProvider />
         <AttributionCapture />
+        <InternalBrowserMarker />
       </body>
     </html>
   );

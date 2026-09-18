@@ -64,4 +64,10 @@ assert.ok(/event_name:\s*"SubmitApplication"/.test(demo), "/demo dispara SubmitA
 assert.ok(/isInternalConversion\(\)/.test(demo), "/demo respeta el navegador interno");
 assert.ok(/"SubmitApplication"/.test(route), "la ruta acepta SubmitApplication");
 
+// 6. la marca de navegador interno se pone al iniciar sesión, en cualquier página
+const layout = read("app/layout.tsx");
+assert.ok(/<InternalBrowserMarker \/>/.test(layout), "layout monta InternalBrowserMarker");
+const marker = read("components/analytics/InternalBrowserMarker.tsx");
+assert.ok(/markInternalBrowser\(\)/.test(marker) && /onAuthStateChanged/.test(marker), "el marcador escucha la sesión y marca");
+
 console.log("meta-signal OK");
