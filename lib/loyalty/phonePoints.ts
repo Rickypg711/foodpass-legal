@@ -32,6 +32,7 @@ import {
   timestampToMillis,
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
+import { freeItemClaimable } from "@/lib/loyalty/freeItems";
 import { parseDiscountProfiles } from "@/lib/loyalty/discountProfiles";
 import {
   mergeBillingOverPublic,
@@ -218,12 +219,19 @@ export async function creditPhonePointsForOrder(params: {
     const discountAmount = Number(da?.amount) || 0;
 
     const balanceAfterEarn = (Number(prev.points) || 0) + earnedPoints;
+    // TACOS COMO FILAS (docs/REFERIDOS_POR_TELEFONO.md §6 y §7): con la
+    // compuerta prendida manda el `expiresAt` de la fila, que el servidor ya
+    // calculó (7 días desde que el comensal lo VIO, 30 desde que nació). Nadie
+    // recalcula aquí. `null` = local sin compuerta o doc sin migrar → se usa la
+    // regla de siempre (createdAt + 7 días), intacta, para no quitarle el taco
+    // a nadie mientras esto se enciende local por local.
+    const rowsClaimable = freeItemClaimable(rdata, prev);
     // Window enforced at apply time too: an expired welcome reward can't be
     // redeemed even if a stale client still offers it.
     const welcomeApplied =
       welcomeRequested &&
       prev.firstVisitRewardUnlocked === true &&
-      welcomeStillClaimable(timestampToMillis(prev.createdAt));
+      (rowsClaimable ?? welcomeStillClaimable(timestampToMillis(prev.createdAt)));
     const redemptionApplied =
       welcomeApplied || (redemptionCost > 0 && balanceAfterEarn >= redemptionCost);
     const finalPoints =
@@ -253,6 +261,21 @@ export async function creditPhonePointsForOrder(params: {
             : firstVisit && !noEarn,
         ...(welcomeApplied
           ? { firstVisitRewardRedeemedAt: serverTimestamp() }
+          : {}),
+        // El canje de la fila lo hace el SERVIDOR (functions/free_items.js):
+        // la web no puede escribir `freeItems` — las reglas de Firestore no la
+        // dejan, y así ninguna sesión del local puede regalarse tacos. Aquí
+        // solo se deja la intención con el número de pedido; el servidor marca
+        // la fila que vence primero, le pone ese pedido y borra la intención.
+        // Un pedido no puede canjear dos tacos (candado en el servidor).
+        ...(welcomeApplied && rowsClaimable === true
+          ? {
+              freeItemsRedeemIntent: {
+                orderId,
+                via: redemptionVia,
+                at: Timestamp.now(),
+              },
+            }
           : {}),
         lastVisitAt: serverTimestamp(),
         ...(discountAmount > 0
