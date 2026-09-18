@@ -63,12 +63,65 @@ function isFbqReady(): boolean {
  * @param customData - Optional key-value pairs for the event (3rd fbq argument)
  * @param eventId    - Deduplication ID — must match the CAPI event_id
  */
+// ---------------------------------------------------------------------------
+// Cola de eventos (17-sep-2026)
+// El script del pixel entra con strategy="afterInteractive", o sea DESPUÉS de
+// la hidratación. Un useEffect que dispara ViewContent en el primer render
+// llegaba antes de que existiera window.fbq y el evento se tiraba en silencio:
+// Events Manager tenía 74 ViewContent del navegador contra 1,482 del servidor.
+// Ahora, si fbq no está, el evento espera y se manda en cuanto aparece.
+// ---------------------------------------------------------------------------
+
+type PendingPixelEvent = [string, Record<string, unknown> | undefined, string | undefined];
+const pending: PendingPixelEvent[] = [];
+let flushTimer: number | undefined;
+const FLUSH_EVERY_MS = 250;
+const FLUSH_MAX_TRIES = 60; // 15 s; después se descarta (bloqueador de anuncios, etc.)
+
+/** Manda lo que quedó en cola. Seguro llamarlo cuando sea. */
+export function flushPendingPixelEvents(): void {
+  if (!isFbqReady()) return;
+  while (pending.length > 0) {
+    const [event, customData, eventId] = pending.shift()!;
+    fireFbq(event, customData, eventId);
+  }
+}
+
+function scheduleFlush(): void {
+  if (flushTimer !== undefined || typeof window === "undefined") return;
+  let tries = 0;
+  flushTimer = window.setInterval(() => {
+    tries += 1;
+    if (isFbqReady()) {
+      flushPendingPixelEvents();
+    }
+    if (pending.length === 0 || tries >= FLUSH_MAX_TRIES) {
+      window.clearInterval(flushTimer);
+      flushTimer = undefined;
+      pending.length = 0;
+    }
+  }, FLUSH_EVERY_MS);
+}
+
 function callFbq(
   event: string,
   customData?: Record<string, unknown>,
   eventId?: string,
 ): void {
-  if (!META_PIXEL_ID || !isFbqReady()) return;
+  if (!META_PIXEL_ID || typeof window === "undefined") return;
+  if (!isFbqReady()) {
+    pending.push([event, customData, eventId]);
+    scheduleFlush();
+    return;
+  }
+  fireFbq(event, customData, eventId);
+}
+
+function fireFbq(
+  event: string,
+  customData?: Record<string, unknown>,
+  eventId?: string,
+): void {
   try {
     const fbq = window.fbq!;
     const hasData =

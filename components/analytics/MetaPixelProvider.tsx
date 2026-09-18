@@ -24,6 +24,7 @@ import {
   META_PIXEL_ID,
   buildPixelInitSnippet,
   pixelPageView,
+  flushPendingPixelEvents,
 } from "@/lib/meta/pixel";
 import { pixelAllowedOnPath } from "@/lib/meta/pixelPaths";
 
@@ -76,6 +77,7 @@ function MetaPixelInner({ pixelId }: { pixelId: string }) {
         id="meta-pixel-init"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: buildPixelInitSnippet(pixelId) }}
+        onReady={flushPendingPixelEvents}
       />
 
       {/*

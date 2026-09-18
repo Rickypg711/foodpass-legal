@@ -76,4 +76,9 @@ assert.ok(/fbclid/.test(store) && /buildFbcFromStored/.test(store), "utmStore gu
 const browser = read("lib/meta/capiBrowser.ts");
 assert.ok(/readCookie\("_fbc"\) \?\? buildFbcFromStored\(\)/.test(browser), "capiBrowser usa la cookie y si no, el fbclid guardado");
 
+// 8. el pixel encola si fbq aún no existe (74 ViewContent navegador vs 1,482 servidor)
+const pixel = read("lib/meta/pixel.ts");
+assert.ok(/pending\.push\(\[event, customData, eventId\]\)/.test(pixel), "pixel.ts encola cuando fbq no está listo");
+assert.ok(/export function flushPendingPixelEvents/.test(pixel), "pixel.ts expone flushPendingPixelEvents");
+
 console.log("meta-signal OK");
