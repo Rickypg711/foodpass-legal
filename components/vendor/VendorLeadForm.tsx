@@ -12,7 +12,7 @@ import {
   type VendorUtmParams,
 } from "@/lib/analytics/vendorAcquisition";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
-import { pixelLead, pixelContact } from "@/lib/meta/pixel";
+import { pixelContact } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import {
@@ -132,24 +132,22 @@ export function VendorLeadForm() {
         utm_term: utms.utm_term,
       });
 
-      // Generate unique event IDs for deduplication.
-      // Each event_id is shared between the browser fbq() call and the
-      // server CAPI call so Meta counts only one event per pair.
-      const leadEventId = generateEventId();
+      // 17-sep-2026: este formulario YA NO dispara "Lead". Lead significa una
+      // sola cosa en Comeleal: se creó un restaurante (ActivarModal). Aquí
+      // solo pidió que le escribamos por WhatsApp → "Contact". Con los dos
+      // sumados, Meta contaba 91 Leads contra 46 altas y optimizaba por
+      // "me contactaron", no por "se dio de alta".
       const contactEventId = generateEventId();
-
-      // Browser Pixel — Lead (primary conversion signal for Meta optimisation).
-      pixelLead(leadEventId);
 
       // Browser Pixel — Contact (WhatsApp outreach initiated).
       pixelContact(contactEventId);
 
-      // Server CAPI — Lead + Contact with the same event_ids for deduplication.
-      // UTMs are forwarded so Meta can attribute the conversion to the campaign.
+      // Server CAPI — Contact with the same event_id for deduplication.
+      // UTMs are forwarded so Meta can attribute the contact to the campaign.
       sendBrowserCapiEvents([
         {
-          event_name: "Lead",
-          event_id: leadEventId,
+          event_name: "Contact",
+          event_id: contactEventId,
           event_source_url: window.location.href,
           custom_data: {
             utm_source: utms.utm_source,
@@ -158,11 +156,6 @@ export function VendorLeadForm() {
             utm_content: utms.utm_content,
             utm_term: utms.utm_term,
           },
-        },
-        {
-          event_name: "Contact",
-          event_id: contactEventId,
-          event_source_url: window.location.href,
         },
       ]);
 

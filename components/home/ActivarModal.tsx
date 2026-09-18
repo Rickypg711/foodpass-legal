@@ -37,6 +37,7 @@ import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
+import { isInternalConversion } from "@/lib/meta/internal";
 import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
 import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone } from "@/lib/phone/phoneCountry";
@@ -379,24 +380,40 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       // This is the real "Lead": Meta optimizes leads campaigns on this event.
       // Pixel + CAPI share one event_id so Meta deduplicates the pair.
       // Wrapped so analytics failures can never break the signup flow.
+      //
+      // 17-sep-2026: si la cuenta es interna (alias comeleal+…, Ricardo
+      // montando un menú para entregarlo) NO es conversión: ni pixel ni CAPI.
+      // Y cuando sí lo es, viaja quién fue (correo, teléfono, uid) para que el
+      // servidor lo hashee y Meta empareje bien al que se registró.
       try {
         const utms = readAndPersistUtms(window.location.search);
-        const leadEventId = generateEventId();
-        pixelLead(leadEventId);
-        sendBrowserCapiEvents([
-          {
-            event_name: "Lead",
-            event_id: leadEventId,
-            event_source_url: window.location.href,
-            custom_data: {
-              utm_source: utms.utm_source,
-              utm_medium: utms.utm_medium,
-              utm_campaign: utms.utm_campaign,
-              utm_content: utms.utm_content,
-              utm_term: utms.utm_term,
+        const internalSignup = isInternalConversion(user.email);
+        if (!internalSignup) {
+          const leadEventId = generateEventId();
+          pixelLead(leadEventId);
+          sendBrowserCapiEvents(
+            [
+              {
+                event_name: "Lead",
+                event_id: leadEventId,
+                event_source_url: window.location.href,
+                custom_data: {
+                  utm_source: utms.utm_source,
+                  utm_medium: utms.utm_medium,
+                  utm_campaign: utms.utm_campaign,
+                  utm_content: utms.utm_content,
+                  utm_term: utms.utm_term,
+                },
+              },
+            ],
+            {
+              email: user.email,
+              phone: phone10,
+              phoneCountry: countryFromTypedPhone(phone) ?? DEFAULT_PHONE_COUNTRY,
+              externalId: user.uid,
             },
-          },
-        ]);
+          );
+        }
         // GA4 — mark restaurant_created as a key event in GA4 admin.
         trackRestaurantCreated({ category: cats[0] ?? "", ...utms });
       } catch (trackErr) {

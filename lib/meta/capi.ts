@@ -11,6 +11,8 @@
  * failure can never break an API route response.
  */
 
+import { createHash } from "node:crypto";
+
 const PIXEL_ID = "1774133503558467";
 const GRAPH_API_VERSION = "v23.0";
 const CAPI_ENDPOINT = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events`;
@@ -20,6 +22,12 @@ const CAPI_ENDPOINT = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_I
 // ---------------------------------------------------------------------------
 
 export interface CapiUserData {
+  /** SHA-256 of the normalized email (lowercase, trimmed). Raises match quality. */
+  em?: string[];
+  /** SHA-256 of the phone as digits with country code, no "+" (e.g. 526141234567). */
+  ph?: string[];
+  /** SHA-256 of our own stable user id (Firebase uid). */
+  external_id?: string[];
   /** Public IPv4 or IPv6 address. Not hashed. */
   client_ip_address?: string;
   /** Full User-Agent string. Not hashed. */
@@ -51,6 +59,58 @@ export interface CapiEvent {
   event_id: string;
   user_data: CapiUserData;
   custom_data?: CapiCustomData;
+}
+
+// ---------------------------------------------------------------------------
+// PII hashing — Meta requires SHA-256 over NORMALIZED values.
+// Server-only (node:crypto). Never send raw email/phone to Meta.
+// ---------------------------------------------------------------------------
+
+
+export function sha256Hex(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+/** Meta email normalization: trim + lowercase. Returns undefined if not an email. */
+export function normalizeEmailForMeta(email: string | undefined | null): string | undefined {
+  const e = (email ?? "").trim().toLowerCase();
+  return e.includes("@") && e.length > 3 ? e : undefined;
+}
+
+/**
+ * Meta phone normalization: only digits, with country code, no "+", no
+ * leading zeros. `phoneCountry` is the country code the owner chose at signup
+ * ("52", "1", "57"...). If the number already carries the country code (has
+ * more than 10 digits) it's kept as is. A bare 10-digit number WITHOUT a
+ * known country is dropped rather than guessed (regla: jamás coser 52).
+ */
+export function normalizePhoneForMeta(
+  phone: string | undefined | null,
+  phoneCountry: string | undefined | null,
+): string | undefined {
+  const digits = (phone ?? "").replace(/\D/g, "").replace(/^0+/, "");
+  if (!digits) return undefined;
+  if (digits.length > 10) return digits;
+  const cc = (phoneCountry ?? "").replace(/\D/g, "");
+  if (digits.length === 10 && cc) return `${cc}${digits}`;
+  return undefined;
+}
+
+/** Build the hashed identity fields for user_data. Empty inputs → nothing added. */
+export function hashedIdentity(identity: {
+  email?: string | null;
+  phone?: string | null;
+  phoneCountry?: string | null;
+  externalId?: string | null;
+}): Pick<CapiUserData, "em" | "ph" | "external_id"> {
+  const out: Pick<CapiUserData, "em" | "ph" | "external_id"> = {};
+  const em = normalizeEmailForMeta(identity.email);
+  if (em) out.em = [sha256Hex(em)];
+  const ph = normalizePhoneForMeta(identity.phone, identity.phoneCountry);
+  if (ph) out.ph = [sha256Hex(ph)];
+  const ext = (identity.externalId ?? "").trim();
+  if (ext) out.external_id = [sha256Hex(ext)];
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +269,40 @@ export async function sendCompleteRegistrationEvent(
       event_source_url: params.eventSourceUrl,
       event_id: params.eventId,
       user_data: params.userData,
+    },
+  ]);
+}
+
+/**
+ * Send a SubmitApplication event via CAPI.
+ * Fires when a prospect uploads their menu photo in /demo.
+ */
+export async function sendSubmitApplicationEvent(
+  params: BaseCapiParams & {
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    utmContent?: string;
+    utmTerm?: string;
+  },
+): Promise<void> {
+  const customData = stripEmpty({
+    utm_source: params.utmSource,
+    utm_medium: params.utmMedium,
+    utm_campaign: params.utmCampaign,
+    utm_content: params.utmContent,
+    utm_term: params.utmTerm,
+  });
+
+  await sendCapiEvents([
+    {
+      event_name: "SubmitApplication",
+      event_time: params.eventTime ?? Math.floor(Date.now() / 1000),
+      action_source: "website",
+      event_source_url: params.eventSourceUrl,
+      event_id: params.eventId,
+      user_data: params.userData,
+      ...(customData ? { custom_data: customData } : {}),
     },
   ]);
 }

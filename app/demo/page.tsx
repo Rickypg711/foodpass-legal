@@ -17,6 +17,12 @@ import {
   type DemoJob,
 } from "@/lib/demo/demoJobs";
 import { ensureAnonymousUser } from "@/lib/auth";
+import { pixelSubmitApplication } from "@/lib/meta/pixel";
+import { generateEventId } from "@/lib/meta/eventId";
+import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
+import { isInternalConversion } from "@/lib/meta/internal";
+import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
+import { DEFAULT_PHONE_COUNTRY } from "@/lib/phone/phoneCountry";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 
@@ -86,6 +92,38 @@ export default function DemoUploadPage() {
         files,
         digits.length === 10 ? digits : null,
       );
+      // ── Meta: "subió su menú" (17-sep-2026) ───────────────────────────
+      // El paso con volumen antes del alta. Anónimo: no hay correo, así que
+      // el filtro interno es la marca del navegador (Ricardo montando).
+      // Nunca bloquea el demo.
+      try {
+        if (!isInternalConversion()) {
+          const utms = readAndPersistUtms(window.location.search);
+          const eventId = generateEventId();
+          pixelSubmitApplication(eventId);
+          sendBrowserCapiEvents(
+            [
+              {
+                event_name: "SubmitApplication",
+                event_id: eventId,
+                event_source_url: window.location.href,
+                custom_data: {
+                  utm_source: utms.utm_source,
+                  utm_medium: utms.utm_medium,
+                  utm_campaign: utms.utm_campaign,
+                  utm_content: utms.utm_content,
+                  utm_term: utms.utm_term,
+                },
+              },
+            ],
+            digits.length === 10
+              ? { phone: digits, phoneCountry: DEFAULT_PHONE_COUNTRY }
+              : undefined,
+          );
+        }
+      } catch (trackErr) {
+        console.warn("[demo] tracking failed (non-blocking):", trackErr);
+      }
       router.push(`/demo/${jobId}`);
     } catch (e) {
       console.error("[demo] create", e);

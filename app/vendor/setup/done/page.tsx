@@ -10,6 +10,7 @@ import { waitForAuthReady } from "@/lib/auth";
 import { pixelCompleteRegistration } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
+import { isInternalConversion } from "@/lib/meta/internal";
 import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisition";
 import MenuShareModal from "../../_components/MenuShareModal";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
@@ -18,21 +19,36 @@ import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/pho
  * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
  * localStorage guard prevents refires when the vendor revisits this page.
  */
-function fireOnboardingCompletedOnce(restaurantId: string) {
+function fireOnboardingCompletedOnce(
+  restaurantId: string,
+  who: { email: string | null; uid: string; phone: string | null; phoneCountry: string },
+) {
   try {
     const guardKey = `cml_onboarding_done_${restaurantId}`;
     if (localStorage.getItem(guardKey)) return;
     localStorage.setItem(guardKey, "1");
 
-    const eventId = generateEventId();
-    pixelCompleteRegistration(eventId);
-    sendBrowserCapiEvents([
-      {
-        event_name: "CompleteRegistration",
-        event_id: eventId,
-        event_source_url: window.location.href,
-      },
-    ]);
+    // 17-sep-2026: un montaje nuestro (alias comeleal+…) no es un dueño que
+    // terminó su alta. Ni pixel ni CAPI. GA4 sí, para el embudo interno.
+    if (!isInternalConversion(who.email)) {
+      const eventId = generateEventId();
+      pixelCompleteRegistration(eventId);
+      sendBrowserCapiEvents(
+        [
+          {
+            event_name: "CompleteRegistration",
+            event_id: eventId,
+            event_source_url: window.location.href,
+          },
+        ],
+        {
+          email: who.email,
+          phone: who.phone,
+          phoneCountry: who.phoneCountry,
+          externalId: who.uid,
+        },
+      );
+    }
     trackVendorOnboardingCompleted();
   } catch {
     // Tracking must never break the page.
@@ -70,7 +86,12 @@ export default function SetupDonePage() {
       setPromisesPoints(rSnap.data()?.loyaltyReady !== false);
       setRestaurantId(rid);
       setLoading(false);
-      fireOnboardingCompletedOnce(rid);
+      fireOnboardingCompletedOnce(rid, {
+        email: u.email,
+        uid: u.uid,
+        phone: wa.length >= 10 ? wa.slice(-10) : null,
+        phoneCountry: phoneCountryOf(rSnap.data()),
+      });
     }
     init().catch(() => setLoading(false));
   }, [router]);

@@ -168,3 +168,14 @@ export function pixelViewContent(
     eventId,
   );
 }
+
+/**
+ * Track SubmitApplication.
+ * Fires when a prospect uploads their paper-menu photo in /demo (17-sep-2026).
+ * Es el paso con VOLUMEN antes del alta: la pauta web puede optimizar por
+ * esto mientras "Lead" (restaurante creado) sea demasiado escaso para que
+ * Meta salga de la fase de aprendizaje.
+ */
+export function pixelSubmitApplication(eventId?: string): void {
+  callFbq("SubmitApplication", undefined, eventId);
+}

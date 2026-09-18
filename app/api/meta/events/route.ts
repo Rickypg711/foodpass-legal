@@ -11,7 +11,7 @@
  * Request body (JSON):
  * {
  *   events: Array<{
- *     event_name:      "Lead" | "Contact" | "ViewContent"
+ *     event_name:      "Lead" | "Contact" | "ViewContent" | "CompleteRegistration" | "SubmitApplication"
  *     event_id:        string   // same UUID sent to fbq() for deduplication
  *     event_source_url: string  // window.location.href
  *     custom_data?: {
@@ -22,7 +22,13 @@
  *   fbp?:              string   // _fbp cookie value
  *   fbc?:              string   // _fbc cookie value
  *   client_user_agent?: string  // navigator.userAgent
+ *   identity?: {                // quién convirtió (17-sep-2026): se HASHEA aquí
+ *     email?, phone?, phone_country?, external_id?
+ *   }
  * }
+ *
+ * Cuentas internas (alias comeleal+…, Ricardo): NADA se manda a Meta y la
+ * respuesta dice { ok: true, skipped: "internal" }. Ver lib/meta/internal.ts.
  *
  * Response: always 200 { ok: true } once events are dispatched.
  * CAPI failures are logged server-side and never surface to the browser.
@@ -34,8 +40,11 @@ import {
   sendContactEvent,
   sendViewContentEvent,
   sendCompleteRegistrationEvent,
+  sendSubmitApplicationEvent,
+  hashedIdentity,
   type CapiUserData,
 } from "@/lib/meta/capi";
+import { isInternalEmail } from "@/lib/meta/internal";
 
 // ---------------------------------------------------------------------------
 // Input validation
@@ -46,6 +55,7 @@ const ALLOWED_EVENT_NAMES = [
   "Contact",
   "ViewContent",
   "CompleteRegistration",
+  "SubmitApplication",
 ] as const;
 type AllowedEventName = (typeof ALLOWED_EVENT_NAMES)[number];
 
@@ -83,6 +93,12 @@ interface RequestBody {
   fbp?: string;
   fbc?: string;
   client_user_agent?: string;
+  identity?: {
+    email?: string;
+    phone?: string;
+    phone_country?: string;
+    external_id?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -109,8 +125,23 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // ---------------------------------------------------------------------------
+  // Cuenta interna → no es conversión. Ni Lead, ni CompleteRegistration, ni
+  // nada: si Meta aprende de los montajes de Ricardo, la pauta busca a Ricardo.
+  // ---------------------------------------------------------------------------
+
+  const identityEmail = safeString(body.identity?.email, 320);
+  if (isInternalEmail(identityEmail)) {
+    console.log(
+      "[Meta CAPI skipped] internal account, events dropped:",
+      body.events.map((e) => e?.event_name).join(","),
+    );
+    return NextResponse.json({ ok: true, skipped: "internal" });
+  }
+
+  // ---------------------------------------------------------------------------
   // Build shared user_data for all events in this request.
   // IP comes from Vercel/CDN forwarding headers — never from the browser body.
+  // Email / phone / uid travel hashed (SHA-256) — raw PII never reaches Meta.
   // ---------------------------------------------------------------------------
 
   const clientIp =
@@ -127,6 +158,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       safeString(body.client_user_agent),
     fbp: safeString(body.fbp, 200),
     fbc: safeString(body.fbc, 200),
+    ...hashedIdentity({
+      email: identityEmail,
+      phone: safeString(body.identity?.phone, 40),
+      phoneCountry: safeString(body.identity?.phone_country, 5),
+      externalId: safeString(body.identity?.external_id, 128),
+    }),
   };
 
   // ---------------------------------------------------------------------------
@@ -164,6 +201,19 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       case "CompleteRegistration":
         sends.push(sendCompleteRegistrationEvent(base));
+        break;
+
+      case "SubmitApplication":
+        sends.push(
+          sendSubmitApplicationEvent({
+            ...base,
+            utmSource: safeString(e.custom_data?.utm_source),
+            utmMedium: safeString(e.custom_data?.utm_medium),
+            utmCampaign: safeString(e.custom_data?.utm_campaign),
+            utmContent: safeString(e.custom_data?.utm_content),
+            utmTerm: safeString(e.custom_data?.utm_term),
+          }),
+        );
         break;
 
       case "ViewContent":

@@ -10,11 +10,28 @@
  *   4. Is entirely fire-and-forget — errors are logged server-side, never thrown here.
  */
 
+import { isInternalConversion } from "@/lib/meta/internal";
+
 export type BrowserCapiEventName =
   | "Lead"
   | "Contact"
   | "ViewContent"
-  | "CompleteRegistration";
+  | "CompleteRegistration"
+  | "SubmitApplication";
+
+/**
+ * Quién convirtió. Va en CRUDO al servidor (misma origin, HTTPS) y el servidor
+ * lo hashea antes de hablar con Meta. Sube la calidad de coincidencia
+ * (Events Manager la tenía en 4.4/10 sin esto, 17-sep-2026).
+ */
+export interface BrowserCapiIdentity {
+  email?: string | null;
+  /** Dígitos como los guardamos (10 pelones) + phoneCountry aparte. */
+  phone?: string | null;
+  phoneCountry?: string | null;
+  /** Firebase uid. */
+  externalId?: string | null;
+}
 
 export interface BrowserCapiEvent {
   event_name: BrowserCapiEventName;
@@ -60,14 +77,29 @@ function readCookie(name: string): string | undefined {
  * Uses `keepalive: true` so the request survives page unloads (e.g. if the
  * success state triggers a redirect before the fetch completes).
  */
-export function sendBrowserCapiEvents(events: BrowserCapiEvent[]): void {
+export function sendBrowserCapiEvents(
+  events: BrowserCapiEvent[],
+  identity?: BrowserCapiIdentity,
+): void {
   if (typeof window === "undefined" || events.length === 0) return;
+  // Cuenta o navegador interno: ni siquiera pedimos. El servidor también lo revisa.
+  if (isInternalConversion(identity?.email)) return;
 
   const body = {
     events,
     fbp: readCookie("_fbp"),
     fbc: readCookie("_fbc"),
     client_user_agent: navigator.userAgent,
+    ...(identity
+      ? {
+          identity: {
+            email: identity.email ?? undefined,
+            phone: identity.phone ?? undefined,
+            phone_country: identity.phoneCountry ?? undefined,
+            external_id: identity.externalId ?? undefined,
+          },
+        }
+      : {}),
   };
 
   fetch("/api/meta/events", {

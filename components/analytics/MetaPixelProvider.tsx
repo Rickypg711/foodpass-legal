@@ -19,12 +19,13 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   META_PIXEL_ID,
   buildPixelInitSnippet,
   pixelPageView,
 } from "@/lib/meta/pixel";
+import { pixelAllowedOnPath } from "@/lib/meta/pixelPaths";
 
 export function MetaPixelProvider() {
   // Skip render entirely when pixel ID is not configured.
@@ -43,6 +44,9 @@ function MetaPixelInner({ pixelId }: { pixelId: string }) {
   // The init snippet fires the first PageView; we skip the first effect call
   // to avoid sending a duplicate immediately after hydration.
   const isFirstRender = useRef(true);
+  // Decidido UNA vez con la ruta de aterrizaje: si el navegador abrió directo
+  // en el panel, el script del pixel ni se inyecta.
+  const [allowed] = useState(() => pixelAllowedOnPath(pathname));
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -50,9 +54,12 @@ function MetaPixelInner({ pixelId }: { pixelId: string }) {
       // First PageView was already fired by the init snippet in the Script tag.
       return;
     }
+    if (!pixelAllowedOnPath(pathname)) return;
     // Fire PageView on every subsequent App Router navigation.
     pixelPageView();
   }, [pathname]);
+
+  if (!allowed) return null;
 
   const noscriptSrc = `https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`;
 
