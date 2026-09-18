@@ -22,6 +22,7 @@ import {
   waitForAuthReady,
   getFirebaseAuth,
 } from "@/lib/auth";
+import { requestPasswordReset } from "@/lib/passwordReset";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -198,13 +199,11 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   async function handleReset() {
     const correo = emailInput.trim();
     if (!correo) return;
-    try {
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      const a = getFirebaseAuth();
-      a.languageCode = "es";
-      await sendPasswordResetEmail(a, correo);
-    } catch {
-      // Se ignora a proposito: ver abajo.
+    // Resend desde ricardo@comeleal.com, con plan B a Firebase (lib/passwordReset).
+    const r = await requestPasswordReset(correo);
+    if (r === "wait") {
+      setError("Ya te mandamos varios correos. Revisa spam o espera una hora.");
+      return;
     }
     // Se confirma SIEMPRE, exista o no la cuenta. Decir "ese correo no
     // existe" le regalaria a cualquiera una forma de averiguar quien tiene

@@ -25,7 +25,8 @@ import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { ProWall } from "@/components/vendor/ProWall";
 import { parseLocationLink, cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
-import { waitForAuthReady, getFirebaseAuth } from "@/lib/auth";
+import { waitForAuthReady } from "@/lib/auth";
+import { requestPasswordReset } from "@/lib/passwordReset";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import { persistReadiness, stepGroupFromReasons } from "@/lib/vendorReadiness";
 import { parseDiscountProfiles, isFounderTestRestaurant, type DiscountProfile } from "@/lib/loyalty/discountProfiles";
@@ -73,11 +74,11 @@ export default function ConfiguracionPage() {
   async function handleCambiarPassword() {
     const correo = user?.email?.trim();
     if (!correo) return;
-    try {
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      await sendPasswordResetEmail(getFirebaseAuth(), correo);
-    } catch {
-      // Se confirma igual: no se le dice a nadie si un correo existe o no.
+    // Resend desde ricardo@comeleal.com, con plan B a Firebase (lib/passwordReset).
+    const r = await requestPasswordReset(correo);
+    if (r === "wait") {
+      setError("Ya te mandamos varios correos. Revisa spam o espera una hora.");
+      return;
     }
     setResetEnviado(true);
   }
