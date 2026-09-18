@@ -27,6 +27,7 @@ import { resolveVendorContext } from "@/lib/vendorContext";
 import { businessDayStart } from "@/lib/businessDay";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
+import { markReceiptTapped } from "@/lib/order/receiptStamps";
 import { primeChime, playNewOrderChime, flashTabTitle } from "@/lib/vendor/newOrderChime";
 import { IN_TRAY_STATUSES, mergeOrdersById } from "@/lib/order/trayOrders";
 import {
@@ -526,6 +527,9 @@ function PedidosPageContent() {
       "_blank",
       "noopener,noreferrer",
     );
+    // Stamp del embudo del recibo (docs/REFERIDOS_POR_TELEFONO.md §10):
+    // después del window.open (el popup no puede esperar), sin await.
+    void markReceiptTapped(getFirebaseDb(), restaurantId, order.id);
   };
 
   // ── Grouping (board columns = tab filters, one source of truth) ─────────────

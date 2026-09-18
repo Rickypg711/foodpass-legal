@@ -10,6 +10,7 @@ import { paidWithLine, pickupPaymentLine } from "@/lib/pos/paidOrderFields";
 import { deliveryPaymentLine } from "@/lib/order/deliveryOptions";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { getFirebaseDb } from "@/lib/firebase";
+import { RECEIPT_VIEWED_ENDPOINT } from "@/lib/order/receiptStamps";
 import { formatPrice } from "@/lib/priceFormat";
 import {
   buildWhatsappUrl,
@@ -181,10 +182,43 @@ function OrderStatusPageContent() {
    * Anónimo o cliente = false y la página es la de siempre.
    */
   const [viewerIsStaff, setViewerIsStaff] = useState(false);
+  /** Ya sabemos si quien mira es del local o no (antes de eso no se marca "visto"). */
+  const [viewerResolved, setViewerResolved] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  /** Tarjeta "Pedido #…": cuando se dibuja en pantalla, el pedido cuenta como visto. */
+  const receiptCardRef = useRef<HTMLDivElement | null>(null);
+  const viewStampSentRef = useRef(false);
   const prevStatusRef = useRef<{ status?: string; paymentStatus?: string }>({});
 
   const orderingEnabled = isWebOrderingEnabled();
+
+  // "Visto" (docs/REFERIDOS_POR_TELEFONO.md §7): el bloque del recibo se dibujó
+  // en la pantalla del COMENSAL. Corre después de render (IntersectionObserver),
+  // así el preview de WhatsApp (sin scripts) no cuenta; el dueño/equipo con
+  // sesión abierta tampoco. Una vez por carga; el servidor fija la primera vez.
+  useEffect(() => {
+    if (!order || !viewerResolved || viewerIsStaff || viewStampSentRef.current) return;
+    const el = receiptCardRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const send = () => {
+      if (viewStampSentRef.current) return;
+      viewStampSentRef.current = true;
+      fetch(RECEIPT_VIEWED_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, orderId }),
+        keepalive: true,
+      }).catch(() => { /* medir jamás rompe el recibo */ });
+    };
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        send();
+        io.disconnect();
+      }
+    }, { threshold: 0.5 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [order, viewerResolved, viewerIsStaff, restaurantId, orderId]);
 
   useEffect(() => {
     if (paymentReturn) {
@@ -324,6 +358,7 @@ function OrderStatusPageContent() {
             }
           }
         }
+        setViewerResolved(true);
       } catch {
         setLoadError("No pudimos verificar tu sesión.");
       }
@@ -559,7 +594,7 @@ function OrderStatusPageContent() {
               ) : null}
             </div>
 
-            <div className={th.cardFlat}>
+            <div className={th.cardFlat} ref={receiptCardRef}>
               <p className={`text-xs ${th.ink}/60`}>Pedido</p>
               <p className="font-mono text-lg font-bold tracking-wider">
                 #{shortOrderCode(orderId)}

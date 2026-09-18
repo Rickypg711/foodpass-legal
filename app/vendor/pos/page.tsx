@@ -42,6 +42,7 @@ import {
   type PaymentMethod,
 } from "@/lib/pos/paidOrderFields";
 import { receiptWhatsappUrl } from "@/lib/receiptWhatsapp";
+import { markReceiptTapped } from "@/lib/order/receiptStamps";
 // Opciones por platillo (salsas/extras) — mismo motor que el menú del cliente.
 // Ver docs/OPCIONES_POR_PLATILLO.md: lo guardado en optionGroups manda, y si
 // no hay, el parser lee la descripción.
@@ -796,7 +797,7 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; loyaltyLive?: boolean }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; loyaltyLive?: boolean }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
@@ -841,6 +842,8 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, loyaltyLiv
                 // wa.me directo al número capturado, recibo ya escrito
                 // (puntos ganados + premio canjeado EN el mensaje).
                 window.open(receiptUrl, "_blank", "noopener,noreferrer");
+                // Stamp del embudo del recibo (docs/REFERIDOS_POR_TELEFONO.md §10).
+                onReceiptTapped?.();
                 onDone();
               }}
               className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
@@ -943,7 +946,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; orderId?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1546,7 +1549,7 @@ export default function PosPage() {
 
       // 🖨️ Ticket para la impresora térmica (10-sep): la misma hoja que
       // Pedidos, con el pedido recién cobrado.
-      setSuccess({ mode, total: subtotal, receiptUrl, ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}` });
+      setSuccess({ mode, total: subtotal, receiptUrl, ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}`, orderId: orderRef.id });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -2100,6 +2103,9 @@ export default function PosPage() {
           total={success.total}
           receiptUrl={success.receiptUrl}
           ticketUrl={success.ticketUrl}
+          onReceiptTapped={() => {
+            if (restaurantId && success.orderId) void markReceiptTapped(getFirebaseDb(), restaurantId, success.orderId);
+          }}
           onDone={() => setSuccess(null)}
         />
       )}
