@@ -22,6 +22,11 @@ import {
   timestampToMillis,
   type RewardTierOption,
 } from "@/lib/loyalty/rewardCatalog";
+import {
+  freeItemClaimable,
+  freeItemsEnabled,
+  soonestLive,
+} from "@/lib/loyalty/freeItems";
 import { validateRedemptionCode } from "@/lib/loyalty/redeemCode";
 import {
   parseDiscountProfiles,
@@ -35,7 +40,29 @@ export type PosRedemptionSelection = {
   points: number;
   /** true = código de canje validated; false = cashier override (audited). */
   verified: boolean;
+  /**
+   * De dónde salió el taco gratis (docs/REFERIDOS_POR_TELEFONO.md §6): la
+   * bienvenida de siempre, o un referido que se ganó porque su amigo vino.
+   * Solo viene en los premios de 0 puntos y solo en locales con la compuerta
+   * `freeItemsV2Enabled`. La Caja lo dice en pantalla para que el cajero sepa
+   * qué está entregando — no cambia nada de la matemática.
+   */
+  freeItemSource?: "welcome" | "referral";
+  /** Quién lo trajo, cuando el taco es de referido (para el "Avísale" de §9). */
+  freeItemReferredName?: string;
 };
+
+/** Solo los premios de 0 puntos traen fila; los de puntos no son tacos gratis. */
+function freeItemInfo(
+  points: number,
+  fila: { source: "welcome" | "referral"; referredName: string } | null,
+): { freeItemSource?: "welcome" | "referral"; freeItemReferredName?: string } {
+  if (points > 0 || !fila) return {};
+  return {
+    freeItemSource: fila.source,
+    ...(fila.referredName ? { freeItemReferredName: fila.referredName } : {}),
+  };
+}
 
 function last10(digits: string): string {
   const d = digits.replace(/\D/g, "");
@@ -74,6 +101,8 @@ export function PosRedemption({
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignErr, setAssignErr] = useState(false);
+  /** La fila viva que se va a canjear: de dónde salió y quién la trajo (§6). */
+  const [freeItem, setFreeItem] = useState<{source: "welcome" | "referral"; referredName: string} | null>(null);
   const [picked, setPicked] = useState<RewardTierOption | null>(null);
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<"idle" | "checking" | "ok" | "bad">(
@@ -117,12 +146,31 @@ export function PosRedemption({
           const name = typeof pc?.name === "string" ? pc.name.trim() : "";
           setKnown(pcSnap.exists());
           setPoints(pts);
+          // TACOS COMO FILAS (§6): con la compuerta prendida, la fila viva que
+          // vence primero dice si hay premio y de dónde salió. Sin compuerta,
+          // o sin filas, todo sigue decidiéndose como siempre.
+          const filaViva = freeItemsEnabled(rSnap.data())
+            ? soonestLive(pc?.freeItems)
+            : null;
+          setFreeItem(
+            filaViva
+              ? {
+                  source: filaViva.source === "referral" ? "referral" : "welcome",
+                  referredName: filaViva.referredName ?? "",
+                }
+              : null,
+          );
+          const porFilas = freeItemClaimable(rSnap.data(), pc);
           setRewards(
             redeemableRewards({
               restaurantData: rSnap.data() as Record<string, unknown> | undefined,
               points: pts,
               welcomeUnlocked: pc?.firstVisitRewardUnlocked === true,
-              welcomeUnlockedAtMs: timestampToMillis(pc?.createdAt),
+              // Con filas manda `expiresAt` (que ya calculó el servidor); sin
+              // filas, la cuenta de siempre desde createdAt.
+              welcomeUnlockedAtMs: porFilas === true
+                ? Date.now()
+                : timestampToMillis(pc?.createdAt),
             }),
           );
           if (name && onCustomerName) onCustomerName(name);
@@ -180,6 +228,7 @@ export function PosRedemption({
         name: picked.name,
         points: picked.points,
         verified: true,
+        ...freeItemInfo(picked.points, freeItem),
       });
     } else {
       setCodeState("bad");
@@ -197,6 +246,7 @@ export function PosRedemption({
       tierId: picked.id,
       name: picked.name,
       points: picked.points,
+      ...freeItemInfo(picked.points, freeItem),
       verified: false,
     });
   }

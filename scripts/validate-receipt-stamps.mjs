@@ -48,7 +48,10 @@ assert.ok(pedidos.includes("void markReceiptTapped(getFirebaseDb(), restaurantId
 const pos = read("../app/vendor/pos/page.tsx");
 assert.ok(pos.includes('import { markReceiptTapped } from "@/lib/order/receiptStamps";'), "Caja importa markReceiptTapped");
 assert.ok(pos.includes('window.open(receiptUrl, "_blank", "noopener,noreferrer");\n                // Stamp del embudo del recibo (docs/REFERIDOS_POR_TELEFONO.md §10).\n                onReceiptTapped?.();'), "Caja: onReceiptTapped después del window.open");
-assert.ok(pos.includes("orderId: orderRef.id });"), "Caja: el éxito guarda el orderId para el stamp");
+// Lo que importa es que el orderId VIAJE al éxito, no que la línea termine
+// ahí: desde el 18-sep el éxito también lleva customerName, para el "Avísale"
+// del referido (§9).
+assert.ok(pos.includes("orderId: orderRef.id"), "Caja: el éxito guarda el orderId para el stamp");
 assert.ok(pos.includes("if (restaurantId && success.orderId) void markReceiptTapped(getFirebaseDb(), restaurantId, success.orderId);"), "Caja: stamp con restaurantId + orderId, sin await");
 
 // ── 3. La página marca "visto" solo tras render y nunca para el local ────────

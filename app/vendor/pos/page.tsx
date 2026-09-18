@@ -2,7 +2,7 @@
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 import { buildEarnPreview, cashierEarnLine, cashierWelcomeLine } from "@/lib/loyalty/earnPreview";
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -28,6 +28,7 @@ import {
   type Entitlements,
 } from "@/lib/subscription/entitlement";
 import { ProWall } from "@/components/vendor/ProWall";
+import ReferralNotifyButton from "@/components/loyalty/ReferralNotifyButton";
 import { waitForAuthReady } from "@/lib/auth";
 import { resolveVendorContext, type VendorRole } from "@/lib/vendorContext";
 import { parsePosStaff, findStaffByPin, type PosStaffMember, type SoldBy } from "@/lib/posStaff";
@@ -760,7 +761,14 @@ function CheckoutDialog({
           {redemption ? (
             <p className="text-center text-[12px] font-bold" style={{ color: "#16A34A" }}>
               🎁 Incluye: {redemption.name} GRATIS
-              {redemption.points > 0 ? ` (−${redemption.points} pts)` : " (bienvenida)"}
+              {redemption.points > 0
+                ? ` (−${redemption.points} pts)`
+                : redemption.freeItemSource === "referral"
+                  ? // §6: el cajero tiene que saber QUÉ está entregando. Un taco
+                    // de referido no es la bienvenida: se lo ganó porque su
+                    // amigo vino, y decirlo en voz alta es la mitad del premio.
+                    ` (referido${redemption.freeItemReferredName ? ` de ${redemption.freeItemReferredName}` : ""})`
+                  : " (bienvenida)"}
             </p>
           ) : null}
           <button
@@ -797,7 +805,7 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, loyaltyLive = true }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; loyaltyLive?: boolean }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
@@ -851,6 +859,10 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptT
             >
               🧾 Enviar recibo por WhatsApp
             </button>
+            {/* "Avísale" (§9): si este cobro le dio un taco a quien invitó al
+                cliente, el local se lo dice por WhatsApp. A mano, y nunca se
+                promete que se mande solo. Si no hubo referido, no sale nada. */}
+            {referralNotify}
             {ticketUrl ? (
               <button
                 onClick={() => window.open(ticketUrl, "_blank", "noopener,noreferrer")}
@@ -946,7 +958,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; orderId?: string } | null>(null);
+  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; orderId?: string; customerName?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1549,7 +1561,8 @@ export default function PosPage() {
 
       // 🖨️ Ticket para la impresora térmica (10-sep): la misma hoja que
       // Pedidos, con el pedido recién cobrado.
-      setSuccess({ mode, total: subtotal, receiptUrl, ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}`, orderId: orderRef.id });
+      // customerName va para el "Avísale" (§9): el texto dice QUIÉN vino.
+      setSuccess({ mode, total: subtotal, receiptUrl, ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}`, orderId: orderRef.id, customerName: customerName.trim() || undefined });
       setShowCheckout(false);
       clearCart();
       loadOpenTabs(restaurantId);
@@ -2106,6 +2119,17 @@ export default function PosPage() {
           onReceiptTapped={() => {
             if (restaurantId && success.orderId) void markReceiptTapped(getFirebaseDb(), restaurantId, success.orderId);
           }}
+          referralNotify={
+            restaurantId && success.orderId ? (
+              <ReferralNotifyButton
+                restaurantId={restaurantId}
+                orderId={success.orderId}
+                restaurantName={String(restaurantData?.name ?? "")}
+                friendName={success.customerName}
+                phoneCountryCode={phoneCountryOf(restaurantData)}
+              />
+            ) : null
+          }
           onDone={() => setSuccess(null)}
         />
       )}
