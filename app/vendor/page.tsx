@@ -99,6 +99,13 @@ interface DashboardData {
   /** "Vendiste por tu menú" (12-sep, el marcador de Owner.com): pedidos en
    *  línea de los últimos 30 días — lib/order/menuSales.ts. */
   menuSales: MenuSalesSummary;
+  /**
+   * "Tus clientes trajeron N personas" (docs/REFERIDOS_POR_TELEFONO.md §10):
+   * pedidos pagados de 30 días con `referredBy` — o sea, amigos que vinieron
+   * porque alguien les mandó su link. Es el número que cierra el loop del
+   * referido para el dueño. 0 = no se pinta.
+   */
+  referredOrders30d: number;
   // Revenue goal
   dailyGoal: number | null;
   ventasHoy: number;
@@ -322,10 +329,14 @@ export default function VendorDashboard() {
         // deja su número en la Caja y viceversa.
         const monthOrders: Record<string, unknown>[] = [];
         let phoneRedemptions30d = 0;
+        // REFERIDOS (§10): un pedido con `referredBy` lo trajo un cliente. Sale
+        // del MISMO lote de 30 días, cero lecturas extra.
+        let referredOrders30d = 0;
         monthOrdersSnap?.forEach((d) => {
           const o = d.data() as Record<string, unknown>;
           monthOrders.push(o);
           if (o.redemptionResult === "applied") phoneRedemptions30d++;
+          if (typeof o.referredBy === "string" && o.referredBy) referredOrders30d++;
         });
         addPhoneSaleVisits(visitCounts, monthOrders);
         // "Vendiste por tu menú" — mismo lote de 30 días, cero lecturas extra.
@@ -433,6 +444,7 @@ export default function VendorDashboard() {
           },
           lookback,
           menuSales,
+          referredOrders30d,
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
           // Veredicto de meta contra el horario REAL (espejo de la app,
@@ -678,7 +690,7 @@ export default function VendorDashboard() {
 
           {/* ── 4 · Clientes · últimos 30 días ── */}
           {!firstDay && (
-            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} menuSales={data.menuSales} />
+            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} menuSales={data.menuSales} referredOrders30d={data.referredOrders30d ?? 0} />
           )}
 
           {/* ── 5 · Pregúntale a Comeleal (compacto) ── */}
@@ -1231,7 +1243,7 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
 /** 4 · Clientes · últimos 30 días — espejo de OwnerLookbackCard (app):
  *  Con teléfono · Volvieron · % que volvió · Premios canjeados. Sin escáner
  *  ni promesa de puntos: "Cada venta con número suma aquí." */
-function OwnerLookbackCard({ stats, atRiskCount, menuSales }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary }) {
+function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 0 }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary; referredOrders30d?: number }) {
   const lowSample = stats.withPhone < 5;
   return (
     <section className="mb-6">
@@ -1267,6 +1279,24 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales }: { stats: LookbackS
                 <span className="ml-auto">›</span>
               </Link>
             )}
+          </div>
+        )}
+        {/* REFERIDOS (§10): lo que cierra el loop para el dueño. Con 0 no se
+            pinta — un cero no le dice nada y solo ocupa lugar. */}
+        {referredOrders30d > 0 && (
+          <div className="mb-4 rounded-xl px-4 py-3"
+            style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.18)" }}>
+            <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.6)" }}>
+              🎁 Tus clientes te trajeron gente
+            </p>
+            <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: "#C2620F" }}>
+              {referredOrders30d === 1
+                ? "1 persona vino por el link de un cliente"
+                : `${referredOrders30d} personas vinieron por el link de un cliente`}
+              <span className="ml-1 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+                · últimos 30 días
+              </span>
+            </p>
           </div>
         )}
         {lowSample && (
