@@ -265,4 +265,27 @@ assert.ok(
   "las frases por IA arrancan en dry-run, tras una bandera",
 );
 
+// ── §7 El reloj desde /puntos: la llave es la sesión, no el navegador ─────
+const byPhone = readFileSync(new URL("../app/api/free-items/seen-by-phone/route.ts", import.meta.url), "utf8");
+assert.ok(/verifyIdToken\(idToken\)/.test(byPhone), "seen-by-phone debe verificar el token en el servidor");
+assert.ok(
+  /phone = String\(decoded\.phone_number/.test(byPhone),
+  "EL TELÉFONO SALE DEL TOKEN: si saliera del cuerpo, cualquiera le acortaría el taco a otro",
+);
+assert.ok(
+  !/body\.phone|body\.customerPhone/.test(byPhone),
+  "seen-by-phone jamás acepta un teléfono del navegador",
+);
+const seenByOrder = readFileSync(new URL("../app/api/free-items/seen/route.ts", import.meta.url), "utf8");
+assert.ok(
+  /markPhoneSeen\(/.test(byPhone) && /markPhoneSeen\(/.test(seenByOrder),
+  "el recibo y /puntos arrancan el reloj con la MISMA función",
+);
+const puntosSrc2 = readFileSync(new URL("../app/puntos/page.tsx", import.meta.url), "utf8");
+assert.ok(
+  /<SeenOnScreen onSeen=\{\(\) => void markTacosSeen\(b\.restaurantId\)\}>/.test(puntosSrc2),
+  "/puntos arranca el reloj solo cuando la lista se DIBUJA en pantalla",
+);
+assert.ok(/Authorization: `Bearer \$\{idToken\}`/.test(puntosSrc2), "/puntos manda su sesión, no su número");
+
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");

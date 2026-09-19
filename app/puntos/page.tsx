@@ -29,6 +29,7 @@ import {
   welcomeStillClaimable,
 } from "@/lib/loyalty/rewardCatalog";
 import { expiryLabel, liveRows, toMs } from "@/lib/loyalty/freeItems";
+import SeenOnScreen from "@/components/loyalty/SeenOnScreen";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 import { RedeemCodeBadge } from "@/components/loyalty/RedeemCodeBadge";
@@ -173,6 +174,43 @@ export default function PuntosGlobalPage() {
     }
   }
 
+  // El reloj del taco (§7): cuando la lista de un local se DIBUJA en su
+  // pantalla, el servidor arranca los 7 días. El número sale de su sesión por
+  // SMS, del lado del servidor — aquí solo se manda la prueba (el token).
+  async function markTacosSeen(restaurantId: string) {
+    try {
+      const user = getFirebaseAuth().currentUser;
+      if (!user) return;
+      const idToken = await user.getIdToken();
+      const r = await fetch("/api/free-items/seen-by-phone", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ restaurantId }),
+      });
+      if (r.status !== 200) return;
+      const j = (await r.json()) as { items?: { id: string; expiresAt: number | null }[] };
+      const nuevas = new Map((j.items ?? []).map((it) => [it.id, it.expiresAt]));
+      // Se enseña la fecha buena (la del reloj ya corriendo) sin recargar.
+      setBalances((prev) =>
+        prev.map((b) =>
+          b.restaurantId !== restaurantId
+            ? b
+            : {
+                ...b,
+                freeItems: b.freeItems
+                  .filter((f) => nuevas.has(f.id))
+                  .map((f) => ({ ...f, expiresAtMs: nuevas.get(f.id) ?? f.expiresAtMs })),
+              },
+        ),
+      );
+    } catch {
+      // Si falla, el taco vive sus 30 días: a favor del comensal.
+    }
+  }
+
   async function loadBalances() {
     // Identity first, balances second. Every path into this function has just
     // proven the number by SMS, so this is the one place that has to mirror the
@@ -294,6 +332,7 @@ export default function PuntosGlobalPage() {
                           : ""}
                       </p>
                       {b.freeItems.length > 0 ? (
+                        <SeenOnScreen onSeen={() => void markTacosSeen(b.restaurantId)}>
                         <ul className="mt-1 space-y-0.5">
                           {b.freeItems.map((f) => (
                             <li
@@ -313,6 +352,7 @@ export default function PuntosGlobalPage() {
                             </li>
                           ))}
                         </ul>
+                        </SeenOnScreen>
                       ) : null}
                       {b.unlockedTier ? (
                         <p className="mt-0.5 text-xs font-semibold" style={{ color: "#16A34A" }}>

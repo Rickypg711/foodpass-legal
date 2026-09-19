@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
 import { getFirebaseAdminDb, hasFirebaseAdminCredentials } from "@/lib/firebaseAdmin";
 import { receiptViewFromOrder } from "@/lib/order/receiptView";
-import {
-  freeItemsEnabled,
-  markSeenRows,
-  toMs,
-  type FreeItemRow,
-} from "@/lib/loyalty/freeItems";
+import { markPhoneSeen } from "@/lib/loyalty/freeItemsServer";
 
 /**
  * POST /api/free-items/seen  { restaurantId, orderId }
@@ -63,36 +57,12 @@ export async function POST(request: Request) {
     if (phone.length > 10) phone = phone.slice(-10);
     if (phone.length < 10) return noContent();
 
-    const restSnap = await db.doc(`restaurants/${restaurantId}`).get();
-    // Compuerta: fuera de los locales que ya usan filas, aquí no pasa nada.
-    if (!freeItemsEnabled(restSnap.data())) return noContent();
-
-    const phoneRef = db.doc(`restaurants/${restaurantId}/phoneCustomers/${phone}`);
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(phoneRef);
-      if (!snap.exists) return;
-      const next = markSeenRows((snap.data() ?? {}).freeItems, Date.now());
-      if (!next) return; // ya estaban vistas: no se escribe de gusto
-      tx.update(phoneRef, { freeItems: next.map(toFirestoreRow) });
-    });
+    // Misma lógica que /puntos (lib/loyalty/freeItemsServer.ts): si cambia
+    // una, cambian las dos.
+    await markPhoneSeen(db, restaurantId, phone);
     return noContent();
   } catch (e) {
     console.error("free-items/seen", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-}
-
-/** ms → Timestamp para guardar; deja pasar null. */
-function toFirestoreRow(r: FreeItemRow): FreeItemRow {
-  const conv = (v: unknown) => {
-    const ms = toMs(v);
-    return ms == null ? null : Timestamp.fromMillis(ms);
-  };
-  return {
-    ...r,
-    bornAt: conv(r.bornAt),
-    seenAt: conv(r.seenAt),
-    expiresAt: conv(r.expiresAt),
-    redeemedAt: conv(r.redeemedAt),
-  };
 }
