@@ -1535,6 +1535,7 @@ export default function PosPage() {
       // Con tope de 1.2 s y sin romper nada si falla: el cobro JAMÁS espera por
       // esto, y si no llega, el recibo sale como siempre, sin la línea.
       let inviteLink: string | null = null;
+      let inviteText: string | null = null;
       if (mode === "now" && phoneDigits.length >= 10) {
         try {
           const res = await Promise.race([
@@ -1546,8 +1547,9 @@ export default function PosPage() {
             new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
           ]);
           if (res && res.status === 200) {
-            const j = (await res.json()) as { link?: string };
+            const j = (await res.json()) as { link?: string; receiptText?: string };
             if (typeof j.link === "string" && j.link) inviteLink = j.link;
+            if (typeof j.receiptText === "string" && j.receiptText) inviteText = j.receiptText;
           }
         } catch {
           // sin invitación en el recibo: el recibo sigue siendo recibo
@@ -1580,6 +1582,7 @@ export default function PosPage() {
               origin: window.location.origin,
               promisesPoints: loyaltyLive,
               inviteLink,
+              inviteText,
             })
           : undefined;
 

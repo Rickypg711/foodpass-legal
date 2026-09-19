@@ -40,6 +40,8 @@ export default function ReceiptRewardsBlock({
   className?: string;
 }) {
   const [items, setItems] = useState<ApiItem[] | null>(null);
+  /** La frase que escribió la IA (§8). null = se usa el texto fijo. */
+  const [inviteText, setInviteText] = useState<string | null>(null);
   const [invite, setInvite] = useState<{ link: string } | null>(null);
   const seenSent = useRef(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -51,8 +53,9 @@ export default function ReceiptRewardsBlock({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantId, orderId }),
       });
-      const j = (await r.json()) as { items?: ApiItem[] };
+      const j = (await r.json()) as { items?: ApiItem[]; inviteText?: string };
       setItems(Array.isArray(j.items) ? j.items : []);
+      setInviteText(typeof j.inviteText === "string" ? j.inviteText : null);
     } catch {
       setItems([]);
     }
@@ -69,8 +72,10 @@ export default function ReceiptRewardsBlock({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ restaurantId, orderId }),
         });
-        const j = (await r.json()) as { items?: ApiItem[] };
-        if (!cancelado) setItems(Array.isArray(j.items) ? j.items : []);
+        const j = (await r.json()) as { items?: ApiItem[]; inviteText?: string };
+        if (cancelado) return;
+        setItems(Array.isArray(j.items) ? j.items : []);
+        setInviteText(typeof j.inviteText === "string" ? j.inviteText : null);
       } catch {
         if (!cancelado) setItems([]);
       }
@@ -132,12 +137,16 @@ export default function ReceiptRewardsBlock({
   if (tacos.length === 0 && !invite) return null;
 
   const primero = tacos[0];
-  const inviteText = invite
-    ? inviteTextFallback({
-        itemName: primero?.itemName || "taco",
-        restaurantName,
-        link: invite.link,
-      })
+  // La frase de la IA si la hay; si no, el texto fijo. El LINK lo pega el
+  // sistema, nunca el modelo (§8: por eso el candado rechaza URLs).
+  const texto = invite
+    ? inviteText
+      ? `${inviteText} ${invite.link}`
+      : inviteTextFallback({
+          itemName: primero?.itemName || "taco",
+          restaurantName,
+          link: invite.link,
+        })
     : "";
 
   return (
@@ -179,7 +188,7 @@ export default function ReceiptRewardsBlock({
             y tú otro para tu siguiente visita.
           </p>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(inviteText)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(texto)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {

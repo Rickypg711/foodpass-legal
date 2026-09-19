@@ -58,7 +58,16 @@ export async function POST(request: Request) {
       .get();
     if (!phoneSnap.exists) return vacio();
 
-    const items = liveRows((phoneSnap.data() ?? {}).freeItems, Date.now()).map((r) => ({
+    const pc = phoneSnap.data() ?? {};
+    // La frase que escribió la IA antes de que se necesitara (§8). Si no hay,
+    // el cliente usa el texto fijo — nunca se espera por un modelo.
+    const aiLines = (pc.aiLines ?? {}) as Record<string, unknown>;
+    const inviteText =
+      typeof aiLines.invite === "string" && aiLines.invite.trim()
+        ? aiLines.invite.trim()
+        : null;
+
+    const items = liveRows(pc.freeItems, Date.now()).map((r) => ({
       id: r.id,
       source: r.source,
       itemName: r.itemName,
@@ -68,7 +77,10 @@ export async function POST(request: Request) {
       ...(r.referredName ? { referredName: r.referredName } : {}),
     }));
 
-    return NextResponse.json({ items }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(
+      { items, ...(inviteText ? { inviteText } : {}) },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (e) {
     console.error("free-items/list", e);
     return vacio();

@@ -48,6 +48,11 @@ export type ReceiptWhatsappInput = {
    * como siempre — nunca se manda un recibo a medias por esperar esta línea.
    */
   inviteLink?: string | null;
+  /**
+   * La frase de invitación que escribió la IA (§8). Sin ella se usa la fija.
+   * El LINK se pega aparte, nunca lo escribe el modelo.
+   */
+  inviteText?: string | null;
 };
 
 const fmt = (n: number) =>
@@ -81,7 +86,10 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
     // La invitación va AL FINAL, después del recibo: primero lo que pidió, y
     // ya luego lo que puede ganar. Nunca antes del total.
     ...(r.inviteLink
-      ? ["", `🎁 Invita a un amigo y los dos ganan: ${r.inviteLink}`]
+      ? [
+          "",
+          `🎁 ${(r.inviteText || "").trim() || "Invita a un amigo y los dos ganan:"} ${r.inviteLink}`,
+        ]
       : []),
   ].join("\n");
 }

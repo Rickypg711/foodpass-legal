@@ -190,8 +190,8 @@ assert.ok(
   "el recibo debe aceptar inviteLink OPCIONAL: sin él sale como siempre",
 );
 const idxLink = receiptSrc.indexOf("Tu recibo y tus puntos");
-// Con el emoji: así se busca la LÍNEA del mensaje, no el comentario del tipo.
-const idxInvita = receiptSrc.indexOf("🎁 Invita a un amigo y los dos ganan:");
+// Se busca la LÍNEA del mensaje (la que pega el link), no el comentario del tipo.
+const idxInvita = receiptSrc.indexOf("${r.inviteLink}");
 assert.ok(idxInvita > idxLink && idxLink > 0, "la invitación va DESPUÉS del link del recibo");
 const idxTotal = receiptSrc.indexOf("*Total:");
 assert.ok(idxInvita > idxTotal && idxTotal > 0, "y nunca antes del total");
@@ -227,6 +227,42 @@ assert.ok(
 assert.ok(
   !/autom[áa]tic/i.test(soloCopy(notifySrc)),
   '"Avísale" lo manda una PERSONA: jamás decir automático en pantalla',
+);
+
+// ── §8 Las frases de la IA: mejoran el texto, nunca son un requisito ──────
+const bloqueSrc = readFileSync(new URL("../components/loyalty/ReceiptRewardsBlock.tsx", import.meta.url), "utf8");
+assert.ok(
+  /inviteText\s*\n?\s*\?\s*`\$\{inviteText\}\s\$\{invite\.link\}`/.test(bloqueSrc.replace(/\s+/g, " ")) ||
+    /\$\{inviteText\} \$\{invite\.link\}/.test(bloqueSrc),
+  "el LINK lo pega el sistema al final, nunca el modelo",
+);
+assert.ok(
+  /inviteTextFallback\(/.test(bloqueSrc),
+  "sin frase de IA debe quedar el texto fijo: nadie espera por un modelo",
+);
+assert.ok(
+  /notifyTextFallback\(/.test(notifySrc) && /aiNotify\s*\?\?/.test(notifySrc),
+  '"Avísale" usa la frase de la IA si existe y el texto fijo si no',
+);
+assert.ok(
+  /\(r\.inviteText \|\| ""\)\.trim\(\) \|\| "Invita a un amigo y los dos ganan:"/.test(receiptSrc),
+  "el recibo cae al texto fijo cuando no hay frase de IA",
+);
+
+// La IA no decide NADA de la matemática: solo texto.
+const aiSrc = readFileSync(
+  "/Users/ricardoparedes/projects/FOODPASS/functions/referral_lines_ai.js",
+  "utf8",
+);
+for (const prohibido of ["expiresAt", "redeemedAt", "freeItems:", "referrerPhone"]) {
+  assert.ok(
+    !aiSrc.includes(prohibido),
+    `la IA solo escribe TEXTO: no puede tocar ${prohibido} (eso es matemática, y va en reglas)`,
+  );
+}
+assert.ok(
+  /REFERRAL_LINES_AI_ENABLED/.test(aiSrc),
+  "las frases por IA arrancan en dry-run, tras una bandera",
 );
 
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");

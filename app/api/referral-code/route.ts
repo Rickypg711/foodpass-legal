@@ -87,6 +87,14 @@ export async function POST(request: Request) {
         .catch(() => {});
     }
 
+    // La frase del recibo que escribió la IA (§8), si la hay. El link lo pega
+    // quien arma el recibo, nunca el modelo.
+    const aiLines = ((phoneSnap.data() ?? {}).aiLines ?? {}) as Record<string, unknown>;
+    const receiptText =
+      typeof aiLines.receipt === "string" && aiLines.receipt.trim()
+        ? aiLines.receipt.trim()
+        : null;
+
     // ¿Ya tenía código? Se valida que apunte de vuelta a este teléfono: si el
     // puntero viniera torcido, se acuña uno nuevo en vez de devolver basura.
     const existing = parseReferralCode((phoneSnap.data() ?? {}).referralCode);
@@ -94,7 +102,11 @@ export async function POST(request: Request) {
       const codeSnap = await db.doc(`restaurants/${restaurantId}/referralCodes/${existing}`).get();
       if (codeSnap.exists && String((codeSnap.data() ?? {}).phone ?? "") === phone) {
         return NextResponse.json(
-          { code: existing, link: referralLink(restaurantId, existing, originOf(request)) },
+          {
+            code: existing,
+            link: referralLink(restaurantId, existing, originOf(request)),
+            ...(receiptText ? { receiptText } : {}),
+          },
           { headers: { "Cache-Control": "private, no-store" } },
         );
       }
@@ -117,7 +129,11 @@ export async function POST(request: Request) {
       });
       if (winner) {
         return NextResponse.json(
-          { code: winner, link: referralLink(restaurantId, winner, originOf(request)) },
+          {
+            code: winner,
+            link: referralLink(restaurantId, winner, originOf(request)),
+            ...(receiptText ? { receiptText } : {}),
+          },
           { headers: { "Cache-Control": "private, no-store" } },
         );
       }

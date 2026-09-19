@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 import { notifyTextFallback } from "@/lib/referral/referralLink";
@@ -40,6 +40,8 @@ export default function ReferralNotifyButton({
     itemName: string;
     notified: boolean;
   } | null>(null);
+  /** La frase que la IA le escribió al que invitó (§8). null = texto fijo. */
+  const [aiNotify, setAiNotify] = useState<string | null>(null);
 
   useEffect(() => {
     if (!restaurantId || !orderId) return;
@@ -56,6 +58,15 @@ export default function ReferralNotifyButton({
           itemName: String(d.itemName ?? "premio"),
           notified: !!d.notifiedAt,
         });
+        // Su frase ya estaba escrita antes de este cobro: aquí solo se LEE.
+        void getDoc(
+          doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone),
+        )
+          .then((pc) => {
+            const t = (pc.data()?.aiLines as Record<string, unknown> | undefined)?.notify;
+            if (typeof t === "string" && t.trim()) setAiNotify(t.trim());
+          })
+          .catch(() => {});
       },
       () => {
         // sin permiso o sin red: no hay botón, y ya
@@ -66,11 +77,13 @@ export default function ReferralNotifyButton({
 
   if (!grant || grant.notified) return null;
 
-  const texto = notifyTextFallback({
-    itemName: grant.itemName,
-    restaurantName,
-    friendName,
-  });
+  const texto =
+    aiNotify ??
+    notifyTextFallback({
+      itemName: grant.itemName,
+      restaurantName,
+      friendName,
+    });
 
   return (
     <button
