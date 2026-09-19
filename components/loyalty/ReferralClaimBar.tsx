@@ -20,7 +20,9 @@ const claimedKey = (restaurantId: string) => `comeleal_ref_claimed_${restaurantI
  * (§5). Lo peor que puede hacer un curioso es apuntar algo que después se
  * rechaza.
  *
- * El copy no promete de más: dice "si es tu primera vez", porque un teléfono
+ * El copy no promete de más (19-sep): el taco del amigo NO se entrega en su
+ * primera compra — con su primer pedido pagado se lo GANA, para su SIGUIENTE
+ * visita (así funciona la bienvenida). Y dice "si es tu primera vez", porque un teléfono
  * que ya le compró al local no califica y no se le va a mentir.
  */
 export default function ReferralClaimBar({
@@ -96,8 +98,9 @@ export default function ReferralClaimBar({
           <div className="flex items-start gap-2">
             <span className="text-[18px]">✅</span>
             <p className="text-[13px] font-semibold text-[#1C2526]">
-              Ya quedó apuntado. Pide tu <span className="text-[#F28C38]">{itemName}</span>{" "}
-              cuando pagues, y di que vienes por invitación.
+              Ya quedó apuntado. Paga tu primer pedido con este número y te
+              ganas un <span className="text-[#F28C38]">{itemName}</span> gratis
+              para tu siguiente visita.
             </p>
           </div>
         ) : (
@@ -105,9 +108,9 @@ export default function ReferralClaimBar({
             <div className="flex items-start gap-2">
               <span className="text-[18px]">🎁</span>
               <p className="text-[13px] font-semibold text-[#1C2526]">
-                Un amigo te regala un{" "}
-                <span className="text-[#F28C38]">{itemName}</span>. Pon tu
-                WhatsApp y te lo apuntamos.
+                Un amigo te invitó. Con tu primer pedido te ganas un{" "}
+                <span className="text-[#F28C38]">{itemName}</span> gratis para tu
+                siguiente visita.
               </p>
             </div>
             <div className="mt-2 flex gap-2">
@@ -131,8 +134,8 @@ export default function ReferralClaimBar({
               </button>
             </div>
             <p className="mt-1.5 text-[11px] leading-snug text-[#1C2526]/60">
-              Si es tu primera vez aquí, te lo damos con tu primer pedido. No te
-              mandamos mensajes.
+              Pon tu WhatsApp y te lo apuntamos. Solo cuenta si es tu primera vez
+              aquí. No te mandamos mensajes.
             </p>
           </>
         )}

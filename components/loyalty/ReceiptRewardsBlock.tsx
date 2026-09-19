@@ -184,8 +184,9 @@ export default function ReceiptRewardsBlock({
             Invita a un amigo y los dos ganan
           </p>
           <p className="mt-1 text-[12px] leading-snug text-[#1C2526]/70">
-            Él se lleva un {primero?.itemName || "premio"} en su primera compra,
-            y tú otro para tu siguiente visita.
+            Con su primer pedido tu amigo se gana un{" "}
+            {primero?.itemName || "premio"} para su siguiente visita, y tú te
+            ganas otro cuando él pague.
           </p>
           <a
             href={`https://wa.me/?text=${encodeURIComponent(texto)}`}

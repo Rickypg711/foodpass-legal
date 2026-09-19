@@ -288,4 +288,20 @@ assert.ok(
 );
 assert.ok(/Authorization: `Bearer \$\{idToken\}`/.test(puntosSrc2), "/puntos manda su sesión, no su número");
 
+// ── 19-sep: al AMIGO no se le promete el taco en su primera compra ────────
+// Con su primer pedido se lo GANA, para su SIGUIENTE visita (así funciona la
+// bienvenida). Prometerle otra cosa hace que llegue pidiéndolo y el local le
+// diga que no, justo en su primera visita.
+{
+  const bar = soloCopy(readFileSync(new URL("../components/loyalty/ReferralClaimBar.tsx", import.meta.url), "utf8"));
+  const blk = soloCopy(readFileSync(new URL("../components/loyalty/ReceiptRewardsBlock.tsx", import.meta.url), "utf8"));
+  const inv = inviteTextFallback({ itemName: "Taco suelto", restaurantName: "Suadero", link: "https://x" });
+  for (const [nombre, texto] of [["barra del amigo", bar], ["bloque del recibo", blk], ["invitación", inv]]) {
+    const plano = texto.replace(/\s+/g, " ");
+    assert.ok(/siguiente visita/i.test(plano), `${nombre}: tiene que decir "siguiente visita"`);
+    assert.ok(!/en su primera compra|cuando pagues, y di|te lo damos con tu primer pedido|te regala un/i.test(plano),
+      `${nombre}: vuelve a prometer el taco en la primera compra`);
+  }
+}
+
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");

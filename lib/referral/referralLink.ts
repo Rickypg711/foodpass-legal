@@ -82,7 +82,9 @@ export function inviteTextFallback(params: {
   const item = params.itemName.trim() || "algo gratis";
   const rest = params.restaurantName.trim();
   const donde = rest ? ` en ${rest}` : "";
-  return `Aquí se come bien. Te regalo un ${item}${donde} con este link: ${params.link}`;
+  // 19-sep: el amigo NO recibe el premio en su primera compra; con ella se lo
+  // GANA para su siguiente visita. El texto no puede prometer otra cosa.
+  return `Aquí se come bien. Con tu primer pedido${donde} te ganas un ${item} gratis para tu siguiente visita. Entra con este link: ${params.link}`;
 }
 
 /**
