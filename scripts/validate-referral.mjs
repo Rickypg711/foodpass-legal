@@ -304,4 +304,14 @@ assert.ok(/Authorization: `Bearer \$\{idToken\}`/.test(puntosSrc2), "/puntos man
   }
 }
 
+// 19-sep, cazado en producción: justo después de "Apuntar" la barra tiene que
+// enseñar "Ya quedó apuntado", no desaparecer.
+{
+  const barSrc = readFileSync(new URL("../components/loyalty/ReferralClaimBar.tsx", import.meta.url), "utf8");
+  assert.ok(
+    /hidden && state !== "done"/.test(barSrc),
+    'la barra no se puede esconder en el mismo momento en que confirma "Ya quedó apuntado"',
+  );
+}
+
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");

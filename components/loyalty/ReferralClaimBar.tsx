@@ -56,7 +56,12 @@ export default function ReferralClaimBar({
 
   // Sin código no hay invitación, y sin premio con nombre no hay nada que
   // prometer: en los dos casos la barra no existe.
-  if (!refCode || !itemName || hidden) return null;
+  // OJO (19-sep, cazado probando en producción): al apuntar se guarda en el
+  // navegador que "ya se apuntó", y eso vuelve `hidden` verdadero en ESE mismo
+  // render. Si se escondiera aquí, la barra desaparecería en vez de enseñar
+  // "Ya quedó apuntado" y el amigo no sabría si funcionó. Solo se esconde en
+  // una visita POSTERIOR, nunca justo después de apuntar.
+  if (!refCode || !itemName || (hidden && state !== "done")) return null;
 
   const digits = phone.replace(/\D/g, "").slice(-10);
   const listo = digits.length === 10;
