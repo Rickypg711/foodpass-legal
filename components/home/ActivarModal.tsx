@@ -43,6 +43,7 @@ import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStor
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
 import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone } from "@/lib/phone/phoneCountry";
 import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
+import { detectInAppBrowser, chromeIntentUrl, type InAppBrowser } from "@/lib/inAppBrowser";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,15 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "signin">(initialMode);
+  // Navegador embebido (Facebook/Instagram): ahí Google NO deja iniciar
+  // sesión (403 disallowed_useragent). 22-sep: 6 de 8 dueños de la pauta se
+  // quedaron en este paso. Se detecta en el cliente, después de montar.
+  const [inApp, setInApp] = useState<InAppBrowser | null>(null);
+  const [inAppHref, setInAppHref] = useState("");
+  useEffect(() => {
+    setInApp(detectInAppBrowser(navigator.userAgent));
+    setInAppHref(window.location.href);
+  }, []);
 
   // Ya con sesión: si venía de un link del panel (?next=, p. ej. el pedido del recibo), regresa ahí en
   // vez de "Ya tienes un restaurante". Si no es del local, Pedidos lo manda a Entrar SIN next (sin bucle).
@@ -631,6 +641,39 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             </div>
           )}
 
+          {/* Dentro de Facebook/Instagram, Google no deja entrar a nadie
+              (política de Google, no nuestra). Antes el botón salía igual,
+              fallaba con "No pudimos conectar" y el dueño se iba. Ahora: el
+              correo va primero y se explica en una línea. Con demo NO se
+              ofrece abrir en Chrome: el demo vive en este navegador y en
+              Chrome tendría que subir la foto otra vez. */}
+          {inApp && (
+            <div className="mt-5 rounded-xl border border-[#F28C38]/30 bg-[#F28C38]/8 px-4 py-3 text-left text-sm text-[#141413]">
+              <p className="font-semibold">
+                Estás dentro de {inApp.app}. Aquí Google no deja entrar.
+              </p>
+              <p className="mt-1 text-[#141413]/65">
+                {authMode === "signup"
+                  ? "Crea tu cuenta con tu correo aquí abajo, es un minuto."
+                  : "Entra con tu correo y contraseña aquí abajo."}
+              </p>
+              {!demo && inApp.os === "android" && chromeIntentUrl(inAppHref, inApp.os) && (
+                <a
+                  href={chromeIntentUrl(inAppHref, inApp.os) ?? undefined}
+                  className="mt-2 inline-block text-xs font-semibold text-[#F28C38] underline underline-offset-2"
+                >
+                  O abre esta página en Chrome para usar Google →
+                </a>
+              )}
+              {!demo && inApp.os === "ios" && (
+                <p className="mt-2 text-xs text-[#141413]/55">
+                  Para usar Google: toca los tres puntos de arriba y elige «Abrir en Safari».
+                </p>
+              )}
+            </div>
+          )}
+
+          {!inApp && (
           <div className="mt-6 flex flex-col gap-3">
             <button
               onClick={handleSignIn}
@@ -642,10 +685,11 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
                 : <><GoogleLogo />Continuar con Google</>}
             </button>
           </div>
+          )}
 
           <div className="my-4 flex items-center justify-between gap-3 text-xs text-[#141413]/35">
             <div className="h-px flex-1 bg-[#141413]/10" />
-            <span>o con correo</span>
+            <span>{inApp ? "con tu correo" : "o con correo"}</span>
             <div className="h-px flex-1 bg-[#141413]/10" />
           </div>
 
