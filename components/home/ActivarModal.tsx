@@ -829,7 +829,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               Te mandamos un código al{" "}
               <strong className="text-[#141413]">
                 {formatPhoneForDisplay(phoneInput, countryFromTypedPhone(phoneInput) ?? DEFAULT_PHONE_COUNTRY)}
-              </strong>.
+              </strong>. Puede tardar un par de minutos en llegar.
             </p>
             <input
               type="text"

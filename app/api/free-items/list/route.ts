@@ -73,6 +73,12 @@ export async function POST(request: Request) {
       itemName: r.itemName,
       // En milisegundos: el cliente no necesita saber de Timestamps.
       expiresAt: toMs(r.expiresAt),
+      // 22-sep-2026: el recibo necesita estos dos para pintar, DESDE EL PRIMER
+      // dibujo, la fecha que va a quedar cuando se marque "visto". Sin ellos el
+      // comensal alcanzaba a leer la fecha vieja y se le cambiaba enfrente —
+      // parecía que el local le acortaba el premio mientras lo miraba.
+      bornAt: toMs(r.bornAt),
+      seenAt: toMs(r.seenAt),
       // Quién lo trajo, solo el nombre y solo si el servidor lo guardó.
       ...(r.referredName ? { referredName: r.referredName } : {}),
     }));

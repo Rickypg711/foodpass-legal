@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { expiryLabel, type FreeItemRow } from "@/lib/loyalty/freeItems";
+import {
+  computeExpiresAtMs,
+  expiryLabel,
+  type FreeItemRow,
+} from "@/lib/loyalty/freeItems";
 import { inviteTextFallback } from "@/lib/referral/referralLink";
 import { buildWhatsappShareUrl } from "@/lib/order/formatWhatsappMessage";
 
@@ -26,8 +30,30 @@ import { buildWhatsappShareUrl } from "@/lib/order/formatWhatsappMessage";
 
 type ApiItem = Pick<FreeItemRow, "id" | "source" | "itemName"> & {
   expiresAt: number | null;
+  /** Para pintar la fecha que VA a quedar (ver `fechaQueVaAQuedar`). */
+  bornAt?: number | null;
+  seenAt?: number | null;
   referredName?: string;
 };
+
+/**
+ * La fecha que hay que enseñarle AL COMENSAL, desde el primer dibujo.
+ *
+ * 22-sep-2026: este bloque arranca el reloj al verse (30 días → 7 desde que se
+ * ve). Antes pintaba el `expiresAt` guardado y, un segundo después, recargaba
+ * con el nuevo: el comensal alcanzaba a leer "22 de octubre" y se le cambiaba
+ * a "29 de septiembre" enfrente. Correcto por dentro, y por fuera parecía que
+ * el local le acortaba el premio mientras lo miraba.
+ *
+ * Como VERLO es justo lo que arranca el reloj, la única fecha honesta en el
+ * momento en que la lee es la de después. Se pinta desde el principio y ya no
+ * se mueve: cuando el servidor confirma, escribe exactamente la misma.
+ */
+function fechaQueVaAQuedar(t: ApiItem, nowMs: number): number | null {
+  if (t.seenAt) return t.expiresAt; // ya corría: lo guardado manda
+  if (!t.bornAt) return t.expiresAt; // sin ancla no se inventa nada
+  return computeExpiresAtMs(t.bornAt, nowMs);
+}
 
 export default function ReceiptRewardsBlock({
   restaurantId,
@@ -135,6 +161,9 @@ export default function ReceiptRewardsBlock({
   }, [items, restaurantId, orderId, cargar]);
 
   const tacos = items ?? [];
+  // Un solo "ahora" para toda la lista: si cada taco leyera su propio reloj,
+  // dos tacos nacidos igual podrían pintar días distintos.
+  const ahora = Date.now();
   if (tacos.length === 0 && !invite) return null;
 
   const primero = tacos[0];
@@ -167,9 +196,12 @@ export default function ReceiptRewardsBlock({
                     ? ` — porque ${t.referredName} vino por tu link`
                     : " — porque tu amigo vino por tu link"
                   : ""}
-                {t.expiresAt
-                  ? ` · ${expiryLabel({ id: t.id, source: t.source, itemName: t.itemName, expiresAt: t.expiresAt })}`
-                  : ""}
+                {(() => {
+                  const vence = fechaQueVaAQuedar(t, ahora);
+                  return vence
+                    ? ` · ${expiryLabel({ id: t.id, source: t.source, itemName: t.itemName, expiresAt: vence })}`
+                    : "";
+                })()}
               </li>
             ))}
           </ul>

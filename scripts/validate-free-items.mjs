@@ -169,4 +169,40 @@ assert.match(expiryLabel(row({ expiresAt: NOW + d(5) }), NOW), /^vence el \d+ de
 assert.equal(daysLeft(row({ expiresAt: NOW + d(3) }), NOW), 3);
 assert.equal(daysLeft(row({ expiresAt: NOW - d(3) }), NOW), 0);
 
-console.log("✅ tacos como filas: reloj, cuál se canjea, compuerta y 'la web no escribe' OK");
+// ── La fecha del recibo no parpadea (22-sep-2026) ─────────────────────────
+//
+// El bloque del recibo ARRANCA el reloj al verse (30 días → 7 desde que se ve).
+// Antes pintaba el `expiresAt` guardado y un segundo después recargaba con el
+// nuevo: el comensal alcanzaba a leer "22 de octubre" y se le cambiaba a "29 de
+// septiembre" enfrente. Parecía que el local le acortaba el premio mientras lo
+// miraba. Ahora se pinta desde el primer dibujo la fecha que VA a quedar.
+{
+  const bloque = readFileSync(
+      new URL("../components/loyalty/ReceiptRewardsBlock.tsx", import.meta.url), "utf8");
+  assert.ok(
+    bloque.includes("fechaQueVaAQuedar"),
+    "el recibo debe pintar la fecha que va a quedar, no la guardada",
+  );
+  assert.ok(
+    !/expiresAt:\s*t\.expiresAt/.test(bloque),
+    "el recibo ya no puede pintar t.expiresAt crudo: parpadea al marcarse visto",
+  );
+  // Y el endpoint tiene que mandarle con qué calcularla.
+  const lista = readFileSync(
+      new URL("../app/api/free-items/list/route.ts", import.meta.url), "utf8");
+  for (const campo of ["bornAt:", "seenAt:"]) {
+    assert.ok(lista.includes(campo),
+      `/api/free-items/list debe devolver ${campo} o el recibo no puede calcular la fecha`);
+  }
+
+  // El comportamiento: sin ver, la fecha es la de dentro de 7 días (con tope a
+  // los 30 de nacido). Ya visto, manda lo guardado y no se mueve.
+  const nacido = NOW - d(1);
+  assert.equal(computeExpiresAtMs(nacido, NOW), NOW + d(7),
+    "sin ver, al comensal se le enseña +7 días desde AHORA");
+  const viejo = NOW - d(26);
+  assert.equal(computeExpiresAtMs(viejo, NOW), viejo + d(30),
+    "el tope de 30 días desde que nació sigue mandando");
+}
+
+console.log("✅ tacos como filas: reloj, cuál se canjea, compuerta, 'la web no escribe' y la fecha del recibo no parpadea");
