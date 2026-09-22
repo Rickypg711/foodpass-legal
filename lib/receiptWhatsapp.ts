@@ -55,6 +55,19 @@ export type ReceiptWhatsappInput = {
   inviteText?: string | null;
 };
 
+/**
+ * El texto fijo de la línea de invitación del recibo.
+ *
+ * 22-sep-2026: decía "Invita a un amigo y los dos ganan:" y la IA escribía
+ * cosas como "Aquí te dejo el link". Las dos suenan a que el link es para que
+ * lo ABRA quien recibe el recibo — y si lo abre, cae en el menú con un cartel
+ * que le dice "un amigo te invitó", cuando el que invita es ÉL. El link es
+ * para REENVIARLO. Ahora el verbo lo dice.
+ *
+ * Espejo de `kInviteFallback` en FOODPASS/lib/referral/receipt_invite.dart.
+ */
+export const INVITE_FALLBACK = "Mándale este link a un amigo y los dos ganan:";
+
 const fmt = (n: number) =>
   n.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 });
 
@@ -88,7 +101,7 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
     ...(r.inviteLink
       ? [
           "",
-          `🎁 ${(r.inviteText || "").trim() || "Invita a un amigo y los dos ganan:"} ${r.inviteLink}`,
+          `🎁 ${(r.inviteText || "").trim() || INVITE_FALLBACK} ${r.inviteLink}`,
         ]
       : []),
   ].join("\n");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { clearStoredRef } from "@/lib/referral/refSession";
+import { clearStoredRef, isMyReferralCode } from "@/lib/referral/refSession";
 
 /** El almacenamiento del navegador no cambia por fuera: no hay a qué suscribirse. */
 const subscribeNada = () => () => {};
@@ -53,6 +53,14 @@ export default function ReferralClaimBar({
     () => null,
   );
   const hidden = yaApuntado === refCode && refCode !== "";
+  // 22-sep: si el código es el SUYO (lo vio en su recibo en este navegador),
+  // esta barra le mentiría: "un amigo te invitó" — a él, que es el que invita.
+  // Y si se apuntara, el grant lo rechaza dos veces. No se pinta.
+  const esMio = useSyncExternalStore(
+    subscribeNada,
+    () => isMyReferralCode(restaurantId, refCode),
+    () => false,
+  );
 
   // Sin código no hay invitación, y sin premio con nombre no hay nada que
   // prometer: en los dos casos la barra no existe.
@@ -61,7 +69,7 @@ export default function ReferralClaimBar({
   // render. Si se escondiera aquí, la barra desaparecería en vez de enseñar
   // "Ya quedó apuntado" y el amigo no sabría si funcionó. Solo se esconde en
   // una visita POSTERIOR, nunca justo después de apuntar.
-  if (!refCode || !itemName || (hidden && state !== "done")) return null;
+  if (!refCode || !itemName || esMio || (hidden && state !== "done")) return null;
 
   const digits = phone.replace(/\D/g, "").slice(-10);
   const listo = digits.length === 10;
@@ -102,10 +110,17 @@ export default function ReferralClaimBar({
         {state === "done" ? (
           <div className="flex items-start gap-2">
             <span className="text-[18px]">✅</span>
+            {/* 22-sep: el servidor contesta 204 SIEMPRE (a propósito: decir
+                "no" revelaría si ese número ya compró aquí). Así que esta
+                confirmación no puede prometer en firme. Lleva la misma
+                condición que ya decía la letra chica antes de apuntar: "si es
+                tu primera vez". Un número que ya compró no se lleva nada, y
+                aquí no se le dice lo contrario. */}
             <p className="text-[13px] font-semibold text-[#1C2526]">
-              Ya quedó apuntado. Paga tu primer pedido con este número y te
-              ganas un <span className="text-[#F28C38]">{itemName}</span> gratis
-              para tu siguiente visita.
+              Listo. Si es tu primera vez aquí, con tu primer pedido pagado con
+              este número te ganas un{" "}
+              <span className="text-[#F28C38]">{itemName}</span> gratis para tu
+              siguiente visita.
             </p>
           </div>
         ) : (

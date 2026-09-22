@@ -245,7 +245,8 @@ assert.ok(
   '"Avísale" usa la frase de la IA si existe y el texto fijo si no',
 );
 assert.ok(
-  /\(r\.inviteText \|\| ""\)\.trim\(\) \|\| "Invita a un amigo y los dos ganan:"/.test(receiptSrc),
+  // 22-sep: el texto fijo vive en INVITE_FALLBACK (con verbo de MANDAR).
+  /\(r\.inviteText \|\| ""\)\.trim\(\) \|\| INVITE_FALLBACK/.test(receiptSrc),
   "el recibo cae al texto fijo cuando no hay frase de IA",
 );
 
@@ -315,3 +316,40 @@ assert.ok(/Authorization: `Bearer \$\{idToken\}`/.test(puntosSrc2), "/puntos man
 }
 
 console.log("✅ referidos: el número no viaja, el código resuelve solo en el servidor, y el copy no miente");
+
+// ── 22-sep-2026: el link del recibo es para REENVIARLO, y la barra no miente ─
+{
+  const { readFileSync } = await import("fs");
+  const rd = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
+
+  // 1) El texto fijo del recibo trae verbo de MANDAR. Espejo de kInviteFallback
+  //    (app) y del fallback de functions/referral_lines_ai.js. Si el que invita
+  //    cree que el link es para abrirlo, cae en el menú con "un amigo te
+  //    invitó" dirigido a él mismo.
+  const recibo = rd("lib/receiptWhatsapp.ts");
+  const m = recibo.match(/export const INVITE_FALLBACK = "([^"]+)"/);
+  if (!m) throw new Error("falta INVITE_FALLBACK en lib/receiptWhatsapp.ts");
+  if (m[1] !== "Mándale este link a un amigo y los dos ganan:") {
+    throw new Error(`INVITE_FALLBACK cambió (${m[1]}): tiene que ser el MISMO que kInviteFallback en la app y el fallback de functions`);
+  }
+  if (!/\b(m[áa]ndale|comparte|p[áa]sale|env[íi]ale)\b/i.test(m[1])) {
+    throw new Error("INVITE_FALLBACK debe llevar un verbo de mandar");
+  }
+
+  // 2) La barra no se pinta para el código PROPIO.
+  const barra = rd("components/loyalty/ReferralClaimBar.tsx");
+  if (!barra.includes("isMyReferralCode(")) throw new Error("ReferralClaimBar debe esconderse cuando el código es el propio (isMyReferralCode)");
+  const bloque = rd("components/loyalty/ReceiptRewardsBlock.tsx");
+  if (!bloque.includes("rememberMyReferralCode(")) throw new Error("ReceiptRewardsBlock debe guardar el código propio (rememberMyReferralCode)");
+
+  // 3) La confirmación no promete en firme: el servidor contesta 204 siempre
+  //    (para no revelar si ese número ya compró), así que "ya quedó apuntado"
+  //    sin condición era una promesa que el grant puede rechazar.
+  if (/Ya quedó apuntado\. Paga tu primer pedido/.test(barra)) {
+    throw new Error("la confirmación de la barra no puede prometer en firme: lleva 'Si es tu primera vez aquí'");
+  }
+  if (!/Si es tu primera vez aquí/.test(barra)) {
+    throw new Error("la confirmación de la barra debe decir 'Si es tu primera vez aquí'");
+  }
+  console.log("✅ el link del recibo dice que se MANDE; la barra no se pinta para el código propio ni promete en firme");
+}

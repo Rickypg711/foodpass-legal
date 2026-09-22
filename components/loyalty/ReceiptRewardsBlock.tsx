@@ -7,6 +7,7 @@ import {
   type FreeItemRow,
 } from "@/lib/loyalty/freeItems";
 import { inviteTextFallback } from "@/lib/referral/referralLink";
+import { rememberMyReferralCode } from "@/lib/referral/refSession";
 import { buildWhatsappShareUrl } from "@/lib/order/formatWhatsappMessage";
 
 /**
@@ -125,7 +126,12 @@ export default function ReceiptRewardsBlock({
         });
         if (r.status !== 200) return;
         const j = (await r.json()) as { link?: string };
-        if (!cancelado && typeof j.link === "string" && j.link) setInvite({ link: j.link });
+        if (!cancelado && typeof j.link === "string" && j.link) {
+          setInvite({ link: j.link });
+          // Para que, si abre su propio link, el menú no le diga "un amigo te
+          // invitó" a él mismo (refSession.ts).
+          rememberMyReferralCode(restaurantId, j.link);
+        }
       } catch {
         // sin invitación: el recibo sigue siendo recibo
       }
