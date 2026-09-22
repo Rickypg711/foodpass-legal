@@ -115,18 +115,24 @@ export async function POST(request: Request) {
     // La dirección va TAL CUAL. La versión anterior le pegaba
     // ", Chihuahua, Chihuahua, México" a todo, lo que rompía a los locales de
     // Colombia, Guatemala, Sinaloa, Veracruz y Puebla que ya hay en la base.
+    //
+    // Lo que SÍ se manda es el país esperado como `components=country:XX`
+    // (22-sep-2026). No es texto pegado a la dirección: es el filtro oficial
+    // de Google, y el país sale del que eligió el dueño. Sin esto, "Colegio
+    // Militar 6707, Col Nombre de Dios" (Chihuahua, tel 614) se fue a
+    // Colombia y la guarda de país lo rechazó: Dogos Las Dos Tribus nació en
+    // Null Island con dirección buena. Con el filtro, la misma dirección
+    // devuelve ROOFTOP.
+    const expected = expectedCountryFor({ country: iso, phone: tel });
     const url =
       "https://maps.googleapis.com/maps/api/geocode/json?address=" +
       encodeURIComponent(addr) +
+      (expected ? "&components=country:" + expected : "") +
       "&language=es&key=" +
       apiKey;
     const res = await fetch(url);
     const geoData = await res.json();
-    const verdict = evaluateGeocodeResult(
-      geoData,
-      expectedCountryFor({ country: iso, phone: tel }),
-      addr,
-    );
+    const verdict = evaluateGeocodeResult(geoData, expected, addr);
     if (!verdict.ok) {
       console.warn("[geocode] rechazado:", verdict.reason, "addr:", addr);
     }

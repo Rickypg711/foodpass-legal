@@ -84,6 +84,17 @@ assert.match(
   "/api/geocode debe usar expectedCountryFor, no la corazonada del teléfono a secas",
 );
 
+assert.match(
+  ruta,
+  /components=country:/,
+  "/api/geocode debe filtrar por el país esperado (components=country:XX); sin eso 'Colegio Militar 6707' se fue a Colombia (Dogos, 22-sep)",
+);
+assert.doesNotMatch(
+  ruta,
+  /encodeURIComponent\(\s*addr\s*\+/,
+  "el país va como components, NUNCA pegado al texto de la dirección",
+);
+
 const activar = readFileSync("components/home/ActivarModal.tsx", "utf8");
 assert.match(
   activar,
