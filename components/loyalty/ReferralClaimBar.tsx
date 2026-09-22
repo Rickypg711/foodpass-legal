@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { clearStoredRef, isMyReferralCode } from "@/lib/referral/refSession";
+import { clearStoredRef } from "@/lib/referral/refSession";
 
 /** El almacenamiento del navegador no cambia por fuera: no hay a qué suscribirse. */
 const subscribeNada = () => () => {};
@@ -53,14 +53,13 @@ export default function ReferralClaimBar({
     () => null,
   );
   const hidden = yaApuntado === refCode && refCode !== "";
-  // 22-sep: si el código es el SUYO (lo vio en su recibo en este navegador),
-  // esta barra le mentiría: "un amigo te invitó" — a él, que es el que invita.
-  // Y si se apuntara, el grant lo rechaza dos veces. No se pinta.
-  const esMio = useSyncExternalStore(
-    subscribeNada,
-    () => isMyReferralCode(restaurantId, refCode),
-    () => false,
-  );
+  // 22-sep: se probó esconder la barra cuando el código es el PROPIO (guardado
+  // al ver el recibo). Se quitó el mismo día: rompía el reenvío del recibo
+  // completo — el amigo abre por curiosidad la página del pedido, su navegador
+  // se queda con ese código como "suyo", y ya no se puede apuntar. Sin
+  // identidad en el navegador no hay forma de distinguir "mi recibo" de "me lo
+  // reenviaron". Lo que protege del auto-referido es la confirmación de abajo,
+  // que no promete en firme, y el grant, que lo rechaza.
 
   // Sin código no hay invitación, y sin premio con nombre no hay nada que
   // prometer: en los dos casos la barra no existe.
@@ -69,7 +68,7 @@ export default function ReferralClaimBar({
   // render. Si se escondiera aquí, la barra desaparecería en vez de enseñar
   // "Ya quedó apuntado" y el amigo no sabría si funcionó. Solo se esconde en
   // una visita POSTERIOR, nunca justo después de apuntar.
-  if (!refCode || !itemName || esMio || (hidden && state !== "done")) return null;
+  if (!refCode || !itemName || (hidden && state !== "done")) return null;
 
   const digits = phone.replace(/\D/g, "").slice(-10);
   const listo = digits.length === 10;

@@ -336,11 +336,15 @@ console.log("✅ referidos: el número no viaja, el código resuelve solo en el 
     throw new Error("INVITE_FALLBACK debe llevar un verbo de mandar");
   }
 
-  // 2) La barra no se pinta para el código PROPIO.
+  // 2) La barra NO se esconde por "código propio". Se probó y se quitó el
+  //    mismo día: el navegador no puede distinguir "mi recibo" de "me lo
+  //    reenviaron", y esconderla rompía el reenvío del recibo completo (el
+  //    amigo abre la página del pedido por curiosidad y ya no se puede
+  //    apuntar). Si alguien lo vuelve a intentar, que sea con identidad real.
   const barra = rd("components/loyalty/ReferralClaimBar.tsx");
-  if (!barra.includes("isMyReferralCode(")) throw new Error("ReferralClaimBar debe esconderse cuando el código es el propio (isMyReferralCode)");
-  const bloque = rd("components/loyalty/ReceiptRewardsBlock.tsx");
-  if (!bloque.includes("rememberMyReferralCode(")) throw new Error("ReceiptRewardsBlock debe guardar el código propio (rememberMyReferralCode)");
+  if (barra.includes("isMyReferralCode(")) {
+    throw new Error("ReferralClaimBar no debe esconderse por 'código propio' desde el navegador: rompe el reenvío del recibo completo");
+  }
 
   // 3) La confirmación no promete en firme: el servidor contesta 204 siempre
   //    (para no revelar si ese número ya compró), así que "ya quedó apuntado"
@@ -351,5 +355,5 @@ console.log("✅ referidos: el número no viaja, el código resuelve solo en el 
   if (!/Si es tu primera vez aquí/.test(barra)) {
     throw new Error("la confirmación de la barra debe decir 'Si es tu primera vez aquí'");
   }
-  console.log("✅ el link del recibo dice que se MANDE; la barra no se pinta para el código propio ni promete en firme");
+  console.log("✅ el link del recibo dice que se MANDE, y la barra no promete en firme");
 }
