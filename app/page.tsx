@@ -79,12 +79,36 @@ const VALUE_POINTS = [
     body: "La IA lee tu menú de papel: platillos, precios, salsas y tamaños. Lo compartes por WhatsApp o lo pegas en la mesa, y tus clientes ordenan desde ahí. Sin comisión por pedido.",
   },
   {
+    title: "Tu caja para cobrar, sin tope de ventas",
+    body: "Cobra en efectivo o con tu terminal de siempre: 0% de comisión. Saca tu corte del día, lleva tus turnos y dale su ticket al cliente. No cambias nada de lo que ya usas.",
+  },
+  {
+    title: "Pedidos en línea y por WhatsApp",
+    body: "Tus clientes ordenan desde tu menú y el pedido te llega a TU WhatsApp, además de tu panel. Solo los pagos en línea con tarjeta llevan 3%; las apps de reparto cobran hasta 30%.",
+  },
+  {
     title: "Puntos por cada compra, también en efectivo",
     body: "El cliente deja su número al pagar y junta puntos: en mostrador, en mesa o en pedido en línea. Los ve en Apple Wallet o Google Wallet sin descargar nada.",
   },
   {
     title: "Ves quién volvió y quién se está perdiendo",
     body: "Cada venta con número te dice quién regresó. Y cuando un cliente de siempre lleva tiempo sin venir, te lo señalamos para que le escribas tú.",
+  },
+  {
+    title: "Te decimos qué hacer hoy",
+    body: "Cada noche Comeleal revisa tus ventas y al día siguiente te deja una sola cosa que hacer, escrita en español. Sin gráficas que nadie lee.",
+  },
+  {
+    title: "Que un cliente te traiga otro",
+    body: "Tu cliente invita a un amigo con su número y los dos ganan algo cuando el amigo viene. Recién estrenado.",
+  },
+  {
+    title: "Tu página en Google",
+    body: "Te ponemos en los resultados cuando alguien busca dónde comer cerca de ti. Tu menú con precios, tu horario y cómo llegar.",
+  },
+  {
+    title: "En tu celular, en tu tablet y en la compu",
+    body: "Lo mismo en los tres, con la misma cuenta. Está en App Store y en Google Play, o entras desde el navegador sin instalar nada.",
   },
 ] as const;
 
@@ -284,9 +308,9 @@ export default function Home() {
         <section className={SECTION} aria-labelledby="valor-heading">
           <div className="mx-auto max-w-6xl">
             <Eyebrow>02 · Qué incluye</Eyebrow>
-            <h2 id="valor-heading" className={H2}>Todo lo que necesitas para que tus clientes regresen</h2>
+            <h2 id="valor-heading" className={H2}>Con tu menú viene tu caja, tus pedidos y tus clientes.</h2>
             <p className={LEAD}>
-              Activo en unos 5 minutos, sin contratos. Comeleal funciona junto a tu punto de venta actual.
+              Todo gratis, y funciona junto a lo que ya usas. Sin cambiar tu caja actual, sin equipo que comprar y sin contrato.
             </p>
             <ul className="mt-12 grid gap-10 md:grid-cols-3">
               {VALUE_POINTS.map((point) => (
