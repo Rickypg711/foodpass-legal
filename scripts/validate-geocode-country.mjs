@@ -95,6 +95,12 @@ assert.doesNotMatch(
   "el país va como components, NUNCA pegado al texto de la dirección",
 );
 
+assert.match(
+  ruta,
+  /\(expected \? "&components=country:" \+ expected : ""\) \+\s*"&key="/,
+  "el geocode directo NO manda language=es: con idioma Google devuelve 'México' APPROXIMATE y tumba direcciones buenas (Dogos, 22-sep)",
+);
+
 const activar = readFileSync("components/home/ActivarModal.tsx", "utf8");
 assert.match(
   activar,

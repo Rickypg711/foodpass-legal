@@ -123,12 +123,19 @@ export async function POST(request: Request) {
     // Colombia y la guarda de país lo rechazó: Dogos Las Dos Tribus nació en
     // Null Island con dirección buena. Con el filtro, la misma dirección
     // devuelve ROOFTOP.
+    //
+    // Y SIN `language=es` en esta rama (22-sep-2026, probado 3 veces): con
+    // `language=es` Google contesta "México" APPROXIMATE para esa misma
+    // dirección y la guarda la rechaza; sin idioma contesta la calle
+    // (GEOMETRIC_CENTER) y pasa. 14 direcciones reales dan la misma
+    // precisión con y sin idioma, así que no se pierde nada. El idioma se
+    // queda solo en la rama reverse (nombres de ciudad para el dueño).
     const expected = expectedCountryFor({ country: iso, phone: tel });
     const url =
       "https://maps.googleapis.com/maps/api/geocode/json?address=" +
       encodeURIComponent(addr) +
       (expected ? "&components=country:" + expected : "") +
-      "&language=es&key=" +
+      "&key=" +
       apiKey;
     const res = await fetch(url);
     const geoData = await res.json();
