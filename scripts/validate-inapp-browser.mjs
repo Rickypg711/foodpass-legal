@@ -42,7 +42,7 @@ const modal = readFileSync("components/home/ActivarModal.tsx", "utf8");
 assert.match(modal, /detectInAppBrowser\(/, "ActivarModal debe detectar el navegador embebido");
 assert.match(
   modal,
-  /\{!inApp && \(\s*<div[\s\S]*?Continuar con Google/,
+  /\{!inApp && \(\s*<button[\s\S]*?Continuar con Google/,
   "el botón de Google solo sale FUERA del navegador embebido (Google lo bloquea adentro)",
 );
 assert.match(modal, /chromeIntentUrl\(/, "en Android se ofrece abrir en Chrome");

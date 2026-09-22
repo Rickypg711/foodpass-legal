@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { paperCategoryOrder } from "@/lib/menu/categoryOrder";
 import { cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
 import Link from "next/link";
@@ -30,6 +30,8 @@ import {
   linkWithCredential,
   EmailAuthProvider,
   GoogleAuthProvider,
+  RecaptchaVerifier,
+  type ConfirmationResult,
 } from "firebase/auth";
 import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
 import { RESTAURANT_CATEGORIES, inferCategoryFromDemo, rankCategoriesForDemo } from "@/lib/demo/inferCategory";
@@ -41,9 +43,17 @@ import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { isInternalConversion } from "@/lib/meta/internal";
 import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
-import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone, formatPhoneForDisplay } from "@/lib/phone/phoneCountry";
 import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 import { detectInAppBrowser, chromeIntentUrl, type InAppBrowser } from "@/lib/inAppBrowser";
+import {
+  ownerPhoneToE164,
+  precheckOwnerPhone,
+  sendOwnerPhoneCode,
+  confirmOwnerPhoneCode,
+  phoneAuthErrorText,
+} from "@/lib/phoneOwnerSignIn";
+import { linkVerifiedPhone } from "@/lib/loyalty/linkVerifiedPhone";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -122,6 +132,15 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
     setInApp(detectInAppBrowser(navigator.userAgent));
     setInAppHref(window.location.href);
   }, []);
+  // Alta por NÚMERO (22-sep): registro y entrada son el mismo paso, código
+  // por SMS, sin contraseña. Es la puerta principal: muchos dueños en México
+  // no tienen correo a la mano y su número ya está en el demo.
+  const [phoneMode, setPhoneMode] = useState<"number" | "code" | null>(null);
+  const [phoneInput, setPhoneInput] = useState(demo?.whatsapp ?? demo?.info?.phone ?? "");
+  const [smsCode, setSmsCode] = useState("");
+  const confirmRef = useRef<ConfirmationResult | null>(null);
+  const verifierRef = useRef<RecaptchaVerifier | null>(null);
+  const recaptchaHostRef = useRef<HTMLDivElement | null>(null);
 
   // Ya con sesión: si venía de un link del panel (?next=, p. ej. el pedido del recibo), regresa ahí en
   // vez de "Ya tienes un restaurante". Si no es del local, Pedidos lo manda a Entrar SIN next (sin bucle).
@@ -289,6 +308,72 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         setError("No pudimos conectar. Intenta de nuevo.");
         setStage("idle");
       }
+    }
+  }
+
+  async function handlePhoneSend() {
+    setError(null);
+    const e164 = ownerPhoneToE164(phoneInput);
+    if (!e164) {
+      setError("Pon tus 10 dígitos. Si no estás en México, ponlo con + y tu país, como +1 809 123 4567.");
+      return;
+    }
+    setStage("signing");
+    try {
+      // Antes del SMS: ¿ese número ya es de una cuenta con Google o correo?
+      // Entonces se entra por ahí; jamás dos cuentas para un número.
+      const pre = await precheckOwnerPhone(e164);
+      if (pre === "social_account") {
+        setAuthMode("signin");
+        setPhoneMode(null);
+        setError(
+          inApp
+            ? "Ese número ya tiene cuenta con correo o Google. Entra con tu correo aquí abajo."
+            : "Ese número ya tiene cuenta con Google o correo. Entra por ahí.",
+        );
+        setStage("idle");
+        return;
+      }
+      const auth = getFirebaseAuth();
+      if (!verifierRef.current && recaptchaHostRef.current) {
+        verifierRef.current = new RecaptchaVerifier(auth, recaptchaHostRef.current, { size: "invisible" });
+      }
+      if (!verifierRef.current) throw new Error("recaptcha_unavailable");
+      confirmRef.current = await sendOwnerPhoneCode(auth, e164, verifierRef.current);
+      setSmsCode("");
+      setPhoneMode("code");
+      setStage("idle");
+    } catch (err: unknown) {
+      console.error("[activar] sms send", err);
+      setError(phoneAuthErrorText(err, "send"));
+      // El reCAPTCHA es de un solo uso cuando falla: se tira para reintentar.
+      verifierRef.current?.clear();
+      verifierRef.current = null;
+      setStage("idle");
+    }
+  }
+
+  async function handlePhoneConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    const confirmation = confirmRef.current;
+    if (!confirmation || smsCode.replace(/\D/g, "").length < 6) return;
+    setError(null);
+    setStage("signing");
+    try {
+      const auth = getFirebaseAuth();
+      const u = await confirmOwnerPhoneCode(auth, confirmation, smsCode);
+      // Igual que la app y que /puntos: el número verificado se escribe en
+      // users/{uid}.linkedPhone, la verdad única del teléfono. Nunca lanza.
+      await linkVerifiedPhone(phoneInput);
+      setUser(u);
+      // El número verificado es el del local, salvo que el demo ya traiga otro.
+      if (!phone.trim()) setPhone(phoneInput);
+      const snap = await getDoc(doc(getFirebaseDb(), "users", u.uid));
+      afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
+    } catch (err: unknown) {
+      console.error("[activar] sms confirm", err);
+      setError(phoneAuthErrorText(err, "confirm"));
+      setStage("idle");
     }
   }
 
@@ -654,8 +739,8 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               </p>
               <p className="mt-1 text-[#141413]/65">
                 {authMode === "signup"
-                  ? "Crea tu cuenta con tu correo aquí abajo, es un minuto."
-                  : "Entra con tu correo y contraseña aquí abajo."}
+                  ? "Crea tu cuenta con tu número de WhatsApp aquí abajo, es un minuto."
+                  : "Entra con tu número o con tu correo aquí abajo."}
               </p>
               {!demo && inApp.os === "android" && chromeIntentUrl(inAppHref, inApp.os) && (
                 <a
@@ -673,8 +758,23 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             </div>
           )}
 
-          {!inApp && (
+          {/* El reCAPTCHA invisible del SMS vive aquí (Firebase lo exige en el DOM). */}
+          <div ref={recaptchaHostRef} />
+
+          {/* El número PRIMERO (22-sep): registro y entrada son el mismo paso,
+              un código por SMS y adentro. Google segundo (y nunca dentro de
+              Facebook, que lo bloquea). El correo queda abajo, chico. */}
+          {phoneMode === null && (
           <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => { setError(null); setPhoneMode("number"); }}
+              disabled={stage === "signing"}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              📱 Continuar con mi número
+            </button>
+            {!inApp && (
             <button
               onClick={handleSignIn}
               disabled={stage === "signing"}
@@ -684,15 +784,93 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
                 ? <><Spinner className="text-[#141413]" />Conectando…</>
                 : <><GoogleLogo />Continuar con Google</>}
             </button>
+            )}
           </div>
           )}
 
+          {phoneMode === "number" && (
+          <div className="mt-6 flex flex-col gap-2.5 text-left">
+            <label className="text-xs font-semibold text-[#141413]/60" htmlFor="activar-phone">
+              Tu número de WhatsApp
+            </label>
+            <input
+              id="activar-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="614 123 4567"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              disabled={stage === "signing"}
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]"
+            />
+            <button
+              type="button"
+              onClick={handlePhoneSend}
+              disabled={stage === "signing"}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
+            >
+              {stage === "signing" ? <Spinner className="text-white" /> : "Mandarme un código por SMS →"}
+            </button>
+            <p className="text-[11px] text-[#141413]/45">Te llega un código de 6 dígitos. Sin contraseña.</p>
+            <button
+              type="button"
+              onClick={() => { setPhoneMode(null); setError(null); }}
+              className="self-center text-xs font-semibold text-[#141413]/50 underline underline-offset-2"
+            >
+              Usar otra forma
+            </button>
+          </div>
+          )}
+
+          {phoneMode === "code" && (
+          <form onSubmit={handlePhoneConfirm} className="mt-6 flex flex-col gap-2.5 text-left">
+            <p className="text-sm text-[#141413]/70">
+              Te mandamos un código al{" "}
+              <strong className="text-[#141413]">
+                {formatPhoneForDisplay(phoneInput, countryFromTypedPhone(phoneInput) ?? DEFAULT_PHONE_COUNTRY)}
+              </strong>.
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="Código de 6 dígitos"
+              value={smsCode}
+              onChange={(e) => setSmsCode(e.target.value)}
+              required
+              autoFocus
+              disabled={stage === "signing"}
+              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-center text-lg tracking-[0.3em] text-[#141413] outline-none placeholder:text-sm placeholder:tracking-normal placeholder:text-[#141413]/30 focus:border-[#F28C38]"
+            />
+            <button
+              type="submit"
+              disabled={stage === "signing" || smsCode.replace(/\D/g, "").length < 6}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-50"
+            >
+              {stage === "signing" ? <Spinner className="text-white" /> : "Entrar →"}
+            </button>
+            <div className="flex items-center justify-between text-xs font-semibold text-[#141413]/50">
+              <button type="button" onClick={() => { setPhoneMode("number"); setError(null); }} className="underline underline-offset-2">
+                Cambiar número
+              </button>
+              <button type="button" onClick={handlePhoneSend} disabled={stage === "signing"} className="underline underline-offset-2 disabled:opacity-50">
+                Mandar otra vez
+              </button>
+            </div>
+          </form>
+          )}
+
+          {phoneMode === null && (
           <div className="my-4 flex items-center justify-between gap-3 text-xs text-[#141413]/35">
             <div className="h-px flex-1 bg-[#141413]/10" />
-            <span>{inApp ? "con tu correo" : "o con correo"}</span>
+            <span>o con correo</span>
             <div className="h-px flex-1 bg-[#141413]/10" />
           </div>
+          )}
 
+          {phoneMode === null && (<>
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-2.5 text-left">
             <input
               type="email"
@@ -762,6 +940,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               ? "¿Ya tienes cuenta? Inicia sesión"
               : "¿Primera vez? Crea tu cuenta"}
           </button>
+          </>)}
 
           <p className="mt-4 text-[11px] text-[#141413]/35">
             Al continuar aceptas los{" "}
@@ -782,7 +961,13 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               <img src={user.photoURL} alt="" className="h-8 w-8 rounded-full ring-1 ring-[#e8e6dc]" />
             )}
             <div>
-              <p className="text-sm font-semibold text-[#141413]">{user.displayName ?? user.email}</p>
+              <p className="text-sm font-semibold text-[#141413]">
+                {user.displayName
+                  ?? user.email
+                  ?? (user.phoneNumber
+                    ? formatPhoneForDisplay(user.phoneNumber, countryFromTypedPhone(user.phoneNumber) ?? DEFAULT_PHONE_COUNTRY)
+                    : "Tu cuenta")}
+              </p>
               {/* Cuentas de correo no tienen displayName: sin esta guarda el
                   correo salía DOS veces, apilado (cazado por Ricardo 26-ago). */}
               {user.displayName && (
