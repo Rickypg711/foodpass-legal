@@ -73,16 +73,56 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
   ].join("\n");
 }
 
+/**
+ * El host de TODO link de WhatsApp: `api.whatsapp.com/send`, JAMÁS `wa.me`.
+ *
+ * 22-sep-2026: `wa.me` **rompe todos los emojis**. Su redirect a
+ * api.whatsapp.com re-codifica el texto y convierte cada emoji en `\uFFFD`
+ * (el rombo con el signo de interrogación). Probado con curl y confirmado en
+ * el teléfono de Ricardo:
+ *
+ *   wa.me/…?text=%E2%AD%90 PRUEBA %F0%9F%8E%81   →  "� PRUEBA �"
+ *   api.whatsapp.com/send/?…text=%E2%AD%90 …     →  "⭐ PRUEBA 🎁"
+ *
+ * Nuestra codificación siempre estuvo bien; el que rompía era el redirect.
+ * `ñ`, `¡` y `—` pasaban intactos, así que el daño solo se veía en los emojis
+ * — y se veía en TODO: el recibo (⭐ de puntos, 🎁 del premio y de la
+ * invitación), los win-back y el 🙏 del link de ayuda.
+ *
+ * Yendo directo no hay redirect que re-codifique. Si alguien vuelve a escribir
+ * `wa.me` a mano, truena `npm run test:whatsapp-url`.
+ */
+const WA_SEND = "https://api.whatsapp.com/send";
+
 export function buildWhatsappUrl(
   phoneDigits: string,
   text: string,
   countryCode: string = DEFAULT_PHONE_COUNTRY,
 ): string {
-  // Canon (26-ago, abierto al mundo el 5-sep): wa.me exige formato
+  // Canon (26-ago, abierto al mundo el 5-sep): WhatsApp exige formato
   // internacional, así que TODO link se arma como país + últimos 10 dígitos —
   // sin importar cómo se haya guardado el número ("+52 614...", "52614...",
   // o 10 pelones). El país lo dice el restaurante (phoneCountryCode) y si no
   // dice nada es México. Antes "52" iba cosido y a un dueño de República
   // Dominicana su propio botón de WhatsApp le marcaba a un número mexicano.
-  return `https://wa.me/${waNumber(phoneDigits, countryCode)}?text=${encodeURIComponent(text)}`;
+  return (
+    `${WA_SEND}/?phone=${waNumber(phoneDigits, countryCode)}` +
+    `&text=${encodeURIComponent(text)}&type=phone_number&app_absent=0`
+  );
+}
+
+/**
+ * Sin número: abre el selector de contactos de WhatsApp con el texto listo.
+ * Es el botón de "mándale esto a un amigo" (invitación del recibo).
+ */
+export function buildWhatsappShareUrl(text: string): string {
+  return `${WA_SEND}?text=${encodeURIComponent(text)}`;
+}
+
+/** Link a un número, sin texto (abrir el chat y ya). */
+export function buildWhatsappChatUrl(
+  phoneDigits: string,
+  countryCode: string = DEFAULT_PHONE_COUNTRY,
+): string {
+  return `${WA_SEND}/?phone=${waNumber(phoneDigits, countryCode)}&type=phone_number&app_absent=0`;
 }

@@ -18,6 +18,7 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseApp, getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
 /** Espejo de PLATFORM_ADMIN_UIDS en functions/menu_demo_ai.js. */
 const PLATFORM_ADMIN_UIDS = ["xf69ZR1tWHRJ3z3N7NIolTXKXQF2"];
@@ -92,7 +93,7 @@ export default function ProspectosPage() {
       setMsg({ jobId: row.id, text: data.text, whatsapp: data.whatsapp });
       if (data.whatsapp) {
         window.open(
-          `https://wa.me/52${data.whatsapp}?text=${encodeURIComponent(data.text)}`,
+          buildWhatsappUrl(data.whatsapp, data.text),
           "_blank",
         );
       }

@@ -9,6 +9,7 @@
  */
 
 import { readFileSync } from "fs";
+import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
@@ -34,17 +35,31 @@ const builderSrc = read("lib/order/formatWhatsappMessage.ts");
 const fn = builderSrc.match(/export function buildWhatsappUrl[\s\S]*?\n\}/);
 if (!fn) fail("buildWhatsappUrl no encontrado");
 if (!/countryCode: string = DEFAULT_PHONE_COUNTRY/.test(fn[0])) fail("buildWhatsappUrl debe aceptar countryCode con default DEFAULT_PHONE_COUNTRY");
-if (!/wa\.me\/\$\{waNumber\(phoneDigits, countryCode\)\}/.test(fn[0])) fail("buildWhatsappUrl debe armar wa.me/${waNumber(phoneDigits, countryCode)}");
+if (!/phone=\$\{waNumber\(phoneDigits, countryCode\)\}/.test(fn[0])) fail("buildWhatsappUrl debe armar phone=${waNumber(phoneDigits, countryCode)}");
 if (/wa\.me\/52/.test(fn[0])) fail("buildWhatsappUrl no puede coser 52");
+
+// 2 bis) JAMÁS wa.me (22-sep-2026): su redirect convierte TODOS los emojis en
+// "\uFFFD". Probado con curl y confirmado en el teléfono de Ricardo:
+//   wa.me/…?text=%E2%AD%90 PRUEBA %F0%9F%8E%81   → "� PRUEBA �"
+//   api.whatsapp.com/send/?…text=%E2%AD%90 …     → "⭐ PRUEBA 🎁"
+// Nuestra codificación siempre estuvo bien; rompía el redirect. Afectaba el
+// recibo (⭐ de puntos, 🎁 del premio y de la invitación), los win-back y el
+// 🙏 del link de ayuda — o sea, TODO lo que le mandamos a un comensal.
+if (!builderSrc.includes('const WA_SEND = "https://api.whatsapp.com/send"')) {
+  fail("el host debe ser api.whatsapp.com/send — wa.me rompe los emojis");
+}
+for (const needed of ["buildWhatsappShareUrl", "buildWhatsappChatUrl"]) {
+  if (!builderSrc.includes(`export function ${needed}(`)) fail(`falta ${needed} en formatWhatsappMessage.ts`);
+}
 
 // El comportamiento, probado de verdad (mismo algoritmo que waNumber).
 const last10 = (raw) => { const d = String(raw).replace(/\D/g, ""); return d.length > 10 ? d.slice(-10) : d; };
-const build = (raw, cc = "52") => `https://wa.me/${cc}${last10(raw)}`;
+const build = (raw, cc = "52") => `https://api.whatsapp.com/send/?phone=${cc}${last10(raw)}`;
 for (const raw of ["+52 614 123 4567", "526141234567", "614 123 4567", "6141234567"]) {
-  if (build(raw) !== "https://wa.me/526141234567") fail(`formato "${raw}" no normaliza a wa.me/526141234567`);
+  if (build(raw) !== "https://api.whatsapp.com/send/?phone=526141234567") fail(`formato "${raw}" no normaliza a phone=526141234567`);
 }
 for (const raw of ["+1 809 952 4637", "18099524637", "809 952 4637", "8099524637"]) {
-  if (build(raw, "1") !== "https://wa.me/18099524637") fail(`formato RD "${raw}" no normaliza a wa.me/18099524637`);
+  if (build(raw, "1") !== "https://api.whatsapp.com/send/?phone=18099524637") fail(`formato RD "${raw}" no normaliza a phone=18099524637`);
 }
 
 // 3) Ningún consumidor arma wa.me con "52" cosido a mano (todos pasan por el país).
@@ -62,6 +77,7 @@ const consumers = [
 ];
 for (const rel of consumers) {
   const src = read(rel);
+  if (/["'`]https:\/\/wa\.me/.test(src)) fail(`${rel}: wa.me rompe los emojis — usa buildWhatsappUrl/ShareUrl/ChatUrl`);
   if (/wa\.me\/52/.test(src)) fail(`${rel}: wa.me/52 cosido — usa waNumber(…, país)`);
   if (/`52\$\{/.test(src)) fail(`${rel}: "52" cosido al número — usa waNumber(…, país)`);
   if (/`\+52\$\{/.test(src)) fail(`${rel}: "+52" cosido al SMS — usa toE164(…, país)`);
@@ -107,4 +123,23 @@ if (!/update\.loyaltyEarnPolicy = newVenueEarnPolicy\(currency\)/.test(cfgSrc)) 
 if (/currencyCode: "MXN",/.test(modalSrc)) fail("el alta ya no puede coser MXN — la moneda sale del número escrito");
 if (!/loyaltyEarnPolicy: newVenueEarnPolicy\(signupCurrency\)/.test(modalSrc)) fail("el alta debe guardar la regla de puntos de la moneda detectada");
 
-console.log("✓ canon WhatsApp: se guardan 10 dígitos, todo link es wa.me/PAÍS+últimos10 (México si el local no dice otro)");
+// 7) Barrido ancho: wa.me no puede sobrevivir en NINGÚN archivo de la web.
+// Es el candado que de verdad importa — los emojis se rompen en silencio y
+// nadie se entera hasta que un dueño pega un recibo lleno de "�".
+{
+  const out = execSync(
+    "grep -rln 'wa\\.me' --include='*.ts' --include='*.tsx' app lib components || true",
+    {cwd: join(__dirname, ".."), encoding: "utf8"},
+  ).trim();
+  const files = out ? out.split("\n").filter(Boolean) : [];
+  // El validador y los comentarios que EXPLICAN por qué no se usa quedan fuera.
+  const ofensores = files.filter((f) => {
+    const src = read(f);
+    return /["'`]https:\/\/wa\.me/.test(src);
+  });
+  if (ofensores.length) {
+    fail(`wa.me rompe TODOS los emojis — arréglalo en: ${ofensores.join(", ")}`);
+  }
+}
+
+console.log("✓ canon WhatsApp: 10 dígitos guardados, links a api.whatsapp.com/send con PAÍS+últimos10, y cero wa.me (rompe los emojis)");

@@ -4,12 +4,12 @@
 // (Pedidos y Caja/POS). Antes vivía solo en Pedidos; la caja abría el share
 // genérico y el número capturado del cliente se desperdiciaba. Ahora ambos
 // arman EXACTAMENTE el mismo recibo (items, total, premio canjeado, puntos
-// ganados, link al recibo con su tarjeta de puntos) y abren wa.me DIRECTO al
+// ganados, link al recibo con su tarjeta de puntos) y abren WhatsApp DIRECTO al
 // número del cliente — el mensaje del premio llega EN el chat, no escondido
 // tras el link.
 //
 // Paridad app: el Flutter (receipt_share.dart) construye el mismo texto; el
-// fix 5.1.3 le agrega el mismo wa.me directo cuando hay customerPhone.
+// fix 5.1.3 le agrega el mismo link directo cuando hay customerPhone.
 
 import { shortOrderCode, buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
@@ -94,7 +94,7 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
   ].join("\n");
 }
 
-/** URL wa.me directa al número del cliente con el recibo ya escrito. */
+/** URL directa al número del cliente con el recibo ya escrito (api.whatsapp.com). */
 export function receiptWhatsappUrl(r: ReceiptWhatsappInput): string {
   // El país lo pone el restaurante (5-sep): sus clientes marcan como él.
   return buildWhatsappUrl(r.customerPhone, buildReceiptWhatsappText(r), phoneCountryOf(r));

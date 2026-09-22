@@ -40,6 +40,7 @@ import {
 } from "@/lib/order/orderAging";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 import { entrarHref } from "@/lib/vendor/pedidoLink";
+import { buildWhatsappChatUrl } from "@/lib/order/formatWhatsappMessage";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -885,7 +886,7 @@ function PedidosPageContent() {
                         {order.customerPhone && (
                           <div className="flex items-center justify-between gap-2">
                             <a
-                              href={`https://wa.me/${waNumber(order.customerPhone, phoneCountry)}`}
+                              href={buildWhatsappChatUrl(order.customerPhone, phoneCountry)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"

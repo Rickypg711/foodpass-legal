@@ -57,6 +57,7 @@ interface Customer {
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
 import { FIRST_VISIT_CLAIM_DAYS } from "@/lib/loyalty/rewardCatalog";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
+import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ function CustomerCard({
     if (!customer.phone) return;
     const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
     if (msg) {
-      const waUrl = `https://wa.me/${waNumber(customer.phone, phoneCountry)}?text=${encodeURIComponent(msg)}`;
+      const waUrl = buildWhatsappUrl(customer.phone, msg, phoneCountry);
       window.open(waUrl, "_blank");
       return;
     }
@@ -209,7 +210,7 @@ function CustomerCard({
         `¡Te esperamos pronto!`;
       setMsg(generated);
       logPhoneWinbackTap(phone10);
-      const waUrl = `https://wa.me/${waNumber(phone10, phoneCountry)}?text=${encodeURIComponent(generated)}`;
+      const waUrl = buildWhatsappUrl(phone10, generated, phoneCountry);
       window.open(waUrl, "_blank");
       return;
     }
@@ -233,7 +234,7 @@ function CustomerCard({
       });
       const generated = res.data.message;
       setMsg(generated);
-      const waUrl = `https://wa.me/${waNumber(customer.phone, phoneCountry)}?text=${encodeURIComponent(generated)}`;
+      const waUrl = buildWhatsappUrl(customer.phone, generated, phoneCountry);
       window.open(waUrl, "_blank");
     } catch {
       setMsgError(true);

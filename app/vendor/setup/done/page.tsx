@@ -14,6 +14,7 @@ import { isInternalConversion } from "@/lib/meta/internal";
 import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisition";
 import MenuShareModal from "../../_components/MenuShareModal";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
+import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
 /**
  * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
@@ -155,9 +156,11 @@ export default function SetupDonePage() {
             </button>
             {restaurantWhatsapp && qrUrl && (
               <a
-                href={`https://wa.me/${waNumber(restaurantWhatsapp, phoneCountry)}?text=${encodeURIComponent(
+                href={buildWhatsappUrl(
+                  restaurantWhatsapp,
                   `Mi menú digital ya está VIVO.\n\nLink de mi QR (este va impreso en mesas y caja):\n${qrUrl}\n\nLink para mandar a mis clientes (lleva mi menú, teléfono y ubicación):\nhttps://comeleal.com/r/${slug ?? restaurantId}\n\nEl QR lo imprimo desde mi panel — o en cualquier papelería.`,
-                )}`}
+                  phoneCountry,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/40 bg-[#25D366]/5 px-4 py-3 text-sm font-semibold text-[#128C4B] hover:bg-[#25D366]/10 transition-all"

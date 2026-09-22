@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { expiryLabel, type FreeItemRow } from "@/lib/loyalty/freeItems";
 import { inviteTextFallback } from "@/lib/referral/referralLink";
+import { buildWhatsappShareUrl } from "@/lib/order/formatWhatsappMessage";
 
 /**
  * Lo que el comensal ve en su recibo (docs/REFERIDOS_POR_TELEFONO.md §3, §7, §9):
@@ -189,7 +190,7 @@ export default function ReceiptRewardsBlock({
             ganas otro cuando él pague.
           </p>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(texto)}`}
+            href={buildWhatsappShareUrl(texto)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
