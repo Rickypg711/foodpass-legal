@@ -672,7 +672,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             {demo
               ? "Crea tu cuenta y te lo entregamos adentro: platillos, precios y tamaños."
               : authMode === "signin"
-                ? "Con el correo y la contraseña de tu cuenta. Los tuyos pueden entrar desde su celular con los mismos datos."
+                ? "Con tu número, con Google o con tu correo. Los tuyos pueden entrar desde su celular con los mismos datos."
                 : "Un clic y empiezas a recibir clientes hoy mismo. Sin POS, sin contratos."}
           </p>
 
