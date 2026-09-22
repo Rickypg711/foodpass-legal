@@ -107,6 +107,22 @@ export function anyLive(rows: unknown, nowMs: number = Date.now()): boolean {
   return liveRows(rows, nowMs).length > 0;
 }
 
+/**
+ * El nombre del premio de bienvenida del local, o null si no tiene.
+ * Espejo EXACTO de `welcomeItemName` en FOODPASS/functions/free_items.js: es
+ * el mismo premio que nace como taco (bienvenida y referido dan lo mismo).
+ */
+export function welcomeItemNameOf(restaurant: unknown): string | null {
+  const r = restaurant as { firstPurchaseReward?: unknown } | null | undefined;
+  const fpr = r?.firstPurchaseReward as
+    | { enabled?: unknown; menuItemName?: unknown }
+    | null
+    | undefined;
+  if (!fpr || typeof fpr !== "object" || fpr.enabled !== true) return null;
+  const n = typeof fpr.menuItemName === "string" ? fpr.menuItemName.trim() : "";
+  return n || null;
+}
+
 /** ¿Este local ya usa filas? Fuera de la compuerta todo sigue como antes. */
 export function freeItemsEnabled(restaurant: unknown): boolean {
   const r = restaurant as { freeItemsV2Enabled?: unknown } | null | undefined;

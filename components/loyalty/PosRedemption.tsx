@@ -16,7 +16,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
+import { getFirebaseApp, getFirebaseDb } from "@/lib/firebase";
 import {
   redeemableRewards,
   timestampToMillis,
@@ -103,6 +104,19 @@ export function PosRedemption({
   const [assignErr, setAssignErr] = useState(false);
   /** La fila viva que se va a canjear: de dónde salió y quién la trajo (§6). */
   const [freeItem, setFreeItem] = useState<{source: "welcome" | "referral"; referredName: string} | null>(null);
+  /**
+   * ¿Este número llegó por la invitación de alguien? (22-sep-2026)
+   *
+   * Antes la Caja se enteraba DESPUÉS de cobrar, con el botón "Avísale".
+   * Cobrando no decía nada, y "ves quién te trajo a quién" es lo que
+   * vendemos: el cajero tiene que poder decírselo al comensal EN el momento.
+   *
+   * Sale de /api/referral-claims/lookup y no de Firestore porque
+   * `referralClaims` está cerrado a todos en las reglas: el doc lleva el
+   * teléfono de QUIEN INVITA. La ruta responde sí/no y el nombre del premio,
+   * nunca ese teléfono.
+   */
+  const [referred, setReferred] = useState<{ itemName: string } | null>(null);
   const [picked, setPicked] = useState<RewardTierOption | null>(null);
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<"idle" | "checking" | "ok" | "bad">(
@@ -117,6 +131,7 @@ export function PosRedemption({
       setRewards([]);
       setPicked(null);
       setKnown(false);
+      setReferred(null);
       setDiscount(null);
       setProfiles([]);
       setAssignOpen(false);
@@ -192,6 +207,32 @@ export function PosRedemption({
           }
           setDiscount(prof);
           onDiscount?.(prof);
+
+          // Best-effort y al final: si esto falla o tarda, el cobro sigue
+          // exactamente igual. Nunca se le pone una piedra al cajero.
+          setReferred(null);
+          try {
+            const user = getAuth(getFirebaseApp()).currentUser;
+            if (user) {
+              const res = await fetch("/api/referral-claims/lookup", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${await user.getIdToken()}`,
+                },
+                body: JSON.stringify({ restaurantId, phone: phone10 }),
+              });
+              if (res.ok) {
+                const j = (await res.json()) as { referred?: boolean; itemName?: string };
+                // Si el número cambió mientras la red iba y venía, no se pinta.
+                if (j.referred && loadedForRef.current === phone10) {
+                  setReferred({ itemName: (j.itemName ?? "").trim() });
+                }
+              }
+            }
+          } catch {
+            // sin ruido: es un extra, no un requisito del cobro
+          }
         } catch {
           // lookup is best-effort — earning still works without it
         } finally {
@@ -346,6 +387,21 @@ export function PosRedemption({
               ) : null}
             </div>
           )}
+        </div>
+      ) : null}
+      {referred ? (
+        <div
+          className="mb-1.5 rounded-xl px-3 py-2"
+          style={{ background: "#ECFDF5", border: "1px solid rgba(16,185,129,0.35)" }}
+        >
+          <p className="text-[12px] font-bold" style={{ color: "#065F46" }}>
+            🎁 Lo trajo un amigo
+          </p>
+          <p className="text-[11px] leading-snug" style={{ color: "rgba(6,95,70,0.85)" }}>
+            Al cobrar, quien lo invitó se gana un{" "}
+            {referred.itemName || "premio"} — y este cliente también, para su
+            siguiente visita.
+          </p>
         </div>
       ) : null}
       {loading ? (
