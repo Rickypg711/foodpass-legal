@@ -31,6 +31,7 @@ import {
 } from "@/lib/order/menuSales";
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
+import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import ManualCloseToggle from "./_components/ManualCloseToggle";
@@ -636,6 +637,10 @@ export default function VendorDashboard() {
           {!data.isSetupComplete && (
             <SetupBanner reasons={data.setupIncompleteReasons} />
           )}
+
+          {/* Entró con su número (22-sep): no tenemos su correo. Se pide aquí,
+              una vez, sin bloquear nada. Se esconde sola cuando ya hay correo. */}
+          <OwnerEmailCard />
 
           {/* Mobile primary CTA — la venta ES el loop. En teléfono el header
               solo trae el pill "Cobrar"; este es el "Nueva venta" del header
