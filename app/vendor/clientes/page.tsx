@@ -70,20 +70,20 @@ function computeSegment(visits: number, daysSince: number): Segment {
 }
 
 const SEGMENT_META: Record<Segment, { label: string; emoji: string; bg: string; color: string }> = {
-  campeon:  { label: "VIP",   emoji: "👑", bg: "rgba(255,180,0,0.1)",    color: "#b8860b" },
-  regular:  { label: "Regular",   emoji: "🔁", bg: "rgba(59,130,246,0.1)",   color: "#2563eb" },
-  riesgo:   { label: "En riesgo", emoji: "⚠️", bg: "rgba(239,68,68,0.1)",    color: "#dc2626" },
-  perdido:  { label: "Perdido",   emoji: "💤", bg: "rgba(107,114,128,0.1)",  color: "#6b7280" },
-  nuevo:    { label: "Nuevo",     emoji: "✨", bg: "rgba(217,119,87,0.1)",   color: "#F28C38" },
+  campeon:  { label: "VIP",   emoji: "", bg: "#1C2526", color: "#FAF9F5" },
+  regular:  { label: "Regular",   emoji: "", bg: "#F0EBE1", color: "#3F4A4D" },
+  riesgo:   { label: "En riesgo", emoji: "", bg: "#FFFBEB", color: "#B45309" },
+  perdido:  { label: "Perdido",   emoji: "", bg: "#F0EBE1", color: "#5B6366" },
+  nuevo:    { label: "Nuevo",     emoji: "", bg: "#F0EBE1", color: "#1C2526" },
 };
 
 const TABS: { key: Segment | "todos"; label: string; emoji: string }[] = [
   { key: "todos",   label: "Todos",      emoji: "👥" },
-  { key: "riesgo",  label: "En riesgo",  emoji: "⚠️" },
-  { key: "perdido", label: "Perdidos",   emoji: "💤" },
-  { key: "campeon", label: "VIP",  emoji: "👑" },
-  { key: "regular", label: "Regulares",  emoji: "🔁" },
-  { key: "nuevo",   label: "Nuevos",     emoji: "✨" },
+  { key: "riesgo",  label: "En riesgo",  emoji: "" },
+  { key: "perdido", label: "Perdidos",   emoji: "" },
+  { key: "campeon", label: "VIP",  emoji: "" },
+  { key: "regular", label: "Regulares",  emoji: "" },
+  { key: "nuevo",   label: "Nuevos",     emoji: "" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -107,14 +107,37 @@ function Spinner({ small = false }: { small?: boolean }) {
   );
 }
 
-function SegmentBadge({ segment }: { segment: Segment }) {
-  const m = SEGMENT_META[segment];
+// Opción A (23-sep-2026, lienzo "Sistema Comeleal"): mismos tokens que el
+// Panel, Pedidos y Caja. Los estados se dicen con palabra y punto.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const TILE = "#F0EBE1";
+const WARN = "#B45309";
+const WARN_SURFACE = "#FFFBEB";
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconWhatsapp() { return <svg {...ICON}><path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.1-4.7A9 9 0 1 1 21 12z" /></svg>; }
+function IconSearch() { return <svg {...ICON} stroke="#5B6366"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>; }
+function IconTag() { return <svg {...ICON} width={16} height={16}><path d="M20 12l-8 8-9-9V3h8l9 9z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>; }
+function IconPeople() { return <svg {...ICON} width={22} height={22} stroke="#5B6366"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2" /></svg>; }
+
+function Pill({ bg, color, dot, children, title }: { bg: string; color: string; dot?: string; children: React.ReactNode; title?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-      style={{ background: m.bg, color: m.color }}>
-      {m.emoji} {m.label}
+    <span className="inline-flex h-[24px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold" style={{ background: bg, color }} title={title}>
+      {dot && <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />}
+      {children}
     </span>
   );
+}
+
+function SegmentBadge({ segment }: { segment: Segment }) {
+  const m = SEGMENT_META[segment];
+  return <Pill bg={m.bg} color={m.color} dot={segment === "riesgo" ? WARN : undefined}>{m.label}</Pill>;
 }
 
 // ─── Customer card ────────────────────────────────────────────────────────────
@@ -247,76 +270,41 @@ function CustomerCard({
   const m = SEGMENT_META[customer.segment];
 
   return (
-    <div className={`rounded-2xl p-4 ${isActuaHoy ? "border-2" : "border"}`}
-      style={{
-        background: "#ffffff",
-        borderColor: isActuaHoy ? "rgba(217,119,87,0.25)" : "rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-      }}>
+    <div className="rounded-xl bg-white p-3.5" style={{ border: `1px solid ${isActuaHoy ? WARN : BORDER}` }}>
       <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-bold"
-          style={{ background: m.bg, color: m.color }}>
+        {/* Avatar: iniciales en tinta sobre tostado */}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[14px] font-bold" style={{ background: TILE, color: INK }}>
           {initials}
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-[14px] font-bold truncate" style={{ color: "#1C2526" }}>
-              {customer.name}
-            </p>
+          <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>{customer.name}</p>
+          <p className="mt-0.5 text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+            {customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""} · {customer.totalPoints} pts · {timeAgo(customer.lastVisit)}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <SegmentBadge segment={customer.segment} />
-            {customer.isPhoneOnly && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{ background: "rgba(37,211,102,0.12)", color: "#128C7E" }}>
-                📱 Tel
-              </span>
-            )}
+            {customer.isPhoneOnly && <Pill bg={TILE} color={INK_MUTED}>Con teléfono</Pill>}
             {customer.rewardUnlocked && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={
-                  (customer.rewardDaysLeft ?? 9) <= 2
-                    ? { background: "rgba(239,68,68,0.12)", color: "#dc2626" }
-                    : { background: "rgba(255,180,0,0.12)", color: "#b8860b" }
-                }>
-                🎁 {(customer.rewardDaysLeft ?? 9) <= 2
-                  ? `Premio vence ${customer.rewardDaysLeft === 0 ? "HOY" : customer.rewardDaysLeft === 1 ? "mañana" : "en 2d"}`
-                  : "Premio sin usar"}
-              </span>
+              (customer.rewardDaysLeft ?? 9) <= 2
+                ? <Pill bg={WARN_SURFACE} color={WARN} dot={WARN}>{`Premio vence ${customer.rewardDaysLeft === 0 ? "hoy" : customer.rewardDaysLeft === 1 ? "mañana" : "en 2 días"}`}</Pill>
+                : <Pill bg={TILE} color={INK_MUTED}>Premio sin usar</Pill>
             )}
             {(customer.noShowCount ?? 0) >= 2 && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626" }}
-                title="Pedidos 'pagar al recoger' cancelados sin pagar">
-                ⚠️ {customer.noShowCount} no-shows
-              </span>
+              <Pill bg={WARN_SURFACE} color={WARN} dot={WARN} title="Pedidos 'pagar al recoger' cancelados sin pagar">{customer.noShowCount} veces no llegó</Pill>
             )}
             {customer.discountProfileName && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
-                title="Descuento especial — el POS lo aplica al cobrar">
-                🏷️ {customer.discountProfileName}
-              </span>
+              <Pill bg={TILE} color={INK_MUTED} title="Descuento especial: la Caja lo aplica al cobrar">{customer.discountProfileName}</Pill>
             )}
-          </div>
-          <div className="mt-1 flex items-center gap-3 text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-            <span>{customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""}</span>
-            <span>·</span>
-            <span style={{ color: "#F28C38", fontWeight: 600 }}>{customer.totalPoints} pts</span>
-            <span>·</span>
-            <span>{timeAgo(customer.lastVisit)}</span>
           </div>
         </div>
       </div>
 
-      {/* AI message preview (only for actúa hoy) */}
+      {/* Mensaje sugerido (solo en "Escríbeles hoy") */}
       {isActuaHoy && msg && (
-        <div className="mt-3 rounded-xl p-3 text-[12px] leading-relaxed"
-          style={{ background: "rgba(217,119,87,0.05)", border: "1px solid rgba(217,119,87,0.15)", color: "rgba(28,37,38,0.65)" }}>
-          <p className="mb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(217,119,87,0.7)" }}>
-            Mensaje generado por AI
-          </p>
+        <div className="mt-3 rounded-lg px-3 py-2.5 text-[13px] leading-[18px]" style={{ background: TILE, color: INK }}>
+          <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Mensaje sugerido</p>
           {msg}
         </div>
       )}
@@ -325,20 +313,19 @@ function CustomerCard({
       <div className="mt-3 flex items-center gap-2">
         {customer.phone ? (
           <button
+            type="button"
             onClick={generateAndOpen}
             disabled={msgLoading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-bold text-white disabled:opacity-60"
-            style={{ background: "#25D366" }}>
-            {msgLoading ? <Spinner small /> : "📲"}
-            {msgLoading ? "Generando mensaje..." : msg ? "Abrir WhatsApp" : "Contactar via WhatsApp"}
+            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+            style={{ border: `1px solid ${INK}`, color: INK }}>
+            {msgLoading ? <Spinner small /> : <IconWhatsapp />}
+            {msgLoading ? "Escribiendo el mensaje" : msg ? "Abrir WhatsApp" : "Escribirle por WhatsApp"}
           </button>
         ) : (
-          <span className="text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-            Sin número registrado
-          </span>
+          <span className="text-[13px]" style={{ color: INK_SOFT }}>Sin número registrado</span>
         )}
         {msgError && (
-          <span className="text-[11px]" style={{ color: "#dc2626" }}>Error, intenta de nuevo</span>
+          <span className="text-[13px]" style={{ color: "#B91C1C" }}>No se pudo, intenta de nuevo</span>
         )}
       </div>
 
@@ -349,21 +336,18 @@ function CustomerCard({
             <button
               type="button"
               onClick={() => setDiscOpen(true)}
-              className="w-full rounded-xl py-2 text-[11px] font-bold transition hover:opacity-80"
-              style={{
-                background: "rgba(242,140,56,0.08)",
-                border: "1px dashed rgba(242,140,56,0.4)",
-                color: "#F28C38",
-              }}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-semibold transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
             >
+              <IconTag />
               {customer.discountProfileName
-                ? `🏷️ ${customer.discountProfileName} — cambiar o quitar`
-                : "🏷️ Asignar descuento especial"}
+                ? `${customer.discountProfileName} · cambiar o quitar`
+                : "Asignar descuento especial"}
             </button>
           ) : (
             <div
               className="space-y-1.5 rounded-xl p-2.5"
-              style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
+              style={{ background: TILE }}
             >
               {discountProfiles.map((dp) => {
                 const active = customer.discountProfileId === dp.id;
@@ -377,15 +361,11 @@ function CustomerCard({
                     type="button"
                     disabled={discBusy || active}
                     onClick={() => assignDiscount(dp)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition hover:opacity-80 disabled:opacity-60"
-                    style={
-                      active
-                        ? { background: "#F28C38", color: "#ffffff" }
-                        : { background: "#ffffff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }
-                    }
+                    className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-left text-[13px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+                    style={active ? { background: INK, color: "#FAF9F5" } : { background: "#FFFFFF", border: `1px solid ${BORDER}`, color: INK }}
                   >
-                    <span>🏷️ {dp.name}</span>
-                    <span style={{ opacity: 0.7 }}>{active ? "✓ asignado" : pcts}</span>
+                    <span>{dp.name}</span>
+                    <span className="font-normal" style={{ opacity: 0.8 }}>{active ? "asignado" : pcts}</span>
                   </button>
                 );
               })}
@@ -395,8 +375,8 @@ function CustomerCard({
                     type="button"
                     disabled={discBusy}
                     onClick={() => assignDiscount(null)}
-                    className="flex-1 rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-60"
-                    style={{ background: "rgba(239,68,68,0.1)", color: "#dc2626" }}
+                    className="flex-1 rounded-lg px-3 py-2 text-[13px] font-semibold hover:underline disabled:opacity-60"
+                    style={{ color: LINK }}
                   >
                     Quitar descuento
                   </button>
@@ -405,18 +385,18 @@ function CustomerCard({
                   type="button"
                   disabled={discBusy}
                   onClick={() => setDiscOpen(false)}
-                  className="flex-1 rounded-lg px-3 py-2 text-[11px] font-semibold"
-                  style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+                  className="flex-1 rounded-lg px-3 py-2 text-[13px] font-semibold hover:underline"
+                  style={{ color: LINK }}
                 >
                   Cerrar
                 </button>
               </div>
               {discBusy && (
-                <p className="text-center text-[10px]" style={{ color: "rgba(28,37,38,0.4)" }}>Guardando…</p>
+                <p className="text-center text-[12px]" style={{ color: INK_SOFT }}>Guardando…</p>
               )}
               {discError && (
-                <p className="text-center text-[10px] font-semibold" style={{ color: "#dc2626" }}>
-                  Error al guardar, intenta de nuevo
+                <p className="text-center text-[12px] font-semibold" style={{ color: "#B91C1C" }}>
+                  No se guardó, intenta de nuevo
                 </p>
               )}
             </div>
@@ -693,17 +673,17 @@ export default function ClientesPage() {
 
   return (
     <>
-      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
+      <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
 
-        {/* Page title */}
-        <div className="mb-5 flex items-end justify-between">
-          <div>
-            <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Clientes</h1>
+        {/* Título en Lora + qué hay debajo */}
+        <div className="mb-4 flex items-end justify-between">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Clientes</h1>
             {!loading && customers.length > 0 && (
-              <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                {customers.length} cliente{customers.length !== 1 ? "s" : ""} registrados
+              <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                {customers.length} con teléfono
                 {(winbackSent > 0 || winbackReturned > 0) && (
-                  <> · 📨 {winbackSent} mensajes enviados · {winbackReturned} clientes recuperados</>
+                  <> · {winbackSent} mensajes enviados · {winbackReturned} regresaron</>
                 )}
               </p>
             )}
@@ -715,58 +695,44 @@ export default function ClientesPage() {
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : customers.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center">
-            <span className="text-[48px]">👥</span>
-            <p className="mt-4 text-[16px] font-bold" style={{ color: "#1C2526" }}>Sin clientes aún</p>
-            <p className="mt-1 text-[13px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE }}><IconPeople /></div>
+            <p className="mt-4 text-[16px] font-semibold" style={{ color: INK }}>Todavía no hay clientes</p>
+            <p className="mt-1 text-[14px]" style={{ color: INK_SOFT }}>
               Pide el número de WhatsApp en tu próximo cobro y aparece aquí.
             </p>
             <Link href="/vendor/pos"
-              className="mt-5 rounded-xl px-5 py-2.5 text-[13px] font-bold text-[#1C2526]"
-              style={{ background: "#F28C38" }}>
-              Ir a la Caja →
+              className="mt-5 flex h-12 items-center rounded-xl px-6 text-[15px] font-semibold text-[#1C2526]"
+              style={{ background: BRAND }}>
+              Ir a la Caja
             </Link>
           </div>
         ) : (
           <>
-            {/* ── Metrics strip ── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* ── Cuatro cifras en una fila con líneas finas (como en el Panel) ── */}
+            <div className="grid grid-cols-4 py-3" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
               {[
-                { label: "VIP",       value: counts.campeon, color: "#b8860b", emoji: "👑" },
-                { label: "Regulares", value: counts.regular, color: "#2563eb", emoji: "🔁" },
-                { label: "En riesgo", value: counts.riesgo,  color: "#dc2626", emoji: "⚠️" },
-                { label: "Perdidos",  value: counts.perdido, color: "#6b7280", emoji: "💤" },
-              ].map((m) => (
-                <div key={m.label} className="rounded-2xl p-4 text-center"
-                  style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}>
-                  <p className="text-[22px]">{m.emoji}</p>
-                  <p className="mt-1 font-mono text-[24px] font-bold leading-none" style={{ color: m.color }}>
-                    {m.value}
-                  </p>
-                  <p className="mt-1 text-[11px] font-medium"
-                    style={{ color: "rgba(28,37,38,0.45)" }}>
-                    {m.label}
-                  </p>
+                { label: "VIP", value: counts.campeon },
+                { label: "regulares", value: counts.regular },
+                { label: "en riesgo", value: counts.riesgo },
+                { label: "perdidos", value: counts.perdido },
+              ].map((m, i) => (
+                <div key={m.label} className="flex flex-col items-center gap-0.5 px-1 text-center" style={i > 0 ? { borderLeft: `1px solid ${HAIRLINE}` } : undefined}>
+                  <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{m.value}</p>
+                  <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>{m.label}</p>
                 </div>
               ))}
             </div>
 
             {/* ── Actúa hoy ── */}
             {actuaHoy.length > 0 && (
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: "#fff8f5", border: "2px solid rgba(217,119,87,0.2)" }}>
-                <div className="px-5 pt-5 pb-3 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl text-[16px]"
-                    style={{ background: "rgba(217,119,87,0.12)" }}>🎯</div>
-                  <div>
-                    <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                      Actúa hoy
-                    </p>
-                    <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                      {actuaHoy.length} cliente{actuaHoy.length !== 1 ? "s" : ""} que necesitan atención — el Brain escribe el mensaje
-                    </p>
-                  </div>
+              <section>
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Escríbeles hoy</h2>
+                  <span className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                    {actuaHoy.length} cliente{actuaHoy.length !== 1 ? "s" : ""} · el mensaje ya está escrito
+                  </span>
                 </div>
-                <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {actuaHoy.map((c) => (
                     <CustomerCard
                       phoneCountry={phoneCountry}
@@ -781,22 +747,22 @@ export default function ClientesPage() {
                     />
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* ── Search ── */}
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="🔍 Buscar por nombre o teléfono…"
-              className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.1)",
-                color: "#1C2526",
-              }}
-            />
+            {/* ── Búsqueda: 48px, letra de 16 (sin zoom en iPhone) ── */}
+            <label className="flex h-12 items-center gap-2.5 rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
+              <IconSearch />
+              <span className="sr-only">Buscar por nombre o teléfono</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Nombre o teléfono"
+                className="min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-[#5B6366]"
+                style={{ color: INK }}
+              />
+            </label>
 
             {/* ── Segment tabs ── */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -807,22 +773,13 @@ export default function ClientesPage() {
                   <button
                     key={t.key}
                     onClick={() => setActiveTab(t.key as Segment | "todos")}
-                    className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all"
-                    style={{
-                      background: active ? "#1C2526" : "#ffffff",
-                      color: active ? "#ffffff" : "rgba(28,37,38,0.55)",
-                      border: active ? "1px solid #1C2526" : "1px solid rgba(28,37,38,0.1)",
-                    }}>
-                    <span>{t.emoji}</span>
+                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] transition-all"
+                    style={active
+                      ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 }
+                      : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }}>
                     <span>{t.label}</span>
                     {count > 0 && (
-                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                        style={{
-                          background: active ? "rgba(255,255,255,0.2)" : "rgba(28,37,38,0.07)",
-                          color: active ? "#ffffff" : "rgba(28,37,38,0.5)",
-                        }}>
-                        {count}
-                      </span>
+                      <span className="text-[13px] tabular-nums" style={{ color: active ? "#E6E0D6" : INK_SOFT }}>{count}</span>
                     )}
                   </button>
                 );
@@ -839,30 +796,22 @@ export default function ClientesPage() {
                     <button
                       key={dp.id}
                       onClick={() => setDiscountFilter(active ? null : dp.id)}
-                      className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all"
-                      style={{
-                        background: active ? "#F28C38" : "#ffffff",
-                        color: active ? "#ffffff" : "#b45309",
-                        border: active ? "1px solid #F28C38" : "1px solid rgba(242,140,56,0.35)",
-                      }}>
-                      <span>🏷️</span>
+                      className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] transition-all"
+                      style={active
+                        ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 }
+                        : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }}>
+                      <IconTag />
                       <span>{dp.name}</span>
-                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                        style={{
-                          background: active ? "rgba(255,255,255,0.25)" : "rgba(242,140,56,0.12)",
-                          color: active ? "#ffffff" : "#b45309",
-                        }}>
-                        {count}
-                      </span>
+                      <span className="text-[13px] tabular-nums" style={{ color: active ? "#E6E0D6" : INK_SOFT }}>{count}</span>
                     </button>
                   );
                 })}
                 {discountFilter && (
                   <button
                     onClick={() => setDiscountFilter(null)}
-                    className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold"
-                    style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)", border: "1px solid transparent" }}>
-                    ✕ Quitar filtro
+                    className="h-9 shrink-0 rounded-full px-3 text-[14px] font-semibold hover:underline"
+                    style={{ color: LINK }}>
+                    Quitar filtro
                   </button>
                 )}
               </div>
@@ -871,7 +820,7 @@ export default function ClientesPage() {
             {/* ── Customer list ── */}
             {filtered.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-[14px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                <p className="text-[14px]" style={{ color: INK_SOFT }}>
                   {discountFilter
                     ? "Nadie tiene este descuento asignado todavía"
                     : "No hay clientes en este segmento"}
