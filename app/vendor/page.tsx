@@ -1014,7 +1014,7 @@ function AICoachPreviewCard({
       <button
         type="button"
         onClick={() => router.push(`${window.location.pathname}?ai=1`)}
-        className="mt-3 text-[13px] font-semibold hover:underline"
+        className="mt-3 block text-[13px] font-semibold hover:underline"
         style={{ color: LINK }}>
         Abrir Comeleal AI →
       </button>
@@ -1195,7 +1195,7 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
       <SectionTitle right="últimos 7 días"><span>Ventas con teléfono</span></SectionTitle>
       {/* En 390px el link a la derecha partía "1 de 1" en dos renglones
           (cazado en producción, 23-sep): la puerta a la Caja va DEBAJO. */}
-      <Link href="/vendor/pos" className="group block">
+      <Link href="/vendor/pos" className="group block" aria-label={hint}>
         <div className="flex items-baseline gap-2">
           <p className="whitespace-nowrap text-[28px] font-bold leading-8 tracking-[-0.01em] tabular-nums" style={{ color: INK }}>
             {data.weekIdentifiedSales} de {data.weekPaidSales}
@@ -1210,7 +1210,6 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
         </p>
         <span className="mt-2 inline-block text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número →</span>
       </Link>
-      <span className="sr-only">{hint}</span>
     </section>
   );
 }
