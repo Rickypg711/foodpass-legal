@@ -1,8 +1,9 @@
 "use client";
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import React, { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   collection,
   query,
@@ -38,7 +39,7 @@ import {
   orderWaitingMinutes,
   shouldRemindLateOrders,
 } from "@/lib/order/orderAging";
-import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { entrarHref } from "@/lib/vendor/pedidoLink";
 import { buildWhatsappChatUrl } from "@/lib/order/formatWhatsappMessage";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
@@ -110,13 +111,44 @@ type OrderTab = "pending" | "preparing" | "ready" | "completed";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
+// Opción A (23-sep-2026): los mismos tokens del Panel y del Design System
+// "Comeleal". Crema + tinta, naranja solo en la acción principal.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const WARN = "#B45309";
+const WARN_SURFACE = "#FFFBEB";
+const DANGER = "#B91C1C";
+const SUCCESS_TEXT = "#15803D";
+
+/** Chip neutro con borde: origen y tipo del pedido, lo que no es un estado. */
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex h-[26px] items-center rounded-full px-2.5 text-[12px]" style={{ border: `1px solid ${BORDER}`, color: INK }}>
+      {children}
+    </span>
+  );
+}
+
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconBell() { return <svg {...ICON}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" /></svg>; }
+function IconBellOff() { return <svg {...ICON}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4M3 3l18 18" /></svg>; }
+function IconPrinter() { return <svg {...ICON}><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z" /></svg>; }
+function IconReceipt() { return <svg {...ICON} width={16} height={16}><path d="M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6" /></svg>; }
+function IconPin() { return <svg {...ICON} width={16} height={16} style={{ marginTop: 1, flexShrink: 0 }}><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>; }
+
 function fmt(n: number) {
   return n.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 });
 }
 
 function Spinner() {
   return (
-    <svg className="h-7 w-7 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+    <svg className="h-6 w-6 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
@@ -478,7 +510,7 @@ function PedidosPageContent() {
     try {
       const db = getFirebaseDb();
       const orderRef = doc(db, "restaurants", restaurantId, "orders", orderId);
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, unknown> = {
         status: newStatus,
         updatedAt: serverTimestamp(),
         statusUpdatedAt: serverTimestamp(),
@@ -655,32 +687,32 @@ function PedidosPageContent() {
   const focusMissing =
     focusOrderId !== null && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
 
-  /** Column definitions — color language: orange = needs attention,
-   * blue = working, green = ready to hand over, gray = done. */
-  const COLUMNS: {
-    key: OrderTab;
-    label: string;
-    accent: string;
-    tint: string;
-    emptyCopy: string;
-  }[] = [
-    { key: "pending", label: "Pendientes", accent: "#F28C38", tint: "rgba(242,140,56,0.06)", emptyCopy: "Sin pedidos nuevos" },
-    { key: "preparing", label: "En cocina", accent: "#2563EB", tint: "rgba(37,99,235,0.05)", emptyCopy: "Nada en preparación" },
-    { key: "ready", label: "Listos", accent: "#16A34A", tint: "rgba(22,163,74,0.05)", emptyCopy: "Nada listo por entregar" },
-    { key: "completed", label: "Entregados hoy", accent: "#6B7280", tint: "rgba(107,114,128,0.05)", emptyCopy: "Aún no hay entregas hoy" },
+  /** Columnas del tablero. Opción A (23-sep-2026, lienzo "Sistema Comeleal"):
+   *  sin fondos de color por columna; el estado se dice con palabra y punto. */
+  const COLUMNS: { key: OrderTab; label: string; emptyCopy: string }[] = [
+    { key: "pending", label: "Esperando", emptyCopy: "Sin pedidos nuevos" },
+    { key: "preparing", label: "En cocina", emptyCopy: "Nada en preparación" },
+    { key: "ready", label: "Listos", emptyCopy: "Nada listo por entregar" },
+    { key: "completed", label: "Entregados hoy", emptyCopy: "Aún no hay entregas hoy" },
   ];
+
+  const waitingCount = groups.pending.length;
+  const oldestWaitingMin = groups.pending.reduce((m, o) => Math.max(m, minutesOf(o)), 0);
+  const subtitle = loading
+    ? ""
+    : waitingCount === 0
+      ? "Nada esperando"
+      : `${waitingCount} esperando · el más viejo ${orderWaitLabel(oldestWaitingMin)}`;
 
   return (
     <>
-      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7" style={{ background: "#F5F3EF", minHeight: "100vh" }}>
-        
-        {/* Page Title */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Pedidos</h1>
-            <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-              Fulfillment y cocina en tiempo real
-            </p>
+      <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7" style={{ minHeight: "100vh" }}>
+
+        {/* Título de pantalla (Lora) + qué hay, y a la derecha los controles del aviso. */}
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Pedidos</h1>
+            {subtitle && <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>{subtitle}</p>}
           </div>
           {/* Controles del aviso: solo ya cargado (lo que guarda el navegador no
               existe en el servidor y no debe pintarse en el primer render). */}
@@ -690,23 +722,17 @@ function PedidosPageContent() {
                 type="button"
                 onClick={toggleAviso}
                 aria-pressed={!avisoSilenciado}
-                className={`rounded-xl px-3 py-2 text-[12px] font-bold transition-colors ${
-                  avisoSilenciado
-                    ? "border border-[#1C2526]/15 bg-white text-[#1C2526]/55 hover:bg-[#FAF7F2]"
-                    : "bg-[#1C2526] text-white hover:opacity-90"
-                }`}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90"
+                style={{ border: `1px solid ${avisoSilenciado ? BORDER : INK}`, color: INK }}
               >
-                {avisoSilenciado ? "🔕 Aviso callado — activar" : "🔔 Aviso de pedidos encendido"}
+                {avisoSilenciado ? <IconBellOff /> : <IconBell />}
+                {avisoSilenciado ? "Aviso callado" : "Aviso encendido"}
               </button>
-              {/* 🖨️ Impresión automática (Pro): prendida en Configuración. Con
+              {/* Impresión automática (Pro): prendida en Configuración. Con
                   la reja cerrada (se acabó la prueba) lo dice y abre la pared. */}
               {autoPrintOn && ents.kitchenPrintAccess && (
-                <span
-                  className="rounded-xl px-3 py-2 text-[12px] font-bold"
-                  style={{ background: "#FFF3E8", color: "#C2410C", border: "1px solid rgba(242,140,56,0.4)" }}
-                  title="Cada pedido que entre sale solo en tu impresora"
-                >
-                  🖨️ Sale solo en tu impresora
+                <span className="inline-flex h-10 items-center gap-2 px-1 text-[13px]" style={{ color: INK_SOFT }} title="Cada pedido que entre sale solo en tu impresora">
+                  <IconPrinter /> Sale solo en tu impresora
                 </span>
               )}
               {autoPrintOn && !ents.kitchenPrintAccess && (
@@ -716,16 +742,18 @@ function PedidosPageContent() {
                     pendingAction.current = null;
                     setWallOpen(true);
                   }}
-                  className="rounded-xl border border-[#F28C38]/40 bg-white px-3 py-2 text-[12px] font-bold text-[#C2410C] hover:bg-[#FFF3E8]"
+                  className="inline-flex h-10 items-center gap-2 px-1 text-[13px] font-semibold hover:underline"
+                  style={{ color: LINK }}
                 >
-                  🖨️ Impresión automática en pausa · es Pro
+                  <IconPrinter /> Impresión automática en pausa · es Pro
                 </button>
               )}
               {notifPerm === "default" && (
                 <button
                   type="button"
                   onClick={pedirNotificaciones}
-                  className="rounded-xl border border-[#F28C38]/40 bg-white px-3 py-2 text-[12px] font-bold text-[#C2410C] hover:bg-[#FFF3E8]"
+                  className="inline-flex h-10 items-center px-1 text-[13px] font-semibold hover:underline"
+                  style={{ color: LINK }}
                 >
                   Avisarme también con notificación
                 </button>
@@ -734,40 +762,37 @@ function PedidosPageContent() {
           )}
         </div>
 
-        {/* ⏰ Pedidos olvidados: rojo, parpadea y suena cada 5 min hasta que los
-            marquen o callen el aviso. */}
+        {/* Pedidos olvidados: suena cada 5 min hasta que los marquen o callen el
+            aviso. Aviso en ámbar con palabra, no un banner rojo que parpadea. */}
         {!loading && lateCount > 0 && (
-          <div role="alert" className="relative mb-5 overflow-hidden rounded-2xl border-2 border-red-500 bg-red-50 px-4 py-3">
-            <div className="pointer-events-none absolute inset-0 animate-pulse bg-red-500/10" aria-hidden />
-            <div className="relative flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[15px] font-extrabold text-red-700">⏰ {lateOrdersBanner(lateCount)}</p>
-              <button
-                type="button"
-                onClick={toggleAviso}
-                className="rounded-xl border border-red-200 bg-white px-3 py-2 text-[12px] font-bold text-red-700 hover:bg-red-100"
-              >
-                {avisoSilenciado ? "🔔 Activar aviso" : "🔕 Silenciar aviso"}
-              </button>
-            </div>
-            <p className="relative mt-1 text-[12px] font-medium text-red-700/80">
-              {avisoSilenciado
-                ? "El aviso está callado en esta pantalla. Márcalos cuando salgan."
-                : "Suena cada 5 min hasta que los marques: Comenzar → Terminar → Entregar."}
+          <div role="alert" className="mb-4 flex items-center gap-2.5 rounded-xl px-3.5 py-3" style={{ background: WARN_SURFACE, color: INK }}>
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: WARN }} />
+            <p className="min-w-0 flex-1 text-[14px] leading-[18px]">
+              {lateOrdersBanner(lateCount)}{" "}
+              <span style={{ color: INK_SOFT }}>
+                {avisoSilenciado
+                  ? "El aviso está callado en esta pantalla. Márcalos cuando salgan."
+                  : "Suena cada 5 min hasta que los marques: Comenzar, Terminar, Entregar."}
+              </span>
             </p>
+            <button type="button" onClick={toggleAviso} className="shrink-0 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+              {avisoSilenciado ? "Activar aviso" : "Silenciar"}
+            </button>
           </div>
         )}
 
         {!loading && focusOrderId && focusMissing && (
-          <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-2xl border border-[#1C2526]/10 bg-white px-4 py-3">
-            <p className="text-[13px] text-[#1C2526]/75">
-              El pedido <span className="font-bold">#{focusOrderId.slice(-6).toUpperCase()}</span> ya no está en la
+          <div role="status" className="mb-4 flex items-start justify-between gap-3 rounded-xl bg-white px-4 py-3" style={{ border: `1px solid ${BORDER}` }}>
+            <p className="text-[14px] leading-[18px]" style={{ color: INK }}>
+              El pedido <span className="font-semibold">#{focusOrderId.slice(-6).toUpperCase()}</span> ya no está en la
               bandeja. Puede que ya se haya entregado o cancelado.
             </p>
             <button
               type="button"
               onClick={() => setDismissedFocusId(focusOrderId)}
               aria-label="Cerrar"
-              className="shrink-0 text-[16px] font-bold leading-none text-[#1C2526]/40 hover:text-[#1C2526]"
+              className="shrink-0 text-[18px] font-semibold leading-none"
+              style={{ color: INK_SOFT }}
             >
               ×
             </button>
@@ -777,405 +802,329 @@ function PedidosPageContent() {
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : error ? (
-          <div className="text-center py-20 text-red-600 font-semibold">{error}</div>
+          <div className="py-20 text-center text-[14px] font-semibold" style={{ color: DANGER }}>{error}</div>
         ) : (
-          <div className="space-y-6">
-            
-            {/* Board: every stage visible at once — no clicking through tabs.
-                Stacks on phones, 2 columns on tablets, full 4-column board on
-                desktop. Live via onSnapshot: cards move between columns alone. */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
-              {COLUMNS.map((col) => {
-                const list = groups[col.key];
-                return (
-                  <section
-                    key={col.key}
-                    className="rounded-2xl p-3"
-                    style={{ background: col.tint, border: `1px solid ${col.accent}22` }}
-                  >
-                    <header className="flex items-center justify-between px-1.5 pb-3 pt-1">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.accent }} aria-hidden />
-                        <h2 className="text-[13px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>
-                          {col.label}
-                        </h2>
-                      </div>
-                      <span
-                        className="flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-black text-white"
-                        style={{ background: list.length > 0 ? col.accent : "rgba(28,37,38,0.18)" }}
-                      >
-                        {list.length}
-                      </span>
-                    </header>
-                    {list.length === 0 ? (
-                      <div
-                        className="rounded-xl border border-dashed py-8 text-center text-[12px]"
-                        style={{ borderColor: `${col.accent}33`, color: "rgba(28,37,38,0.35)" }}
-                      >
-                        {col.emptyCopy}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {list.map((order) => {
-                  const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
-                  const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-                  const isPaid = order.paymentStatus === "paid";
-                  // ⏰ Cuánto lleva (solo lo que sigue en la bandeja; las cuentas
-                  // abiertas no, esas se quedan abiertas a propósito).
-                  const waiting = isWaitingOrder(order);
-                  const waitMin = minutesOf(order);
-                  const level = waiting ? orderWaitLevel(waitMin) : "ok";
-                  const cardBorder =
-                    level === "late"
-                      ? "2px solid #EF4444"
-                      : level === "warn"
-                        ? "2px solid #F28C38"
-                        : "1px solid rgba(28,37,38,0.07)";
-
-                  return (
-                    <div
-                      key={order.id}
-                      id={`pedido-${order.id}`}
-                      className="relative rounded-2xl p-5 bg-white flex flex-col justify-between"
-                      style={{
-                        ...(order.id === focusOrderId
-                          ? { outline: "3px solid #F28C38", outlineOffset: "3px", scrollMarginTop: "96px" }
-                          : {}),
-                        border: cardBorder,
-                        boxShadow:
-                          level === "late"
-                            ? "0 0 0 4px rgba(239,68,68,0.12)"
-                            : "0 1px 3px rgba(28,37,38,0.04)",
-                      }}
-                    >
-                      {level === "late" && (
-                        // Parpadeo: el pedido olvidado se ve desde lejos.
-                        <div
-                          className="pointer-events-none absolute -inset-[2px] rounded-2xl ring-4 ring-red-500/60 animate-pulse motion-reduce:animate-none"
-                          aria-hidden
-                        />
-                      )}
-                      {/* Top Header */}
-                      <div className="space-y-1.5 pb-3 border-b border-gray-100">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[13px] font-extrabold text-[#1C2526]">
-                            Pedido #{order.id.slice(-6).toUpperCase()}
-                          </span>
-                          <span className="text-[11px] font-bold text-gray-400">
-                            {formattedTime}
-                          </span>
-                        </div>
-                        {waiting && (
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-extrabold ${
-                              level === "late"
-                                ? "bg-red-600 text-white"
-                                : level === "warn"
-                                  ? "bg-[#FFF3E8] text-[#C2410C]"
-                                  : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            ⏱ {orderWaitLabel(waitMin)}
-                          </span>
-                        )}
-                        <div className="flex flex-wrap gap-1">
-                          {/* Canal de origen en CRISTIANO, no el enum crudo
-                              (decía "CUSTOMER_WEB" en la pantalla del mesero
-                              — feedback de Ricardo 25-ago). Para pedidos de
-                              la Caja no se pinta: el chip de tipo ya dice
-                              "Caja" y repetirlo es ruido. */}
-                          {(() => {
-                            const src = String(order.orderSource || "");
-                            const label =
-                              src === "pos"
-                                ? null
-                                : order.orderType === "dine_in"
-                                ? "QR de mesa"
-                                : src === "customer_app"
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 md:gap-4 xl:grid-cols-4">
+            {/* Tablero: todas las etapas a la vista, sin pestañas. En teléfono se
+                apilan; en escritorio, cuatro columnas. Vivo con onSnapshot. */}
+            {COLUMNS.map((col) => {
+              const list = groups[col.key];
+              return (
+                <section key={col.key} className="flex min-w-0 flex-col gap-2.5">
+                  <header className="flex items-baseline justify-between px-0.5 pb-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+                    <h2 className="text-[14px] font-semibold" style={{ color: INK }}>{col.label}</h2>
+                    <span className="text-[13px] font-semibold tabular-nums" style={{ color: list.length > 0 && col.key === "pending" ? LINK : INK_SOFT }}>
+                      {list.length}
+                    </span>
+                  </header>
+                  {list.length === 0 ? (
+                    <div className="flex h-24 items-center justify-center rounded-xl text-[13px]" style={{ border: `1px dashed ${BORDER}`, color: INK_SOFT }}>
+                      {col.emptyCopy}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {list.map((order) => {
+                        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
+                        const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+                        const isPaid = order.paymentStatus === "paid";
+                        // Cuánto lleva (solo lo que sigue en la bandeja; las cuentas
+                        // abiertas no, esas se quedan abiertas a propósito).
+                        const waiting = isWaitingOrder(order);
+                        const waitMin = minutesOf(order);
+                        const level = waiting ? orderWaitLevel(waitMin) : "ok";
+                        const src = String(order.orderSource || "");
+                        const sourceLabel =
+                          src === "pos"
+                            ? null
+                            : order.orderType === "dine_in"
+                              ? "QR de mesa"
+                              : src === "customer_app"
                                 ? "Desde la app"
                                 : src === "customer_web"
-                                ? "Pedido web"
-                                : src;
-                            return label ? (
-                              <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
-                                {label}
-                              </span>
-                            ) : null;
-                          })()}
-                          <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#F28C38]/10 text-[#F28C38]">
-                            {order.orderType === "in_store"
-                              ? "Caja"
-                              : order.orderType === "dine_in"
+                                  ? "Pedido web"
+                                  : src;
+                        const typeLabel =
+                          order.orderType === "in_store"
+                            ? "Caja"
+                            : order.orderType === "dine_in"
                               ? "En mesa"
                               : order.orderType === "pickup"
-                              ? "Para llevar"
-                              : "A domicilio"}
-                          </span>
-                          {/* La mesa es lo ÚNICO que le dice al mesero a dónde
-                              llevar el plato — va en verde y grande, no como un
-                              chip más. */}
-                          {order.tableNumber ? (
-                            <span className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-[#16A34A] text-white">
-                              {/* tableLabel: "Mesa 5" cuando es numero, pero
-                                  "Barra" a secas cuando trae letras. Antes
-                                  decia "Mesa Barra", que se lee mal — y la
-                                  hoja de QR ya usaba esta misma regla. */}
-                              🍽️ {tableLabel(order.tableNumber)}
-                              {order.diners ? ` · ${order.diners}p` : ""}
-                            </span>
-                          ) : null}
-                          {/* 🛵 La dirección es lo ÚNICO que le dice al dueño a
-                              dónde ir — verde y grande como la mesa, no un chip.
-                              Central Fast Food (RD) entrega él mismo; antes la
-                              gente metía "Daly dígale a Harol" en el NOMBRE. */}
-                          {order.orderType === "delivery" && order.deliveryAddress?.trim() ? (
-                            <span className="w-full rounded-xl px-2.5 py-1.5 text-[12px] font-bold leading-snug bg-[#16A34A] text-white">
-                              🛵 {order.deliveryAddress.trim()}
-                            </span>
-                          ) : null}
-                          {/* 🏦 Lo que el comensal DIJO al ordenar. Solo mientras
-                              no se cobra: ya cobrado, manda paymentMethod. */}
-                          {!isPaid && order.pickupPaymentMethod ? (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#FFF3E8] text-[#C2410C]">
-                              {POS_PAYMENT_OPTIONS.find((o) => o.key === order.pickupPaymentMethod)?.emoji ?? "💵"}{" "}
-                              Paga con {POS_PAYMENT_OPTIONS.find((o) => o.key === order.pickupPaymentMethod)?.label.toLowerCase() ?? order.pickupPaymentMethod}
-                            </span>
-                          ) : null}
-                          {order.isOpenTab && (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600">
-                              Cuenta Abierta
-                            </span>
-                          )}
-                          {!isPaid && (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-600">
-                              Sin Pagar
-                            </span>
-                          )}
-                          {order.redemptionRequest && (
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                                order.redemptionResult === "insufficient"
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-green-100 text-green-700"
-                              }`}
-                              title={
-                                order.redemptionResult === "insufficient"
-                                  ? "Puntos insuficientes al cobrar — cobra normal, no entregues el premio"
-                                  : `Entregar GRATIS: ${order.redemptionRequest.name} (canje de ${order.redemptionRequest.points} pts)`
-                              }
-                            >
-                              🎁 {order.redemptionResult === "insufficient"
-                                ? "Canje inválido"
-                                : `Canje: ${order.redemptionRequest.name}`}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                                ? "Para llevar"
+                                : "A domicilio";
+                        const saidOpt = !isPaid && order.pickupPaymentMethod
+                          ? POS_PAYMENT_OPTIONS.find((o) => o.key === order.pickupPaymentMethod)
+                          : undefined;
 
-                      {/* Items */}
-                      <div className="py-4 flex-1 space-y-3">
-                        <p className="text-[12px] font-bold text-gray-400">PRODUCTOS</p>
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="text-[12px] text-[#1C2526]">
-                              <div className="flex justify-between font-semibold">
-                                <span>{item.quantity}x {item.name}</span>
-                                <span>{fmt(item.price * item.quantity)}</span>
-                              </div>
-                              {/* Modifiers */}
-                              {item.selectedModifiers && item.selectedModifiers.map((mod, mIdx) => (
-                                <div key={mIdx} className="text-[10px] text-gray-400 pl-3">
-                                  {mod.modifierName}: {mod.selectedOptions.join(", ")}
-                                </div>
-                              ))}
-                              {item.notes && (
-                                <div className="text-[10px] italic text-[#F28C38] pl-3">
-                                  Nota: {item.notes}
-                                </div>
+                        return (
+                          <article
+                            key={order.id}
+                            id={`pedido-${order.id}`}
+                            className="flex flex-col gap-3 rounded-xl bg-white p-3.5"
+                            style={{
+                              border: `1px solid ${level === "late" ? WARN : BORDER}`,
+                              ...(order.id === focusOrderId
+                                ? { outline: `2px solid ${INK}`, outlineOffset: "2px", scrollMarginTop: "96px" }
+                                : {}),
+                            }}
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="text-[15px] font-semibold tabular-nums" style={{ color: INK }}>#{order.id.slice(-6).toUpperCase()}</span>
+                              <span className="text-[13px]" style={{ color: INK_SOFT }}>{formattedTime}</span>
+                            </div>
+
+                            {/* Chips: origen y tipo con borde; cuánto lleva con punto y
+                                palabra (ámbar desde los 10 min). La mesa va en tinta,
+                                es lo único que le dice al mesero a dónde llevar el plato. */}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {sourceLabel && <Chip>{sourceLabel}</Chip>}
+                              <Chip>{typeLabel}</Chip>
+                              {order.tableNumber ? (
+                                <span className="inline-flex h-[26px] items-center rounded-full px-2.5 text-[12px] font-semibold" style={{ background: INK, color: "#FAF9F5" }}>
+                                  {tableLabel(order.tableNumber)}{order.diners ? ` · ${order.diners} personas` : ""}
+                                </span>
+                              ) : null}
+                              {waiting && (
+                                <span
+                                  className="inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold"
+                                  style={level === "ok"
+                                    ? { background: "#F0EBE1", color: INK_MUTED }
+                                    : { background: WARN_SURFACE, color: WARN }}
+                                >
+                                  {level !== "ok" && (
+                                    <span
+                                      className={`h-1.5 w-1.5 rounded-full${level === "late" ? " animate-pulse motion-reduce:animate-none" : ""}`}
+                                      style={{ background: WARN }}
+                                    />
+                                  )}
+                                  {orderWaitLabel(waitMin)}
+                                </span>
+                              )}
+                              {saidOpt ? <Chip>Paga con {saidOpt.label.toLowerCase()}</Chip> : null}
+                              {order.isOpenTab && <Chip>Cuenta abierta</Chip>}
+                              {!isPaid && !order.isOpenTab && (
+                                <span className="inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold" style={{ background: WARN_SURFACE, color: WARN }}>
+                                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: WARN }} />Sin cobrar
+                                </span>
+                              )}
+                              {order.redemptionRequest && (
+                                <span
+                                  className="inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold"
+                                  style={order.redemptionResult === "insufficient"
+                                    ? { background: "#F0EBE1", color: DANGER }
+                                    : { background: "#F0EBE1", color: SUCCESS_TEXT }}
+                                  title={
+                                    order.redemptionResult === "insufficient"
+                                      ? "Puntos insuficientes al cobrar: cobra normal, no entregues el premio"
+                                      : `Entregar GRATIS: ${order.redemptionRequest.name} (canje de ${order.redemptionRequest.points} pts)`
+                                  }
+                                >
+                                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: order.redemptionResult === "insufficient" ? DANGER : SUCCESS_TEXT }} />
+                                  {order.redemptionResult === "insufficient" ? "Canje inválido" : `Canje: ${order.redemptionRequest.name}`}
+                                </span>
                               )}
                             </div>
-                          ))}
-                        </div>
 
-                        {order.notes && (
-                          <div className="rounded-lg bg-orange-50 p-2.5 text-[11px] text-[#E07830] border border-orange-100">
-                            <strong>Nota general:</strong> {order.notes}
-                          </div>
-                        )}
+                            {/* La dirección es lo ÚNICO que le dice al dueño a dónde ir:
+                                un renglón entero en tinta, no un chip. */}
+                            {order.orderType === "delivery" && order.deliveryAddress?.trim() ? (
+                              <div className="flex items-start gap-2 rounded-lg px-2.5 py-2 text-[14px] font-semibold leading-[18px]" style={{ background: "#F0EBE1", color: INK }}>
+                                <IconPin />
+                                <span className="min-w-0">{order.deliveryAddress.trim()}</span>
+                              </div>
+                            ) : null}
 
-                        {order.customerName && (
-                          <div className="pt-2 text-[12px] font-semibold text-gray-700 flex items-center gap-1.5">
-                            👤 <span>{order.customerName}</span>
-                          </div>
-                        )}
-                        {order.customerPhone && (
-                          <div className="flex items-center justify-between gap-2">
-                            <a
-                              href={buildWhatsappChatUrl(order.customerPhone, phoneCountry)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[12px] font-semibold text-[#128C7E] flex items-center gap-1.5 hover:underline"
-                            >
-                              💬 <span>{order.customerPhone}</span>
-                            </a>
-                            <button
-                              onClick={() => sendReceiptWhatsapp(order)}
-                              className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 transition-colors"
-                            >
-                              🧾 Enviar recibo
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                            {/* Platillos */}
+                            <div className="flex flex-col gap-1.5 py-2.5" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+                              {order.items.map((item, idx) => (
+                                <div key={idx} className="flex flex-col gap-0.5">
+                                  <div className="flex justify-between gap-3 text-[15px] leading-5" style={{ color: INK }}>
+                                    <span>{item.quantity} × {item.name}</span>
+                                    <span className="tabular-nums" style={{ color: INK_MUTED }}>{fmt(item.price * item.quantity)}</span>
+                                  </div>
+                                  {item.selectedModifiers && item.selectedModifiers.map((mod, mIdx) => (
+                                    <div key={mIdx} className="pl-4 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                                      {mod.modifierName}: {mod.selectedOptions.join(", ")}
+                                    </div>
+                                  ))}
+                                  {item.notes && (
+                                    <div className="pl-4 text-[13px] leading-4" style={{ color: INK_SOFT }}>Nota: {item.notes}</div>
+                                  )}
+                                </div>
+                              ))}
+                              {order.notes && (
+                                <div className="text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>Nota: {order.notes}</div>
+                              )}
+                            </div>
 
-                      {/* Bottom Actions */}
-                      <div className="pt-3 border-t border-gray-100 space-y-2">
-                        {typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? (
-                          <div className="flex justify-between items-center">
-                            <span className="text-[11px] font-semibold text-gray-400">ENVÍO</span>
-                            <span className="text-[12px] font-bold text-[#1C2526]/70">{fmt(order.deliveryFee)}</span>
-                          </div>
-                        ) : null}
-                        <div className="flex justify-between items-center">
-                          <span className="text-[11px] font-semibold text-gray-400">TOTAL</span>
-                          <span className="text-[16px] font-extrabold text-[#1C2526]">{fmt(order.total)}</span>
-                        </div>
+                            {/* Quién: nombre y teléfono (abre WhatsApp), y el recibo. */}
+                            {(order.customerName || order.customerPhone) && (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex min-w-0 flex-col gap-0.5">
+                                  {order.customerName && <span className="truncate text-[14px] font-semibold" style={{ color: INK }}>{order.customerName}</span>}
+                                  {order.customerPhone && (
+                                    <a
+                                      href={buildWhatsappChatUrl(order.customerPhone, phoneCountry)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[13px] tabular-nums hover:underline"
+                                      style={{ color: INK_SOFT }}
+                                    >
+                                      {order.customerPhone}
+                                    </a>
+                                  )}
+                                </div>
+                                {order.customerPhone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => sendReceiptWhatsapp(order)}
+                                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-white px-3 text-[13px] font-semibold transition hover:opacity-90"
+                                    style={{ border: `1px solid ${BORDER}`, color: INK }}
+                                  >
+                                    <IconReceipt /> Enviar recibo
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
-                        <div className="flex gap-1.5">
-                          {/* 🖨️ Ticket para la impresora térmica (10-sep, Zahir/Aokia):
-                              abre la hoja limpia y el navegador imprime. */}
-                          <button
-                            onClick={() => openTicket(order.id)}
-                            className="rounded-xl px-2.5 py-2.5 text-[11px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
-                            title="Imprimir ticket"
-                            aria-label="Imprimir ticket"
-                          >
-                            🖨️
-                          </button>
-                          {order.status !== "completed" && (
-                            <button
-                              onClick={() => cancelOrder(order.id)}
-                              className="rounded-xl px-2.5 py-2.5 text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                            >
-                              Cancelar
-                            </button>
-                          )}
+                            {/* Total y acciones */}
+                            <div className="flex flex-col gap-2.5">
+                              {typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? (
+                                <div className="flex items-baseline justify-between text-[13px]" style={{ color: INK_SOFT }}>
+                                  <span>Envío</span>
+                                  <span className="tabular-nums">{fmt(order.deliveryFee)}</span>
+                                </div>
+                              ) : null}
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-[13px]" style={{ color: INK_SOFT }}>Total</span>
+                                <span className="text-[17px] font-bold tabular-nums" style={{ color: INK }}>{fmt(order.total)}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                {/* Ticket para la impresora térmica (10-sep, Zahir/Aokia):
+                                    abre la hoja limpia y el navegador imprime. */}
+                                <button
+                                  type="button"
+                                  onClick={() => openTicket(order.id)}
+                                  className="mr-auto inline-flex h-10 w-10 items-center justify-center rounded-[10px] bg-white transition hover:opacity-90"
+                                  style={{ border: `1px solid ${BORDER}`, color: INK }}
+                                  title="Imprimir ticket"
+                                  aria-label="Imprimir ticket"
+                                >
+                                  <IconPrinter />
+                                </button>
+                                {order.status !== "completed" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => cancelOrder(order.id)}
+                                    className="inline-flex h-10 items-center px-2.5 text-[14px] font-semibold hover:underline"
+                                    style={{ color: LINK }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
 
-                          {!isPaid && order.isOpenTab ? (
-                            // CUENTA ABIERTA: el cobro de mesa pasa por la
-                            // Caja SIEMPRE — ahí vive la cuenta agrupada
-                            // (todas las rondas), la propina, el teléfono →
-                            // puntos y el canje. El cobro pelón de aquí
-                            // (efectivo/tarjeta y ya) cobraba UNA ronda sin
-                            // propina y por fuera de la cuenta.
-                            <a
-                              href="/vendor/pos?cuentas=1"
-                              className="flex-1 rounded-xl py-2.5 text-[11px] font-bold bg-orange-100 text-[#E07830] hover:bg-orange-200 transition-colors text-center"
-                            >
-                              Cobrar en la Caja →
-                            </a>
-                          ) : !isPaid ? (
-                            <button
-                              onClick={() => setChargingOrderId(order.id)}
-                              className="flex-1 rounded-xl py-2.5 text-[11px] font-bold bg-orange-100 text-[#E07830] hover:bg-orange-200 transition-colors text-center"
-                            >
-                              Cobrar
-                            </button>
-                          ) : null}
+                                {!isPaid && order.isOpenTab ? (
+                                  // CUENTA ABIERTA: el cobro de mesa pasa por la Caja SIEMPRE:
+                                  // ahí vive la cuenta agrupada (todas las rondas), la propina,
+                                  // el teléfono → puntos y el canje.
+                                  <Link
+                                    href="/vendor/pos?cuentas=1"
+                                    className="inline-flex h-10 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90"
+                                    style={{ border: `1px solid ${INK}`, color: INK }}
+                                  >
+                                    Cobrar en la Caja
+                                  </Link>
+                                ) : !isPaid ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setChargingOrderId(order.id)}
+                                    className="inline-flex h-10 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90"
+                                    style={{ border: `1px solid ${INK}`, color: INK }}
+                                  >
+                                    Cobrar
+                                  </button>
+                                ) : null}
 
-                          {order.status === "pending" && (
-                            <button
-                              onClick={() => updateStatus(order.id, "preparing")}
-                              className="flex-grow rounded-xl py-2.5 text-[11px] font-bold text-white bg-[#1C2526] hover:opacity-90 transition-all text-center"
-                            >
-                              Comenzar
-                            </button>
-                          )}
-
-                          {order.status === "preparing" && (
-                            <button
-                              onClick={() => updateStatus(order.id, "ready")}
-                              className="flex-grow rounded-xl py-2.5 text-[11px] font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all text-center"
-                            >
-                              Terminar
-                            </button>
-                          )}
-
-                          {order.status === "ready" && (
-                            <button
-                              onClick={() => deliverOrder(order)}
-                              className="flex-grow rounded-xl py-2.5 text-[11px] font-bold text-white bg-green-600 hover:bg-green-700 transition-all text-center"
-                            >
-                              Entregar
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                                {order.status === "pending" && (
+                                  <button type="button" onClick={() => updateStatus(order.id, "preparing")} className="inline-flex h-10 items-center rounded-[10px] px-4 text-[14px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]" style={{ background: BRAND }}>
+                                    Comenzar
+                                  </button>
+                                )}
+                                {order.status === "preparing" && (
+                                  <button type="button" onClick={() => updateStatus(order.id, "ready")} className="inline-flex h-10 items-center rounded-[10px] px-4 text-[14px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]" style={{ background: BRAND }}>
+                                    Está listo
+                                  </button>
+                                )}
+                                {order.status === "ready" && (
+                                  <button type="button" onClick={() => deliverOrder(order)} className="inline-flex h-10 items-center rounded-[10px] px-4 text-[14px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]" style={{ background: BRAND }}>
+                                    Entregar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
-                  );
-                        })}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
       </main>
 
-      {/* ── Payment Dialog for Kitchen Fulfillment ── */}
+      {/* ── Diálogo de cobro ── */}
       {chargingOrderId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={closeChargeDialog}>
-          <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[16px] font-extrabold text-[#1C2526]">
-              {deliverAfterCharge ? "¿Ya te pagó?" : "Registrar Pago"}
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 md:items-center" onClick={closeChargeDialog}>
+          <div className="flex w-full max-w-[360px] flex-col gap-3 rounded-xl bg-white p-5" style={{ border: `1px solid ${BORDER}` }} onClick={(e) => e.stopPropagation()}>
+            <p className="text-[18px] font-semibold leading-6" style={{ color: INK, fontFamily: SERIF }}>
+              {deliverAfterCharge ? "¿Ya te pagó?" : "Registrar pago"}
             </p>
-            <p className="text-[13px] text-gray-400 font-medium">
+            <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
               {deliverAfterCharge
-                ? "Toca con qué te pagó y el pedido queda entregado"
-                : "Elige el método de pago del cliente"}
+                ? "Toca con qué te pagó y el pedido queda entregado."
+                : "Elige con qué te pagó el cliente."}
             </p>
             {(() => {
               const said = orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod;
               const opt = said ? POS_PAYMENT_OPTIONS.find((o) => o.key === said) : undefined;
               return opt ? (
-                <p className="text-[12px] font-semibold text-[#C2410C]">
-                  El cliente dijo: {opt.emoji} {opt.label}
+                <p className="text-[14px] font-semibold" style={{ color: WARN }}>
+                  El cliente dijo: {opt.label}
                 </p>
               ) : null;
             })()}
             <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
-              {paymentOptions.map((m) => (
-                <button
-                  key={m.key}
-                  onClick={() => chargeOrder(chargingOrderId, m.key)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border hover:bg-orange-50 hover:border-[#F28C38] transition-all ${
-                    orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod === m.key
-                      ? "bg-orange-50 border-[#F28C38] ring-2 ring-[#F28C38]/25"
-                      : "bg-gray-50 border-gray-100"
-                  }`}
-                >
-                  <span className="text-2xl mb-1">{m.emoji}</span>
-                  <span className="text-[12px] font-bold text-[#1C2526]">{m.label}</span>
-                </button>
-              ))}
+              {paymentOptions.map((m) => {
+                const said = orders.find((o) => o.id === chargingOrderId)?.pickupPaymentMethod === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => chargeOrder(chargingOrderId, m.key)}
+                    className="flex h-14 items-center justify-center rounded-xl bg-white px-2 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.98]"
+                    style={{ border: `1px solid ${said ? INK : BORDER}`, color: INK }}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
             </div>
             {deliverAfterCharge ? (
               <button
+                type="button"
                 onClick={() => deliverUnpaid(chargingOrderId)}
-                className="w-full py-2.5 rounded-xl text-[12px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
               >
                 Todavía no me paga · Entregar sin cobrar
               </button>
             ) : null}
             <button
+              type="button"
               onClick={closeChargeDialog}
-              className={`w-full py-2.5 rounded-xl text-[12px] font-bold transition-colors ${
-                deliverAfterCharge
-                  ? "text-gray-400 hover:text-gray-600"
-                  : "bg-gray-100 text-[#1C2526] hover:bg-gray-200"
-              }`}
+              className="flex h-11 w-full items-center justify-center text-[14px] font-semibold hover:underline"
+              style={{ color: LINK }}
             >
               Cancelar
             </button>
