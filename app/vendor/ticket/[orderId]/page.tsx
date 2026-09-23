@@ -14,6 +14,12 @@
 // Vive fuera del layout del panel (sin barra lateral ni nav) para que lo
 // impreso sea SOLO el ticket. Ancho 80 mm por default; ?w=58 para las de 58.
 // ?auto=0 evita el diálogo automático (QA).
+//
+// 23-sep-2026: es un ticket DE COCINA (Zahir: "para la cocina", "las letras
+// más grandes"). Lo que se lee de lejos y primero: a dónde va, los platillos
+// con sus opciones y notas. Sin precio por platillo. El total y cómo paga
+// quedan chicos al final para que la misma hoja siga sirviendo de pre factura
+// (lo que se le prometió a Zahir el 22-sep).
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -178,16 +184,25 @@ export default function TicketPage() {
         @page { size: ${widthMm}mm auto; margin: 0; }
         html, body { background: #fff !important; margin: 0; padding: 0; }
         .ticket-root { color: #000; background: #fff; font-family: "Courier New", ui-monospace, Menlo, monospace; }
-        .ticket { width: ${contentMm}mm; margin: 0 auto; padding: 3mm 0 6mm; font-size: 12px; line-height: 1.3; }
+        .ticket { width: ${contentMm}mm; margin: 0 auto; padding: 3mm 0 6mm; font-size: 14px; line-height: 1.25; }
+        .ticket p { margin: 0; }
         .center { text-align: center; }
-        .big { font-size: 18px; font-weight: 700; }
+        .big { font-size: 22px; font-weight: 700; }
         .bold { font-weight: 700; }
-        .rule { border-top: 1px dashed #000; margin: 6px 0; }
+        .rule { border-top: 2px dashed #000; margin: 8px 0; }
         .row { display: flex; justify-content: space-between; gap: 8px; }
         .row span:first-child { flex: 1; min-width: 0; }
-        .sub { padding-left: 10px; font-size: 11px; }
-        .total { font-size: 16px; font-weight: 700; }
-        .box { border: 1px solid #000; padding: 4px 6px; margin: 6px 0; }
+        /* Cocina: el platillo es lo más grande de la hoja; opciones y notas van
+           grandes también, con sangría para que se vea que cuelgan del platillo. */
+        .item { font-size: 22px; font-weight: 700; line-height: 1.15; margin-top: 8px; overflow-wrap: anywhere; }
+        .item:first-child { margin-top: 0; }
+        .sub { padding-left: 14px; font-size: 17px; line-height: 1.2; margin-top: 2px; overflow-wrap: anywhere; }
+        .where { font-size: 20px; font-weight: 700; }
+        .addr { font-size: 16px; }
+        .who { font-size: 17px; }
+        .meta { font-size: 14px; }
+        .total { font-size: 15px; font-weight: 700; }
+        .box { border: 2px solid #000; padding: 5px 7px; margin: 8px 0; }
         .no-print { display: flex; gap: 8px; justify-content: center; padding: 12px; }
         .no-print button { font: inherit; padding: 10px 16px; border-radius: 10px; border: 1px solid #000; background: #fff; }
         .no-print button.primary { background: #000; color: #fff; }
@@ -210,60 +225,56 @@ export default function TicketPage() {
             </button>
           </div>
           <div className="ticket">
-            {restaurantName ? <p className="center big">{restaurantName}</p> : null}
-            <p className="center">Pedido #{shortCode}{when ? ` · ${when}` : ""}</p>
+            {restaurantName ? <p className="center meta">{restaurantName}</p> : null}
+            <p className="center big">#{shortCode}{when ? ` · ${when}` : ""}</p>
 
             <div className="rule" />
 
             {/* A dónde va / dónde está — lo primero que lee la cocina. */}
             {esDomicilio ? (
               <div className="box">
-                <p className="bold">A DOMICILIO</p>
-                <p>{order.deliveryAddress}</p>
+                <p className="where">A DOMICILIO</p>
+                <p className="addr">{order.deliveryAddress}</p>
               </div>
             ) : mesa ? (
               <div className="box">
-                <p className="bold">{mesa.toUpperCase()}{order.diners ? ` · ${order.diners} personas` : ""}</p>
+                <p className="where">{mesa.toUpperCase()}{order.diners ? ` · ${order.diners} personas` : ""}</p>
               </div>
             ) : order.orderType === "pickup" ? (
               <div className="box">
-                <p className="bold">PARA LLEVAR{order.pickupPin ? ` · PIN ${order.pickupPin}` : ""}</p>
+                <p className="where">PARA LLEVAR{order.pickupPin ? ` · PIN ${order.pickupPin}` : ""}</p>
               </div>
             ) : null}
 
-            {order.customerName ? <p className="bold">{order.customerName}</p> : null}
-            {order.customerPhone ? <p>Tel. {order.customerPhone}</p> : null}
+            {order.customerName ? <p className="who bold">{order.customerName}</p> : null}
+            {order.customerPhone ? <p className="meta">Tel. {order.customerPhone}</p> : null}
 
             <div className="rule" />
 
+            {/* Cocina: cantidad y platillo grandes, sin precio por línea. */}
             {(order.items ?? []).map((it, i) => {
               const qty = typeof it.quantity === "number" ? it.quantity : 1;
-              const line =
-                typeof it.subtotal === "number"
-                  ? it.subtotal
-                  : (typeof it.price === "number" ? it.price : 0) * qty;
               return (
                 <div key={i}>
-                  <div className="row">
-                    <span className="bold">{qty}x {it.name ?? "—"}</span>
-                    <span>{formatPrice(line)}</span>
-                  </div>
+                  <p className="item">{qty}x {it.name ?? "—"}</p>
                   {it.selectedModifiers?.map((m, j) => (
                     <p key={j} className="sub">
                       {m.modifierName}: {m.selectedOptions.join(", ")}
                     </p>
                   ))}
-                  {it.notes?.trim() ? <p className="sub">* {it.notes.trim()}</p> : null}
+                  {it.notes?.trim() ? <p className="sub bold">* {it.notes.trim()}</p> : null}
                 </div>
               );
             })}
-            {order.notes?.trim() ? <p className="sub">Nota: {order.notes.trim()}</p> : null}
-            {premio ? <p className="bold">GRATIS: {premio}</p> : null}
+            {order.notes?.trim() ? <p className="sub bold" style={{ marginTop: 8 }}>NOTA: {order.notes.trim()}</p> : null}
+            {premio ? <p className="item">GRATIS: {premio}</p> : null}
 
             <div className="rule" />
 
+            {/* Pre factura, chica: total y cómo paga. La cocina no lo lee; el
+                repartidor y el cliente sí. */}
             {envio > 0 ? (
-              <div className="row">
+              <div className="row meta">
                 <span>Envío</span>
                 <span>{formatPrice(envio)}</span>
               </div>
@@ -272,7 +283,7 @@ export default function TicketPage() {
               <span>TOTAL</span>
               <span>{formatPrice(order.total ?? 0)}</span>
             </div>
-            <p className="bold" style={{ marginTop: 4 }}>
+            <p className="meta bold" style={{ marginTop: 4 }}>
               {isPaid
                 ? paidLabel(order.paymentMethod)
                 : mesa

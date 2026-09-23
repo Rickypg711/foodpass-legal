@@ -7,6 +7,9 @@
 //   1. /vendor/ticket vive SIN el layout del panel (lo impreso es solo el ticket).
 //   2. El ticket trae lo que la cocina y el repartidor necesitan: a dónde va
 //      (dirección / mesa / PIN), envío, total y cómo paga.
+//   2b. (23-sep) Es ticket DE COCINA: platillo, opciones y notas en grande
+//      (platillo >= 20px, opciones >= 16px), SIN precio por platillo; el
+//      total y cómo paga quedan chicos al final (pre factura).
 //   3. Hay botón en Pedidos y en el éxito de la Caja; Configuración elige el
 //      ancho (58/80) y tiene ticket de prueba.
 //   4. Bluetooth JAMÁS desde nuestro código: solo window.print().
@@ -36,6 +39,15 @@ assert.ok(!/bluetooth|navigator\.usb|navigator\.serial/i.test(ticket.replace(/\/
 for (const must of ["A DOMICILIO", "order.deliveryAddress", "PARA LLEVAR", "PIN ", "Envío", "TOTAL", "@page { size: ${widthMm}mm auto", "ticketPaperMm(r)", "TICKET_SAMPLE_ID"]) {
   assert.ok(ticket.includes(must), `el ticket trae: ${must}`);
 }
+
+// Cocina (23-sep): letras grandes y sin precio por platillo.
+const px = (cls) => Number((ticket.match(new RegExp(`\\.${cls} \\{[^}]*font-size: (\\d+)px`)) ?? [])[1] ?? 0);
+assert.ok(px("item") >= 20, `platillo en grande (>=20px), hoy ${px("item")}`);
+assert.ok(px("sub") >= 16, `opciones y notas en grande (>=16px), hoy ${px("sub")}`);
+assert.ok(px("where") >= 18, `a dónde va en grande (>=18px), hoy ${px("where")}`);
+assert.ok(ticket.includes('className="item">{qty}x {it.name'), "cantidad + platillo en la línea grande");
+assert.ok(!ticket.includes("formatPrice(line)"), "sin precio por platillo (ticket de cocina)");
+assert.ok(ticket.includes('className="row total"'), "el total sigue al final (pre factura)");
 
 const pedidos = read("app/vendor/pedidos/page.tsx");
 assert.ok(pedidos.includes("/vendor/ticket/${encodeURIComponent(order.id)}"), "Pedidos tiene el botón de imprimir");

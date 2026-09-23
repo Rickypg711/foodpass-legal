@@ -103,3 +103,24 @@ si es computadora, abre Comeleal ahí e imprime, y ya.
 **Pendiente (no urgente):** el texto de Configuración → Impresora de tickets
 solo explica Bluetooth. Cuando lo toque alguien, que diga los tres caminos
 (USB en computadora, red por IP en celular, Bluetooth en celular).
+
+## 23-sep-2026 — ticket de cocina, letras grandes
+
+Zahir (Central Fast Food) respondió que el ticket es **para la cocina** y pidió
+**letras más grandes**. Antes era un recibo: platillo con precio en 12 px,
+total en 16. Ahora es un ticket de cocina:
+
+- **Lo grande:** número corto + hora (22 px), la caja de a dónde va (A
+  DOMICILIO / MESA / PARA LLEVAR, 20 px), cada platillo con su cantidad
+  (22 px negritas), opciones y notas (17 px, notas en negritas, sangría).
+- **Sin precio por platillo.** La cocina no lo lee.
+- **Lo chico, al final:** envío, TOTAL y cómo paga (14–15 px). Se queda para
+  que la misma hoja siga sirviendo de pre factura, que es lo que se le
+  prometió a Zahir el 22-sep. El nombre del local baja a 14 px.
+- Líneas punteadas y recuadro más gruesos (2 px) para que la térmica los
+  marque.
+
+Candado en `scripts/validate-print-ticket.mjs`: platillo ≥ 20 px, opciones
+≥ 16 px, a dónde va ≥ 18 px, nada de `formatPrice(line)`, el total sigue.
+
+QA: en producción con la sesión de Luzz Pizza (localhost no tiene sesión).
