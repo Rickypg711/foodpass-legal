@@ -32,9 +32,11 @@ export function OptionGroupsEditor({
   }
 
   return (
-    <div className="rounded-xl border border-[#141413]/10 bg-[#faf9f5] p-3">
+    // Opción A (23-sep-2026): caja tostada sin borde, campos de 44/16px, un
+    // botón secundario para agrupar, links de texto para quitar.
+    <div className="rounded-xl bg-[#F0EBE1] p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-xs font-bold text-[#141413]/70">Opciones que elige el cliente</p>
+        <p className="text-[13px] font-semibold text-[#1C2526]">Opciones que elige el cliente</p>
         <button
           type="button"
           onClick={() =>
@@ -50,14 +52,14 @@ export function OptionGroupsEditor({
               },
             ])
           }
-          className="rounded-lg bg-[#141413] px-2.5 py-1 text-[11px] font-bold text-white"
+          className="flex h-9 items-center rounded-xl border border-[#1C2526] bg-white px-3 text-[13px] font-semibold text-[#1C2526]"
         >
-          + Grupo
+          Agregar grupo
         </button>
       </div>
 
       {groups.length === 0 && (
-        <p className="text-[11px] leading-relaxed text-[#141413]/45">
+        <p className="text-[13px] leading-[18px] text-[#3F4A4D]">
           {detectedHint
             ? detectedHint
             : "Si este platillo se pide de varias formas (salsa, término, extras), agrega un grupo. Tu cliente lo va a elegir al ordenar y llega en el pedido."}
@@ -65,7 +67,7 @@ export function OptionGroupsEditor({
       )}
 
       {groups.map((g, gi) => (
-        <div key={g.id} className="mb-2 rounded-lg border border-[#141413]/10 bg-white p-2.5">
+        <div key={g.id} className="mb-2 rounded-xl border border-[#D9D2C5] bg-white p-3">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -78,19 +80,19 @@ export function OptionGroupsEditor({
               // "S" y tenia que volver a hacer clic. El id se genera una vez
               // al crear el grupo y se queda quieto.
               onChange={(e) => updateGroup(gi, { name: e.target.value })}
-              className="min-w-0 flex-1 rounded-lg border border-[#141413]/12 px-2 py-1.5 text-xs text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-[#D9D2C5] px-3 text-[16px] text-[#1C2526] placeholder:text-[#5B6366] focus:border-[#1C2526] focus:outline-none"
             />
             <button
               type="button"
               onClick={() => onChange(groups.filter((_, i) => i !== gi))}
-              className="shrink-0 text-[11px] font-semibold text-red-500 hover:underline"
+              className="flex h-11 shrink-0 items-center text-[13px] font-semibold text-[#B91C1C] hover:underline"
             >
               Quitar
             </button>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-1.5 text-[11px] text-[#141413]/60">
+            <label className="flex h-9 items-center gap-2 text-[13px] text-[#3F4A4D]">
               <input
                 type="checkbox"
                 checked={g.required}
@@ -100,7 +102,7 @@ export function OptionGroupsEditor({
               />
               Obligatorio
             </label>
-            <label className="flex items-center gap-1.5 text-[11px] text-[#141413]/60">
+            <label className="flex h-9 items-center gap-2 text-[13px] text-[#3F4A4D]">
               Puede elegir hasta
               <input
                 type="number"
@@ -108,7 +110,7 @@ export function OptionGroupsEditor({
                 max={10}
                 value={g.max}
                 onChange={(e) => updateGroup(gi, { max: Math.max(1, parseInt(e.target.value) || 1) })}
-                className="w-14 rounded-lg border border-[#141413]/12 px-2 py-1 text-xs focus:border-[#F28C38] focus:outline-none"
+                className="h-9 w-16 rounded-lg border border-[#D9D2C5] px-2 text-[16px] tabular-nums text-[#1C2526] focus:border-[#1C2526] focus:outline-none"
               />
             </label>
           </div>
@@ -125,10 +127,10 @@ export function OptionGroupsEditor({
                     opts[oi] = { ...o, name: e.target.value, id: slug(e.target.value) || `op-${oi + 1}` };
                     updateGroup(gi, { options: opts });
                   }}
-                  className="min-w-0 flex-1 rounded-lg border border-[#141413]/12 px-2 py-1.5 text-xs placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-[#D9D2C5] px-3 text-[16px] text-[#1C2526] placeholder:text-[#5B6366] focus:border-[#1C2526] focus:outline-none"
                 />
                 <div className="flex shrink-0 items-center gap-1">
-                  <span className="text-[11px] text-[#141413]/40">+$</span>
+                  <span className="text-[13px] text-[#5B6366]">+$</span>
                   <input
                     type="number"
                     min={0}
@@ -139,11 +141,11 @@ export function OptionGroupsEditor({
                       opts[oi] = { ...o, priceDelta: Math.max(0, parseFloat(e.target.value) || 0) };
                       updateGroup(gi, { options: opts });
                     }}
-                    className="w-16 rounded-lg border border-[#141413]/12 px-2 py-1.5 text-xs focus:border-[#F28C38] focus:outline-none"
+                    className="h-11 w-20 rounded-xl border border-[#D9D2C5] px-2 text-[16px] tabular-nums text-[#1C2526] focus:border-[#1C2526] focus:outline-none"
                   />
                 </div>
                 <label
-                  className="flex shrink-0 items-center gap-1 text-[11px] text-[#141413]/50"
+                  className="flex h-11 shrink-0 items-center gap-1.5 text-[13px] text-[#3F4A4D]"
                   title="Se ve tachada y no se puede elegir. Al guardar, cambia en todos los platillos que llevan esta opción. También se prende y apaga desde la Caja."
                 >
                   <input
@@ -166,10 +168,10 @@ export function OptionGroupsEditor({
                 <button
                   type="button"
                   onClick={() => updateGroup(gi, { options: g.options.filter((_, i) => i !== oi) })}
-                  className="shrink-0 text-[11px] text-[#141413]/35 hover:text-red-500"
+                  className="flex h-11 w-9 shrink-0 items-center justify-center text-[#5B6366] hover:text-[#B91C1C]"
                   aria-label="Quitar opción"
                 >
-                  ✕
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
               </div>
             ))}
@@ -180,9 +182,9 @@ export function OptionGroupsEditor({
                   options: [...g.options, { id: `op-${g.options.length + 1}`, name: "", priceDelta: 0 }],
                 })
               }
-              className="self-start text-[11px] font-semibold text-[#F28C38] hover:underline"
+              className="flex h-9 items-center self-start text-[13px] font-semibold text-[#8A4B12] hover:underline"
             >
-              + Opción
+              Agregar opción
             </button>
           </div>
         </div>

@@ -699,9 +699,9 @@ export default function VendorDashboard() {
 // ─── Setup Banner ─────────────────────────────────────────────────────────────
 
 const SETUP_STEPS = [
-  { key: "hours" as const, label: "Horario", href: "/vendor/setup/horario", emoji: "🕐" },
-  { key: "menu" as const, label: "Menú", href: "/vendor/setup/menu", emoji: "🍽️" },
-  { key: "rewards" as const, label: "Recompensas", href: "/vendor/setup/recompensas", emoji: "🎁" },
+  { key: "hours" as const, label: "Horario", href: "/vendor/setup/horario" },
+  { key: "menu" as const, label: "Menú", href: "/vendor/setup/menu" },
+  { key: "rewards" as const, label: "Recompensas", href: "/vendor/setup/recompensas" },
 ] as const;
 
 const REASON_TO_STEP: Record<string, typeof SETUP_STEPS[number]["key"]> = {
@@ -727,58 +727,56 @@ function SetupBanner({ reasons }: { reasons: string[] }) {
   const doneCount = SETUP_STEPS.filter((s) => !pendingKeys.has(s.key)).length;
   const pct = Math.round((doneCount / total) * 100);
 
-  // La tarjeta ya no es UN solo link: el encabezado lleva al MAPA (Ver →) y
-  // cada chip es PUERTA DIRECTA a su paso (regla de Ricardo, 26-ago: si
-  // tiene forma de chip y nombre de destino, LLEVA al destino — links
-  // anidados son HTML inválido, por eso el contenedor es div).
+  // La tarjeta no es UN solo link: el encabezado lleva al MAPA (Ver) y cada
+  // chip es PUERTA DIRECTA a su paso (regla de Ricardo, 26-ago: si tiene
+  // forma de chip y nombre de destino, LLEVA al destino — links anidados
+  // son HTML inválido, por eso el contenedor es div).
+  // Opción A (23-sep): tarjeta blanca con borde, sin cohete, sin degradado ni
+  // sombra; barra fina con relleno tinta; los chips con anatomía de botón
+  // secundario (pendiente = borde tinta + punto ámbar; hecho = palomita SVG).
   return (
-    <div
-      className="mb-5 flex flex-col rounded-2xl p-5 transition-all hover:shadow-md"
-      style={{
-        background: "linear-gradient(135deg, #fff8f5 0%, #ffffff 100%)",
-        border: "1px solid rgba(217,119,87,0.22)",
-        boxShadow: "0 2px 12px rgba(217,119,87,0.08)",
-      }}>
-      <Link href="/vendor/setup" className="flex items-center justify-between mb-3 active:scale-[0.99] transition-transform">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
-            style={{ background: "rgba(217,119,87,0.12)" }}>
-            🚀
-          </div>
-          <div>
-            <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>
-              Completa tu configuración
-            </p>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.42)" }}>
-              {doneCount} de {total} pasos · {pct}% listo
-            </p>
-          </div>
+    <div className="mb-7 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
+            Completa tu configuración
+          </p>
+          <p className="mt-0.5 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+            {doneCount} de {total} pasos
+          </p>
         </div>
-        <span style={{ color: "#F28C38", fontSize: 12, fontWeight: 600 }}>Ver →</span>
-      </Link>
+        <Link href="/vendor/setup" className="inline-flex h-11 shrink-0 items-center text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+          Ver
+        </Link>
+      </div>
 
       {/* Progress bar */}
-      <div className="mb-3 h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(28,37,38,0.07)" }}>
-        <div className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #FF9A45, #F28C38)" }} />
+      <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: HAIRLINE }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: INK }} />
       </div>
 
       {/* Step chips — cada uno abre SU paso (en modo wizard, con stepper).
-          Anatomía de BOTÓN (fondo blanco, borde, sombra, ›): un pill plano
-          no grita "tócame" aunque sea link (Ricardo, 26-ago). */}
-      <div className="flex gap-2 flex-wrap">
+          Anatomía de BOTÓN secundario: un pill plano no grita "tócame"
+          aunque sea link (Ricardo, 26-ago). */}
+      <div className="flex flex-wrap gap-2">
         {SETUP_STEPS.map((step) => {
           const pending = pendingKeys.has(step.key);
           return (
             <Link key={step.key}
               href={`${step.href}?wizard=1`}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold shadow-sm transition-all hover:shadow-md hover:-translate-y-px active:scale-[0.97]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-[13px] font-semibold transition-opacity hover:opacity-90 active:scale-[0.98]"
               style={pending
-                ? { background: "#ffffff", color: "#F28C38", border: "1.5px solid rgba(242,140,56,0.45)" }
-                : { background: "#ffffff", color: "rgba(28,37,38,0.45)", border: "1.5px solid rgba(28,37,38,0.1)" }
+                ? { color: INK, border: `1px solid ${INK}` }
+                : { color: INK_SOFT, border: `1px solid ${BORDER}` }
               }>
-              {pending ? step.emoji : "✓"} {step.label}
-              <span style={{ color: pending ? "rgba(242,140,56,0.7)" : "rgba(28,37,38,0.3)" }}>›</span>
+              {pending ? (
+                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "#B45309" }} />
+              ) : (
+                <svg aria-hidden="true" width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              )}
+              {step.label}
             </Link>
           );
         })}

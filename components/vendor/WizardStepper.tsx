@@ -57,7 +57,9 @@ export function WizardStepper({
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
   return (
-    <div className="border-b border-[#141413]/8 bg-white px-4 py-3.5 sm:px-6">
+    // Opción A (23-sep-2026): crema, hairline, paso actual en tinta, hechos con
+    // check de trazo, pendientes en inkSoft. El naranja no vive aquí.
+    <div className="border-b border-[#E9E3D7] bg-[#FAF9F5] px-5 py-3 sm:px-6">
       <div className="mx-auto flex max-w-lg items-center gap-3">
         {/* Salida al panel — mismo patrón que el "← Volver" de las páginas
             sin wizard (tinta 45% → tinta al hover). */}
@@ -65,19 +67,19 @@ export function WizardStepper({
           <button
             type="button"
             onClick={onPanelClick}
-            className="shrink-0 text-xs font-semibold text-[#1C2526]/45 transition-colors hover:text-[#1C2526]"
+            className="flex h-9 shrink-0 items-center text-[13px] font-semibold text-[#8A4B12] hover:underline"
           >
-            ← Panel
+            Panel
           </button>
         ) : (
         <Link
           href="/vendor"
-          className="shrink-0 text-xs font-semibold text-[#1C2526]/45 transition-colors hover:text-[#1C2526]"
+          className="flex h-9 shrink-0 items-center text-[13px] font-semibold text-[#8A4B12] hover:underline"
         >
-          ← Panel
+          Panel
         </Link>
         )}
-        {hidePanelExit ? null : <span className="text-[#1C2526]/15">/</span>}
+        {hidePanelExit ? null : <span className="h-4 w-px bg-[#D9D2C5]" aria-hidden />}
         <div className="flex flex-1 items-center">
           {STEPS.map((step, i) => {
             const done    = doneKeys ? doneKeys.includes(step.key) : i < currentIdx;
@@ -90,22 +92,28 @@ export function WizardStepper({
                 <Link
                   href={step.href}
                   aria-current={active ? "step" : undefined}
-                  className="flex items-center gap-1.5 transition-opacity hover:opacity-75"
+                  className="flex h-9 items-center gap-2 transition-opacity hover:opacity-75"
                 >
                   <div
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
-                      done || active
-                        ? "bg-[#F28C38] text-[#1C2526]"
-                        : "bg-[#141413]/10 text-[#141413]/35"
-                    } ${active ? "ring-4 ring-[#F28C38]/15" : ""}`}
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold tabular-nums ${
+                      active
+                        ? "bg-[#1C2526] text-[#FAF9F5]"
+                        : done
+                          ? "border border-[#1C2526] text-[#1C2526]"
+                          : "border border-[#D9D2C5] text-[#5B6366]"
+                    }`}
                   >
-                    {done ? "✓" : i + 1}
+                    {done ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                    ) : (
+                      i + 1
+                    )}
                   </div>
                   <span
-                    className={`text-xs font-semibold ${
-                      active  ? "text-[#141413]"
-                      : done  ? "text-[#F28C38]"
-                      : "text-[#141413]/30"
+                    className={`text-[13px] ${
+                      active  ? "font-semibold text-[#1C2526]"
+                      : done  ? "font-medium text-[#1C2526]"
+                      : "text-[#5B6366]"
                     }`}
                   >
                     {step.label}
@@ -115,8 +123,8 @@ export function WizardStepper({
                 {/* Connector line */}
                 {!isLast && (
                   <div
-                    className={`mx-2 flex-1 h-px transition-all ${
-                      done ? "bg-[#F28C38]" : "bg-[#141413]/10"
+                    className={`mx-2 h-px flex-1 ${
+                      done ? "bg-[#1C2526]" : "bg-[#E9E3D7]"
                     }`}
                   />
                 )}

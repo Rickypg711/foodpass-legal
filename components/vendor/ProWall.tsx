@@ -68,12 +68,15 @@ const WALL_TITLE: Record<CajaWall, string> = {
 };
 
 
+// Opción A (23-sep-2026): un principal naranja con tinta, secundario como
+// link de texto, tarjeta blanca con borde y título en Lora. Sin ⭐ ni sombra.
 const PRIMARY_BTN =
-  "flex min-h-[48px] w-full items-center justify-center rounded-2xl px-4 py-3 text-[14px] font-extrabold transition hover:opacity-90 disabled:opacity-60";
+  "flex min-h-[48px] w-full items-center justify-center rounded-xl px-4 text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-60";
 const SECONDARY_BTN =
-  "mt-2 flex min-h-[44px] w-full items-center justify-center rounded-2xl px-4 py-2.5 text-[13px] font-semibold transition hover:opacity-80";
+  "mt-1 flex min-h-[44px] w-full items-center justify-center rounded-xl px-4 text-[14px] font-semibold transition hover:underline";
 const PRIMARY_STYLE = { background: "#F28C38", color: INK_DARK } as const;
-const SECONDARY_STYLE = { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" } as const;
+const SECONDARY_STYLE = { background: "transparent", color: "#8A4B12" } as const;
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
 
 export function ProWall({
   wall,
@@ -110,14 +113,14 @@ export function ProWall({
     body = (
       <>
         <div
-          className="mt-5 rounded-2xl px-4 py-3"
-          style={{ background: "rgba(242,140,56,0.1)", border: "1px solid rgba(242,140,56,0.3)" }}
+          className="mt-5 rounded-xl px-4 py-3"
+          style={{ background: "#F0EBE1" }}
           role="status"
         >
-          <p className="text-[14px] font-bold" style={{ color: INK_DARK }}>
-            🎉 Listo. Tienes Pro hasta el {endsAt != null ? longDateEs(endsAt) : `día ${TRIAL_DAYS}`}. Sin tarjeta, sin cobros.
+          <p className="text-[14px] font-semibold" style={{ color: INK_DARK }}>
+            Listo. Tienes Pro hasta el {endsAt != null ? longDateEs(endsAt) : `día ${TRIAL_DAYS}`}. Sin tarjeta, sin cobros.
           </p>
-          <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+          <p className="mt-1 text-[13px]" style={{ color: "#3F4A4D" }}>
             Al terminar no se rompe nada: tu Caja sigue gratis y tus clientes siguen juntando puntos.
           </p>
         </div>
@@ -136,12 +139,12 @@ export function ProWall({
     /* ── El servidor está abriendo la prueba ── */
     body = (
       <div
-        className="mt-5 flex min-h-[48px] items-center gap-3 rounded-2xl px-4 py-3"
-        style={{ background: "#F5F3EF" }}
+        className="mt-5 flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3"
+        style={{ background: "#F0EBE1" }}
         role="status"
         aria-live="polite"
       >
-        <svg className="h-5 w-5 shrink-0 animate-spin" style={{ color: "#F28C38" }} fill="none" viewBox="0 0 24 24">
+        <svg className="h-5 w-5 shrink-0 animate-spin" style={{ color: INK_DARK }} fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
         </svg>
@@ -154,7 +157,7 @@ export function ProWall({
     /* ── El servidor dice que ya es Pro (el panel traía datos viejos) ── */
     body = (
       <>
-        <p className="mt-4 rounded-xl px-3 py-2 text-[13px] font-semibold" style={{ background: "#F0FDF4", color: "#15803D" }}>
+        <p className="mt-4 text-[14px] font-semibold" style={{ color: "#15803D" }}>
           {proTrialErrorMessage("already_pro")} Sigue, ya puedes usarlo.
         </p>
         <button
@@ -172,7 +175,7 @@ export function ProWall({
     /* ── Falló: en palabras llanas, y se puede volver a intentar ── */
     body = (
       <>
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-600" role="alert">
+        <p className="mt-4 rounded-xl px-3 py-2 text-[13px]" style={{ background: "#FFFBEB", color: "#B45309" }} role="alert">
           {proTrialErrorMessage("failed")}
         </p>
         <button
@@ -202,7 +205,7 @@ export function ProWall({
         >
           {WALL_TRIAL_CTA}
         </button>
-        <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+        <p className="mt-2 text-center text-[13px]" style={{ color: "#5B6366" }}>
           Sin tarjeta · una vez por restaurante · al terminar regresas solo al plan gratis
         </p>
         <button type="button" onClick={onClose} className={SECONDARY_BTN} style={SECONDARY_STYLE}>
@@ -215,7 +218,7 @@ export function ProWall({
     body = (
       <>
         {trial.error === "already_used" && (
-          <p className="mt-4 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
+          <p className="mt-4 text-[13px]" style={{ color: "#3F4A4D" }}>
             {proTrialErrorMessage("already_used")}
           </p>
         )}
@@ -237,34 +240,34 @@ export function ProWall({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-[72px] md:items-center md:pb-0"
-      style={{ background: "rgba(28,37,38,0.55)", backdropFilter: "blur(6px)" }}
+      style={{ background: "rgba(28,37,38,0.5)" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pro-wall-title"
       onKeyDown={onKeyDown}
     >
       <div
-        className="w-full max-w-md rounded-3xl p-6 md:p-7"
-        style={{ background: "#ffffff", boxShadow: "0 24px 64px rgba(28,37,38,0.2)" }}
+        className="w-full max-w-md rounded-xl p-5 md:p-6"
+        style={{ background: "#ffffff", border: "1px solid #D9D2C5" }}
       >
-        <p
-          className="text-[10px] font-bold uppercase tracking-widest"
-          style={{ color: "#F28C38" }}
+        <span
+          className="inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold"
+          style={{ background: INK_DARK, color: "#FAF9F5" }}
         >
-          ⭐ Pro
-        </p>
+          Pro
+        </span>
         <h2
           id="pro-wall-title"
-          className="mt-1 text-[20px] font-extrabold leading-tight"
-          style={{ color: INK_DARK }}
+          className="mt-3 text-[20px] font-semibold leading-6"
+          style={{ color: INK_DARK, fontFamily: SERIF }}
         >
           {WALL_TITLE[wall]}
         </h2>
-        <p className="mt-2 text-[15px] font-bold leading-snug" style={{ color: INK_DARK }}>
+        <p className="mt-2 text-[15px] font-semibold leading-5" style={{ color: INK_DARK }}>
           {WALL_OUTCOME[wall]}
         </p>
 
-        <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.7)" }}>
+        <p className="mt-3 text-[14px] leading-[20px]" style={{ color: "#3F4A4D" }}>
           {entitlement.canStartTrial && trial.error !== "already_used" ? WALL_COPY : WALL_COPY_NO_TRIAL}
         </p>
 

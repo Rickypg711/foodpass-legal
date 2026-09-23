@@ -15,8 +15,9 @@ import {
   updatePassword,
 } from "firebase/auth";
 
+// Opción A (23-sep-2026): campos de 48/16px con borde, foco en tinta.
 const inputCls =
-  "w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]";
+  "h-12 w-full rounded-xl border border-[#D9D2C5] bg-white px-4 text-[16px] text-[#1C2526] outline-none placeholder:text-[#5B6366] focus:border-[#1C2526]";
 
 export default function CambiarContrasenaCard() {
   const auth = getAuth();
@@ -42,7 +43,7 @@ export default function CambiarContrasenaCard() {
 
   if (!hasPassword) {
     return (
-      <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+      <p className="text-[14px]" style={{ color: "#3F4A4D" }}>
         Entras con {providerName ?? "otra cuenta"}, así que no tienes contraseña
         que cambiar.
       </p>
@@ -104,10 +105,10 @@ export default function CambiarContrasenaCard() {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+          <p className="text-[15px] font-semibold" style={{ color: "#1C2526" }}>
             Contraseña
           </p>
-          <p className="truncate text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+          <p className="truncate text-[13px]" style={{ color: "#5B6366" }}>
             {user.email}
           </p>
         </div>
@@ -115,8 +116,8 @@ export default function CambiarContrasenaCard() {
           <button
             type="button"
             onClick={() => { setOpen(true); setDone(false); setError(null); }}
-            className="shrink-0 rounded-xl px-3 py-2 text-[12px] font-semibold transition-colors hover:bg-[#F28C38]/10"
-            style={{ border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+            className="flex h-11 shrink-0 items-center rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+            style={{ border: "1px solid #D9D2C5", color: "#1C2526" }}
           >
             Cambiar
           </button>
@@ -124,7 +125,7 @@ export default function CambiarContrasenaCard() {
       </div>
 
       {done && !open && (
-        <p className="text-[12px] font-semibold" style={{ color: "#15803D" }}>
+        <p className="text-[13px] font-semibold" style={{ color: "#15803D" }}>
           Listo, tu contraseña ya cambió. Úsala en todos tus celulares.
         </p>
       )}
@@ -165,13 +166,13 @@ export default function CambiarContrasenaCard() {
             className={inputCls}
           />
           {error && (
-            <p className="text-[12px] text-red-600">{error}</p>
+            <p className="text-[13px]" style={{ color: "#B91C1C" }}>{error}</p>
           )}
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-xl bg-[#F28C38] py-2.5 text-[13px] font-bold text-[#1C2526] transition-colors hover:bg-[#c46644] disabled:opacity-50"
+              className="flex h-12 flex-1 items-center justify-center rounded-xl bg-[#F28C38] text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 disabled:opacity-50"
             >
               {saving ? "Guardando…" : "Guardar contraseña"}
             </button>
@@ -179,8 +180,8 @@ export default function CambiarContrasenaCard() {
               type="button"
               disabled={saving}
               onClick={() => { setOpen(false); setError(null); setNeedsCurrent(false); setCurrent(""); setNext(""); setConfirm(""); }}
-              className="rounded-xl px-4 py-2.5 text-[13px] font-semibold"
-              style={{ border: "1px solid rgba(28,37,38,0.12)", color: "rgba(28,37,38,0.6)" }}
+              className="flex h-12 items-center rounded-xl bg-white px-4 text-[14px] font-semibold"
+              style={{ border: "1px solid #D9D2C5", color: "#1C2526" }}
             >
               Cancelar
             </button>

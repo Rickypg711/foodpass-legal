@@ -47,6 +47,127 @@ const RESTAURANT_CATEGORIES = [
   "Mariscos","Antojitos","Carnes","Postres","Otro",
 ] as const;
 
+// ─── Opción A (23-sep-2026, lienzo "Sistema Comeleal") ────────────────────────
+// Los mismos tokens que Panel, Pedidos, Caja y Clientes: crema + tinta, UNA
+// serif (Lora) solo en el título de pantalla y los de sección, naranja solo
+// en el botón principal ("Guardar cambios") con tinta encima. Sin emojis,
+// sin sombras, sin degradados.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const CREAM = "#FAF9F5";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const TILE = "#F0EBE1";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const WARN = "#B45309";
+const WARN_SURFACE = "#FFFBEB";
+const SUCCESS = "#15803D";
+const DANGER = "#B91C1C";
+
+/** Campo de texto: 48px, blanco, borde, radio 12, letra 16 (evita el zoom del
+ *  iPhone), foco con borde tinta. Lo comparten TextInput, textarea y números. */
+const INPUT_CLS =
+  "h-12 w-full rounded-xl border border-[#D9D2C5] bg-white px-3.5 text-[16px] text-[#1C2526] outline-none transition-colors placeholder:text-[#5B6366] focus:border-[#1C2526] disabled:opacity-50";
+
+/** Botones: uno principal (naranja) por formulario; secundarios en blanco con
+ *  borde; el "fuerte" con borde tinta; el terciario es texto link. */
+const BTN_PRIMARY =
+  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] disabled:opacity-60";
+const BTN_SECONDARY =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#D9D2C5] bg-white px-4 text-[14px] font-semibold text-[#1C2526] transition hover:bg-[#FAF9F5] disabled:opacity-50";
+const BTN_SECONDARY_STRONG =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#1C2526] bg-white px-4 text-[14px] font-semibold text-[#1C2526] transition hover:bg-[#FAF9F5] disabled:opacity-50";
+const BTN_DANGER =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#D9D2C5] bg-white px-4 text-[14px] font-semibold text-[#B91C1C] transition hover:bg-[#FAF9F5] disabled:opacity-50";
+const BTN_TERTIARY = "text-[14px] font-semibold text-[#8A4B12] hover:underline disabled:opacity-50";
+
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconChevron() { return <svg {...ICON} stroke={INK_SOFT} aria-hidden><path d="M9 6l6 6-6 6" /></svg>; }
+function IconLock() { return <svg {...ICON} stroke={INK} aria-hidden><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg>; }
+/** Platillo: el hueco del logo cuando el local aún no sube uno. */
+function IconDish() { return <svg {...ICON} width={26} height={26} stroke={INK_SOFT} aria-hidden><path d="M3 15h18" /><path d="M5 15a7 7 0 0 1 14 0" /><path d="M12 8V6" /><path d="M4 19h16" /></svg>; }
+/** Foto: el hueco de la portada. */
+function IconPhoto() { return <svg {...ICON} width={26} height={26} stroke={INK_SOFT} aria-hidden><rect x="3.5" y="5.5" width="17" height="13" rx="2" /><circle cx="9" cy="10" r="1.5" /><path d="M20 15l-4.5-4.5L8 18" /></svg>; }
+function IconCheck() { return <svg {...ICON} width={16} height={16} stroke={INK} aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>; }
+
+/** Pastilla de estado: 24px, 12/600, fondo tile (o tinta para "Pro"). */
+function Pill({ bg, color, children }: { bg: string; color: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex h-[24px] shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold" style={{ background: bg, color }}>
+      {children}
+    </span>
+  );
+}
+
+/** Interruptor: pista tinta cuando está prendido, línea fina cuando no. */
+function Switch({ on }: { on: boolean }) {
+  return (
+    <span className="relative h-6 w-11 shrink-0 rounded-full transition-colors" style={{ background: on ? INK : HAIRLINE }} aria-hidden>
+      <span
+        className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+        style={{ left: on ? "22px" : "2px", border: on ? "none" : `1px solid ${BORDER}` }}
+      />
+    </span>
+  );
+}
+
+/** Fila con interruptor: título 15 tinta, caption 13, y el switch a la derecha. */
+function ToggleRow({
+  on, onToggle, title, caption, disabled = false, note,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  title: string;
+  caption?: React.ReactNode;
+  disabled?: boolean;
+  note?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      aria-pressed={on}
+      className="flex min-h-12 w-full items-center justify-between gap-4 py-1 text-left disabled:cursor-default"
+    >
+      <span className="min-w-0">
+        <span className="block text-[15px] font-semibold leading-5" style={{ color: INK }}>{title}</span>
+        {caption ? <span className="mt-0.5 block text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>{caption}</span> : null}
+        {note ? <span className="mt-0.5 block text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>{note}</span> : null}
+      </span>
+      <Switch on={on} />
+    </button>
+  );
+}
+
+/** Chip de opción: 36px, borde; activo = fondo tinta, texto crema. */
+function Chip({ active, onClick, children, className = "", disabled = false }: { active: boolean; onClick: () => void; children: React.ReactNode; className?: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`inline-flex h-9 items-center justify-center rounded-full px-4 text-[14px] font-medium transition disabled:opacity-50 ${className}`}
+      style={active ? { background: INK, color: CREAM, border: `1px solid ${INK}` } : { background: "#ffffff", color: INK, border: `1px solid ${BORDER}` }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Aviso ámbar: fila #FFFBEB con texto #B45309, sin ícono grande. */
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl px-4 py-3 text-[14px] leading-5" style={{ background: WARN_SURFACE, color: WARN }}>
+      {children}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ConfiguracionPage() {
@@ -616,56 +737,64 @@ export default function ConfiguracionPage() {
   // Estas dos tarjetas viven en la columna izquierda en desktop y al FINAL
   // de la página en móvil (el formulario del negocio va primero en teléfono).
   const planCard = (
-            <SectionCard label="Tu plan">
+            <SectionCard label="Tu plan" plain>
               {plan === "pro" ? (
-                <div className="py-1">
-                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    Plan Pro activo ⭐
-                  </p>
-                  <p className="mt-0.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales y Comeleal AI
-                  </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
+                      Plan Pro activo
+                    </p>
+                    <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
+                      Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales y Pregúntale a Comeleal sin límite
+                    </p>
+                  </div>
+                  <Pill bg={INK} color={CREAM}>Pro</Pill>
                 </div>
               ) : (
-                <div className="py-1">
-                  <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                <div>
+                  <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
                     Plan Gratis — para operar
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
-                    Menú QR, Caja/POS, pedidos, puntos sin tope, tus clientes y reportes: gratis siempre.
+                  <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
+                    Menú QR, Caja, pedidos, puntos sin tope, tus clientes y reportes: gratis siempre.
                   </p>
-                  <div
-                    className="mt-3 rounded-xl p-3.5"
-                    style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-                  >
-                    <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
+                  {/* Lo que trae Pro es una LISTA: por eso sí va en tarjeta. */}
+                  <div className="mt-4 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+                    <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
                       Pro · {PRO_PRICE_LABEL}/mes — para cuando tu Caja crece
                     </p>
-                    <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "rgba(28,37,38,0.6)" }}>
-                      <li>✓ Todo tu historial de ventas (más de 30 días)</li>
-                      <li>✓ Tu equipo cobra con su PIN</li>
-                      <li>✓ Cuentas por mesa</li>
-                      <li>✓ Cuentas con acceso propio para tu equipo, cada quien con su rol</li>
-                      <li>✓ Comeleal AI sin límite</li>
-                      <li>✓ Descuentos especiales (staff y familia) — la caja los aplica sola</li>
+                    <ul className="mt-2">
+                      {[
+                        "Todo tu historial de ventas (más de 30 días)",
+                        "Tu equipo cobra con su PIN",
+                        "Cuentas por mesa",
+                        "Cuentas con acceso propio para tu equipo, cada quien con su rol",
+                        "Pregúntale a Comeleal sin límite",
+                        "Descuentos especiales (staff y familia) — la Caja los aplica sola",
+                      ].map((line, i) => (
+                        <li
+                          key={line}
+                          className="flex items-start gap-2 py-2 text-[14px] leading-5"
+                          style={{ color: INK, borderTop: i > 0 ? `1px solid ${HAIRLINE}` : undefined }}
+                        >
+                          <span className="mt-0.5 shrink-0"><IconCheck /></span>
+                          <span>{line}</span>
+                        </li>
+                      ))}
                     </ul>
                     <button
                       type="button"
                       onClick={handleActivatePro}
                       disabled={activatingPro}
-                      className="mt-3 w-full rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
-                      style={{ background: "#F28C38" }}
+                      className={`${BTN_PRIMARY} mt-3`}
+                      style={{ background: INK, color: CREAM }}
                     >
-                      {activatingPro ? "Abriendo pago…" : "Activar Pro →"}
+                      {activatingPro ? "Abriendo pago…" : "Activar Pro"}
                     </button>
-                    <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                    <p className="mt-2 text-center text-[13px] leading-4" style={{ color: INK_SOFT }}>
                       Pago seguro con Mercado Pago · cancela cuando quieras
                     </p>
-                    <Link
-                      href="/vendor/plan"
-                      className="mt-2 block text-center text-[11px] font-semibold underline underline-offset-2"
-                      style={{ color: "#F28C38" }}
-                    >
+                    <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 block text-center`}>
                       Ver la comparación completa →
                     </Link>
                   </div>
@@ -675,17 +804,15 @@ export default function ConfiguracionPage() {
   );
 
   const soporteCard = (
-            <SectionCard label="Soporte">
+            <SectionCard label="Soporte" plain>
               <ManageLink
                 href="https://apps.apple.com/mx/app/foodpass/id6745301069"
-                emoji="📱"
                 title="App cliente (iOS)"
                 subtitle="Descarga la app para los clientes"
                 external
               />
               <ManageLink
                 href={PUBLIC_WHATSAPP_WA_ME_VENDOR_HELP}
-                emoji="💬"
                 title="Ayuda por WhatsApp"
                 subtitle="Te contesta una persona"
                 external
@@ -696,13 +823,12 @@ export default function ConfiguracionPage() {
 
   return (
     <>
-      <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
-
-        {/* Page title */}
-        <div className="mb-5">
-          <h1 className="text-[22px] font-extrabold tracking-tight" style={{ color: "#1C2526" }}>Configuración</h1>
-          <p className="mt-0.5 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-            Perfil, plan y ajustes de tu cuenta
+      <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
+        {/* Título de pantalla (Lora) + caption. */}
+        <div className="mb-6 flex flex-col gap-0.5">
+          <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Configuración</h1>
+          <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
+            Tu negocio, tu plan y tu cuenta
           </p>
         </div>
 
@@ -710,79 +836,68 @@ export default function ConfiguracionPage() {
         {loading ? (
           <div className="flex justify-center py-20"><Spinner /></div>
         ) : (
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
           {/* ── Left column: cuenta ── */}
-          <div className="space-y-4">
+          <div className="space-y-7">
 
-            {/* ── Profile pill ── */}
-            <div
-              className="flex items-center gap-3 rounded-2xl px-5 py-4"
-              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
-            >
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
-                style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38" }}
-              >
-                {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
+            {/* ── Quién está adentro: inicial en tile, nombre, correo y plan ── */}
+            <div>
+              <div className="flex min-h-12 items-center gap-3 py-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
+                  style={{ background: TILE, color: INK }}
+                >
+                  {(user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>
+                    {user?.displayName ?? user?.email ?? "Propietario"}
+                  </p>
+                  <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                    {user?.email ?? ""}
+                  </p>
+                </div>
+                {plan === "pro"
+                  ? <Pill bg={INK} color={CREAM}>Pro</Pill>
+                  : <Pill bg={TILE} color={INK_MUTED}>Gratis</Pill>}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                  {user?.displayName ?? user?.email ?? "Propietario"}
-                </p>
-                <p className="text-[11px] truncate" style={{ color: "rgba(28,37,38,0.4)" }}>
-                  {user?.email ?? ""}
-                </p>
-              </div>
-              <span
-                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                style={
-                  plan === "pro"
-                    ? { background: "rgba(217,119,87,0.15)", color: "#F28C38" }
-                    : { background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.4)" }
-                }
-              >
-                {plan === "pro" ? "⭐ Pro" : "Free"}
-              </span>
+
+              {/* Cambiar contraseña — NO existía en el panel, y el dueño vive
+                  AQUÍ: aquí está su Caja, sus pedidos y sus reportes. Sin esto
+                  tenía que bajarse la app solo para cambiarla.
+                  Se manda link por correo en vez de pedir la actual: quien la
+                  quiere cambiar suele ser justo quien no la recuerda, y pedirle
+                  la vieja lo deja trabado. Solo se ofrece a cuentas que DE VERDAD
+                  tienen contraseña — una de Google no la tiene. */}
+              {tienePassword && (
+                <button
+                  type="button"
+                  onClick={handleCambiarPassword}
+                  disabled={resetEnviado}
+                  className="flex min-h-12 w-full items-center gap-3 py-2.5 text-left transition-opacity hover:opacity-75 disabled:cursor-default"
+                >
+                  <IconLock />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[15px] font-semibold leading-5" style={{ color: INK }}>
+                      {resetEnviado ? "Correo enviado" : "Cambiar mi contraseña"}
+                    </span>
+                    <span className="block text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                      {resetEnviado
+                        ? "Revisa tu correo y sigue el link."
+                        : "Te mandamos un link a tu correo."}
+                    </span>
+                  </span>
+                  {!resetEnviado && <IconChevron />}
+                </button>
+              )}
             </div>
 
-            {/* Cambiar contraseña — NO existía en el panel, y el dueño vive
-                AQUÍ: aquí está su Caja, sus pedidos y sus reportes. Sin esto
-                tenía que bajarse la app solo para cambiarla.
-                Se manda link por correo en vez de pedir la actual: quien la
-                quiere cambiar suele ser justo quien no la recuerda, y pedirle
-                la vieja lo deja trabado. Solo se ofrece a cuentas que DE VERDAD
-                tienen contraseña — una de Google no la tiene. */}
-            {tienePassword && (
-              <button
-                type="button"
-                onClick={handleCambiarPassword}
-                disabled={resetEnviado}
-                className="flex w-full items-center gap-3 rounded-2xl px-5 py-3.5 text-left transition-colors hover:bg-[#faf9f5] disabled:cursor-default"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
-              >
-                <span className="text-[16px]">🔒</span>
-                <span className="flex-1">
-                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    {resetEnviado ? "Correo enviado" : "Cambiar mi contraseña"}
-                  </span>
-                  <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                    {resetEnviado
-                      ? "Revisa tu correo y sigue el link."
-                      : "Te mandamos un link a tu correo."}
-                  </span>
-                </span>
-                {!resetEnviado && (
-                  <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.3)" }}>›</span>
-                )}
-              </button>
-            )}
-
             {locationUnresolved && (
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+              <Notice>
                 <p className="font-semibold">
                   No pudimos ubicar tu dirección en el mapa
                 </p>
-                <p className="mt-1 leading-relaxed">
+                <p className="mt-1">
                   Tu restaurante <strong>no aparece</strong> en &ldquo;Cerca de ti&rdquo; ni
                   en Recompensas dentro de la app hasta que lo ubiquemos.
                   Escribe la <strong>calle y número, colonia y ciudad</strong> —
@@ -792,53 +907,53 @@ export default function ConfiguracionPage() {
                 {/* La vía para un puesto sin ficha de Google (27-ago): el
                     dueño comparte su ubicación de WhatsApp/Google Maps y
                     pega el link aquí — el GPS trae el pin exacto. */}
-                <p className="mt-3 font-semibold">
-                  📍 O más fácil: párate en tu local, abre Google Maps, mantén
-                  presionado sobre tu puesto y comparte el link aquí:
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={pinLink}
-                    onChange={(e) => { setPinLink(e.target.value); setPinLinkError(null); }}
-                    placeholder="https://maps.google.com/?q=28.63,-106.08"
-                    className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-[13px] text-[#1C2526] outline-none focus:border-amber-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handlePinLink}
-                    disabled={!pinLink.trim() || savingPin}
-                    className="shrink-0 rounded-lg px-4 py-2 text-[13px] font-bold text-[#1C2526] transition disabled:opacity-40"
-                    style={{ background: "#F28C38" }}
-                  >
-                    {savingPin ? "Guardando…" : "Ponerme en el mapa"}
-                  </button>
+                <div className="mt-3 rounded-xl px-3.5 py-3" style={{ background: TILE }}>
+                  <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
+                    O más fácil: párate en tu local, abre Google Maps, mantén
+                    presionado sobre tu puesto y comparte el link aquí:
+                  </p>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={pinLink}
+                      onChange={(e) => { setPinLink(e.target.value); setPinLinkError(null); }}
+                      placeholder="https://maps.google.com/?q=28.63,-106.08"
+                      className={`${INPUT_CLS} min-w-0 flex-1`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePinLink}
+                      disabled={!pinLink.trim() || savingPin}
+                      className={`${BTN_SECONDARY_STRONG} h-12 shrink-0`}
+                    >
+                      {savingPin ? "Guardando…" : "Ponerme en el mapa"}
+                    </button>
+                  </div>
+                  {pinLinkError && (
+                    <p className="mt-2 text-[14px] font-semibold leading-5" style={{ color: DANGER }}>{pinLinkError}</p>
+                  )}
                 </div>
-                {pinLinkError && (
-                  <p className="mt-2 font-semibold text-red-700">{pinLinkError}</p>
-                )}
-              </div>
+              </Notice>
             )}
             {pinSaved && (
-              <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-[13px] font-semibold text-green-800">
-                ✅ ¡Listo! Tu negocio ya tiene ubicación — ya puedes aparecer
+              <p className="text-[14px] font-semibold leading-5" style={{ color: SUCCESS }}>
+                Listo. Tu negocio ya tiene ubicación y ya puede aparecer
                 en &ldquo;Cerca de ti&rdquo;.
-              </div>
+              </p>
             )}
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+              <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }} role="alert">
                 {error}
-              </div>
+              </p>
             )}
 
             {/* ── Horario ── (9-sep: Menú y Recompensas ya tienen botón propio
                 en la barra lateral; una sola puerta por tarea. Aquí queda solo
                 lo que ES configuración y no tiene otra casa: el horario.) */}
-            <SectionCard label="Horario">
+            <SectionCard label="Horario" plain>
               <ManageLink
                 href="/vendor/setup/horario"
-                emoji="🕐"
                 title="Horarios"
                 subtitle="Días y horas de atención"
                 last
@@ -846,7 +961,7 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Tu cuenta: cambiar contraseña adentro, sin correo (9-sep) ── */}
-            <SectionCard label="Tu cuenta">
+            <SectionCard label="Tu cuenta" plain>
               <CambiarContrasenaCard />
             </SectionCard>
 
@@ -860,24 +975,19 @@ export default function ConfiguracionPage() {
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="hidden w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors lg:flex"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.07)",
-                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
-              }}
+              className={`${BTN_DANGER} hidden h-12 w-full lg:inline-flex`}
             >
               {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
             </button>
 
-            <p className="hidden pb-4 text-center text-[10px] lg:block" style={{ color: "rgba(28,37,38,0.25)" }}>
+            <p className="hidden pb-4 text-center text-[13px] lg:block" style={{ color: INK_SOFT }}>
               Comeleal · v{new Date().getFullYear()}
             </p>
 
           </div>
 
           {/* ── Right column: negocio ── */}
-          <div className="space-y-4">
+          <div className="space-y-7">
 
             {/* ── Datos del restaurante ── */}
             <SectionCard label="Información del negocio">
@@ -893,7 +1003,7 @@ export default function ConfiguracionPage() {
                     value={phoneCountry}
                     currency={currency}
                     onChange={(c) => { setPhoneCountry(c.code); setCurrency(c.currency); setSaved(false); }}
-                    className="max-w-[46%] shrink-0"
+                    className="h-12 max-w-[46%] shrink-0"
                   />
                   <TextInput
                     value={phone}
@@ -902,11 +1012,11 @@ export default function ConfiguracionPage() {
                     type="tel"
                   />
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#1C2526]/55">
+                <Hint>
                   Si tu local no está en México, cambia el país aquí. Así tu botón de WhatsApp y los códigos por SMS de tus clientes marcan bien.
                   {" "}Tus precios quedan en {currency} y tus clientes ganan {earnRuleLine({ base: 1, step: defaultSpendStepForCurrency(currency) })}.
                   {currency !== loadedCurrency ? " Al guardar, la regla de puntos se ajusta a la nueva moneda." : ""}
-                </p>
+                </Hint>
               </Field>
               <Field label="Tu frase (opcional)">
                 <TextInput
@@ -915,10 +1025,10 @@ export default function ConfiguracionPage() {
                   placeholder="Ej. Desde 1998, el mismo sazón"
                   maxLength={TAGLINE_MAX}
                 />
-                <p className="mt-1.5 text-[11px] text-[#1C2526]/55">
+                <Hint>
                   Una línea corta, con tu voz. Sale debajo de tu nombre en tu menú y en tu página.
-                  {" "}{tagline.length}/{TAGLINE_MAX}
-                </p>
+                  {" "}<span className="tabular-nums">{tagline.length}/{TAGLINE_MAX}</span>
+                </Hint>
               </Field>
               <Field label="Tu historia (opcional)">
                 <textarea
@@ -927,18 +1037,11 @@ export default function ConfiguracionPage() {
                   placeholder="¿Cómo empezó tu restaurante? Los negocios con historia venden más — sale en tu página pública."
                   rows={4}
                   maxLength={1200}
-                  className="w-full resize-y rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
-                  style={{
-                    background: "#F5F3EF",
-                    border: "1px solid rgba(28,37,38,0.12)",
-                    color: "#1C2526",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                  className={`${INPUT_CLS} h-auto resize-y py-3 leading-6`}
                 />
-                <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                <Hint>
                   Se muestra como &quot;Nuestra historia&quot; en tu página comeleal.com/r/…
-                </p>
+                </Hint>
               </Field>
               {/* Funnel de reseñas: con la liga puesta, cada cliente que gana
                   puntos (app y recibo web) recibe la invitación a dejar reseña
@@ -951,11 +1054,11 @@ export default function ConfiguracionPage() {
                   placeholder="https://g.page/r/…/review"
                   type="url"
                 />
-                <p className="mt-1 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                <Hint>
                   Cópialo del botón &quot;Pedir reseñas&quot; en tu Perfil de Negocio de
                   Google. Con el link puesto, Comeleal invita a tus clientes a dejarte
                   reseña justo después de ganar puntos — reseñas de visitas reales.
-                </p>
+                </Hint>
               </Field>
             </SectionCard>
 
@@ -964,16 +1067,16 @@ export default function ConfiguracionPage() {
 
             {/* ── Imágenes del restaurante ── */}
             <SectionCard label="Imágenes del negocio">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Logo Section */}
-                <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-gray-200 bg-[#F5F3EF]/30">
-                  <span className="block mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Logo / Miniatura</span>
-                  <div className="relative group w-24 h-24 rounded-full overflow-hidden border border-gray-100 bg-[#F5F3EF]">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Logo */}
+                <div className="flex flex-col items-center">
+                  <span className="mb-2 block text-[13px] font-medium leading-4" style={{ color: INK_MUTED }}>Logo</span>
+                  <div className="relative h-24 w-24 overflow-hidden rounded-full" style={{ background: TILE, border: `1px solid ${BORDER}` }}>
                     {logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                      <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex items-center justify-center w-full h-full text-2xl text-gray-400">🍽️</div>
+                      <div className="flex h-full w-full items-center justify-center"><IconDish /></div>
                     )}
                     {logoUploading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -981,8 +1084,8 @@ export default function ConfiguracionPage() {
                       </div>
                     )}
                   </div>
-                  <label className="mt-3 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-white bg-[#1C2526] hover:opacity-90">
-                    {logoUrl ? "Cambiar Logo" : "Subir Logo"}
+                  <label className={`${BTN_SECONDARY} mt-3 cursor-pointer`}>
+                    {logoUrl ? "Cambiar logo" : "Subir logo"}
                     <input
                       type="file"
                       accept="image/*"
@@ -996,15 +1099,15 @@ export default function ConfiguracionPage() {
                   </label>
                 </div>
 
-                {/* Cover Banner Section */}
-                <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-gray-200 bg-[#F5F3EF]/30">
-                  <span className="block mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Portada / Banner</span>
-                  <div className="relative group w-full h-24 rounded-lg overflow-hidden border border-gray-100 bg-[#F5F3EF]">
+                {/* Portada */}
+                <div className="flex flex-col items-center">
+                  <span className="mb-2 block text-[13px] font-medium leading-4" style={{ color: INK_MUTED }}>Portada</span>
+                  <div className="relative h-24 w-full overflow-hidden rounded-xl" style={{ background: TILE, border: `1px solid ${BORDER}` }}>
                     {coverUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={coverUrl} alt="Portada" className="w-full h-full object-cover" />
+                      <img src={coverUrl} alt="Portada" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex items-center justify-center w-full h-full text-2xl text-gray-400">🖼️</div>
+                      <div className="flex h-full w-full items-center justify-center"><IconPhoto /></div>
                     )}
                     {coverUploading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -1012,9 +1115,9 @@ export default function ConfiguracionPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 mt-3">
-                    <label className="cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-white bg-[#1C2526] hover:opacity-90">
-                      {coverUrl ? "Cambiar Portada" : "Subir Portada"}
+                  <div className="mt-3 flex gap-2">
+                    <label className={`${BTN_SECONDARY} cursor-pointer`}>
+                      {coverUrl ? "Cambiar portada" : "Subir portada"}
                       <input
                         type="file"
                         accept="image/*"
@@ -1031,7 +1134,7 @@ export default function ConfiguracionPage() {
                         type="button"
                         onClick={handleCoverDelete}
                         disabled={coverUploading}
-                        className="rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                        className={BTN_DANGER}
                       >
                         Eliminar
                       </button>
@@ -1042,26 +1145,13 @@ export default function ConfiguracionPage() {
             </SectionCard>
 
             {/* ── Categorías ── */}
-            <SectionCard label="Tipo de comida (hasta 3)">
+            <SectionCard label="Tipo de comida" caption="hasta 3">
               <div className="flex flex-wrap gap-2">
-                {RESTAURANT_CATEGORIES.map((cat) => {
-                  const active = categories.includes(cat);
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleCategory(cat)}
-                      className="rounded-full px-3 py-1.5 text-[12px] font-medium transition-all"
-                      style={
-                        active
-                          ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
-                          : { background: "transparent", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                      }
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
+                {RESTAURANT_CATEGORIES.map((cat) => (
+                  <Chip key={cat} active={categories.includes(cat)} onClick={() => toggleCategory(cat)}>
+                    {cat}
+                  </Chip>
+                ))}
               </div>
             </SectionCard>
 
@@ -1071,9 +1161,9 @@ export default function ConfiguracionPage() {
 
             {/* ── Meta de ingresos ── */}
             <SectionCard label="Meta de ingresos diaria">
-              <Field label="Meta en MXN (opcional)">
+              <Field label={`Meta en ${currency} (opcional)`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>$</span>
+                  <span className="text-[15px] font-semibold" style={{ color: INK_MUTED }}>$</span>
                   <input
                     type="number"
                     min={0}
@@ -1081,79 +1171,46 @@ export default function ConfiguracionPage() {
                     value={dailyRevenueGoal}
                     placeholder="0"
                     onChange={(e) => { setDailyRevenueGoal(e.target.value === "" ? "" : Number(e.target.value)); setSaved(false); }}
-                    className="w-36 rounded-xl px-3 py-2.5 text-[13px] outline-none"
-                    style={{
-                      background: "#F5F3EF",
-                      border: "1px solid rgba(28,37,38,0.12)",
-                      color: "#1C2526",
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                    className={`${INPUT_CLS} w-40 tabular-nums`}
                   />
-                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>MXN / día</span>
+                  <span className="text-[13px]" style={{ color: INK_SOFT }}>{currency} / día</span>
                 </div>
-                <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                  El Brain AI usa esta meta para calcular el progreso diario.
-                </p>
+                <Hint>
+                  Tu Panel usa esta meta para enseñarte cuánto llevas del día.
+                </Hint>
               </Field>
             </SectionCard>
 
             {/* ── Formas de pago ── */}
             <SectionCard label="Formas de pago">
-              <p className="mb-2 text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+              <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
                 Lo que aceptas en el mostrador. Solo estas salen como botones en
                 tu Caja y se las decimos a tus clientes.
               </p>
-              <div className="space-y-2">
-                {POS_PAYMENT_OPTIONS.map((opt) => {
+              <div>
+                {POS_PAYMENT_OPTIONS.map((opt, i) => {
                   const on = acceptedMethods.includes(opt.key);
                   // Al menos una prendida: una Caja sin botones no cobra nada.
                   const lastOne = on && acceptedMethods.length === 1;
                   return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      disabled={lastOne}
-                      onClick={() => {
-                        setAcceptedMethods((prev) =>
-                          prev.includes(opt.key)
-                            ? prev.filter((k) => k !== opt.key)
-                            : POS_PAYMENT_OPTIONS.map((o) => o.key).filter(
-                                (k) => k === opt.key || prev.includes(k),
-                              ),
-                        );
-                        setSaved(false);
-                      }}
-                      aria-pressed={on}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all disabled:cursor-default"
-                      style={{
-                        background: on ? "#FFF3E8" : "#F5F3EF",
-                        border: on
-                          ? "1px solid rgba(242,140,56,0.5)"
-                          : "1px solid rgba(28,37,38,0.12)",
-                      }}
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                          {opt.emoji} {opt.label}
-                        </span>
-                        {lastOne ? (
-                          <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                            Tiene que quedar al menos una.
-                          </span>
-                        ) : null}
-                      </span>
-                      <span
-                        className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                        style={{ background: on ? "#F28C38" : "rgba(28,37,38,0.2)" }}
-                        aria-hidden
-                      >
-                        <span
-                          className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-                          style={{ left: on ? "22px" : "2px" }}
-                        />
-                      </span>
-                    </button>
+                    <div key={opt.key} style={i > 0 ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}>
+                      <ToggleRow
+                        on={on}
+                        disabled={lastOne}
+                        title={opt.label}
+                        note={lastOne ? "Tiene que quedar al menos una." : undefined}
+                        onToggle={() => {
+                          setAcceptedMethods((prev) =>
+                            prev.includes(opt.key)
+                              ? prev.filter((k) => k !== opt.key)
+                              : POS_PAYMENT_OPTIONS.map((o) => o.key).filter(
+                                  (k) => k === opt.key || prev.includes(k),
+                                ),
+                          );
+                          setSaved(false);
+                        }}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -1161,90 +1218,36 @@ export default function ConfiguracionPage() {
 
             {/* ── Pedidos en línea ── */}
             <SectionCard label="Pedidos en línea">
-              <button
-                type="button"
-                onClick={() => { setPayAtPickup((v) => !v); setSaved(false); }}
-                aria-pressed={payAtPickup}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
-                style={{
-                  background: payAtPickup ? "#FFF3E8" : "#F5F3EF",
-                  border: payAtPickup
-                    ? "1px solid rgba(242,140,56,0.5)"
-                    : "1px solid rgba(28,37,38,0.12)",
-                }}
-              >
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    💵 Aceptar &quot;Pagar al recoger&quot;
-                  </span>
-                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                    Tus clientes ordenan desde el menú sin pagar en línea y pagan
-                    al recoger. El pedido llega a Pedidos y lo cobras ahí
-                    con las formas de pago que aceptas.
-                  </span>
-                </span>
-                <span
-                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                  style={{ background: payAtPickup ? "#F28C38" : "rgba(28,37,38,0.2)" }}
-                  aria-hidden
-                >
-                  <span
-                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-                    style={{ left: payAtPickup ? "22px" : "2px" }}
-                  />
-                </span>
-              </button>
-              <p className="mt-2 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+              <ToggleRow
+                on={payAtPickup}
+                onToggle={() => { setPayAtPickup((v) => !v); setSaved(false); }}
+                title='Aceptar "Pagar al recoger"'
+                caption="Tus clientes ordenan desde el menú sin pagar en línea y pagan al recoger. El pedido llega a Pedidos y lo cobras ahí con las formas de pago que aceptas."
+              />
+              <Hint>
                 Con Mercado Pago conectado, el cliente elige entre pagar en línea
                 o al recoger. Sin Mercado Pago, esta opción es la única forma de
                 recibir pedidos en línea.
-              </p>
+              </Hint>
             </SectionCard>
 
-            {/* ── 🛵 Entrega a domicilio (9-sep-2026) ──
+            {/* ── Entrega a domicilio (9-sep-2026) ──
                 Pedido por Central Fast Food (RD): entrega él mismo y todo le
                 caía como "para recoger". Default APAGADO: es trabajo del dueño.
                 Sin mapa ni zonas: una caja de texto para la dirección y un
                 costo fijo opcional que se suma al total. */}
             <SectionCard label="Entrega a domicilio">
-              <button
-                type="button"
-                onClick={() => { setDeliveryEnabled((v) => !v); setSaved(false); }}
-                aria-pressed={deliveryEnabled}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
-                style={{
-                  background: deliveryEnabled ? "#FFF3E8" : "#F5F3EF",
-                  border: deliveryEnabled
-                    ? "1px solid rgba(242,140,56,0.5)"
-                    : "1px solid rgba(28,37,38,0.12)",
-                }}
-              >
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    🛵 Entrego a domicilio
-                  </span>
-                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                    Tus clientes eligen &quot;A domicilio&quot; al ordenar y
-                    escriben su dirección. Te llega en Pedidos con la
-                    dirección para que lo lleves tú.
-                  </span>
-                </span>
-                <span
-                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                  style={{ background: deliveryEnabled ? "#F28C38" : "rgba(28,37,38,0.2)" }}
-                  aria-hidden
-                >
-                  <span
-                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-                    style={{ left: deliveryEnabled ? "22px" : "2px" }}
-                  />
-                </span>
-              </button>
+              <ToggleRow
+                on={deliveryEnabled}
+                onToggle={() => { setDeliveryEnabled((v) => !v); setSaved(false); }}
+                title="Entrego a domicilio"
+                caption='Tus clientes eligen "A domicilio" al ordenar y escriben su dirección. Te llega en Pedidos con la dirección para que lo lleves tú.'
+              />
               {deliveryEnabled ? (
-                <div className="mt-3 space-y-3">
+                <div className="space-y-4 pt-4" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
                   <Field label="Costo de envío (opcional)">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>$</span>
+                      <span className="text-[15px] font-semibold" style={{ color: INK_MUTED }}>$</span>
                       <input
                         type="number"
                         min={0}
@@ -1252,20 +1255,13 @@ export default function ConfiguracionPage() {
                         value={deliveryFee}
                         placeholder="0"
                         onChange={(e) => { setDeliveryFee(e.target.value === "" ? "" : Number(e.target.value)); setSaved(false); }}
-                        className="w-36 rounded-xl px-3 py-2.5 text-[13px] outline-none"
-                        style={{
-                          background: "#F5F3EF",
-                          border: "1px solid rgba(28,37,38,0.12)",
-                          color: "#1C2526",
-                        }}
-                        onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
-                        onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                        className={`${INPUT_CLS} w-40 tabular-nums`}
                       />
-                      <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.4)" }}>{currency} por pedido</span>
+                      <span className="text-[13px]" style={{ color: INK_SOFT }}>{currency} por pedido</span>
                     </div>
-                    <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                    <Hint>
                       Se suma al total del pedido. Vacío = no cobras envío.
-                    </p>
+                    </Hint>
                   </Field>
                   <Field label="¿Hasta dónde entregas? (opcional)">
                     <input
@@ -1274,109 +1270,66 @@ export default function ConfiguracionPage() {
                       value={deliveryZone}
                       placeholder="Ej. Solo dentro de la ciudad"
                       onChange={(e) => { setDeliveryZone(e.target.value); setSaved(false); }}
-                      className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none"
-                      style={{
-                        background: "#F5F3EF",
-                        border: "1px solid rgba(28,37,38,0.12)",
-                        color: "#1C2526",
-                      }}
-                      onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
-                      onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+                      className={INPUT_CLS}
                     />
-                    <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+                    <Hint>
                       Tu cliente lo lee al elegir &quot;A domicilio&quot;, para que no te pida de más lejos.
-                    </p>
+                    </Hint>
                   </Field>
                   {!payAtPickup && !mpConnected ? (
-                    <p className="text-[11px] font-semibold" style={{ color: "#C2410C" }}>
+                    <Notice>
                       Para recibir pedidos necesitas prender &quot;Pagar al recoger&quot; o conectar Mercado Pago.
-                    </p>
+                    </Notice>
                   ) : null}
                 </div>
               ) : null}
             </SectionCard>
 
-            {/* ── 🖨️ Impresora de tickets (10-sep-2026) ──
+            {/* ── Impresora de tickets (10-sep-2026) ──
                 Zahir (RD) tiene una AOKIA AK-3280 de 80 mm (USB + red, SIN
                 Bluetooth — lo confirmó su foto el 12-sep). No hay nada
                 que "conectar" aquí: el celular empareja la impresora y una app
                 puente la presta a Chrome. Comeleal solo imprime una hoja
                 limpia. Esta sección: ancho del papel, los pasos y una prueba. */}
-            <SectionCard label="Impresora de tickets">
-              <p className="mb-2 text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-                El ticket de cocina de cada pedido, en grande: desde Pedidos (🖨️),
+            <SectionCard label="Impresora de tickets" caption={<Pill bg={TILE} color={INK_MUTED}>Incluido en Pro</Pill>}>
+              <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
+                El ticket de cocina de cada pedido, en grande: desde Pedidos,
                 al cobrar en la Caja, o solo en cuanto entra el pedido. Sirve con
-                impresoras térmicas de 80 y 58 mm. Es parte de Pro.
+                impresoras térmicas de 80 y 58 mm.
               </p>
-              {/* 🖨️ Sale solo (23-sep, Pro): el interruptor abre la pared si la
+              {/* Sale solo (23-sep, Pro): el interruptor abre la pared si la
                   reja está cerrada; con Pro (o la prueba) se prende y se guarda. */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!autoPrintOn && !ents.kitchenPrintAccess) {
-                    printPending.current = () => { setAutoPrintOn(true); setSaved(false); };
-                    setPrintWallOpen(true);
-                    return;
-                  }
-                  setAutoPrintOn((v) => !v);
-                  setSaved(false);
-                }}
-                aria-pressed={autoPrintOn}
-                className="mb-3 flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
-                style={{
-                  background: autoPrintOn ? "#FFF3E8" : "#F5F3EF",
-                  border: autoPrintOn ? "1px solid rgba(242,140,56,0.5)" : "1px solid rgba(28,37,38,0.12)",
-                }}
-              >
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    🖨️ Sale solo cuando entra un pedido
-                  </span>
-                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                    Con Pedidos abierto en la compu de la impresora, cada pedido
-                    nuevo se imprime sin que nadie toque nada.
-                  </span>
-                </span>
-                <span
-                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                  style={{ background: autoPrintOn ? "#F28C38" : "rgba(28,37,38,0.2)" }}
-                  aria-hidden
-                >
-                  <span
-                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-                    style={{ left: autoPrintOn ? "22px" : "2px" }}
-                  />
-                </span>
-              </button>
+              <div style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+                <ToggleRow
+                  on={autoPrintOn}
+                  onToggle={() => {
+                    if (!autoPrintOn && !ents.kitchenPrintAccess) {
+                      printPending.current = () => { setAutoPrintOn(true); setSaved(false); };
+                      setPrintWallOpen(true);
+                      return;
+                    }
+                    setAutoPrintOn((v) => !v);
+                    setSaved(false);
+                  }}
+                  title="Sale solo cuando entra un pedido"
+                  caption="Con Pedidos abierto en la compu de la impresora, cada pedido nuevo se imprime sin que nadie toque nada."
+                />
+              </div>
               <Field label="Ancho del papel">
                 <div className="flex gap-2">
-                  {([80, 58] as const).map((mm) => {
-                    const on = paperMm === mm;
-                    return (
-                      <button
-                        key={mm}
-                        type="button"
-                        onClick={() => { setPaperMm(mm); setSaved(false); }}
-                        aria-pressed={on}
-                        className="rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all"
-                        style={{
-                          background: on ? "#FFF3E8" : "#F5F3EF",
-                          border: on ? "1px solid rgba(242,140,56,0.5)" : "1px solid rgba(28,37,38,0.12)",
-                          color: "#1C2526",
-                        }}
-                      >
-                        {mm} mm
-                      </button>
-                    );
-                  })}
+                  {([80, 58] as const).map((mm) => (
+                    <Chip key={mm} active={paperMm === mm} onClick={() => { setPaperMm(mm); setSaved(false); }}>
+                      {mm} mm
+                    </Chip>
+                  ))}
                 </div>
               </Field>
-              <div className="mt-3 rounded-xl px-3.5 py-3 text-[12px] leading-relaxed" style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.7)" }}>
-                <p className="font-semibold" style={{ color: "#1C2526" }}>En una computadora (lo más fácil):</p>
+              <div className="rounded-xl px-3.5 py-3 text-[14px] leading-5" style={{ background: TILE, color: INK_MUTED }}>
+                <p className="font-semibold" style={{ color: INK }}>En una computadora (lo más fácil):</p>
                 <p className="mt-1">1. Conecta la impresora por USB y déjala como impresora predeterminada.</p>
                 <p>2. Abre comeleal.com/vendor/pedidos en Chrome y déjalo abierto todo el turno.</p>
                 <p>3. Para que salga sin preguntar: clic derecho al acceso directo de Chrome → Propiedades → al final de &quot;Destino&quot; escribe un espacio y <code>--kiosk-printing</code>. Abre Chrome desde ese acceso directo.</p>
-                <p className="mt-2 font-semibold" style={{ color: "#1C2526" }}>Desde un celular Android:</p>
+                <p className="mt-2 font-semibold" style={{ color: INK }}>Desde un celular Android:</p>
                 <p className="mt-1">Por Bluetooth: empareja la impresora en los ajustes del celular e instala la app gratis &quot;ESCPOS Bluetooth Print Service&quot;. Por cable de red: instala &quot;RawBT&quot; y pon ahí la IP de la impresora. Al tocar Imprimir, escoge esa impresora en la ventana de Chrome.</p>
               </div>
               <button
@@ -1390,10 +1343,9 @@ export default function ConfiguracionPage() {
                   }
                   go();
                 }}
-                className="mt-3 w-full rounded-xl px-3.5 py-3 text-[13px] font-bold"
-                style={{ background: "#1C2526", color: "#fff" }}
+                className={`${BTN_SECONDARY_STRONG} h-12 w-full`}
               >
-                🖨️ Imprimir ticket de prueba
+                Imprimir ticket de prueba
               </button>
             </SectionCard>
 
@@ -1404,60 +1356,21 @@ export default function ConfiguracionPage() {
                 functions/birthday_reward_sweep.js (dormido tras
                 BIRTHDAY_REWARD_ENABLED). */}
             <SectionCard label="Premio de cumpleaños">
-              <button
-                type="button"
-                onClick={() => { setBirthdayEnabled((v) => !v); setSaved(false); }}
-                aria-pressed={birthdayEnabled}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
-                style={{
-                  background: birthdayEnabled ? "#FFF3E8" : "#F5F3EF",
-                  border: birthdayEnabled
-                    ? "1px solid rgba(242,140,56,0.5)"
-                    : "1px solid rgba(28,37,38,0.12)",
-                }}
-              >
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-                    🎂 Regalar puntos de cumpleaños
-                  </span>
-                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-                    El día de su cumpleaños, tus clientes reciben puntos de
-                    regalo y un aviso para venir a celebrar contigo. Comeleal lo
-                    hace solito.
-                  </span>
-                </span>
-                <span
-                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                  style={{ background: birthdayEnabled ? "#F28C38" : "rgba(28,37,38,0.2)" }}
-                  aria-hidden
-                >
-                  <span
-                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-                    style={{ left: birthdayEnabled ? "22px" : "2px" }}
-                  />
-                </span>
-              </button>
+              <ToggleRow
+                on={birthdayEnabled}
+                onToggle={() => { setBirthdayEnabled((v) => !v); setSaved(false); }}
+                title="Regalar puntos de cumpleaños"
+                caption="El día de su cumpleaños, tus clientes reciben puntos de regalo y un aviso para venir a celebrar contigo. Comeleal lo hace solo."
+              />
               {birthdayEnabled ? (
-                <div className="mt-2.5 flex items-center gap-2">
-                  <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                <div className="flex flex-wrap items-center gap-2 pt-4" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+                  <span className="text-[13px]" style={{ color: INK_MUTED }}>
                     Puntos de regalo:
                   </span>
                   {[5, 10, 20].map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => { setBirthdayPoints(opt); setSaved(false); }}
-                      className="rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all"
-                      style={{
-                        background: birthdayPoints === opt ? "#F28C38" : "#F5F3EF",
-                        color: birthdayPoints === opt ? "#fff" : "#1C2526",
-                        border: birthdayPoints === opt
-                          ? "1px solid #F28C38"
-                          : "1px solid rgba(28,37,38,0.12)",
-                      }}
-                    >
+                    <Chip key={opt} active={birthdayPoints === opt} onClick={() => { setBirthdayPoints(opt); setSaved(false); }} className="tabular-nums">
                       {opt}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
               ) : null}
@@ -1512,61 +1425,44 @@ export default function ConfiguracionPage() {
                 pending.rewards ? "Recompensas" : null,
               ].filter(Boolean);
               return (
-                <div
-                  className="rounded-2xl p-4"
-                  style={{
-                    background: "#FFF7ED",
-                    border: "1px solid rgba(234,88,12,0.35)",
-                  }}
-                >
-                  <p className="text-[13px] font-bold" style={{ color: "#9A3412" }}>
-                    ⚠️ Tu configuración está incompleta
-                  </p>
-                  <p className="mt-1 text-[12px]" style={{ color: "rgba(154,52,18,0.85)" }}>
+                <Notice>
+                  <p className="font-semibold">Tu configuración está incompleta</p>
+                  <p className="mt-1">
                     Falta: {labels.join(", ")}. Mientras tanto, los pagos en línea
                     con Mercado Pago están pausados en tu menú
                     {payAtPickup ? " (Pagar al recoger sigue funcionando)" : ""}.
                   </p>
-                  <Link
-                    href="/vendor/setup"
-                    className="mt-2 inline-block rounded-lg px-3 py-1.5 text-[12px] font-bold text-white"
-                    style={{ background: "#EA580C" }}
-                  >
+                  <Link href="/vendor/setup" className="mt-2 inline-block font-semibold underline underline-offset-2" style={{ color: WARN }}>
                     Completar configuración →
                   </Link>
-                </div>
+                </Notice>
               );
             })()}
 
-            {/* ── Guardar ── */}
+            {/* ── Guardar: EL botón principal de la pantalla ── */}
             <button
               onClick={handleSave}
               disabled={saving || saved}
-              className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[13px] font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60"
-              style={{ background: saved ? "#22c55e" : "#F28C38" }}
+              className={BTN_PRIMARY}
+              style={saved ? { background: "#ffffff", color: SUCCESS, border: `1px solid ${BORDER}` } : { background: BRAND, color: INK }}
             >
-              {saved ? "✓ Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
+              {saved ? "Cambios guardados" : saving ? <><Spin /> Guardando…</> : "Guardar cambios"}
             </button>
 
           </div>
 
           {/* ── Móvil: plan, soporte y cerrar sesión al FINAL de la página ── */}
-          <div className="space-y-4 lg:hidden">
+          <div className="space-y-7 lg:hidden">
             {planCard}
             {soporteCard}
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-[13px] font-semibold transition-colors"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.07)",
-                color: signingOut ? "rgba(28,37,38,0.3)" : "#EF4444",
-              }}
+              className={`${BTN_DANGER} h-12 w-full`}
             >
               {signingOut ? <><Spin /> Cerrando sesión…</> : "Cerrar sesión"}
             </button>
-            <p className="pb-4 text-center text-[10px]" style={{ color: "rgba(28,37,38,0.25)" }}>
+            <p className="pb-4 text-center text-[13px]" style={{ color: INK_SOFT }}>
               Comeleal · v{new Date().getFullYear()}
             </p>
           </div>
@@ -1620,7 +1516,7 @@ function PublicLinksCard({
   const links = [
     {
       key: "landing",
-      label: "🏠 Tu página",
+      label: "Tu página",
       // Con slug: el link corto bonito (comeleal.com/luzz-pizza — ideal para
       // bio y statuses). Sin slug: el de ID (guarda la configuración una vez
       // y se activa solo).
@@ -1633,7 +1529,7 @@ function PublicLinksCard({
     },
     {
       key: "menu",
-      label: "🍽 Tu menú",
+      label: "Tu menú",
       // Con slug: link corto para compartir. El QR impreso trae el de ID y
       // sigue llegando al mismo menú — /menu/{id} es eterno.
       url: slug
@@ -1655,86 +1551,105 @@ function PublicLinksCard({
 
   return (
     <SectionCard label="Tu página en internet">
-      <div className="space-y-3">
-        {links.map((l) => (
+      <div>
+        {links.map((l, i) => (
           <div
             key={l.key}
-            className="rounded-xl px-3.5 py-3"
-            style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+            className="py-3"
+            style={i > 0 ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0">
-                <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold leading-5" style={{ color: INK }}>
                   {l.label}
                 </span>
-                <span className="mt-0.5 block truncate font-mono text-[11px]" style={{ color: "rgba(28,37,38,0.55)" }}>
+                <span className="mt-0.5 block truncate font-mono text-[13px] leading-4" style={{ color: INK_MUTED }}>
                   {l.url.replace("https://", "")}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5">
+              <span className="flex shrink-0 items-center gap-2">
                 <a
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-colors"
-                  style={{ border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526", background: "#ffffff" }}
+                  className={`${BTN_SECONDARY} h-10`}
                 >
                   Ver
                 </a>
                 <button
                   type="button"
                   onClick={() => copyLink(l.key, l.url)}
-                  className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-white transition-colors"
-                  style={{ background: copied === l.key ? "#22C55E" : "#F28C38" }}
+                  className={`${BTN_SECONDARY_STRONG} h-10`}
+                  style={copied === l.key ? { color: SUCCESS, borderColor: BORDER } : undefined}
                 >
-                  {copied === l.key ? "✓ Copiado" : "Copiar"}
+                  {copied === l.key ? "Copiado" : "Copiar"}
                 </button>
               </span>
             </div>
-            <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+            <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
               {l.hint}
             </p>
           </div>
         ))}
-        <p
-          className="rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed"
-          style={{ background: "#FFF3E8", border: "1px solid rgba(242,140,56,0.25)", color: "rgba(28,37,38,0.65)" }}
-        >
-          💡 <strong>Pon tu página en la bio de Instagram y como sitio web en tu
-          perfil de Google Maps.</strong> Así te encuentran en Google, ven tu menú
-          y te piden por WhatsApp — sin pagarle a nadie más.
-        </p>
       </div>
+      <p className="rounded-xl px-3.5 py-3 text-[14px] leading-5" style={{ background: TILE, color: INK_MUTED }}>
+        <strong style={{ color: INK }}>Pon tu página en la bio de Instagram y como sitio web en tu
+        perfil de Google Maps.</strong> Así te encuentran en Google, ven tu menú
+        y te piden por WhatsApp — sin pagarle a nadie más.
+      </p>
     </SectionCard>
   );
 }
 
-function SectionCard({ label, children, id }: { label: string; children: React.ReactNode; id?: string }) {
+/** Sección: título en Lora 17 (+ caption opcional a la derecha). El contenido
+ *  va en tarjeta blanca con borde SOLO cuando es un formulario o una lista
+ *  (`plain` = filas sueltas, como Horario o Soporte). `id` sirve de ancla
+ *  (#equipo desde el Panel). */
+function SectionCard({
+  label, caption, children, id, plain = false,
+}: {
+  label: string;
+  caption?: React.ReactNode;
+  children: React.ReactNode;
+  id?: string;
+  plain?: boolean;
+}) {
   return (
-    <div
-      id={id}
-      className="rounded-2xl p-5 scroll-mt-24"
-      style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.07)" }}
-    >
-      <p
-        className="mb-4 text-[10px] font-bold uppercase tracking-widest"
-        style={{ color: "rgba(28,37,38,0.35)" }}
-      >
-        {label}
-      </p>
-      <div className="space-y-3">{children}</div>
-    </div>
+    <section id={id} className="scroll-mt-24">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+          {label}
+        </h2>
+        {caption ? <span className="shrink-0 text-[13px] leading-4" style={{ color: INK_SOFT }}>{caption}</span> : null}
+      </div>
+      {plain ? (
+        <div>{children}</div>
+      ) : (
+        <div className="space-y-4 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+          {children}
+        </div>
+      )}
+    </section>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+      <label className="mb-1.5 block text-[13px] font-medium leading-4" style={{ color: INK_MUTED }}>
         {label}
       </label>
       {children}
     </div>
+  );
+}
+
+/** Nota bajo un campo: 13px, tinta suave. */
+function Hint({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p className={`mt-1.5 text-[13px] leading-[18px] ${className}`} style={{ color: INK_SOFT }}>
+      {children}
+    </p>
   );
 }
 
@@ -1754,23 +1669,17 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
-      style={{
-        background: "#F5F3EF",
-        border: "1px solid rgba(28,37,38,0.12)",
-        color: "#1C2526",
-      }}
-      onFocus={(e) => (e.target.style.borderColor = "#F28C38")}
-      onBlur={(e) => (e.target.style.borderColor = "rgba(28,37,38,0.12)")}
+      className={INPUT_CLS}
     />
   );
 }
 
+/** Fila de 48px: título 15 tinta, caption 13, chevron a la derecha y línea
+ *  fina entre filas (sin tarjeta por fila). */
 function ManageLink({
-  href, emoji, title, subtitle, last = false, external = false,
+  href, title, subtitle, last = false, external = false,
 }: {
   href: string;
-  emoji: string;
   title: string;
   subtitle: string;
   last?: boolean;
@@ -1778,20 +1687,14 @@ function ManageLink({
 }) {
   const inner = (
     <div
-      className="flex items-center gap-3 py-3 transition-opacity hover:opacity-75"
-      style={last ? {} : { borderBottom: "1px solid rgba(28,37,38,0.05)" }}
+      className="flex min-h-12 items-center gap-3 py-2.5 transition-opacity hover:opacity-75"
+      style={last ? {} : { borderBottom: `1px solid ${HAIRLINE}` }}
     >
-      <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
-        style={{ background: "#F5F3EF" }}
-      >
-        {emoji}
-      </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold" style={{ color: "#1C2526" }}>{title}</p>
-        <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>{subtitle}</p>
+        <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>{title}</p>
+        <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>{subtitle}</p>
       </div>
-      <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.25)" }}>›</span>
+      <IconChevron />
     </div>
   );
 
@@ -1932,222 +1835,168 @@ function DiscountProfilesSection({
 
   if (!isPro) {
     return (
-      <SectionCard label="Descuentos especiales 🏷️">
-        <div
-          className="rounded-xl p-3.5"
-          style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-        >
-          <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-            ⭐ Incluido en Pro
-          </p>
-          <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.55)" }}>
-            Crea descuentos para tu staff o familia (ej. 50% en bebidas) y asígnalos
-            por cliente. El POS los aplica solo al cobrar, automáticamente.
-          </p>
-          <Link
-            href="/vendor/plan"
-            className="mt-2 inline-block text-[11px] font-bold underline underline-offset-2"
-            style={{ color: "#F28C38" }}
-          >
-            Ver el plan Pro →
-          </Link>
-        </div>
+      <SectionCard label="Descuentos especiales" caption={<Pill bg={TILE} color={INK_MUTED}>Incluido en Pro</Pill>} plain>
+        <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
+          Crea descuentos para tu staff o familia (ej. 50% en bebidas) y asígnalos
+          por cliente. La Caja los aplica sola al cobrar.
+        </p>
+        <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 inline-block`}>
+          Ver el plan Pro →
+        </Link>
       </SectionCard>
     );
   }
 
   return (
-    <SectionCard label="Descuentos especiales 🏷️">
-      <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+    <SectionCard label="Descuentos especiales">
+      <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
         Crea perfiles (Staff, Familia…) y asígnalos por cliente en{" "}
-        <Link href="/vendor/clientes" className="font-semibold underline" style={{ color: "#F28C38" }}>
+        <Link href="/vendor/clientes" className="font-semibold underline underline-offset-2" style={{ color: LINK }}>
           Clientes
         </Link>
-        . El POS los aplica automáticamente al cobrar; los puntos se calculan
+        . La Caja los aplica sola al cobrar; los puntos se calculan
         sobre lo realmente pagado.
       </p>
 
       {profiles.length === 0 && editingId === null && (
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
+        <div>
+          <p className="text-[13px] font-medium leading-4" style={{ color: INK_MUTED }}>
             Empieza con una plantilla:
           </p>
-          <button
-            type="button"
-            onClick={() => openNew({ name: "Staff", type: "per_category", bebidasPct: 50, alimentosPct: 30, earnsPoints: false })}
-            className="w-full rounded-xl px-3.5 py-3 text-left text-[12px] font-semibold transition hover:opacity-80"
-            style={{ background: "#F5F3EF", border: "1px dashed rgba(28,37,38,0.2)", color: "#1C2526" }}
-          >
-            ⚡ Staff — 50% bebidas · 30% alimentos
-          </button>
-          <button
-            type="button"
-            onClick={() => openNew({ name: "Family & Friends", type: "total", totalPct: 15 })}
-            className="w-full rounded-xl px-3.5 py-3 text-left text-[12px] font-semibold transition hover:opacity-80"
-            style={{ background: "#F5F3EF", border: "1px dashed rgba(28,37,38,0.2)", color: "#1C2526" }}
-          >
-            ⚡ Family &amp; Friends — 15% en toda la cuenta
-          </button>
+          <div className="mt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => openNew({ name: "Staff", type: "per_category", bebidasPct: 50, alimentosPct: 30, earnsPoints: false })}
+              className={`${BTN_SECONDARY} h-12 w-full justify-start`}
+            >
+              Staff — 50% bebidas · 30% alimentos
+            </button>
+            <button
+              type="button"
+              onClick={() => openNew({ name: "Family & Friends", type: "total", totalPct: 15 })}
+              className={`${BTN_SECONDARY} h-12 w-full justify-start`}
+            >
+              Family &amp; Friends — 15% en toda la cuenta
+            </button>
+          </div>
         </div>
       )}
 
-      {profiles.map((p) => (
-        <div
-          key={p.id}
-          className="flex items-center gap-3 rounded-xl px-3.5 py-3"
-          style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
-        >
-          <span className="text-base">🏷️</span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>{p.name}</p>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>{pctLabel(p)}</p>
-          </div>
-          {confirmDeleteId === p.id ? (
-            <div className="flex shrink-0 items-center gap-1.5">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => handleDeleteProfile(p.id)}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
-                style={{ background: "#EF4444" }}
-              >
-                Sí, eliminar
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteId(null)}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
-                style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.6)" }}
-              >
-                No
-              </button>
+      {profiles.length > 0 && (
+        <div>
+          {profiles.map((p, i) => (
+            <div
+              key={p.id}
+              className="flex min-h-12 flex-wrap items-center gap-3 py-2.5"
+              style={i > 0 ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>{p.name}</p>
+                <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{pctLabel(p)}</p>
+              </div>
+              {confirmDeleteId === p.id ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleDeleteProfile(p.id)}
+                    className={`${BTN_DANGER} h-10`}
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(null)}
+                    className={`${BTN_SECONDARY} h-10`}
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(p)}
+                    className={`${BTN_SECONDARY} h-10`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(p.id)}
+                    aria-label={`Eliminar ${p.name}`}
+                    className={`${BTN_TERTIARY} h-10 px-2`}
+                    style={{ color: DANGER }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex shrink-0 items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => openEdit(p)}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteId(p.id)}
-                aria-label={`Eliminar ${p.name}`}
-                className="rounded-lg px-2 py-1.5 text-[12px]"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)" }}
-              >
-                🗑️
-              </button>
-            </div>
-          )}
+          ))}
         </div>
-      ))}
+      )}
 
       {err && editingId === null && (
-        <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+        <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }}>{err}</p>
       )}
 
       {editingId !== null ? (
-        <div
-          className="space-y-3 rounded-xl p-3.5"
-          style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
-        >
-          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(154,52,18,0.6)" }}>
+        <div className="space-y-4 pt-4" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+          <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
             {editingId === "new" ? "Nuevo descuento" : "Editar descuento"}
           </p>
           <Field label="Nombre">
             <TextInput value={fName} onChange={(v) => setFName(v)} placeholder="Ej. Staff, Familia" />
           </Field>
           <Field label="Tipo de descuento">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFType("total")}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
-                style={
-                  fType === "total"
-                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
-                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                }
-              >
+            <div className="flex flex-wrap gap-2">
+              <Chip active={fType === "total"} onClick={() => setFType("total")}>
                 % en toda la cuenta
-              </button>
-              <button
-                type="button"
-                onClick={() => setFType("per_category")}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
-                style={
-                  fType === "per_category"
-                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
-                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                }
-              >
+              </Chip>
+              <Chip active={fType === "per_category"} onClick={() => setFType("per_category")}>
                 Por categoría
-              </button>
+              </Chip>
             </div>
           </Field>
           {fType === "total" ? (
             <PctInput label="Descuento en toda la cuenta" value={fTotal} onChange={setFTotal} />
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <PctInput label="🥤 Bebidas" value={fBebidas} onChange={setFBebidas} />
-              <PctInput label="🍽️ Alimentos" value={fAlimentos} onChange={setFAlimentos} />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <PctInput label="Bebidas" value={fBebidas} onChange={setFBebidas} />
+              <PctInput label="Alimentos" value={fAlimentos} onChange={setFAlimentos} />
             </div>
           )}
           <Field label="¿Junta puntos de lealtad?">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFEarnsPoints(true)}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
-                style={
-                  fEarnsPoints
-                    ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
-                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                }
-              >
+            <div className="flex flex-wrap gap-2">
+              <Chip active={fEarnsPoints} onClick={() => setFEarnsPoints(true)}>
                 Sí — sobre lo pagado
-              </button>
-              <button
-                type="button"
-                onClick={() => setFEarnsPoints(false)}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all"
-                style={
-                  !fEarnsPoints
-                    ? { background: "#1C2526", color: "#fff", border: "1.5px solid #1C2526" }
-                    : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                }
-              >
+              </Chip>
+              <Chip active={!fEarnsPoints} onClick={() => setFEarnsPoints(false)}>
                 No — su beneficio es el descuento
-              </button>
+              </Chip>
             </div>
-            <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+            <Hint>
               Con &quot;No&quot;, sus compras no acumulan puntos ni premio de
               bienvenida (y no gastan tus visitas de lealtad del mes). Su visita
               y gasto sí quedan registrados en Clientes.
-            </p>
+            </Hint>
           </Field>
           {highPct && (
-            <p
-              className="rounded-lg px-3 py-2 text-[11px] font-semibold"
-              style={{ background: "rgba(234,88,12,0.1)", color: "#9A3412" }}
-            >
-              ⚠️ Más de 50% de descuento — asegúrate de que sea intencional.
-            </p>
+            <Notice>
+              Más de 50% de descuento — asegúrate de que sea intencional.
+            </Notice>
           )}
           {err && (
-            <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+            <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }}>{err}</p>
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={handleSaveProfile}
               disabled={busy}
-              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
-              style={{ background: "#F28C38" }}
+              className={`${BTN_PRIMARY} sm:flex-1`}
+              style={{ background: INK, color: CREAM }}
             >
               {busy ? "Guardando…" : "Guardar descuento"}
             </button>
@@ -2155,8 +2004,7 @@ function DiscountProfilesSection({
               type="button"
               onClick={() => { setEditingId(null); setErr(null); }}
               disabled={busy}
-              className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
-              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "rgba(28,37,38,0.6)" }}
+              className={`${BTN_SECONDARY} h-12`}
             >
               Cancelar
             </button>
@@ -2166,10 +2014,9 @@ function DiscountProfilesSection({
         <button
           type="button"
           onClick={() => openNew()}
-          className="w-full rounded-xl px-3.5 py-3 text-[12px] font-bold transition hover:opacity-80"
-          style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
+          className={`${BTN_SECONDARY_STRONG} h-12 w-full`}
         >
-          + Nuevo descuento
+          Nuevo descuento
         </button>
       )}
     </SectionCard>
@@ -2293,56 +2140,52 @@ function PosStaffSection({
   }
 
   return (
-    <SectionCard label="Equipo 👥" id="equipo">
-      <p
-        className="text-[10px] font-bold uppercase tracking-widest"
-        style={{ color: "rgba(28,37,38,0.35)" }}
-      >
-        PINs de la caja
-      </p>
-      <p className="text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
-        Agrega a tu equipo con un PIN de 4 dígitos. En la caja eligen quién
-        cobra con su PIN — cada venta queda registrada a su nombre (sin
-        necesidad de cuenta ni email).
-        {entitlements.posStaffAccess
-          ? ""
-          : " El primer PIN es gratis; el segundo y los que siguen son Pro."}
-      </p>
+    <SectionCard label="Equipo" id="equipo">
+      <div>
+        <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
+          PINs de la Caja
+        </p>
+        <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+          Agrega a tu equipo con un PIN de 4 dígitos. En la Caja eligen quién
+          cobra con su PIN — cada venta queda registrada a su nombre (sin
+          necesidad de cuenta ni correo).
+          {entitlements.posStaffAccess
+            ? ""
+            : " El primer PIN es gratis; el segundo y los que siguen son Pro."}
+        </p>
+      </div>
 
       {staff.length > 0 && (
-        <div className="space-y-2">
-          {staff.map((m) => (
+        <div>
+          {staff.map((m, i) => (
             <div
               key={m.id}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3"
-              style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+              className="flex min-h-12 items-center gap-3 py-2.5"
+              style={i > 0 ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}
             >
-              <span className="text-base">👤</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>
                   {m.name}
                 </p>
-                <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
                   {m.role === "gerente" ? "Gerente" : "Cajero"} · PIN{" "}
-                  <span className="font-mono font-bold">{showPins ? m.pin : "••••"}</span>
+                  <span className="font-mono font-bold tabular-nums" style={{ color: INK }}>{showPins ? m.pin : "••••"}</span>
                 </p>
               </div>
               {confirmDeleteId === m.id ? (
-                <div className="flex shrink-0 items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => handleDelete(m.id)}
-                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
-                    style={{ background: "#EF4444" }}
+                    className={`${BTN_DANGER} h-10`}
                   >
                     Sí, eliminar
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmDeleteId(null)}
-                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold"
-                    style={{ background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.6)" }}
+                    className={`${BTN_SECONDARY} h-10`}
                   >
                     No
                   </button>
@@ -2352,10 +2195,10 @@ function PosStaffSection({
                   type="button"
                   onClick={() => setConfirmDeleteId(m.id)}
                   aria-label={`Eliminar ${m.name}`}
-                  className="shrink-0 rounded-lg px-2 py-1.5 text-[12px]"
-                  style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)" }}
+                  className={`${BTN_TERTIARY} h-10 shrink-0 px-2`}
+                  style={{ color: DANGER }}
                 >
-                  🗑️
+                  Eliminar
                 </button>
               )}
             </div>
@@ -2363,8 +2206,7 @@ function PosStaffSection({
           <button
             type="button"
             onClick={() => setShowPins((v) => !v)}
-            className="text-[11px] font-semibold underline underline-offset-2"
-            style={{ color: "rgba(28,37,38,0.45)" }}
+            className={`${BTN_TERTIARY} mt-1`}
           >
             {showPins ? "Ocultar PINs" : "Mostrar PINs"}
           </button>
@@ -2372,18 +2214,16 @@ function PosStaffSection({
       )}
 
       {err && !formOpen && (
-        <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+        <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }}>{err}</p>
       )}
 
       {formOpen ? (
-        <div
-          className="space-y-3 rounded-xl p-3.5"
-          style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
-        >
+        <div className="space-y-4 pt-4" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+          <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>Nueva persona</p>
           <Field label="Nombre">
             <TextInput value={fName} onChange={(v) => setFName(v)} placeholder="Ej. Juan" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="PIN (4 dígitos)">
               <input
                 type="text"
@@ -2392,40 +2232,29 @@ function PosStaffSection({
                 value={fPin}
                 onChange={(e) => setFPin(e.target.value.replace(/\D/g, ""))}
                 placeholder="0000"
-                className="w-full rounded-xl px-3 py-2.5 text-center font-mono text-[15px] font-bold tracking-[0.3em] outline-none"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+                className={`${INPUT_CLS} text-center font-mono font-bold tracking-[0.3em] tabular-nums`}
               />
             </Field>
             <Field label="Rol">
               <div className="flex gap-2">
                 {(["cajero", "gerente"] as PosStaffRole[]).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setFRole(r)}
-                    className="flex-1 rounded-xl px-2 py-2.5 text-[12px] font-semibold transition-all"
-                    style={
-                      fRole === r
-                        ? { background: "#F28C38", color: "#fff", border: "1.5px solid #F28C38" }
-                        : { background: "#ffffff", color: "rgba(28,37,38,0.55)", border: "1.5px solid rgba(28,37,38,0.14)" }
-                    }
-                  >
+                  <Chip key={r} active={fRole === r} onClick={() => setFRole(r)} className="flex-1">
                     {r === "cajero" ? "Cajero" : "Gerente"}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </Field>
           </div>
           {err && (
-            <p className="text-[11px] font-semibold" style={{ color: "#dc2626" }}>{err}</p>
+            <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }}>{err}</p>
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={handleAdd}
               disabled={busy}
-              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526] transition hover:opacity-90 disabled:opacity-60"
-              style={{ background: "#F28C38" }}
+              className={`${BTN_PRIMARY} sm:flex-1`}
+              style={{ background: INK, color: CREAM }}
             >
               {busy ? "Guardando…" : "Agregar al equipo"}
             </button>
@@ -2433,8 +2262,7 @@ function PosStaffSection({
               type="button"
               onClick={() => { setFormOpen(false); setErr(null); }}
               disabled={busy}
-              className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
-              style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "rgba(28,37,38,0.6)" }}
+              className={`${BTN_SECONDARY} h-12`}
             >
               Cancelar
             </button>
@@ -2444,10 +2272,9 @@ function PosStaffSection({
         <button
           type="button"
           onClick={requestAdd}
-          className="w-full rounded-xl px-3.5 py-3 text-[12px] font-bold transition hover:opacity-80"
-          style={{ background: "#ffffff", border: "1.5px dashed rgba(242,140,56,0.5)", color: "#F28C38" }}
+          className={`${BTN_SECONDARY_STRONG} h-12 w-full`}
         >
-          {canAdd ? "+ Agregar persona" : "⭐ + Agregar persona (Pro)"}
+          {canAdd ? "Agregar persona" : "Agregar persona · Pro"}
         </button>
       )}
 
@@ -2467,77 +2294,62 @@ function PosStaffSection({
       )}
 
       {/* ── Cuentas con acceso propio (Pro) — espejo del hub Equipo de la app ── */}
-      <div className="mt-1 border-t pt-4" style={{ borderColor: "rgba(28,37,38,0.07)" }}>
-        <p
-          className="text-[10px] font-bold uppercase tracking-widest"
-          style={{ color: "rgba(28,37,38,0.35)" }}
-        >
-          Cuentas con acceso propio · Pro
-        </p>
+      <div className="pt-4" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
+            Cuentas con acceso propio
+          </p>
+          <Pill bg={TILE} color={INK_MUTED}>Incluido en Pro</Pill>
+        </div>
         {isPro ? (
           <>
-            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.45)" }}>
+            <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
               Cada quien entra con su propia cuenta y su rol desde su teléfono o
               computadora — empleado ve solo la operación; manager también
               clientes y reportes. Las invitaciones se envían desde la app
               (Configuración → Equipo).
             </p>
             {accounts.length > 0 ? (
-              <div className="mt-2 space-y-2">
-                {accounts.map((m) => (
+              <div className="mt-2">
+                {accounts.map((m, i) => (
                   <div
                     key={m.id}
-                    className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
-                    style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.08)" }}
+                    className="flex min-h-12 items-center gap-3 py-2.5"
+                    style={i > 0 ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}
                   >
-                    <span className="text-base">🔐</span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                      <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>
                         {m.name || m.email || m.id.slice(0, 8)}
                       </p>
                       {m.email && m.name && (
-                        <p className="truncate text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                        <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>
                           {m.email}
                         </p>
                       )}
                     </div>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                      style={
-                        m.role === "owner"
-                          ? { background: "rgba(242,140,56,0.15)", color: "#F28C38" }
-                          : m.status === "active"
-                            ? { background: "rgba(28,37,38,0.07)", color: "rgba(28,37,38,0.55)" }
-                            : { background: "rgba(234,88,12,0.1)", color: "#9A3412" }
-                      }
-                    >
-                      {TEAM_ROLE_LABEL[m.role]}
-                      {m.status !== "active" ? " · pendiente" : ""}
-                    </span>
+                    {m.role === "owner" ? (
+                      <Pill bg={INK} color={CREAM}>{TEAM_ROLE_LABEL[m.role]}</Pill>
+                    ) : m.status === "active" ? (
+                      <Pill bg={TILE} color={INK_MUTED}>{TEAM_ROLE_LABEL[m.role]}</Pill>
+                    ) : (
+                      <Pill bg={WARN_SURFACE} color={WARN}>{TEAM_ROLE_LABEL[m.role]} · pendiente</Pill>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-[11px]" style={{ color: "rgba(28,37,38,0.35)" }}>
+              <p className="mt-2 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
                 Aún no has invitado a nadie — invita a tu equipo desde la app.
               </p>
             )}
           </>
         ) : (
-          <div
-            className="mt-2 rounded-xl p-3.5"
-            style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-          >
-            <p className="text-[12px] font-bold" style={{ color: "#1C2526" }}>
-              ⭐ Incluido en Pro
-            </p>
-            <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "rgba(28,37,38,0.55)" }}>
-              Cuentas con acceso propio para tu equipo: cada quien entra con su
-              cuenta y su rol desde su propio teléfono — empleado ve solo la
-              caja; manager también clientes y reportes. Todo tu equipo,
-              incluido.
-            </p>
-          </div>
+          <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+            Cuentas con acceso propio para tu equipo: cada quien entra con su
+            cuenta y su rol desde su propio teléfono — empleado ve solo la
+            Caja; manager también clientes y reportes. Todo tu equipo,
+            incluido.
+          </p>
         )}
       </div>
     </SectionCard>
@@ -2564,10 +2376,9 @@ function PctInput({
           onChange={(e) =>
             onChange(e.target.value === "" ? "" : Math.min(100, Math.max(0, Number(e.target.value))))
           }
-          className="w-24 rounded-xl px-3 py-2.5 text-[13px] outline-none"
-          style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}
+          className={`${INPUT_CLS} w-28 tabular-nums`}
         />
-        <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>%</span>
+        <span className="text-[15px] font-semibold" style={{ color: INK_MUTED }}>%</span>
       </div>
     </Field>
   );

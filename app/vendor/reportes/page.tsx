@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -114,6 +114,151 @@ function Spinner() {
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z" />
     </svg>
   );
+}
+
+// Opción A (23-sep-2026, lienzo "Sistema Comeleal"): los mismos tokens que el
+// Panel, Pedidos, Caja y Clientes. Crema + tinta, UNA serif (Lora) solo en
+// títulos, cifras en tabular, naranja solo para resaltar "hoy" en la gráfica
+// de ingresos. Sin sombras, sin degradados, sin emojis.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const TILE = "#F0EBE1";
+const ICON = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconChart() { return <svg {...ICON} stroke={INK_SOFT}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>; }
+
+/** Título de la pantalla: Lora 22 + caption 13 debajo, y el link al Panel. */
+function PageTitle({ caption }: { caption?: string }) {
+  return (
+    <div className="mb-5 flex items-end justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Reportes</h1>
+        {caption && <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>{caption}</p>}
+      </div>
+      <Link href="/vendor" className="shrink-0 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+        ← Panel
+      </Link>
+    </div>
+  );
+}
+
+/** Encabezado de sección: Lora 17/600 y, a la derecha, el rango en 13px. */
+function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+        {children}
+      </h2>
+      {right ? <span className="shrink-0 text-[13px] leading-4" style={{ color: INK_SOFT }}>{right}</span> : null}
+    </div>
+  );
+}
+
+/** Fila de cifras con líneas finas arriba/abajo y verticales entre celdas.
+ *  `layout` = columnas en móvil / columnas desde md; en móvil la segunda
+ *  fila lleva una línea fina arriba. Número 22/700 tabular, label 12. */
+type Stat = { label: string; value: ReactNode; sub?: ReactNode; className?: string };
+const STAT_GRID = {
+  "2/4": {
+    grid: "grid-cols-2 md:grid-cols-4",
+    cell: "[&:nth-child(2n)]:border-l [&:nth-child(n+3)]:border-t md:[&:not(:first-child)]:border-l md:[&:nth-child(n+3)]:border-t-0",
+  },
+  "2/3": {
+    grid: "grid-cols-2 md:grid-cols-3",
+    cell: "[&:nth-child(2n)]:border-l [&:nth-child(n+3)]:border-t md:[&:not(:first-child)]:border-l md:[&:nth-child(n+3)]:border-t-0",
+  },
+  "2/2": {
+    grid: "grid-cols-2",
+    cell: "[&:nth-child(2n)]:border-l [&:nth-child(n+3)]:border-t",
+  },
+} as const;
+function StatGrid({ items, layout }: { items: Stat[]; layout: keyof typeof STAT_GRID }) {
+  const g = STAT_GRID[layout];
+  return (
+    <div className={`grid ${g.grid}`} style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+      {items.map((s) => (
+        <div
+          key={s.label}
+          className={`flex min-w-0 flex-col items-center justify-center gap-0.5 border-[#E9E3D7] px-1 py-3 text-center ${g.cell} ${s.className ?? ""}`}
+        >
+          <div className="whitespace-nowrap text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{s.value}</div>
+          <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>{s.label}</p>
+          {s.sub ? <p className="text-[12px] leading-[14px] tabular-nums" style={{ color: INK_SOFT }}>{s.sub}</p> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Anillo de la meta del día: trazo tinta sobre línea fina, % adentro 13/700.
+ *  El radio 15.9155 da circunferencia 100 → el dasharray es el porcentaje. */
+function GoalRing({ pct }: { pct: number }) {
+  const r = 15.9155;
+  return (
+    <div className="relative h-11 w-11" role="img" aria-label={`${pct}% de la meta`}>
+      <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r={r} fill="none" stroke={HAIRLINE} strokeWidth="3" />
+        <circle cx="18" cy="18" r={r} fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${pct} 100`} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tabular-nums" style={{ color: INK }}>{pct}%</div>
+    </div>
+  );
+}
+
+/** Gráfica de barras de 7 días: barras planas (sin degradado), valor arriba
+ *  en 12 inkSoft, día abajo. La última barra es hoy: etiqueta en 600 y, si
+ *  `highlightToday`, la barra en naranja (el único naranja de la gráfica). */
+function BarChart({
+  points,
+  color,
+  highlightToday = false,
+}: {
+  points: { label: string; dateStr: string; value: number; text: string }[];
+  color: string;
+  highlightToday?: boolean;
+}) {
+  const max = Math.max(...points.map((p) => p.value), 1);
+  const last = points.length - 1;
+  return (
+    <div className="flex h-44 items-end gap-1.5 md:gap-2">
+      {points.map((p, i) => {
+        const heightPct = (p.value / max) * 100;
+        const today = i === last;
+        return (
+          <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={p.dateStr}>
+            <span className="text-[12px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+              {p.value > 0 ? p.text : ""}
+            </span>
+            <div
+              className="w-full rounded-t"
+              style={{ height: `${Math.max(heightPct, 2)}%`, background: today && highlightToday ? BRAND : color }}
+            />
+            <p className="text-[12px] leading-4" style={{ color: today ? INK : INK_MUTED, fontWeight: today ? 600 : 400 }}>{p.label}</p>
+            <p className="hidden whitespace-nowrap text-[12px] leading-4 sm:block" style={{ color: INK_SOFT }}>{p.dateStr}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Tarjeta blanca para LISTAS (la única tarjeta permitida): borde, radio 12,
+ *  filas separadas por línea fina. */
+function ListCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="divide-y divide-[#E9E3D7] rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
+      {children}
+    </div>
+  );
+}
+
+function EmptyLine({ children }: { children: ReactNode }) {
+  return <p className="py-6 text-center text-[14px]" style={{ color: INK_MUTED }}>{children}</p>;
 }
 
 const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -499,415 +644,319 @@ export default function ReportesPage() {
 
   if (loadState === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: "#F5F3EF" }}>
-        <Spinner />
-      </div>
+      <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
+        <PageTitle />
+        <div className="flex justify-center py-20"><Spinner /></div>
+      </main>
     );
   }
 
   if (loadState === "error" || !data) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#F5F3EF" }}>
-        <p className="text-sm text-gray-500">No pudimos cargar tus reportes.</p>
-        <button onClick={() => window.location.reload()} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-[#1C2526] bg-[#F28C38]">
-          Reintentar
-        </button>
-      </div>
+      <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
+        <PageTitle />
+        <div className="flex flex-col items-center py-20 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE }}><IconChart /></div>
+          <p className="mt-4 text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>No pudimos cargar tus reportes</p>
+          <p className="mt-1 text-[14px]" style={{ color: INK_MUTED }}>Revisa tu conexión y vuelve a intentar.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 flex h-12 items-center rounded-xl px-6 text-[15px] font-semibold"
+            style={{ background: BRAND, color: INK }}
+          >
+            Volver a intentar
+          </button>
+        </div>
+      </main>
     );
   }
 
   // Calculate daily goal percentage
   const goalProgress = data.dailyGoal && data.dailyGoal > 0 ? (data.todayRevenue / data.dailyGoal) * 100 : 0;
   const goalProgressDisplay = Math.min(Math.round(goalProgress), 100);
-
-  // SVG Chart sizing helpers
-  const maxSales = Math.max(...data.weeklyStats.map((s) => s.sales), 1);
-  const maxScans = Math.max(...data.weeklyStats.map((s) => s.scans), 1);
+  const hasGoal = !!data.dailyGoal && data.dailyGoal > 0;
+  const todayLabel = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: "#F5F3EF" }}>
-      
-      {/* Sticky Top Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4"
-        style={{ background: "#ffffff", borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
-        <div className="flex items-center gap-3">
-          <Link href="/vendor" className="text-[13px] font-bold text-gray-400 hover:opacity-75 transition-opacity">
-            ← Panel
-          </Link>
-          <span style={{ color: "rgba(28,37,38,0.2)" }}>/</span>
-          <h1 className="text-[15px] font-black uppercase tracking-wider" style={{ color: "#1C2526" }}>Reportes</h1>
-        </div>
-      </div>
+    <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
+      <PageTitle caption={`${data.restaurantName} · hoy, 7 días y 30 días`} />
 
-      <main className="px-4 pt-6 md:px-8 md:pt-8 space-y-6">
-        
-        {/* Today's Title */}
-        <div>
-          <h2 className="text-[20px] font-black tracking-tight" style={{ color: "#1C2526" }}>Resultados de hoy</h2>
-          <p className="text-[12px] text-gray-400">Rendimiento en tiempo real para las ventas de hoy</p>
-        </div>
+      <div className="flex flex-col gap-7">
 
-        {/* Today's Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          
-          {/* Revenue */}
-          <div className="rounded-2xl p-5 bg-white space-y-3" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos hoy</p>
-            <p className="text-[26px] font-black text-[#1C2526]">{fmt(data.todayRevenue)}</p>
-            <p className="text-[11px] text-gray-400">{data.todaySalesCount} ventas totales</p>
-          </div>
+        {/* ── Resultados de hoy: cuatro cifras en una fila con líneas finas ── */}
+        <section>
+          <SectionTitle right={todayLabel}>Resultados de hoy</SectionTitle>
+          <StatGrid
+            layout="2/4"
+            items={[
+              { label: "ingresos", value: fmt(data.todayRevenue), sub: plural(data.todaySalesCount, "venta", "ventas") },
+              { label: "ticket promedio", value: fmt(data.todayAvgTicket) },
+              { label: "clientes Comeleal", value: data.todayScans, sub: "con app o con número" },
+              hasGoal
+                ? { label: "de la meta del día", value: <GoalRing pct={goalProgressDisplay} />, sub: `meta ${fmt(data.dailyGoal!)}` }
+                : {
+                    label: "meta del día",
+                    value: "—",
+                    sub: (
+                      <Link href="/vendor/configuracion" className="font-semibold hover:underline" style={{ color: LINK }}>
+                        Ponerla en Configuración
+                      </Link>
+                    ),
+                  },
+            ]}
+          />
+        </section>
 
-          {/* Average Ticket */}
-          <div className="rounded-2xl p-5 bg-white space-y-3" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ticket promedio</p>
-            <p className="text-[26px] font-black text-[#1C2526]">{fmt(data.todayAvgTicket)}</p>
-            <p className="text-[11px] text-gray-400">Valor promedio de compra</p>
-          </div>
-
-          {/* Scans/Visits */}
-          <div className="rounded-2xl p-5 bg-white space-y-3" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clientes Comeleal hoy</p>
-            <p className="text-[26px] font-black text-[#1C2526]">{data.todayScans}</p>
-            <p className="text-[11px] text-gray-400">Visitas con app o número</p>
-          </div>
-
-          {/* Daily Goal Progress */}
-          {data.dailyGoal && data.dailyGoal > 0 ? (
-            <div className="rounded-2xl p-5 bg-white flex items-center justify-between" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meta diaria</p>
-                <p className="text-[18px] font-black text-[#1C2526]">{fmt(data.todayRevenue)} / {fmt(data.dailyGoal)}</p>
-                <p className="text-[11px] text-[#F28C38] font-bold">{goalProgressDisplay}% de la meta alcanzado</p>
-              </div>
-              <div className="relative w-16 h-16">
-                {/* SVG circular progress indicator */}
-                <svg className="w-full h-full" viewBox="0 0 36 36">
-                  <path className="text-gray-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-[#F28C38]" strokeWidth="3.2" strokeDasharray={`${goalProgressDisplay}, 100`} strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[#1C2526]">{goalProgressDisplay}%</div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl p-5 bg-white flex flex-col justify-center text-center space-y-1" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="text-[12px] font-bold text-gray-400">Meta diaria no configurada</p>
-              <Link href="/vendor/configuracion" className="text-[11px] font-bold text-[#F28C38] hover:underline">
-                Establecer meta en Configuración →
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* 7-Day Performance Title */}
-        <div className="pt-4">
-          <h2 className="text-[20px] font-black tracking-tight" style={{ color: "#1C2526" }}>Últimos 7 días</h2>
-          <p className="text-[12px] text-gray-400">Hoy y los 6 días anteriores</p>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Sales chart */}
-          <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
+        {/* ── Últimos 7 días: dos gráficas planas, sin tarjeta ── */}
+        <section>
+          <SectionTitle right="hoy y los 6 días anteriores">Últimos 7 días</SectionTitle>
+          <div className="grid grid-cols-1 gap-7 md:grid-cols-2 md:gap-8">
             <div>
-              <p className="text-[14px] font-bold text-[#1C2526]">Ingresos · últimos 7 días</p>
-              <p className="text-[22px] font-black text-[#F28C38]">{fmt(data.weeklyRevenueTotal)}</p>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>Ingresos</p>
+                <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{fmt(data.weeklyRevenueTotal)}</p>
+              </div>
+              <BarChart
+                highlightToday
+                color={INK}
+                points={data.weeklyStats.map((d) => ({
+                  label: d.label,
+                  dateStr: d.dateStr,
+                  value: d.sales,
+                  text: `$${Math.round(d.sales)}`,
+                }))}
+              />
             </div>
-            
-            {/* Custom SVG Bar Chart */}
-            <div className="h-48 flex items-end justify-between gap-1.5 pt-4">
-              {data.weeklyStats.map((day, idx) => {
-                const heightPct = (day.sales / maxSales) * 100;
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                    <span className="text-[9px] font-bold text-gray-500 tabular-nums">
-                      {day.sales > 0 ? `$${Math.round(day.sales)}` : ""}
-                    </span>
-                    <div
-                      className="w-full rounded-t-lg transition-all duration-300"
-                      style={{
-                        height: `${Math.max(heightPct, 2)}%`,
-                        background: "linear-gradient(180deg, #FF9A45 0%, #F28C38 100%)",
-                      }}
-                    />
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold text-[#1C2526]">{day.label}</p>
-                      <p className="text-[8px] text-gray-400 whitespace-nowrap">{day.dateStr}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Visits/Scans chart */}
-          <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
             <div>
-              <p className="text-[14px] font-bold text-[#1C2526]">Clientes Comeleal · últimos 7 días</p>
-              <p className="text-[22px] font-black text-[#1C2526]">{data.weeklyScansTotal} visitas</p>
-              <p className="text-[11px] text-gray-400">Con app o con número — los que puedes traer de vuelta</p>
-            </div>
-            
-            {/* Custom SVG Bar Chart */}
-            <div className="h-48 flex items-end justify-between gap-1.5 pt-4">
-              {data.weeklyStats.map((day, idx) => {
-                const heightPct = (day.scans / maxScans) * 100;
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                    <span className="text-[9px] font-bold text-gray-500 tabular-nums">
-                      {day.scans > 0 ? day.scans : ""}
-                    </span>
-                    <div
-                      className="w-full rounded-t-lg transition-all duration-300 bg-gray-300"
-                      style={{
-                        height: `${Math.max(heightPct, 2)}%`,
-                        background: "linear-gradient(180deg, #4B5563 0%, #1F2937 100%)",
-                      }}
-                    />
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold text-[#1C2526]">{day.label}</p>
-                      <p className="text-[8px] text-gray-400 whitespace-nowrap">{day.dateStr}</p>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="mb-1 flex items-baseline justify-between gap-3">
+                <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>Clientes Comeleal</p>
+                <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{plural(data.weeklyScansTotal, "visita", "visitas")}</p>
+              </div>
+              <p className="mb-3 text-[13px] leading-4" style={{ color: INK_SOFT }}>Con app o con número. Son los que puedes traer de vuelta.</p>
+              <BarChart
+                color={INK_MUTED}
+                points={data.weeklyStats.map((d) => ({
+                  label: d.label,
+                  dateStr: d.dateStr,
+                  value: d.scans,
+                  text: String(d.scans),
+                }))}
+              />
             </div>
           </div>
-
-        </div>
+        </section>
 
         {/* ── Historial de ventas por rango — pared 1 de la Caja (8-sep) ──
             30 días gratis (la ventana de siempre); 90 días y Todo son Pro. */}
-        <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
-            <p className="text-[14px] font-bold text-[#1C2526]">📚 Historial de ventas</p>
-            <div className="flex gap-1.5" role="tablist" aria-label="Rango del historial">
-              {HISTORY_RANGES.map((r) => {
-                const active = rangeDays === r.days;
-                const locked = !historyAllowed(ents, r.days);
-                return (
-                  <button
-                    key={r.label}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => pickRange(r.days)}
-                    className="rounded-xl px-3 py-1.5 text-[12px] font-bold transition"
-                    style={
-                      active
-                        ? { background: "#F28C38", color: "#1C2526" }
-                        : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }
-                    }
-                    title={locked ? "Esto es Pro" : undefined}
-                  >
-                    {locked ? "⭐ " : ""}{r.label}
-                  </button>
-                );
-              })}
-            </div>
+        <section>
+          <SectionTitle>Historial de ventas</SectionTitle>
+          <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Rango del historial">
+            {HISTORY_RANGES.map((r) => {
+              const active = rangeDays === r.days;
+              const locked = !historyAllowed(ents, r.days);
+              return (
+                <button
+                  key={r.label}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => pickRange(r.days)}
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] transition-all"
+                  style={
+                    active
+                      ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 }
+                      : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }
+                  }
+                  title={locked ? "Esto es Pro" : undefined}
+                >
+                  <span>{r.label}</span>
+                  {locked && (
+                    <span className="inline-flex h-5 items-center rounded-full px-2 text-[12px] font-semibold" style={{ background: TILE, color: INK_MUTED }}>
+                      Pro
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
           {historyLoading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : history ? (
             <>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ventas</p>
-                  <p className="text-[18px] font-black text-[#1C2526]">{history.count}</p>
-                </div>
-                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ingresos</p>
-                  <p className="text-[18px] font-black text-[#1C2526]">{fmt(history.revenue)}</p>
-                </div>
-                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ticket prom.</p>
-                  <p className="text-[18px] font-black text-[#1C2526]">
-                    {fmt(history.count > 0 ? history.revenue / history.count : 0)}
-                  </p>
-                </div>
-              </div>
+              <StatGrid
+                layout="2/3"
+                items={[
+                  { label: "ventas", value: history.count },
+                  { label: "ingresos", value: fmt(history.revenue) },
+                  {
+                    label: "ticket promedio",
+                    value: fmt(history.count > 0 ? history.revenue / history.count : 0),
+                    className: "col-span-2 md:col-span-1",
+                  },
+                ]}
+              />
               {history.byMonth.length === 0 ? (
-                <p className="py-6 text-center text-[13px] text-gray-400">
-                  Sin ventas cobradas en este rango.
-                </p>
+                <EmptyLine>Sin ventas cobradas en este rango.</EmptyLine>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {history.byMonth.map((m) => (
-                    <div key={m.key} className="flex items-center justify-between py-2.5">
-                      <span className="text-[13px] font-bold capitalize text-[#1C2526]">{m.label}</span>
-                      <div className="text-right">
-                        <p className="text-[13px] font-black text-[#1C2526]">{fmt(m.revenue)}</p>
-                        <p className="text-[10px] text-gray-400">{m.count} venta{m.count !== 1 ? "s" : ""}</p>
+                <div className="mt-4">
+                  <ListCard>
+                    {history.byMonth.map((m) => (
+                      <div key={m.key} className="flex items-center justify-between gap-3 py-3">
+                        <span className="text-[15px] capitalize" style={{ color: INK }}>{m.label}</span>
+                        <div className="shrink-0 text-right">
+                          <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{fmt(m.revenue)}</p>
+                          <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{plural(m.count, "venta", "ventas")}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </ListCard>
                 </div>
               )}
               {ents.historyDays != null && (
-                <p className="text-[11px] text-gray-400">
+                <p className="mt-3 text-[13px] leading-4" style={{ color: INK_SOFT }}>
                   Gratis ves los últimos {ents.historyDays} días. Todo tu historial es Pro.
                 </p>
               )}
             </>
           ) : (
-            <p className="py-6 text-center text-[13px] text-gray-400">No pudimos cargar el historial.</p>
+            <EmptyLine>No pudimos cargar el historial.</EmptyLine>
           )}
-        </div>
+        </section>
 
-        {/* Lower Grid: Top products and 30d lealtad */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
+        {/* ── Lo de 30 días y los platillos: una columna en móvil, dos desde md ── */}
+        <div className="flex flex-col gap-7 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-7">
+
           {/* Descuentos especiales (30d) — solo si hubo */}
           {data.discounts30d && (
-            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
-                🏷️ Descuentos especiales — 30 días
+            <section>
+              <SectionTitle right="últimos 30 días">Descuentos especiales</SectionTitle>
+              <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{fmt(data.discounts30d.total)}</p>
+              <p className="mt-0.5 text-[13px] leading-4" style={{ color: INK_MUTED }}>
+                dados en {plural(data.discounts30d.count, "venta", "ventas")} a equipo, familia y amigos. Los puntos siempre se calculan sobre lo pagado.
               </p>
-              <div>
-                <p className="text-[22px] font-black text-[#1C2526]">{fmt(data.discounts30d.total)}</p>
-                <p className="text-[11px] text-gray-400">
-                  dados en {data.discounts30d.count} venta{data.discounts30d.count !== 1 ? "s" : ""} (staff, familia…) — los puntos siempre se calculan sobre lo pagado
-                </p>
+              <div className="mt-3">
+                <ListCard>
+                  {Object.entries(data.discounts30d.byProfile)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, amt]) => (
+                      <div key={name} className="flex items-center justify-between gap-3 py-3">
+                        <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{name}</span>
+                        <span className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: INK }}>{fmt(amt)}</span>
+                      </div>
+                    ))}
+                </ListCard>
               </div>
-              <div className="divide-y divide-gray-100">
-                {Object.entries(data.discounts30d.byProfile)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([name, amt]) => (
-                    <div key={name} className="flex justify-between items-center py-2.5">
-                      <span className="text-[13px] font-bold text-[#1C2526]">🏷️ {name}</span>
-                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt)}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
+            </section>
           )}
 
           {/* Ventas por empleado (30d) — solo si la caja usa el equipo con PIN */}
           {data.staffSales30d && (
-            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
-                👤 Ventas por empleado — 30 días
-              </p>
-              <div className="divide-y divide-gray-100">
+            <section>
+              <SectionTitle right="últimos 30 días">Ventas por empleado</SectionTitle>
+              <ListCard>
                 {data.staffSales30d.map((r) => (
-                  <div key={r.name} className="flex justify-between items-center py-2.5">
-                    <span className="text-[13px] font-bold text-[#1C2526]">👤 {r.name}</span>
-                    <div className="text-right">
-                      <p className="text-[13px] font-black text-[#1C2526]">{fmt(r.revenue)}</p>
-                      <p className="text-[10px] text-gray-400">{r.count} venta{r.count !== 1 ? "s" : ""}</p>
+                  <div key={r.name} className="flex items-center justify-between gap-3 py-3">
+                    <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{r.name}</span>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{fmt(r.revenue)}</p>
+                      <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{plural(r.count, "venta", "ventas")}</p>
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </ListCard>
+            </section>
           )}
 
           {/* Propinas (30d) — para repartir justo al equipo */}
           {data.tips30d && (
-            <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-              <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">
-                💵 Propinas — 30 días
+            <section>
+              <SectionTitle right="últimos 30 días">Propinas</SectionTitle>
+              <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{fmt(data.tips30d.total)}</p>
+              <p className="mt-0.5 text-[13px] leading-4" style={{ color: INK_MUTED }}>
+                Aparte de tus ventas. No suman puntos ni comisión.
               </p>
-              <div>
-                <p className="text-[22px] font-black text-[#1C2526]">{fmt(data.tips30d.total)}</p>
-                <p className="text-[11px] text-gray-400">
-                  aparte de tus ventas — no suman puntos ni comisión
-                </p>
+              <div className="mt-3">
+                <StatGrid
+                  layout="2/2"
+                  items={[
+                    { label: "en efectivo", value: fmt(data.tips30d.cash), sub: "ya la tiene el equipo" },
+                    { label: "tarjeta o transferencia", value: fmt(data.tips30d.card), sub: "la cobró el negocio" },
+                  ]}
+                />
+                {/* Sin nota: cuando le paga al equipo lo decide el dueno
+                    (diario, semanal, quincenal). El copy no lo inventa. */}
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[11px] font-bold text-gray-400">💵 Efectivo</p>
-                  <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.cash)}</p>
-                  <p className="text-[10px] text-gray-400">ya la tienen</p>
-                </div>
-                <div className="rounded-2xl p-3" style={{ background: "#F5F3EF" }}>
-                  <p className="text-[11px] font-bold text-gray-400">💳 Tarjeta o transferencia</p>
-                  <p className="text-[16px] font-black text-[#1C2526]">{fmt(data.tips30d.card)}</p>
-                  <p className="text-[10px] text-gray-400">la cobró el negocio</p>
-                  {/* Sin nota: cuando le paga al equipo lo decide el dueno
-                      (diario, semanal, quincenal). El copy no lo inventa. */}
-                </div>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {Object.entries(data.tips30d.byStaff)
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .map(([name, amt]) => (
-                    <div key={name} className="flex justify-between items-center py-2.5">
-                      <div>
-                        <span className="text-[13px] font-bold text-[#1C2526]">💵 {name}</span>
-                        {amt.card > 0 && (
-                          <span className="ml-2 text-[11px]" style={{ color: "#F28C38" }}>
-                            💳 {fmt(amt.card)}
-                          </span>
-                        )}
+              <div className="mt-3">
+                <ListCard>
+                  {Object.entries(data.tips30d.byStaff)
+                    .sort((a, b) => b[1].total - a[1].total)
+                    .map(([name, amt]) => (
+                      <div key={name} className="flex items-center justify-between gap-3 py-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[15px]" style={{ color: INK }}>{name}</p>
+                          {amt.card > 0 && (
+                            <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+                              tarjeta o transferencia {fmt(amt.card)}
+                            </p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: INK }}>{fmt(amt.total)}</span>
                       </div>
-                      <span className="text-[13px] font-black text-[#1C2526]">{fmt(amt.total)}</span>
-                    </div>
-                  ))}
+                    ))}
+                </ListCard>
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Top selling items */}
-          <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">Top 5 productos más vendidos (últimos 7 días)</p>
+          {/* Platillos más vendidos (7 días) */}
+          <section>
+            <SectionTitle right="últimos 7 días">Platillos más vendidos</SectionTitle>
             {data.topProducts.length === 0 ? (
-              <div className="py-12 text-center text-gray-400 text-[13px]">
-                No se registraron ventas en los últimos 7 días
-              </div>
+              <EmptyLine>Sin ventas en los últimos 7 días.</EmptyLine>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <ListCard>
                 {data.topProducts.map((p, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-50 text-[11px] font-black text-[#F28C38]">
-                        #{idx + 1}
-                      </span>
-                      <span className="text-[13px] font-bold text-[#1C2526]">{p.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[13px] font-black text-[#1C2526]">{p.qty} unidades</p>
-                      <p className="text-[10px] text-gray-400">Total: {fmt(p.revenue)}</p>
+                  <div key={idx} className="flex items-center gap-3 py-3">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold tabular-nums"
+                      style={{ background: TILE, color: INK }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[15px]" style={{ color: INK }}>{p.name}</span>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{plural(p.qty, "unidad", "unidades")}</p>
+                      <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{fmt(p.revenue)}</p>
                     </div>
                   </div>
                 ))}
-              </div>
+              </ListCard>
             )}
-          </div>
+          </section>
 
-          {/* 30-Day Insights */}
-          <div className="rounded-3xl p-6 bg-white space-y-4" style={{ border: "1px solid rgba(28,37,38,0.07)" }}>
-            <p className="text-[14px] font-bold text-[#1C2526] border-b border-gray-100 pb-2">Métricas de fidelidad (30 días)</p>
+          {/* Lealtad (30 días) */}
+          <section>
+            <SectionTitle right="últimos 30 días">Lealtad</SectionTitle>
             {data.metrics30d ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visitas Comeleal</p>
-                  <p className="text-[20px] font-black text-[#1C2526]">{data.metrics30d.scans30d}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Canjes de premios</p>
-                  <p className="text-[20px] font-black text-[#1C2526]">{data.metrics30d.redemptions30d}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clientes únicos</p>
-                  <p className="text-[20px] font-black text-[#1C2526]">{data.metrics30d.uniqueCustomers30d}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-2xl space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clientes en riesgo</p>
-                  <p className="text-[20px] font-black text-[#F28C38]">{data.metrics30d.atRiskCount}</p>
-                </div>
-              </div>
+              <StatGrid
+                layout="2/4"
+                items={[
+                  { label: "visitas Comeleal", value: data.metrics30d.scans30d },
+                  { label: "premios canjeados", value: data.metrics30d.redemptions30d },
+                  { label: "clientes distintos", value: data.metrics30d.uniqueCustomers30d },
+                  { label: "clientes en riesgo", value: data.metrics30d.atRiskCount },
+                ]}
+              />
             ) : (
-              <div className="py-16 text-center text-gray-400 text-[13px]">
-                <span className="block text-2xl mb-2">🤖</span>
-                El Brain de Comeleal está calculando tus métricas mensuales. Vuelve mañana.
-              </div>
+              <EmptyLine>Todavía estamos sumando tus números del mes. Vuelve mañana.</EmptyLine>
             )}
-          </div>
+          </section>
 
         </div>
 
-      </main>
+      </div>
 
       {/* ── Pared 1: historial >30 días ── */}
       {wallOpen && ent && data && (
@@ -925,6 +974,6 @@ export default function ReportesPage() {
           }}
         />
       )}
-    </div>
+    </main>
   );
 }

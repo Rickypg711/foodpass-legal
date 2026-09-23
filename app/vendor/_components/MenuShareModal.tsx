@@ -36,6 +36,18 @@ const ORANGE = "#F28C38";
 const ORANGE_PRINT = "#A84E0A";
 const CREAM = "#FAF7F2";
 const INK = "#1C2526";
+// Opción A (23-sep-2026, lienzo "Sistema Comeleal"): la cáscara del modal usa
+// los mismos tokens que el Panel; la TARJETA de abajo es un objeto impreso y
+// conserva su propio diseño (borde de marca, naranja profundo para papel).
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK_SOFT = "#5B6366";
+const BORDER = "#D9D2C5";
+const SUCCESS = "#15803D";
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconClose() { return <svg {...ICON} width={20} height={20}><path d="M6 6l12 12M18 6L6 18" /></svg>; }
+function IconShare() { return <svg {...ICON}><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6" /></svg>; }
+function IconPrinter() { return <svg {...ICON}><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z" /></svg>; }
+function IconCopy() { return <svg {...ICON}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a1 1 0 0 1 1-1h10" /></svg>; }
 
 export default function MenuShareModal({
   restaurantId,
@@ -146,7 +158,7 @@ export default function MenuShareModal({
         URL.revokeObjectURL(a.href);
       }
       await navigator.clipboard.writeText(shareUrl);
-      flash(file ? "Tarjeta descargada y link copiado ✅" : "Link copiado ✅");
+      flash(file ? "Tarjeta descargada y link copiado" : "Link copiado");
     } catch {
       // share sheet cerrado por el usuario — no-op
     } finally {
@@ -157,7 +169,7 @@ export default function MenuShareModal({
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      flash("Link copiado ✅");
+      flash("Link copiado");
     } catch {
       // clipboard bloqueado — el link queda visible para copiar a mano
     }
@@ -185,26 +197,29 @@ export default function MenuShareModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="menu-share-title"
+        className="w-full max-w-sm rounded-t-xl bg-white p-5 sm:rounded-xl"
         style={{ maxHeight: "92vh", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-[15px] font-extrabold" style={{ color: INK }}>
+        <div className="mb-4 flex items-center justify-between">
+          <p id="menu-share-title" className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
             Compartir menú
           </p>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-full px-2 text-[18px]"
-            style={{ color: "rgba(28,37,38,0.5)" }}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:opacity-70"
+            style={{ color: INK_SOFT }}
           >
-            ✕
+            <IconClose />
           </button>
         </div>
 
@@ -244,7 +259,7 @@ export default function MenuShareModal({
             </div>
           )}
           <p className="mt-2 text-[20px] font-extrabold leading-tight" style={{ color: INK }}>
-            {name || " "}
+            {name || " "}
           </p>
           <div className="mt-1.5 h-1 w-14 rounded-full" style={{ background: brandColor ?? ORANGE }} />
           <p className="mt-2.5 text-[14px] font-bold" style={{ color: INK }}>
@@ -264,48 +279,54 @@ export default function MenuShareModal({
           </p>
         </div>
 
-        {/* Fila de link: tocar copia. Lleva su propia linea de contexto porque
-            NO es la misma liga que imprime la tarjeta, y sin decirlo eso se
-            lee como un error. Dice lo que recibe el que la abre. */}
-        {/* 0.65, no 0.45: a 11px el token muteado de la tarjeta da 2.74:1 y el
-            piso es 4.5:1. La jerarquia la carga el tamaño —la liga de abajo va
-            a 13px y es lo accionable—, no el gris. Un gris clarito "elegante"
-            aqui solo lo vuelve ilegible. */}
-        <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
+        {/* El link que se manda NO es el que imprime la tarjeta (la tarjeta va
+            a la carta; el link va a la portada con teléfono y ubicación). Se
+            dice en una línea para que no se lea como error. */}
+        <p className="mt-4 text-[13px] leading-4" style={{ color: INK_SOFT }}>
           El link que mandas lleva tu menú, tu teléfono y tu ubicación
         </p>
-        <button
-          type="button"
-          onClick={handleCopy}
-          aria-label={`Copiar mi link: ${shareUrl}`}
-          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold"
-          style={{ color: "rgba(28,37,38,0.65)" }}
-        >
-          <span className="truncate">{shareUrl.replace(/^https?:\/\/(www\.)?/, "")}</span>
-          <span style={{ color: ORANGE }} aria-hidden>⧉</span>
-        </button>
+        <div className="mt-1.5 flex gap-2">
+          <div
+            className="flex h-12 min-w-0 flex-1 items-center rounded-xl bg-white px-3.5 text-[15px]"
+            style={{ border: `1px solid ${BORDER}`, color: INK }}
+            title={shareUrl}
+          >
+            <span className="truncate">{shareUrl.replace(/^https?:\/\/(www\.)?/, "")}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={`Copiar mi link: ${shareUrl}`}
+            className="flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+            style={{ border: `1px solid ${BORDER}`, color: INK }}
+          >
+            <IconCopy />
+            Copiar
+          </button>
+        </div>
 
         <button
           type="button"
           onClick={handleShare}
           disabled={busy}
-          className="mt-1 w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white disabled:opacity-60"
-          style={{ background: ORANGE }}
+          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+          style={{ background: ORANGE, color: INK }}
         >
-          {busy ? "…" : "📤 Compartir"}
+          {busy ? "…" : <><IconShare />Compartir</>}
         </button>
         <button
           type="button"
           onClick={handlePrint}
           disabled={busy}
-          className="mt-2 w-full rounded-2xl border py-3 text-[14px] font-bold disabled:opacity-60"
-          style={{ borderColor: "rgba(242,140,56,0.35)", color: ORANGE }}
+          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+          style={{ border: `1px solid ${BORDER}`, color: INK }}
         >
-          🖨️ Imprimir tarjeta
+          <IconPrinter />
+          Imprimir tarjeta
         </button>
 
         {feedback && (
-          <p className="mt-2 text-center text-[12px] font-bold" style={{ color: "#15803D" }}>
+          <p className="mt-2 text-center text-[13px] font-semibold" style={{ color: SUCCESS }}>
             {feedback}
           </p>
         )}

@@ -239,6 +239,125 @@ function CartRow({
 // El dispositivo queda logueado como el venue; cada persona teclea su PIN de
 // 4 dígitos para "tomar la caja". Cada venta se estampa con soldBy.
 
+// Opción A (23-sep-2026): piezas compartidas por los diálogos de la Caja.
+// Mismos tokens que la cáscara; nada de verdes/rojos de fondo ni emojis.
+const CREAM = "#FAF9F5";
+const WARN = "#B45309";
+const SUCCESS = "#15803D";
+const DANGER = "#B91C1C";
+const INPUT_CLS = "h-12 w-full rounded-xl bg-white px-4 text-[16px] outline-none placeholder:text-[#5B6366]";
+const INPUT_STYLE = { border: `1px solid ${BORDER}`, color: INK } as const;
+
+function IconClose() { return <svg {...ICON} width={20} height={20}><path d="M6 6l12 12M18 6L6 18" /></svg>; }
+function IconCheck() { return <svg {...ICON} width={26} height={26} strokeWidth={2}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>; }
+function IconBackspace() { return <svg {...ICON} width={22} height={22}><path d="M21 6H8l-5 6 5 6h13a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z" /><path d="M12 9l6 6M18 9l-6 6" /></svg>; }
+
+/** Marco de todo diálogo: hoja desde abajo en móvil (radio 16 arriba) y
+ *  tarjeta centrada en escritorio (radio 12). Sin sombra: borde `#D9D2C5`. */
+function ModalFrame({
+  onBackdrop,
+  widthClass = "md:w-[440px]",
+  maxHeight = "90vh",
+  z = "z-50",
+  children,
+}: {
+  onBackdrop?: () => void;
+  widthClass?: string;
+  maxHeight?: string;
+  z?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`fixed inset-0 ${z} flex items-end justify-center md:items-center md:p-4`}
+      style={{ background: "rgba(28,37,38,0.5)" }}
+      onClick={onBackdrop}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={`flex w-full flex-col overflow-hidden rounded-t-2xl bg-white md:rounded-xl ${widthClass}`}
+        style={{ maxHeight, border: `1px solid ${BORDER}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DialogHeader({ title, caption, onClose }: { title: string; caption?: ReactNode; onClose?: () => void }) {
+  return (
+    <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-3 pt-4" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+      <div className="min-w-0">
+        <p className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>{title}</p>
+        {caption ? <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>{caption}</p> : null}
+      </div>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+          style={{ color: INK }}
+        >
+          <IconClose />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1.5 block text-[13px] font-medium leading-[18px]" style={{ color: INK_MUTED }}>
+      {children}
+    </label>
+  );
+}
+
+/** Chip/segmento de 44px: activo = fondo tinta, texto crema. */
+function Seg({
+  active,
+  onClick,
+  children,
+  className = "",
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex h-11 items-center justify-center rounded-xl px-3 text-[14px] font-semibold transition active:scale-[0.98] ${className}`}
+      style={
+        active
+          ? { background: INK, color: CREAM, border: `1px solid ${INK}` }
+          : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function PinKey({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-14 w-14 items-center justify-center rounded-xl bg-white text-[20px] font-semibold tabular-nums transition active:scale-[0.96]"
+      style={{ border: `1px solid ${BORDER}`, color: INK }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function SellerPinDialog({
   open,
   roster,
@@ -254,9 +373,15 @@ function SellerPinDialog({
 }) {
   const [pin, setPin] = useState("");
   const [bad, setBad] = useState(false);
+  const padRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) { setPin(""); setBad(false); }
+  }, [open]);
+
+  // El teclado físico también sirve (tablet con teclado, escritorio).
+  useEffect(() => {
+    if (open) padRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
@@ -273,70 +398,89 @@ function SellerPinDialog({
 
   if (!open) return null;
 
+  const pressDigit = (d: string) => {
+    if (bad) setBad(false);
+    setPin((p) => (p.length < 4 ? p + d : p));
+  };
+  const erase = () => {
+    if (bad) setBad(false);
+    setPin((p) => p.slice(0, -1));
+  };
+  const activos = roster.filter((m) => m.active);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(28,37,38,0.5)" }}
-      onClick={onClose}
-    >
+    <ModalFrame onBackdrop={onClose} widthClass="md:w-[360px]">
       <div
-        className="w-full max-w-sm rounded-3xl bg-white p-6"
-        onClick={(e) => e.stopPropagation()}
+        ref={padRef}
+        tabIndex={-1}
+        className="px-5 pb-5 pt-4 outline-none"
+        onKeyDown={(e) => {
+          if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pressDigit(e.key); }
+          else if (e.key === "Backspace") { e.preventDefault(); erase(); }
+          else if (e.key === "Escape") onClose();
+        }}
       >
-        <p className="text-[16px] font-extrabold" style={{ color: "#1C2526" }}>
-          👤 ¿Quién cobra?
-        </p>
-        <p className="mt-1 text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-          Teclea tu PIN de 4 dígitos — las ventas quedan a tu nombre.
+        <p className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>¿Quién cobra?</p>
+        <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+          Teclea tu PIN de 4 dígitos. Las ventas quedan a tu nombre.
         </p>
 
-        <input
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          autoFocus
-          value={pin}
-          onChange={(e) => {
-            setPin(e.target.value.replace(/\D/g, ""));
-            if (bad) setBad(false);
-          }}
-          placeholder="••••"
-          className="mt-4 w-full rounded-2xl px-4 py-3.5 text-center font-mono text-[24px] font-black tracking-[0.5em] outline-none"
-          style={{
-            background: "#F5F3EF",
-            border: bad ? "2px solid #EF4444" : "2px solid rgba(28,37,38,0.12)",
-            color: "#1C2526",
-          }}
-        />
-        {bad && (
-          <p className="mt-2 text-center text-[12px] font-semibold" style={{ color: "#dc2626" }}>
-            PIN incorrecto — intenta de nuevo
-          </p>
-        )}
-
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {roster.filter((m) => m.active).map((m) => (
+        {/* Puntos del PIN */}
+        <div className="mt-5 flex items-center justify-center gap-3" aria-label={`${pin.length} de 4 dígitos`}>
+          {[0, 1, 2, 3].map((i) => (
             <span
-              key={m.id}
-              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-              style={
-                current?.staffId === m.id
-                  ? { background: "rgba(242,140,56,0.15)", color: "#F28C38" }
-                  : { background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }
-              }
-            >
-              {current?.staffId === m.id ? "✓ " : ""}{m.name}
-            </span>
+              key={i}
+              className="h-3 w-3 rounded-full"
+              style={{ background: i < pin.length ? INK : "transparent", border: `1.5px solid ${bad ? DANGER : INK}` }}
+            />
           ))}
         </div>
+        <p className="mt-2 h-[18px] text-center text-[13px] leading-[18px]" style={{ color: DANGER }} role="alert">
+          {bad ? "PIN incorrecto. Intenta de nuevo." : ""}
+        </p>
 
-        <div className="mt-4 flex gap-2">
+        {/* Teclado: teclas de 56px, blancas con borde */}
+        <div className="mx-auto mt-3 grid grid-cols-3 gap-2" style={{ width: 184 }}>
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
+            <PinKey key={d} label={d} onClick={() => pressDigit(d)} />
+          ))}
+          <span aria-hidden />
+          <PinKey label="0" onClick={() => pressDigit("0")} />
+          <button
+            type="button"
+            onClick={erase}
+            aria-label="Borrar"
+            className="flex h-14 w-14 items-center justify-center rounded-xl transition active:scale-[0.96]"
+            style={{ color: INK }}
+          >
+            <IconBackspace />
+          </button>
+        </div>
+
+        {activos.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {activos.map((m) => {
+              const on = current?.staffId === m.id;
+              return (
+                <span
+                  key={m.id}
+                  className="inline-flex h-[24px] items-center rounded-full px-2.5 text-[12px] font-semibold"
+                  style={on ? { background: INK, color: CREAM } : { background: TILE, color: INK_MUTED }}
+                >
+                  {m.name}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col gap-2">
           {current && (
             <button
               type="button"
               onClick={() => onPick(null)}
-              className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold"
-              style={{ background: "rgba(239,68,68,0.08)", color: "#dc2626" }}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
             >
               Quitar vendedor
             </button>
@@ -344,14 +488,14 @@ function SellerPinDialog({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-semibold"
-            style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+            className="flex h-11 w-full items-center justify-center text-[14px] font-semibold hover:underline"
+            style={{ color: LINK }}
           >
             Cerrar
           </button>
         </div>
       </div>
-    </div>
+    </ModalFrame>
   );
 }
 
@@ -459,59 +603,46 @@ function CheckoutDialog({
   const effTipMethod: PaymentMethod = tipMethod ?? method;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }}>
-      <div
-        className="w-full rounded-t-3xl md:w-[440px] md:rounded-3xl overflow-hidden"
-        style={{ background: "#ffffff", maxHeight: "90vh", overflowY: "auto" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
-          <div>
-            <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>{isRedeemOnly ? "Canjear premio" : "Cobrar"}</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-              {isRedeemOnly ? (
-                "Sin venta — solo entregar premio"
-              ) : discountRes && discountRes.amount > 0 ? (
-                <>
-                  {/* Original TACHADO junto al neto (mismo patrón que la app):
-                      el cajero ve qué era, cuánto se fue y qué se cobra. */}
-                  Total:{" "}
-                  <span style={{ textDecoration: "line-through", color: "rgba(28,37,38,0.3)" }}>
-                    {fmt(total)}
-                  </span>{" "}
-                  <span className="font-bold">{fmt(effTotal)}</span>
-                  {` · 🏷️ desc. ${fmt(discountRes.amount)}`}
-                  {tipAmount > 0 ? ` · 💵 propina ${fmt(tipAmount)}` : ""}
-                </>
-              ) : tipAmount > 0 ? (
-                `Total: ${fmt(total)} · 💵 propina ${fmt(tipAmount)}`
-              ) : (
-                `Total: ${fmt(total)}`
-              )}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-[18px]"
-            style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
-          >
-            ×
-          </button>
-        </div>
+    <ModalFrame widthClass="md:w-[440px]">
+      <DialogHeader
+        title={isRedeemOnly ? "Canjear premio" : "Cobrar"}
+        caption={
+          isRedeemOnly ? (
+            "Sin venta, solo entregar premio"
+          ) : discountRes && discountRes.amount > 0 ? (
+            <>
+              {/* Original TACHADO junto al neto (mismo patrón que la app):
+                  el cajero ve qué era, cuánto se fue y qué se cobra. */}
+              Total:{" "}
+              <span className="tabular-nums" style={{ textDecoration: "line-through", color: INK_SOFT }}>
+                {fmt(total)}
+              </span>{" "}
+              <span className="font-bold tabular-nums" style={{ color: INK }}>{fmt(effTotal)}</span>
+              {` · descuento ${fmt(discountRes.amount)}`}
+              {tipAmount > 0 ? ` · propina ${fmt(tipAmount)}` : ""}
+            </>
+          ) : tipAmount > 0 ? (
+            `Total: ${fmt(total)} · propina ${fmt(tipAmount)}`
+          ) : (
+            `Total: ${fmt(total)}`
+          )
+        }
+        onClose={onClose}
+      />
 
-        <div className="p-6 space-y-5">
-          {/* Mode selector — irrelevant for a $0 reward handoff */}
-          {!isRedeemOnly && (
+      <div className="min-h-0 space-y-5 overflow-y-auto px-5 py-5">
+        {/* Mode selector — irrelevant for a $0 reward handoff */}
+        {!isRedeemOnly && (
           <div>
-            <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>¿Cómo cobrar?</p>
+            <FieldLabel>¿Cómo cobrar?</FieldLabel>
             <div className="grid grid-cols-2 gap-2">
               {([
-                { key: "now", emoji: "⚡", label: "Cobrar ahora", sub: paymentMethodsSentence(paymentOptions.map((o) => o.key)) },
-                { key: "tab", emoji: "📋", label: "Cuenta abierta", sub: tableTabsLocked ? "⭐ Pro · cobrar después" : "Cobrar después" },
-              ] as { key: CheckoutMode; emoji: string; label: string; sub: string }[]).map((opt) => (
-                <button
+                { key: "now", label: "Cobrar ahora" },
+                { key: "tab", label: tableTabsLocked ? "Cuenta abierta · Pro" : "Cuenta abierta" },
+              ] as { key: CheckoutMode; label: string }[]).map((opt) => (
+                <Seg
                   key={opt.key}
+                  active={mode === opt.key}
                   onClick={() => {
                     // Reja cerrada: la pared sale AL TOCAR, no después de teclear un nombre.
                     if (opt.key === "tab" && tableTabsLocked && onTabsLocked) {
@@ -521,267 +652,233 @@ function CheckoutDialog({
                     }
                     setMode(opt.key);
                   }}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl p-4 transition-all"
-                  style={
-                    mode === opt.key
-                      ? { background: "rgba(217,119,87,0.1)", border: "2px solid #F28C38" }
-                      : { background: "#F5F3EF", border: "2px solid transparent" }
-                  }
                 >
-                  <span className="text-[22px]">{opt.emoji}</span>
-                  <p className="text-[13px] font-bold" style={{ color: "#1C2526" }}>{opt.label}</p>
-                  <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>{opt.sub}</p>
-                </button>
+                  {opt.label}
+                </Seg>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
+              {mode === "now"
+                ? paymentMethodsSentence(paymentOptions.map((o) => o.key))
+                : "Se cobra después, cuando cierres la cuenta."}
+            </p>
+          </div>
+        )}
+
+        {/* Payment method — only when actually charging money */}
+        {mode === "now" && !isRedeemOnly && (
+          <div>
+            <FieldLabel>Método de pago</FieldLabel>
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
+              {paymentOptions.map((m) => (
+                <Seg key={m.key} active={method === m.key} onClick={() => setMethod(m.key)} className="px-2">
+                  {m.label}
+                </Seg>
               ))}
             </div>
           </div>
-          )}
+        )}
 
-          {/* Payment method — only when actually charging money */}
-          {mode === "now" && !isRedeemOnly && (
-            <div>
-              <p className="mb-2.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Método de pago</p>
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
-                {paymentOptions.map((m) => (
-                  <button
-                    key={m.key}
-                    onClick={() => setMethod(m.key)}
-                    // Tres en fila: emoji arriba y nombre abajo — "Transferencia"
-                    // no cabe al lado del emoji en una columna de 3.
-                    className="flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 transition-all"
-                    style={
-                      method === m.key
-                        ? { background: "rgba(217,119,87,0.1)", border: "2px solid #F28C38" }
-                        : { background: "#F5F3EF", border: "2px solid transparent" }
-                    }
-                  >
-                    <span className="text-[20px]">{m.emoji}</span>
-                    <span className="text-[12px] font-bold" style={{ color: "#1C2526" }}>{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Customer phone → rewards → name → notes.
-              Phone is first: it's the loyalty identifier that pulls up points. */}
-          <div className="space-y-3">
-            <div>
-              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                📱 Teléfono del cliente {isRedeemOnly ? "(requerido para canjear)" : "(opcional)"}
-              </label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={loyaltyLive ? "Para sus puntos — 614 123 4567" : "Para su ticket y promos — 614 123 4567"}
-                maxLength={16}
-                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-              />
-              <p className="mt-1 text-[10px]" style={{ color: "rgba(28,37,38,0.35)" }}>
-                {/* Con el número de ESTA venta, no "junta puntos" a secas. */}
-                {loyaltyLive
-                  ? `${cashierEarnLine(earnPreview) ?? "Junta puntos automáticamente"} — y si el número tiene descuento asignado (staff/familia), se aplica solo. ⭐`
-                  : "Le mandas su ticket y le avisas de promos — y si el número tiene descuento asignado (staff/familia), se aplica solo."}{" "}
-                Al darlo acepta el{" "}
-                <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline">
-                  Aviso de Privacidad
-                </a>.
-              </p>
-            </div>
-
-            {/* La bienvenida es la razón para pedir el número aunque sea su
-                primera vez. Solo mientras faltan dígitos: con 10 manda
-                PosRedemption (su estado real). */}
-            {loyaltyLive && phoneDigitsTyped.length < 10 && cashierWelcomeLine(earnPreview) ? (
-              <p className="text-[11px] font-semibold" style={{ color: "#B45309" }}>
-                {"🎁 "}{cashierWelcomeLine(earnPreview)}.
-              </p>
-            ) : null}
-
-            {/* Redemption: balance + unlocked rewards for the typed phone.
-                Selecting one asks for the customer's código de canje. */}
-            <PosRedemption
-              restaurantId={restaurantId}
-              phoneDigits={phone}
-              onSelect={setRedemption}
-              onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
-              onDiscount={setDiscountProfile}
-              canAssignDiscount={canAssignDiscount}
+        {/* Customer phone → rewards → name → notes.
+            Phone is first: it's the loyalty identifier that pulls up points. */}
+        <div className="space-y-4">
+          <div>
+            <FieldLabel htmlFor="pos-phone">
+              Teléfono del cliente {isRedeemOnly ? "(requerido para canjear)" : "(opcional)"}
+            </FieldLabel>
+            <input
+              id="pos-phone"
+              type="tel"
+              inputMode="numeric"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={loyaltyLive ? "Para sus puntos — 614 123 4567" : "Para su ticket y promos — 614 123 4567"}
+              maxLength={16}
+              className={INPUT_CLS}
+              style={INPUT_STYLE}
             />
-            <div>
-              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                {mode === "tab" ? "Nombre de la cuenta (requerido)" : "Nombre del cliente (opcional)"}
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={mode === "tab" ? "Mesa 3, Juan..." : "Para el ticket"}
-                className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-                style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-              />
-            </div>
-            {/* Notes: collapsed behind a link during a $0 canje so the fast
-                lane stays clean, but the kitchen note is one tap away (the free
-                premio still rides to the kitchen as a $0 line). */}
-            {isRedeemOnly && !showNote ? (
-              <button
-                type="button"
-                onClick={() => setShowNote(true)}
-                className="text-[12px] font-semibold"
-                style={{ color: "rgba(28,37,38,0.45)" }}
-              >
-                ➕ Nota para cocina
-              </button>
-            ) : (
-              <div>
-                <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>Notas (opcional)</label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Sin cebolla, extra salsa..."
-                  className="w-full rounded-xl px-4 py-2.5 text-[13px] outline-none"
-                  style={{ background: "#F5F3EF", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-                  autoFocus={isRedeemOnly}
-                />
-              </div>
-            )}
+            <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
+              {/* Con el número de ESTA venta, no "junta puntos" a secas. */}
+              {loyaltyLive
+                ? `${cashierEarnLine(earnPreview) ?? "Junta puntos automáticamente"}. Si el número tiene descuento asignado (staff o familia), se aplica solo.`
+                : "Le mandas su ticket y le avisas de promos. Si el número tiene descuento asignado (staff o familia), se aplica solo."}{" "}
+              Al darlo acepta el{" "}
+              <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: LINK }}>
+                Aviso de Privacidad
+              </a>.
+            </p>
           </div>
 
-          {/* ── Propina (opcional, solo al cobrar ahora) ── */}
-          {mode === "now" && !isRedeemOnly && (
-            <div>
-              <label className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                💵 Propina (opcional)
-              </label>
-              <div className="flex items-center gap-1.5">
-                {[10, 15, 20].map((pct) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={() => {
-                      setTipCustom("");
-                      setTipPct((cur) => (cur === pct ? null : pct));
-                    }}
-                    className="flex-1 rounded-xl px-2 py-2.5 text-[13px] font-bold transition-all"
-                    style={
-                      tipPct === pct && tipCustom === ""
-                        ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
-                        : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
-                    }
-                  >
-                    {pct}%
-                  </button>
-                ))}
-                <div className="flex flex-1 items-center gap-1 rounded-xl px-2" style={{ background: "#F5F3EF", border: "1.5px solid rgba(28,37,38,0.1)" }}>
-                  <span className="text-[13px] font-semibold" style={{ color: "rgba(28,37,38,0.4)" }}>$</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={tipCustom}
-                    placeholder="otra"
-                    onChange={(e) => {
-                      setTipPct(null);
-                      setTipCustom(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)));
-                    }}
-                    className="w-full bg-transparent py-2.5 text-[13px] font-bold outline-none"
-                    style={{ color: "#1C2526" }}
-                  />
-                </div>
-              </div>
-              {tipAmount > 0 && (
-                <>
-                  <div className="mt-2.5">
-                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(28,37,38,0.4)" }}>
-                      ¿Cómo dejó la propina?
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      {paymentOptions.map((t) => (
-                        <button
-                          key={t.key}
-                          type="button"
-                          onClick={() => setTipMethod(t.key)}
-                          className="flex-1 rounded-xl px-1 py-2.5 text-[12px] font-bold transition-all"
-                          style={
-                            effTipMethod === t.key
-                              ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
-                              : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
-                          }
-                        >
-                          {t.emoji} {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
-                    La propina no suma puntos de lealtad — va aparte, íntegra para el equipo.
-                    {/* Solo se dice algo del EFECTIVO, que es el dato accionable
-                        ("no se la vuelvas a pagar"). De la tarjeta no se dice
-                        nada a proposito: cuando el dueno le paga a su equipo es
-                        decision suya — diario, semanal o quincenal — y el copy
-                        no tiene por que inventarlo. */}
-                    {effTipMethod === "cash"
-                      ? " En efectivo el mesero ya la tiene en la mano."
-                      : ""}
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Confirm */}
-          {redemption ? (
-            <p className="text-center text-[12px] font-bold" style={{ color: "#16A34A" }}>
-              🎁 Incluye: {redemption.name} GRATIS
-              {redemption.points > 0
-                ? ` (−${redemption.points} pts)`
-                : redemption.freeItemSource === "referral"
-                  ? // §6: el cajero tiene que saber QUÉ está entregando. Un taco
-                    // de referido no es la bienvenida: se lo ganó porque su
-                    // amigo vino, y decirlo en voz alta es la mitad del premio.
-                    ` (referido${redemption.freeItemReferredName ? ` de ${redemption.freeItemReferredName}` : ""})`
-                  : " (bienvenida)"}
+          {/* La bienvenida es la razón para pedir el número aunque sea su
+              primera vez. Solo mientras faltan dígitos: con 10 manda
+              PosRedemption (su estado real). */}
+          {loyaltyLive && phoneDigitsTyped.length < 10 && cashierWelcomeLine(earnPreview) ? (
+            <p className="text-[13px] font-semibold leading-[18px]" style={{ color: WARN }}>
+              {cashierWelcomeLine(earnPreview)}.
             </p>
           ) : null}
-          <button
-            onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile, mode === "now" ? tipAmount : 0, effTipMethod)}
-            disabled={
-              processing ||
-              (mode === "tab" && !name.trim()) ||
-              (total <= 0 && !redemption)
-            }
-            className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-opacity disabled:opacity-40"
-            style={{ background: mode === "now" ? "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" : "#1C2526" }}
-          >
-            {processing ? (
-              <span className="flex items-center justify-center gap-2">
-                <Spinner size={16} />
-                Procesando…
-              </span>
-            ) : mode === "now" ? (
-              isRedeemOnly
-                ? (redemption ? "Entregar premio ✓" : "Elige un premio para canjear ↑")
-                : `Cobrar ${fmt(grandTotal)}`
-            ) : !name.trim() ? (
-              // Gris callado se leía como "no sirve": se dice qué falta.
-              "Escribe el nombre de la cuenta ↑"
-            ) : (
-              `Abrir cuenta — ${fmt(effTotal)}`
-            )}
-          </button>
+
+          {/* Redemption: balance + unlocked rewards for the typed phone.
+              Selecting one asks for the customer's código de canje. */}
+          <PosRedemption
+            restaurantId={restaurantId}
+            phoneDigits={phone}
+            onSelect={setRedemption}
+            onCustomerName={(n) => setName((prev) => (prev.trim() ? prev : n))}
+            onDiscount={setDiscountProfile}
+            canAssignDiscount={canAssignDiscount}
+          />
+          <div>
+            <FieldLabel htmlFor="pos-name">
+              {mode === "tab" ? "Nombre de la cuenta (requerido)" : "Nombre del cliente (opcional)"}
+            </FieldLabel>
+            <input
+              id="pos-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={mode === "tab" ? "Mesa 3, Juan..." : "Para el ticket"}
+              className={INPUT_CLS}
+              style={INPUT_STYLE}
+            />
+          </div>
+          {/* Notes: collapsed behind a link during a $0 canje so the fast
+              lane stays clean, but the kitchen note is one tap away (the free
+              premio still rides to the kitchen as a $0 line). */}
+          {isRedeemOnly && !showNote ? (
+            <button
+              type="button"
+              onClick={() => setShowNote(true)}
+              className="text-[14px] font-semibold hover:underline"
+              style={{ color: LINK }}
+            >
+              Agregar nota para cocina
+            </button>
+          ) : (
+            <div>
+              <FieldLabel htmlFor="pos-notes">Notas (opcional)</FieldLabel>
+              <input
+                id="pos-notes"
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Sin cebolla, extra salsa..."
+                className={INPUT_CLS}
+                style={INPUT_STYLE}
+                autoFocus={isRedeemOnly}
+              />
+            </div>
+          )}
         </div>
+
+        {/* ── Propina (opcional, solo al cobrar ahora) ── */}
+        {mode === "now" && !isRedeemOnly && (
+          <div>
+            <FieldLabel>Propina (opcional)</FieldLabel>
+            <div className="flex items-center gap-2">
+              {[10, 15, 20].map((pct) => (
+                <Seg
+                  key={pct}
+                  active={tipPct === pct && tipCustom === ""}
+                  onClick={() => {
+                    setTipCustom("");
+                    setTipPct((cur) => (cur === pct ? null : pct));
+                  }}
+                  className="flex-1 px-2 tabular-nums"
+                >
+                  {pct}%
+                </Seg>
+              ))}
+              <div className="flex h-11 flex-1 items-center gap-1 rounded-xl bg-white px-3" style={{ border: `1px solid ${BORDER}` }}>
+                <span className="text-[14px]" style={{ color: INK_SOFT }}>$</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={tipCustom}
+                  placeholder="otra"
+                  aria-label="Otra propina"
+                  onChange={(e) => {
+                    setTipPct(null);
+                    setTipCustom(e.target.value === "" ? "" : Math.max(0, Number(e.target.value)));
+                  }}
+                  className="w-full min-w-0 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:text-[#5B6366]"
+                  style={{ color: INK }}
+                />
+              </div>
+            </div>
+            {tipAmount > 0 && (
+              <>
+                <div className="mt-3">
+                  <FieldLabel>¿Cómo dejó la propina?</FieldLabel>
+                  <div className="flex items-center gap-2">
+                    {paymentOptions.map((t) => (
+                      <Seg key={t.key} active={effTipMethod === t.key} onClick={() => setTipMethod(t.key)} className="flex-1 px-1">
+                        {t.label}
+                      </Seg>
+                    ))}
+                  </div>
+                </div>
+                <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
+                  La propina no suma puntos de lealtad. Va aparte, íntegra para el equipo.
+                  {/* Solo se dice algo del EFECTIVO, que es el dato accionable
+                      ("no se la vuelvas a pagar"). De la tarjeta no se dice
+                      nada a proposito: cuando el dueno le paga a su equipo es
+                      decision suya — diario, semanal o quincenal — y el copy
+                      no tiene por que inventarlo. */}
+                  {effTipMethod === "cash"
+                    ? " En efectivo el mesero ya la tiene en la mano."
+                    : ""}
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Confirm */}
+        {redemption ? (
+          <p className="text-center text-[14px] font-semibold leading-5" style={{ color: SUCCESS }}>
+            Incluye: {redemption.name} gratis
+            {redemption.points > 0
+              ? ` (−${redemption.points} pts)`
+              : redemption.freeItemSource === "referral"
+                ? // §6: el cajero tiene que saber QUÉ está entregando. Un taco
+                  // de referido no es la bienvenida: se lo ganó porque su
+                  // amigo vino, y decirlo en voz alta es la mitad del premio.
+                  ` (referido${redemption.freeItemReferredName ? ` de ${redemption.freeItemReferredName}` : ""})`
+                : " (bienvenida)"}
+          </p>
+        ) : null}
+        <button
+          onClick={() => onConfirm(mode, method, name, phone, notes, redemption, discountProfile, mode === "now" ? tipAmount : 0, effTipMethod)}
+          disabled={
+            processing ||
+            (mode === "tab" && !name.trim()) ||
+            (total <= 0 && !redemption)
+          }
+          className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+          style={mode === "now" ? { background: BRAND, color: INK } : { background: INK, color: CREAM }}
+        >
+          {processing ? (
+            "Procesando…"
+          ) : mode === "now" ? (
+            isRedeemOnly
+              ? (redemption ? "Entregar premio" : "Elige un premio para canjear ↑")
+              : `Cobrar ${fmt(grandTotal)}`
+          ) : !name.trim() ? (
+            // Gris callado se leía como "no sirve": se dice qué falta.
+            "Escribe el nombre de la cuenta ↑"
+          ) : (
+            `Abrir cuenta · ${fmt(effTotal)}`
+          )}
+        </button>
       </div>
-    </div>
+    </ModalFrame>
   );
 }
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, onTicket, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; /** 🖨️ El ticket es Pro (23-sep): la página decide si abre la hoja o la pared. */ onTicket?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, onTicket, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; /** El ticket es Pro (23-sep): la página decide si abre la hoja o la pared. */ onTicket?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
@@ -791,89 +888,81 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptT
     return () => clearTimeout(t);
   }, [onDone, receiptUrl]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(28,37,38,0.55)", backdropFilter: "blur(6px)" }}>
-      <div
-        className="flex max-w-sm flex-col items-center gap-4 rounded-3xl px-10 py-10 text-center"
-        style={{ background: "#ffffff", boxShadow: "0 24px 64px rgba(28,37,38,0.2)" }}
+  const primaryCls = "flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition hover:opacity-90 active:scale-[0.98]";
+  const secondaryCls = "flex h-11 w-full items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90";
+  const ticketButton = (strong: boolean) =>
+    ticketUrl ? (
+      <button
+        onClick={() => (onTicket ? onTicket() : window.open(ticketUrl, "_blank", "noopener,noreferrer"))}
+        className={secondaryCls}
+        style={{ border: `1px solid ${strong ? INK : BORDER}`, color: INK }}
       >
-        <div
-          className="flex h-20 w-20 items-center justify-center rounded-full text-[40px]"
-          style={{ background: mode === "now" ? "rgba(217,119,87,0.12)" : "rgba(28,37,38,0.07)" }}
-        >
-          {mode === "now" ? "✅" : "📋"}
+        Imprimir ticket
+      </button>
+    ) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(28,37,38,0.5)" }}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="flex w-full max-w-[360px] flex-col items-center gap-3 rounded-xl bg-white px-5 py-6 text-center"
+        style={{ border: `1px solid ${BORDER}` }}
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE, color: INK }} aria-hidden>
+          <IconCheck />
         </div>
-        <p className="text-[22px] font-extrabold" style={{ color: "#1C2526" }}>
-          {mode === "now" ? "¡Cobrado!" : "Cuenta abierta"}
-        </p>
-        <p className="text-[15px] font-bold" style={{ color: "#F28C38" }}>{fmt(total)}</p>
-        <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-          {mode === "now" ? "Orden enviada a cocina" : "La cuenta está activa"}
-        </p>
+        <div>
+          <p className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+            {mode === "now" ? "Venta cobrada" : "Cuenta abierta"}
+          </p>
+          <p className="mt-1 text-[22px] font-bold leading-7 tabular-nums" style={{ color: INK }}>{fmt(total)}</p>
+          <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+            {mode === "now" ? "Pedido enviado a cocina" : "La cuenta está activa"}
+          </p>
+        </div>
         {/* Sin tope de lealtad (8-sep): aquí ya no hay aviso de lealtad llena —
             cada venta con número suma sus puntos, gratis y sin límite. */}
         {receiptUrl && (
-          <div className="flex w-full flex-col gap-2">
+          <div className="mt-1 flex w-full flex-col gap-2">
             {/* El empujón (paridad con la app): el recibo es el gancho de
-                regreso, no un papelito. Sin esta línea, "Listo" gana. */}
-            <p className="text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.65)" }}>
+                regreso, no un papelito. Sin esta línea, "Nueva venta" gana. */}
+            <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
               {loyaltyLive
-                ? "📲 No olvides mandarle su recibo — ahí van sus puntos y el premio que lo hace volver."
-                : "📲 No olvides mandarle su recibo — es su ticket y tu puerta para avisarle de promos."}
+                ? "No olvides mandarle su recibo: ahí van sus puntos y el premio que lo hace volver."
+                : "No olvides mandarle su recibo: es su ticket y tu puerta para avisarle de promos."}
             </p>
             <button
               onClick={() => {
-                // wa.me directo al número capturado, recibo ya escrito
+                // WhatsApp directo al número capturado, recibo ya escrito
                 // (puntos ganados + premio canjeado EN el mensaje).
                 window.open(receiptUrl, "_blank", "noopener,noreferrer");
                 // Stamp del embudo del recibo (docs/REFERIDOS_POR_TELEFONO.md §10).
                 onReceiptTapped?.();
                 onDone();
               }}
-              className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
-              style={{ background: "#25D366" }}
+              className={primaryCls}
+              style={{ background: BRAND, color: INK }}
             >
-              🧾 Enviar recibo por WhatsApp
+              Enviar recibo por WhatsApp
             </button>
             {/* "Avísale" (§9): si este cobro le dio un taco a quien invitó al
                 cliente, el local se lo dice por WhatsApp. A mano, y nunca se
                 promete que se mande solo. Si no hubo referido, no sale nada. */}
             {referralNotify}
-            {ticketUrl ? (
-              <button
-                onClick={() => (onTicket ? onTicket() : window.open(ticketUrl, "_blank", "noopener,noreferrer"))}
-                className="w-full rounded-2xl py-3 text-[14px] font-bold"
-                style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
-              >
-                🖨️ Imprimir ticket
-              </button>
-            ) : null}
-            <button
-              onClick={onDone}
-              className="w-full rounded-2xl py-3 text-[14px] font-bold"
-              style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
-            >
-              Listo
+            {ticketButton(false)}
+            <button onClick={onDone} className={secondaryCls} style={{ border: `1px solid ${BORDER}`, color: INK }}>
+              Nueva venta
             </button>
           </div>
         )}
         {/* Sin teléfono no hay recibo por WhatsApp, pero el ticket de
             cocina sí se imprime. */}
         {!receiptUrl && ticketUrl && (
-          <div className="flex w-full flex-col gap-2">
-            <button
-              onClick={() => (onTicket ? onTicket() : window.open(ticketUrl, "_blank", "noopener,noreferrer"))}
-              className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
-              style={{ background: "#1C2526" }}
-            >
-              🖨️ Imprimir ticket
-            </button>
-            <button
-              onClick={onDone}
-              className="w-full rounded-2xl py-3 text-[14px] font-bold"
-              style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
-            >
-              Listo
+          <div className="mt-1 flex w-full flex-col gap-2">
+            {ticketButton(true)}
+            <button onClick={onDone} className={primaryCls} style={{ background: BRAND, color: INK }}>
+              Nueva venta
             </button>
           </div>
         )}
@@ -1820,7 +1909,7 @@ export default function PosPage() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5">
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center py-16 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE, color: INK_SOFT }}><IconCart /></div>
@@ -1923,7 +2012,7 @@ export default function PosPage() {
               <p className="text-[17px] font-semibold" style={{ color: INK, fontFamily: SERIF }}>Carrito <span className="text-[13px] font-normal tabular-nums" style={{ color: INK_SOFT, fontFamily: "inherit" }}>{cartCount}</span></p>
               <button type="button" onClick={() => setMobileCartOpen(false)} aria-label="Cerrar" className="text-[22px] leading-none" style={{ color: INK_SOFT }}>×</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5">
               {cart.map((c, i) => (
                 <CartRow key={c.lineId} cartItem={c} index={i} onIncrement={increment} onDecrement={decrement} />
               ))}
@@ -1965,21 +2054,17 @@ export default function PosPage() {
 
       {/* ── Activar Modo Caja ── */}
       {lockDialogOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(28,37,38,0.5)" }}
-          onClick={() => setLockDialogOpen(false)}
-        >
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[16px] font-extrabold" style={{ color: "#1C2526" }}>
-              🔒 Activar Modo Caja
+        <ModalFrame onBackdrop={() => setLockDialogOpen(false)} widthClass="md:w-[400px]">
+          <div className="px-5 pb-5 pt-4">
+            <p className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+              Activar Modo Caja
             </p>
-            <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "rgba(28,37,38,0.5)" }}>
-              Esta pantalla queda bloqueada a <b>Caja, Pedidos y Escanear</b> —
-              ideal para la tablet del mostrador. Para salir se necesita el PIN
-              de un <b>Gerente</b> de tu equipo.
+            <p className="mt-2 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+              Esta pantalla queda bloqueada a <b style={{ color: INK }}>Caja, Pedidos y Escanear</b>, ideal
+              para la tablet del mostrador. Para salir se necesita el PIN de un{" "}
+              <b style={{ color: INK }}>Gerente</b> de tu equipo.
             </p>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-5 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -1987,22 +2072,22 @@ export default function PosPage() {
                   setCajaLocked(true);
                   setLockDialogOpen(false);
                 }}
-                className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold text-[#1C2526]"
-                style={{ background: "#F28C38" }}
+                className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition hover:opacity-90 active:scale-[0.98]"
+                style={{ background: BRAND, color: INK }}
               >
-                Activar
+                Activar Modo Caja
               </button>
               <button
                 type="button"
                 onClick={() => setLockDialogOpen(false)}
-                className="rounded-xl px-4 py-2.5 text-[12px] font-semibold"
-                style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.6)" }}
+                className="flex h-11 w-full items-center justify-center text-[14px] font-semibold hover:underline"
+                style={{ color: LINK }}
               >
                 Cancelar
               </button>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
 
       {/* ── ¿Quién cobra? (equipo de la caja) ── */}
@@ -2186,121 +2271,110 @@ function OpenTabsModal({
   onVoidGroup: (group: TabGroup<any>) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" style={{ background: "rgba(28,37,38,0.45)", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div
-        className="w-full rounded-t-3xl md:w-[500px] md:rounded-3xl overflow-hidden"
-        style={{ background: "#ffffff", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: "1px solid rgba(28,37,38,0.07)" }}>
-          <div>
-            <p className="text-[18px] font-extrabold" style={{ color: "#1C2526" }}>Cuentas Abiertas</p>
-            <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>{groups.length} cuentas activas</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-[18px]"
-            style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
-          >
-            ×
-          </button>
-        </div>
+    <ModalFrame onBackdrop={onClose} widthClass="md:w-[500px]" maxHeight="80vh">
+      <DialogHeader
+        title="Cuentas abiertas"
+        caption={groups.length === 1 ? "1 cuenta activa" : `${groups.length} cuentas activas`}
+        onClose={onClose}
+      />
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-10"><Spinner size={24} /></div>
-          ) : groups.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <span className="text-4xl block mb-2">📋</span>
-              No hay cuentas abiertas.
+      <div className="min-h-0 flex-1 overflow-y-auto px-5">
+        {loading ? (
+          <div className="flex justify-center py-10"><Spinner size={24} /></div>
+        ) : groups.length === 0 ? (
+          <div className="flex flex-col items-center py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE, color: INK_SOFT }} aria-hidden>
+              <IconTabs />
             </div>
-          ) : (
-            groups.map((group) => {
-              // Grupo de 1 = la tarjeta clásica. Con varias rondas, UNA fila
-              // por mesa: "Mesa 5 · 3 personas · $840" — la cocina ya vio cada
-              // ronda como su ticket; aquí solo importa el cobro.
-              const anchor: any = group.anchor;
-              const rondas = group.orders.length;
-              const itemCount = group.orders.reduce(
-                (sum: number, o: any) =>
-                  sum + (o.items?.reduce((s: number, i: any) => s + (i.quantity || 0), 0) || 0),
-                0,
-              );
-              const date = anchor.createdAt?.toDate ? anchor.createdAt.toDate() : new Date();
-              const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+            <p className="mt-3 text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Sin cuentas abiertas</p>
+            <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>Las mesas que dejes pendientes de cobrar salen aquí.</p>
+          </div>
+        ) : (
+          groups.map((group, gi) => {
+            // Grupo de 1 = la fila clásica. Con varias rondas, UNA fila
+            // por mesa: "Mesa 5 · 3 personas · $840" — la cocina ya vio cada
+            // ronda como su ticket; aquí solo importa el cobro.
+            const anchor: any = group.anchor;
+            const rondas = group.orders.length;
+            const itemCount = group.orders.reduce(
+              (sum: number, o: any) =>
+                sum + (o.items?.reduce((s: number, i: any) => s + (i.quantity || 0), 0) || 0),
+              0,
+            );
+            const date = anchor.createdAt?.toDate ? anchor.createdAt.toDate() : new Date();
+            const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 
-              return (
-                <div
-                  key={group.key}
-                  className="rounded-2xl p-4 bg-white space-y-3"
-                  style={{ border: "1px solid rgba(28,37,38,0.07)", boxShadow: "0 1px 3px rgba(28,37,38,0.04)" }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>
-                        {group.label}
-                        {rondas > 1 && (
-                          <span className="ml-2 rounded-full bg-[#F28C38]/10 px-2 py-0.5 text-[10px] font-bold text-[#1C2526]">
-                            {group.people} {group.people === 1 ? "persona" : "personas"} · {rondas} rondas
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-                        Abierta a las {formattedTime} · {itemCount} {itemCount === 1 ? "producto" : "productos"}
-                      </p>
+            return (
+              <div key={group.key} className="py-4" style={{ borderTop: gi === 0 ? "none" : `1px solid ${HAIRLINE}` }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>{group.label}</p>
+                      {rondas > 1 && (
+                        <span className="inline-flex h-[24px] items-center rounded-full px-2.5 text-[12px] font-semibold" style={{ background: TILE, color: INK_MUTED }}>
+                          {group.people} {group.people === 1 ? "persona" : "personas"} · {rondas} rondas
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[15px] font-bold text-[#F28C38]">{fmt(group.total)}</p>
+                    <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
+                      Abierta a las {formattedTime} · {itemCount} {itemCount === 1 ? "platillo" : "platillos"}
+                    </p>
                   </div>
-
-                  {/* Items — con varias rondas, separadas por quién pidió */}
-                  <div className="text-[11px] text-gray-500 max-h-28 overflow-y-auto bg-gray-50 rounded-lg p-2 space-y-1">
-                    {group.orders.map((o: any, oi: number) => (
-                      <div key={o.id} className="space-y-1">
-                        {rondas > 1 && (
-                          <p className="pt-1 text-[10px] font-bold text-gray-400">
-                            Ronda {oi + 1}{o.customerName ? ` · ${o.customerName}` : ""} · {fmt(o.total || 0)}
-                          </p>
-                        )}
-                        {o.items?.map((item: any, idx: number) => (
-                          <div key={idx} className="flex justify-between">
-                            <span>{item.quantity}x {item.name}</span>
-                            <span>{fmt(item.price * item.quantity)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      onClick={() => onVoidGroup(group)}
-                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => onStartAdding(group)}
-                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                    >
-                      Agregar productos
-                    </button>
-                    <button
-                      onClick={() => onCloseGroup(group.key)}
-                      className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#1C2526] bg-[#F28C38] hover:opacity-90 transition-all"
-                    >
-                      Cobrar Cuenta
-                    </button>
-                  </div>
+                  <p className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: INK }}>{fmt(group.total)}</p>
                 </div>
-              );
-            })
-          )}
-        </div>
+
+                {/* Items — con varias rondas, separadas por quién pidió */}
+                <div className="mt-2 max-h-28 space-y-1 overflow-y-auto text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
+                  {group.orders.map((o: any, oi: number) => (
+                    <div key={o.id} className="space-y-1">
+                      {rondas > 1 && (
+                        <p className="pt-1 font-semibold" style={{ color: INK_SOFT }}>
+                          Ronda {oi + 1}{o.customerName ? ` · ${o.customerName}` : ""} · <span className="tabular-nums">{fmt(o.total || 0)}</span>
+                        </p>
+                      )}
+                      {o.items?.map((item: any, idx: number) => (
+                        <div key={idx} className="flex justify-between gap-3">
+                          <span className="min-w-0 truncate">{item.quantity}x {item.name}</span>
+                          <span className="shrink-0 tabular-nums">{fmt(item.price * item.quantity)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onVoidGroup(group)}
+                    className="flex h-11 items-center justify-center px-2 text-[14px] font-semibold hover:underline"
+                    style={{ color: DANGER }}
+                  >
+                    Cancelar cuenta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onStartAdding(group)}
+                    className="flex h-11 items-center justify-center rounded-xl bg-white px-3 text-[14px] font-semibold transition hover:opacity-90"
+                    style={{ border: `1px solid ${BORDER}`, color: INK }}
+                  >
+                    Agregar platillos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onCloseGroup(group.key)}
+                    className="flex h-11 items-center justify-center rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+                    style={{ border: `1px solid ${INK}`, color: INK }}
+                  >
+                    Cobrar cuenta
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
-    </div>
+    </ModalFrame>
   );
 }
 
@@ -2459,61 +2533,53 @@ function CloseTabDialog({
         ? Math.round(netTotal * tipPct) / 100
         : 0;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-3xl p-6 w-[320px] text-center space-y-4" style={{ boxShadow: "0 10px 25px rgba(28,37,38,0.15)" }} onClick={(e) => e.stopPropagation()}>
-        <p className="text-[16px] font-extrabold text-[#1C2526]">Cobrar Cuenta</p>
-        <p className="text-[13px] text-gray-400">
-          {recalc ? (
+    <ModalFrame onBackdrop={onClose} widthClass="md:w-[400px]" z="z-[60]">
+      <DialogHeader
+        title="Cobrar cuenta"
+        caption={
+          recalc ? (
             <>
-              <span className="line-through opacity-50">{fmt(recalc.gross)}</span>{" "}
-              <span className="font-extrabold text-[#1C2526]">{fmt(netTotal)}</span>
-              {tip > 0 ? ` + 💵 propina ${fmt(tip)} = ${fmt(netTotal + tip)}` : ""}
+              <span className="tabular-nums" style={{ textDecoration: "line-through", color: INK_SOFT }}>{fmt(recalc.gross)}</span>{" "}
+              <span className="font-bold tabular-nums" style={{ color: INK }}>{fmt(netTotal)}</span>
+              {tip > 0 ? ` + propina ${fmt(tip)} = ${fmt(netTotal + tip)}` : ""}
             </>
           ) : tip > 0 ? (
-            `Total ${fmt(netTotal)} + 💵 propina ${fmt(tip)} = ${fmt(netTotal + tip)}`
+            `Total ${fmt(netTotal)} + propina ${fmt(tip)} = ${fmt(netTotal + tip)}`
           ) : (
-            "Selecciona el método de pago del cliente"
-          )}
-        </p>
-        {/* 📱 Telefono PRIMERO: se pide por el TICKET (servicio que el cliente
+            `Total ${fmt(netTotal)}`
+          )
+        }
+        onClose={onClose}
+      />
+
+      <div className="min-h-0 space-y-5 overflow-y-auto px-5 py-5">
+        {/* Telefono PRIMERO: se pide por el TICKET (servicio que el cliente
             quiere), no por los puntos (favor que le pedimos). Los puntos se
             mencionan de pilon. */}
-        <div
-          className="rounded-2xl p-3 text-left"
-          style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-        >
-          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-            📱 ¿Le mandamos su ticket por WhatsApp?
-          </p>
+        <div>
+          <FieldLabel htmlFor="tab-phone">¿Le mandamos su ticket por WhatsApp?</FieldLabel>
           <input
+            id="tab-phone"
             type="tel"
             inputMode="numeric"
             value={phone}
             autoFocus
             onChange={(e) => setPhone(e.target.value)}
             placeholder={loyaltyLive ? "Su ticket y sus puntos — 614 123 4567" : "Su ticket — 614 123 4567"}
-            className="w-full rounded-xl border px-3 py-2.5 text-[13px] outline-none"
-            style={{ borderColor: "rgba(28,37,38,0.15)", color: "#1C2526" }}
+            className={INPUT_CLS}
+            style={INPUT_STYLE}
           />
           {lookingUp && (
-            <p className="mt-1 text-[11px] text-gray-400">Buscando su descuento…</p>
+            <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>Buscando su descuento…</p>
           )}
-          {/* 🏷️ El descuento, ENSEÑADO antes de cobrar: el cajero ve qué era y
+          {/* El descuento, ENSEÑADO antes de cobrar: el cajero ve qué era y
               qué se va a cobrar. Sin esto el mesero no sabe que aplicó. */}
           {recalc && (
-            <p
-              className="mt-1.5 rounded-xl px-3 py-2 text-[12px] font-extrabold"
-              style={{
-                background: "rgba(22,163,74,0.10)",
-                border: "1px solid rgba(22,163,74,0.35)",
-                color: "#15803D",
-              }}
-            >
-              🏷️ {recalc.profile?.name ?? "Descuento"}: {fmt(recalc.gross)} →{" "}
-              {fmt(recalc.net)} (−{fmt(recalc.discount)})
+            <p className="mt-1.5 text-[14px] font-semibold leading-5 tabular-nums" style={{ color: SUCCESS }}>
+              {recalc.profile?.name ?? "Descuento"}: {fmt(recalc.gross)} → {fmt(recalc.net)} (−{fmt(recalc.discount)})
             </p>
           )}
-          {/* 🏷️ Quick-assign (DUENO): numero sin descuento + perfiles creados
+          {/* Quick-assign (DUENO): numero sin descuento + perfiles creados
               -> marcarlo como Staff/Familia sin salir del cobro. Mismo gate,
               mismo copy que el carrito y que la app. */}
           {phoneDigits.length === 10 &&
@@ -2521,25 +2587,19 @@ function CloseTabDialog({
           !lookingUp &&
           canAssignDiscount &&
           profiles.length > 0 ? (
-            <div className="mt-1.5">
+            <div className="mt-2">
               {!assignOpen ? (
                 <button
                   type="button"
                   onClick={() => setAssignOpen(true)}
-                  className="text-[11px] font-bold underline underline-offset-2"
-                  style={{ color: "#b45309" }}
+                  className="text-left text-[14px] font-semibold leading-5 hover:underline"
+                  style={{ color: LINK }}
                 >
-                  🏷️ ¿Staff o familia? Asignar descuento a este número
+                  ¿Staff o familia? Asignar descuento a este número
                 </button>
               ) : (
-                <div
-                  className="space-y-1.5 rounded-xl p-2.5"
-                  style={{ background: "#FFF7ED", border: "1px solid rgba(242,140,56,0.3)" }}
-                >
-                  <p
-                    className="text-[10px] font-bold uppercase tracking-widest"
-                    style={{ color: "rgba(154,52,18,0.6)" }}
-                  >
+                <div className="space-y-2">
+                  <p className="text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
                     Asignar descuento (queda guardado para siempre)
                   </p>
                   {profiles.map((dp) => (
@@ -2548,11 +2608,11 @@ function CloseTabDialog({
                       type="button"
                       disabled={assignBusy}
                       onClick={() => assignProfile(dp)}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition hover:opacity-80 disabled:opacity-60"
-                      style={{ background: "#fff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
+                      className="flex h-11 w-full items-center justify-between gap-3 rounded-xl bg-white px-3 text-left text-[14px] font-semibold transition hover:opacity-80 disabled:opacity-60"
+                      style={{ border: `1px solid ${BORDER}`, color: INK }}
                     >
-                      <span>🏷️ {dp.name}</span>
-                      <span style={{ opacity: 0.6 }}>
+                      <span className="min-w-0 truncate">{dp.name}</span>
+                      <span className="shrink-0 text-[13px] font-normal tabular-nums" style={{ color: INK_SOFT }}>
                         {(dp.type === "total"
                           ? `${dp.totalPct ?? 0}% total`
                           : `${dp.bebidasPct ?? 0}% beb · ${dp.alimentosPct ?? 0}% alim`) +
@@ -2564,18 +2624,18 @@ function CloseTabDialog({
                     type="button"
                     disabled={assignBusy}
                     onClick={() => setAssignOpen(false)}
-                    className="w-full rounded-lg px-3 py-1.5 text-[11px] font-semibold"
-                    style={{ background: "rgba(28,37,38,0.06)", color: "rgba(28,37,38,0.55)" }}
+                    className="flex h-11 w-full items-center justify-center text-[14px] font-semibold hover:underline disabled:opacity-60"
+                    style={{ color: LINK }}
                   >
                     Cancelar
                   </button>
                   {assignBusy ? (
-                    <p className="text-center text-[10px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+                    <p className="text-center text-[13px]" style={{ color: INK_SOFT }}>
                       Guardando…
                     </p>
                   ) : null}
                   {assignErr ? (
-                    <p className="text-center text-[10px] font-semibold" style={{ color: "#b91c1c" }}>
+                    <p className="text-center text-[13px] font-semibold" style={{ color: DANGER }}>
                       No se pudo asignar. Intenta de nuevo.
                     </p>
                   ) : null}
@@ -2584,69 +2644,57 @@ function CloseTabDialog({
             </div>
           ) : null}
           <p
-            className="mt-1 text-[11px]"
-            style={{ color: phoneDigits.length === 10 ? "#16A34A" : "rgba(28,37,38,0.5)" }}
+            className="mt-1.5 text-[13px] leading-[18px]"
+            style={{ color: phoneDigits.length === 10 ? SUCCESS : INK_SOFT }}
           >
             {phoneDigits.length === 10
-              ? (loyaltyLive ? "✅ Le llega su ticket y junta sus puntos." : "✅ Le llega su ticket.")
+              ? (loyaltyLive ? "Le llega su ticket y junta sus puntos." : "Le llega su ticket.")
               : (loyaltyLive
-                  ? "Opcional. Con su número le mandas el ticket y junta puntos solo. ⭐"
+                  ? "Opcional. Con su número le mandas el ticket y junta puntos solo."
                   : "Opcional. Con su número le mandas el ticket y le avisas de promos.")}
           </p>
         </div>
+
         <div>
-          <p className="mb-1.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">💵 Propina (opcional)</p>
-          <div className="flex items-center gap-1.5">
+          <FieldLabel>Propina (opcional)</FieldLabel>
+          <div className="flex items-center gap-2">
             {[10, 15, 20].map((pct) => (
-              <button
+              <Seg
                 key={pct}
-                type="button"
+                active={tipPct === pct && tipCustom === ""}
                 onClick={() => { setTipCustom(""); setTipPct((c) => (c === pct ? null : pct)); }}
-                className="flex-1 rounded-xl px-2 py-2 text-[13px] font-bold transition-all"
-                style={
-                  tipPct === pct && tipCustom === ""
-                    ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
-                    : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
-                }
+                className="flex-1 px-2 tabular-nums"
               >
                 {pct}%
-              </button>
+              </Seg>
             ))}
-            <div className="flex flex-1 items-center gap-1 rounded-xl px-2" style={{ background: "#F5F3EF", border: "1.5px solid rgba(28,37,38,0.1)" }}>
-              <span className="text-[13px] font-semibold text-gray-400">$</span>
+            <div className="flex h-11 flex-1 items-center gap-1 rounded-xl bg-white px-3" style={{ border: `1px solid ${BORDER}` }}>
+              <span className="text-[14px]" style={{ color: INK_SOFT }}>$</span>
               <input
                 type="number"
                 min={0}
                 value={tipCustom}
                 placeholder="otra"
+                aria-label="Otra propina"
                 onChange={(e) => { setTipPct(null); setTipCustom(e.target.value === "" ? "" : Math.max(0, Number(e.target.value))); }}
-                className="w-full bg-transparent py-2 text-left text-[13px] font-bold outline-none text-[#1C2526]"
+                className="w-full min-w-0 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:text-[#5B6366]"
+                style={{ color: INK }}
               />
             </div>
           </div>
           {tip > 0 && (
             <>
-              <p className="mb-1.5 mt-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                ¿Cómo dejó la propina?
-              </p>
-              <div className="flex items-center gap-1.5">
-                {paymentOptions.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTipMethod(t.key)}
-                    className="flex-1 rounded-xl px-1 py-2 text-[12px] font-bold transition-all"
-                    style={
-                      tipMethod === t.key
-                        ? { background: "#16A34A", color: "#fff", border: "1.5px solid #16A34A" }
-                        : { background: "#F5F3EF", color: "rgba(28,37,38,0.6)", border: "1.5px solid rgba(28,37,38,0.1)" }
-                    }
-                  >
-                    {t.emoji} {t.label}
-                  </button>
-                ))}
+              <div className="mt-3">
+                <FieldLabel>¿Cómo dejó la propina?</FieldLabel>
+                <div className="flex items-center gap-2">
+                  {paymentOptions.map((t) => (
+                    <Seg key={t.key} active={tipMethod === t.key} onClick={() => setTipMethod(t.key)} className="flex-1 px-1">
+                      {t.label}
+                    </Seg>
+                  ))}
+                </div>
               </div>
-              <p className="mt-1.5 text-left text-[11px] text-gray-400">
+              <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
                 {tipMethod === null
                   ? "Si no eliges, se guarda igual que el pago de la cuenta."
                   : tipMethod === "cash"
@@ -2656,34 +2704,42 @@ function CloseTabDialog({
             </>
           )}
         </div>
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
-          {paymentOptions.map((m) => (
-            <button
-              key={m.key}
-              onClick={() =>
-                onConfirm(
-                  m.key,
-                  tip,
-                  // Sin elección explícita, la propina viaja igual que la cuenta.
-                  tipMethod ?? m.key,
-                  phoneDigits.length === 10 ? phoneDigits : "",
-                  recalc,
-                )
-              }
-              className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-[#F28C38] transition-all"
-            >
-              <span className="text-2xl mb-1">{m.emoji}</span>
-              <span className="text-[12px] font-bold text-[#1C2526]">{m.label}</span>
-            </button>
-          ))}
+
+        <div>
+          <FieldLabel>¿Con qué te pagó? Toca y la cuenta queda cobrada.</FieldLabel>
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paymentOptions.length}, minmax(0, 1fr))` }}>
+            {paymentOptions.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() =>
+                  onConfirm(
+                    m.key,
+                    tip,
+                    // Sin elección explícita, la propina viaja igual que la cuenta.
+                    tipMethod ?? m.key,
+                    phoneDigits.length === 10 ? phoneDigits : "",
+                    recalc,
+                  )
+                }
+                className="flex h-14 items-center justify-center rounded-xl bg-white px-2 text-[14px] font-semibold transition hover:opacity-90 active:scale-[0.98]"
+                style={{ border: `1px solid ${INK}`, color: INK }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
+
         <button
+          type="button"
           onClick={onClose}
-          className="w-full py-2.5 rounded-xl text-[12px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
+          className="flex h-11 w-full items-center justify-center text-[14px] font-semibold hover:underline"
+          style={{ color: LINK }}
         >
           Cancelar
         </button>
       </div>
-    </div>
+    </ModalFrame>
   );
 }

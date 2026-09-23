@@ -39,6 +39,36 @@ import {
 } from "@/lib/menu/optionGroups";
 import { OptionGroupsEditor, cleanOptionGroups } from "@/components/vendor/OptionGroupsEditor";
 
+// ─── Opción A (23-sep-2026, lienzo "Sistema Comeleal") ───────────────────────
+// Los mismos tokens que Panel, Pedidos, Caja y Clientes: crema de fondo, tinta
+// para el texto, UNA serif (Lora) solo en títulos, naranja solo en la acción
+// principal. Iconos de trazo, sin emojis ni sombras.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const CREAM = "#FAF9F5";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const TILE = "#F0EBE1";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const DANGER = "#B91C1C";
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconPlus() { return <svg {...ICON}><path d="M12 5v14M5 12h14" /></svg>; }
+function IconCamera() { return <svg {...ICON}><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>; }
+function IconClose() { return <svg {...ICON} width={20} height={20}><path d="M6 6l12 12M18 6L6 18" /></svg>; }
+function IconSearch({ size = 18 }: { size?: number }) { return <svg {...ICON} width={size} height={size} stroke={INK_SOFT}><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>; }
+/** Plato con cubiertos: la miniatura de un platillo sin foto. */
+function IconDish({ size = 20 }: { size?: number }) {
+  return (
+    <svg {...ICON} width={size} height={size} stroke={INK_SOFT}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3.5" />
+    </svg>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MenuItem {
@@ -213,7 +243,6 @@ function MenuSetupPageInner() {
     () =>
       draftItems.filter((d) => d.selected && !ocultoPorJuntar.has(d.name)).length +
       juntadas.size,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [draftItems, juntadas, ocultoPorJuntar],
   );
   const [aiError, setAiError] = useState<string | null>(null);
@@ -267,7 +296,7 @@ function MenuSetupPageInner() {
       if (settled) return;
       settled = true;
       setAiError(
-        "La IA no respondió a tiempo. Puedes reintentar con otra foto o agregar los platillos manualmente."
+        "No pudimos leer el menú a tiempo. Prueba con otra foto o agrega los platillos uno por uno."
       );
       setPhotoStep("idle");
     }, 570_000);
@@ -305,7 +334,7 @@ function MenuSetupPageInner() {
         } else if (status === "failed" || status === "error") {
           settled = true;
           clearTimeout(timeoutId);
-          setAiError("La IA no pudo leer el menú. Intenta con otra foto o agrega los platillos manualmente.");
+          setAiError("No pudimos leer el menú. Prueba con otra foto o agrega los platillos uno por uno.");
           setPhotoStep("idle");
         }
       },
@@ -314,7 +343,7 @@ function MenuSetupPageInner() {
         if (settled) return;
         settled = true;
         clearTimeout(timeoutId);
-        setAiError("Se perdió la conexión al leer el menú. Reintenta o agrega los platillos manualmente.");
+        setAiError("Se perdió la conexión al leer el menú. Vuelve a intentar o agrega los platillos uno por uno.");
         setPhotoStep("idle");
       }
     );
@@ -515,238 +544,289 @@ function MenuSetupPageInner() {
   });
   const hasFilters = q !== "" || catFilter !== null || availFilter !== "all";
 
+
+  // Agrupado por categoría para pintar títulos de grupo (Lora 17) con su
+  // conteo. Los platillos ya vienen ordenados por categoría y nombre.
+  const grupos: { name: string; items: MenuItem[] }[] = [];
+  for (const it of visibleItems) {
+    const name = it.category.trim() || "Sin categoría";
+    const last = grupos[grupos.length - 1];
+    if (last && last.name === name) last.items.push(it);
+    else grupos.push({ name, items: [it] });
+  }
+
+  const nPlatillos = menuItems.length;
+  const nGrupos = categories.length;
+  const caption =
+    nPlatillos === 0
+      ? "Todavía no hay platillos"
+      : `${nPlatillos} platillo${nPlatillos !== 1 ? "s" : ""} · ${nGrupos} grupo${nGrupos !== 1 ? "s" : ""}`;
+  const importBusy = photoStep !== "idle";
+
   if (loading) return <Spinner />;
 
   return (
-    <div className={inPanel ? "bg-[#faf9f5]" : "min-h-screen bg-[#faf9f5]"}>
-      {/* Nav */}
+    <div className={inPanel ? "" : "min-h-screen"} style={{ background: CREAM }}>
+      {/* Nav (solo fuera del panel): el stepper del wizard, o "← Volver". */}
       {inPanel ? null : (
-      <div className="sticky top-0 z-10 bg-white shadow-sm">
-        {isWizard ? (
-          <WizardStepper current="menu" doneKeys={stepperDone} />
-        ) : (
-          <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
-            <div className="mx-auto flex max-w-lg items-center gap-3">
-              <Link href="/vendor/setup" className="text-sm text-[#141413]/45 hover:text-[#141413] transition-colors">← Volver</Link>
-              <span className="text-[#141413]/20">/</span>
-              <h1 className="text-sm font-semibold text-[#141413]">Menú</h1>
+        <div className="sticky top-0 z-10" style={{ background: CREAM }}>
+          {isWizard ? (
+            <WizardStepper current="menu" doneKeys={stepperDone} />
+          ) : (
+            <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+              <div className="mx-auto flex max-w-lg items-center gap-3">
+                <Link href="/vendor/setup" className="text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+                  ← Volver
+                </Link>
+                <span style={{ color: BORDER }}>/</span>
+                <span className="text-[14px] font-semibold" style={{ color: INK }}>Menú</span>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
 
-      <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 space-y-6">
-        <div>
-          <h2 className="text-lg font-bold text-[#141413]">¿Qué sirves?</h2>
-          <p className="mt-1 text-sm text-[#141413]/50">
-            Toca un platillo para editarlo. Márcalo agotado y deja de venderse al instante.
-          </p>
+      <main className={inPanel ? "max-w-2xl px-5 pb-24 pt-5 md:px-8 md:pt-7" : "mx-auto max-w-lg px-5 pb-24 pt-5"}>
+        {/* Título de pantalla (Lora) + qué hay debajo */}
+        <div className="mb-5 flex flex-col gap-0.5">
+          <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Menú</h1>
+          <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{caption}</p>
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+          <p role="alert" className="mb-4 text-[14px] leading-[18px]" style={{ color: DANGER }}>{error}</p>
+        )}
+        {aiError && (
+          <p role="alert" className="mb-4 text-[14px] leading-[18px]" style={{ color: DANGER }}>{aiError}</p>
         )}
 
-        {/* ── AI Photo Import Section ── */}
-        <div className="rounded-2xl border border-[#141413]/8 bg-white p-5">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-lg">✨</div>
-            <div>
-              <p className="text-sm font-semibold text-[#141413]">Importar con foto de menú</p>
-              <p className="mt-0.5 text-xs text-[#141413]/50">La IA lee tu menú físico y agrega los platillos automáticamente</p>
-            </div>
-          </div>
+        {/* El input de la foto vive aquí, sea cual sea el estado: lo abren
+            "Subir foto del menú" (arriba o en el estado vacío). */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handlePhotoUpload(f);
+            e.target.value = "";
+          }}
+        />
 
-          {aiError && (
-            <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{aiError}</div>
-          )}
-
-          {photoStep === "idle" && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handlePhotoUpload(f);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#F28C38]/30 bg-[#F28C38]/5 px-4 py-5 text-sm font-medium text-[#F28C38] hover:border-[#F28C38]/60 hover:bg-[#F28C38]/10 transition-all"
-              >
-                📷 Subir foto del menú
-              </button>
-            </>
-          )}
-
-          {(photoStep === "uploading" || photoStep === "processing") && (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <svg className="h-7 w-7 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
-              </svg>
-              <p className="text-sm text-[#141413]/60">
-                {photoStep === "uploading" ? "Subiendo foto…" : "La IA está leyendo tu menú…"}
-              </p>
-              <p className="text-xs text-[#141413]/35">Esto toma unos segundos</p>
-            </div>
-          )}
-
-          {photoStep === "review" && draftItems.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
-                Encontramos {draftItems.length} platillos — revisa y confirma
-              </p>
-
-              {/* ── El mismo platillo en dos tamaños ───────────────────────
-                  La IA lo detecta al leer la foto; el dueño decide. Nunca se
-                  junta solo: "Personal queso" y "Queso y albahaca" pueden ser
-                  la misma pizza o no, y solo él lo sabe. */}
-              {sizeSuggestions.map((f, i) => {
-                const junta = juntadas.has(i);
-                return (
-                  <div
-                    key={`${f.dishName}-${i}`}
-                    className="rounded-xl border p-3"
-                    style={{
-                      borderColor: junta ? "rgba(242,140,56,0.45)" : "rgba(20,20,19,0.1)",
-                      background: junta ? "rgba(242,140,56,0.06)" : "#ffffff",
-                    }}
-                  >
-                    <p className="text-[13px] font-bold text-[#141413]">
-                      ¿<span className="text-[#F28C38]">{f.dishName}</span> es el mismo platillo en {f.options.length} tamaños?
-                    </p>
-                    <ul className="mt-1.5 space-y-0.5">
-                      {f.options.map((o) => (
-                        <li key={o.sourceName} className="text-[12px] text-[#141413]/60">
-                          · {o.sourceName} — ${o.price.toFixed(0)}
-                          <span className="text-[#141413]/35">
-                            {"  →  "}{o.sizeLabel}
-                            {o.priceDelta > 0 ? ` +$${o.priceDelta.toFixed(0)}` : " (base)"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-1.5 text-[11.5px] text-[#141413]/45">
-                      {junta
-                        ? `Se guarda como UN platillo de $${f.basePrice.toFixed(0)} y el cliente elige el tamaño.`
-                        : "Si los juntas, tu cliente elige el tamaño en vez de buscar en dos categorías."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setJuntadas((prev) => {
-                          const n = new Set(prev);
-                          if (n.has(i)) n.delete(i); else n.add(i);
-                          return n;
-                        })
-                      }
-                      className="mt-2 rounded-lg px-3 py-1.5 text-[12.5px] font-bold transition-colors"
-                      style={
-                        junta
-                          ? { background: "rgba(20,20,19,0.06)", color: "rgba(20,20,19,0.6)" }
-                          : { background: "#F28C38", color: "#1C2526" }
-                      }
-                    >
-                      {junta ? "Dejarlos separados" : "Sí, juntarlos"}
-                    </button>
-                  </div>
-                );
-              })}
-
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {draftItems.map((item, i) => (
-                  ocultoPorJuntar.has(item.name) ? null : (
-                  <label key={item.id} className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all ${
-                    item.selected ? "border-[#F28C38]/30 bg-[#F28C38]/5" : "border-[#141413]/8 bg-white"
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={item.selected}
-                      onChange={(e) => {
-                        const updated = [...draftItems];
-                        updated[i] = { ...item, selected: e.target.checked };
-                        setDraftItems(updated);
-                      }}
-                      className="mt-0.5 h-4 w-4 rounded accent-[#F28C38]"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#141413] truncate">{item.name}</p>
-                      {item.description && <p className="text-xs text-[#141413]/45 truncate">{item.description}</p>}
-                      {item.price > 0 && <p className="text-xs text-[#F28C38] font-medium">${item.price.toFixed(2)}</p>}
-                    </div>
-                  </label>
-                )))}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={handlePublishDrafts}
-                  disabled={totalAPublicar === 0}
-                  className="flex-1 rounded-xl bg-[#F28C38] py-2.5 text-sm font-bold text-[#1C2526] hover:brightness-95 disabled:opacity-50 transition-all"
-                >
-                  Agregar {totalAPublicar} {totalAPublicar === 1 ? "platillo" : "platillos"} ✓
-                </button>
-                <button
-                  onClick={() => { setPhotoStep("idle"); setDraftItems([]); setJobId(null); }}
-                  className="rounded-xl border border-[#141413]/12 px-4 py-2.5 text-sm text-[#141413]/50 hover:text-[#141413] transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
-
-          {photoStep === "publishing" && (
-            <div className="flex items-center justify-center gap-2 py-4 text-sm text-[#141413]/60">
-              <svg className="h-4 w-4 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
-              </svg>
-              Guardando platillos…
-            </div>
-          )}
-        </div>
-
-        {/* ── Agregar manualmente ── */}
-        <div className="rounded-2xl border border-[#141413]/8 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-base">✏️</span>
-              <p className="text-sm font-semibold text-[#141413]">Agregar manualmente</p>
-            </div>
+        {/* ── Acciones de arriba: UN botón principal, el resto con borde ── */}
+        {photoStep === "idle" && nPlatillos > 0 && (
+          <div className="mb-5 flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={() => setModal({ mode: "create" })}
-              className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#141413]/80 transition-colors"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition hover:opacity-90"
+              style={{ background: BRAND, color: INK }}
             >
-              + Agregar
+              <IconPlus />
+              Agregar platillo
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+            >
+              <IconCamera />
+              Subir foto del menú
             </button>
           </div>
-        </div>
+        )}
 
-        {/* ── Current Menu Hub ── */}
-        {menuItems.length > 0 && (
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#141413]/45">
-              Menú actual · {menuItems.length} platillo{menuItems.length !== 1 ? "s" : ""}
-              {hasFilters && visibleItems.length !== menuItems.length ? ` · mostrando ${visibleItems.length}` : ""}
+        {/* ── Leyendo la foto ── */}
+        {(photoStep === "uploading" || photoStep === "processing") && (
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-white px-4 py-3.5" style={{ border: `1px solid ${BORDER}` }}>
+            <Spin />
+            <div className="min-w-0">
+              <p className="text-[15px] leading-5" style={{ color: INK }}>
+                {photoStep === "uploading" ? "Subiendo la foto…" : "Leyendo tu menú…"}
+              </p>
+              <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>Esto toma unos segundos</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Revisar lo que se leyó de la foto ── */}
+        {photoStep === "review" && draftItems.length > 0 && (
+          <section className="mb-7">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+                Encontramos {draftItems.length} platillo{draftItems.length !== 1 ? "s" : ""}
+              </h2>
+              <span className="text-[13px] leading-4" style={{ color: INK_SOFT }}>Revisa y confirma</span>
+            </div>
+
+            {/* ── El mismo platillo en dos tamaños ───────────────────────
+                Se detecta al leer la foto; el dueño decide. Nunca se junta
+                solo: "Personal queso" y "Queso y albahaca" pueden ser la
+                misma pizza o no, y solo él lo sabe. */}
+            {sizeSuggestions.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {sizeSuggestions.map((f, i) => {
+                  const junta = juntadas.has(i);
+                  return (
+                    <div
+                      key={`${f.dishName}-${i}`}
+                      className="rounded-xl bg-white p-3.5"
+                      style={{ border: `1px solid ${junta ? INK : BORDER}` }}
+                    >
+                      <p className="text-[15px] leading-5" style={{ color: INK }}>
+                        ¿<span className="font-semibold">{f.dishName}</span> es el mismo platillo en {f.options.length} tamaños?
+                      </p>
+                      <ul className="mt-1.5 space-y-0.5">
+                        {f.options.map((o) => (
+                          <li key={o.sourceName} className="text-[13px] leading-[18px] tabular-nums" style={{ color: INK_MUTED }}>
+                            {o.sourceName} — ${o.price.toFixed(0)}
+                            <span style={{ color: INK_SOFT }}>
+                              {"  →  "}{o.sizeLabel}
+                              {o.priceDelta > 0 ? ` +$${o.priceDelta.toFixed(0)}` : " (base)"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-1.5 text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>
+                        {junta
+                          ? `Se guarda como un platillo de $${f.basePrice.toFixed(0)} y el cliente elige el tamaño.`
+                          : "Si los juntas, tu cliente elige el tamaño en vez de buscar en dos categorías."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setJuntadas((prev) => {
+                            const n = new Set(prev);
+                            if (n.has(i)) n.delete(i); else n.add(i);
+                            return n;
+                          })
+                        }
+                        className="mt-2.5 flex h-10 items-center justify-center rounded-xl px-4 text-[14px] font-semibold transition hover:opacity-90"
+                        style={junta ? { background: TILE, color: INK } : { background: "#FFFFFF", border: `1px solid ${INK}`, color: INK }}
+                      >
+                        {junta ? "Dejarlos separados" : "Sí, juntarlos"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="max-h-72 overflow-y-auto rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
+              {draftItems.map((item, i) => (
+                ocultoPorJuntar.has(item.name) ? null : (
+                <label
+                  key={item.id}
+                  className="flex min-h-[56px] cursor-pointer items-center gap-3 py-2.5"
+                  style={{ borderBottom: `1px solid ${HAIRLINE}` }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={item.selected}
+                    onChange={(e) => {
+                      const updated = [...draftItems];
+                      updated[i] = { ...item, selected: e.target.checked };
+                      setDraftItems(updated);
+                    }}
+                    className="h-5 w-5 shrink-0 rounded"
+                    style={{ accentColor: INK }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] leading-5" style={{ color: INK }}>{item.name}</p>
+                    {(item.description || item.category) && (
+                      <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                        {item.category}
+                        {item.category && item.description ? " · " : ""}
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  {item.price > 0 && (
+                    <span className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: INK }}>${item.price.toFixed(2)}</span>
+                  )}
+                </label>
+              )))}
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={handlePublishDrafts}
+                disabled={totalAPublicar === 0}
+                className="flex h-12 flex-1 items-center justify-center rounded-xl px-4 text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-50"
+                style={{ background: INK, color: CREAM }}
+              >
+                Agregar {totalAPublicar} {totalAPublicar === 1 ? "platillo" : "platillos"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPhotoStep("idle"); setDraftItems([]); setJobId(null); }}
+                className="flex h-12 items-center justify-center rounded-xl bg-white px-5 text-[14px] font-semibold transition hover:opacity-90"
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </section>
+        )}
+
+        {photoStep === "publishing" && (
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-white px-4 py-3.5" style={{ border: `1px solid ${BORDER}` }}>
+            <Spin />
+            <p className="text-[15px] leading-5" style={{ color: INK }}>Guardando platillos…</p>
+          </div>
+        )}
+
+        {/* ── Estado vacío: sin platillos todavía ── */}
+        {nPlatillos === 0 && !importBusy && (
+          <div className="flex flex-col items-center py-14 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE }}><IconDish size={22} /></div>
+            <p className="mt-4 text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Todavía no hay platillos</p>
+            <p className="mt-1 max-w-xs text-[14px] leading-5" style={{ color: INK_MUTED }}>
+              Sube una foto de tu menú y los leemos por ti, o agrégalos uno por uno.
             </p>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-5 flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-[15px] font-semibold transition hover:opacity-90"
+              style={{ background: BRAND, color: INK }}
+            >
+              <IconCamera />
+              Subir foto del menú
+            </button>
+            <button
+              type="button"
+              onClick={() => setModal({ mode: "create" })}
+              className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-6 text-[14px] font-semibold transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+            >
+              <IconPlus />
+              Agregar platillo
+            </button>
+          </div>
+        )}
 
-            {/* Buscar */}
-            <input
-              type="text"
-              placeholder="🔍 Buscar platillo…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="mb-3 w-full rounded-xl border border-[#141413]/12 bg-white px-3.5 py-2.5 text-sm text-[#141413] placeholder-[#141413]/35 focus:border-[#F28C38] focus:outline-none"
-            />
+        {/* ── Lista del menú: buscar, chips, grupos con filas ── */}
+        {nPlatillos > 0 && (
+          <section>
+            {/* Búsqueda: 48px, letra de 16 (sin zoom en iPhone) */}
+            <label className="flex h-12 items-center gap-2.5 rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
+              <IconSearch />
+              <span className="sr-only">Buscar platillo</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar platillo"
+                className="h-full min-w-0 flex-1 bg-transparent text-[16px] outline-none"
+                style={{ color: INK }}
+              />
+            </label>
 
-            {/* Filtros */}
-            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* Chips: saltan entre grupos y estados; activo = tinta */}
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
               <FilterChip label="Todos" selected={availFilter === "all" && catFilter === null} onClick={() => { setAvailFilter("all"); setCatFilter(null); }} />
               <FilterChip label="Disponibles" selected={availFilter === "on"} onClick={() => setAvailFilter(availFilter === "on" ? "all" : "on")} />
               <FilterChip label="Agotados" selected={availFilter === "off"} onClick={() => setAvailFilter(availFilter === "off" ? "all" : "off")} />
@@ -755,74 +835,69 @@ function MenuSetupPageInner() {
               ))}
             </div>
 
-            {visibleItems.length === 0 ? (
-              <div className="rounded-2xl border border-[#141413]/8 bg-white px-4 py-8 text-center">
-                <p className="text-sm font-medium text-[#141413]">No hay platillos que coincidan</p>
+            {hasFilters && (
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+                  {visibleItems.length} de {nPlatillos} platillos
+                </span>
                 <button
+                  type="button"
                   onClick={() => { setSearch(""); setCatFilter(null); setAvailFilter("all"); }}
-                  className="mt-2 text-xs font-semibold text-[#F28C38] hover:text-[#c46644]"
+                  className="text-[14px] font-semibold hover:underline"
+                  style={{ color: LINK }}
                 >
                   Limpiar filtros
                 </button>
               </div>
+            )}
+
+            {visibleItems.length === 0 ? (
+              <div className="flex flex-col items-center py-12 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE }}><IconSearch size={22} /></div>
+                <p className="mt-4 text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>No hay platillos que coincidan</p>
+                <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>Prueba con otro nombre o quita los filtros.</p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {visibleItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setModal({ mode: "edit", item })}
-                    className={`flex w-full items-center gap-3 rounded-xl border border-[#141413]/8 bg-white px-3.5 py-3 text-left transition-all hover:border-[#F28C38]/40 hover:shadow-sm ${
-                      item.isAvailable ? "" : "opacity-60"
-                    }`}
-                  >
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                    ) : (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#faf9f5] text-sm">🍽️</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#141413] truncate">{item.name}</p>
-                      <p className="text-xs text-[#141413]/40 truncate">
-                        {item.category}
-                        {item.description ? ` · ${item.description}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      {item.price > 0 && (
-                        <span className="text-xs font-semibold text-[#F28C38]">${item.price.toFixed(2)}</span>
-                      )}
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); handleToggleAvailability(item); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); handleToggleAvailability(item); }
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                          item.isAvailable
-                            ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                            : "bg-red-50 text-red-500 hover:bg-red-100"
-                        } ${togglingId === item.id ? "opacity-50" : ""}`}
-                      >
-                        {item.isAvailable ? "Disponible" : "Agotado"}
+              <div className="mt-4 space-y-7">
+                {grupos.map((g) => (
+                  <div key={g.name}>
+                    <div className="mb-1 flex items-baseline justify-between gap-3">
+                      <h2 className="truncate text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>{g.name}</h2>
+                      <span className="shrink-0 text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+                        {g.items.length} platillo{g.items.length !== 1 ? "s" : ""}
                       </span>
                     </div>
-                  </button>
+                    <div>
+                      {g.items.map((item) => (
+                        <MenuRow
+                          key={item.id}
+                          item={item}
+                          toggling={togglingId === item.id}
+                          onEdit={() => setModal({ mode: "edit", item })}
+                          onToggle={() => handleToggleAvailability(item)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
 
-        {/* ── Done ── */}
-        <button
-          onClick={handleDone}
-          disabled={saving || saved || menuItems.length === 0}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-60"
-        >
-          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : menuItems.length === 0 ? "Agrega al menos un platillo" : `Guardar menú (${menuItems.length}) →`}
-        </button>
+        {/* ── Guardar: cierra el paso del wizard o regresa al panel. Botón
+            fuerte en tinta; el naranja ya lo lleva "Agregar platillo". ── */}
+        {nPlatillos > 0 && (
+          <button
+            type="button"
+            onClick={handleDone}
+            disabled={saving || saved}
+            className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-6 text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+            style={{ background: INK, color: CREAM }}
+          >
+            {saved ? "Guardado" : saving ? <><Spin light />Guardando…</> : isWizard ? "Guardar menú y continuar" : inPanel ? "Guardar menú y volver al panel" : "Guardar menú"}
+          </button>
+        )}
       </main>
 
       {/* ── Modal crear/editar ── */}
@@ -845,17 +920,76 @@ function MenuSetupPageInner() {
   );
 }
 
-// ─── Filter chip ──────────────────────────────────────────────────────────────
+// ─── Fila de platillo ─────────────────────────────────────────────────────────
+// 64px: miniatura 48 (o el plato de trazo sobre tostado), nombre 15, descripción
+// 13 en una línea, precio tabular a la derecha y, debajo, la pastilla de estado
+// que también es el toggle (misma escritura que el app: isAvailable + updatedAt).
+
+function MenuRow({
+  item,
+  toggling,
+  onEdit,
+  onToggle,
+}: {
+  item: MenuItem;
+  toggling: boolean;
+  onEdit: () => void;
+  onToggle: () => void;
+}) {
+  const off = !item.isAvailable;
+  return (
+    <div className="flex min-h-[64px] items-center gap-3 py-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={`Editar ${item.name}`}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left transition hover:opacity-80"
+      >
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" style={off ? { opacity: 0.5 } : undefined} />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg" style={{ background: TILE }}><IconDish /></div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] leading-5" style={{ color: off ? INK_SOFT : INK }}>{item.name}</p>
+          {item.description && (
+            <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>{item.description}</p>
+          )}
+        </div>
+      </button>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {item.price > 0 && (
+          <span className="text-[15px] font-bold leading-5 tabular-nums" style={{ color: off ? INK_SOFT : INK }}>${item.price.toFixed(2)}</span>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={toggling}
+          aria-pressed={off}
+          aria-label={off ? `Marcar ${item.name} como disponible` : `Marcar ${item.name} como agotado`}
+          title={off ? "Volver a vender" : "Dejar de vender por ahora"}
+          className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold transition hover:opacity-80 disabled:opacity-50"
+          style={off ? { background: TILE, color: INK_MUTED } : { background: "#FFFFFF", border: `1px solid ${BORDER}`, color: INK_MUTED }}
+        >
+          {off && <span className="h-1.5 w-1.5 rounded-full" style={{ background: INK_SOFT }} />}
+          {off ? "Agotado" : "Disponible"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Chip de filtro (36px, borde; activo = tinta) ────────────────────────────
 
 function FilterChip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-        selected
-          ? "border-[#F28C38] bg-[#F28C38]/10 text-[#F28C38]"
-          : "border-[#141413]/12 bg-white text-[#141413]/55 hover:border-[#141413]/25"
-      }`}
+      aria-pressed={selected}
+      className="inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[14px] transition hover:opacity-90"
+      style={selected ? { background: INK, color: CREAM } : { background: "#FFFFFF", border: `1px solid ${BORDER}`, color: INK }}
     >
       {label}
     </button>
@@ -1047,35 +1181,45 @@ function ItemFormModal({
     }
   }
 
+
+  const field =
+    "h-12 w-full rounded-xl bg-white px-3.5 text-[16px] outline-none";
+  const fieldStyle = { border: `1px solid ${BORDER}`, color: INK };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       onClick={() => { if (!busy) onClose(); }}
     >
       <div
-        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="menu-item-form-title"
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-[#141413]">
+          <h3 id="menu-item-form-title" className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
             {mode === "edit" ? "Editar platillo" : "Nuevo platillo"}
           </h3>
           <button
+            type="button"
             onClick={() => { if (!busy) onClose(); }}
-            className="rounded-lg px-2 py-1 text-sm text-[#141413]/40 hover:text-[#141413] transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:opacity-70"
+            style={{ color: INK_SOFT }}
             aria-label="Cerrar"
           >
-            ✕
+            <IconClose />
           </button>
         </div>
 
         {modalError && (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-600">
+          <p role="alert" className="mb-3 text-[14px] leading-[18px]" style={{ color: DANGER }}>
             {modalError}
-          </div>
+          </p>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Foto */}
           <input
             ref={imgInputRef}
@@ -1089,47 +1233,63 @@ function ItemFormModal({
             }}
           />
           {imagePreview ? (
-            <div className="relative overflow-hidden rounded-xl">
+            <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imagePreview} alt="" className="h-36 w-full object-cover" />
-              <div className="absolute bottom-2 right-2 flex gap-1.5">
+              <img src={imagePreview} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+              <div className="flex flex-col gap-1.5">
                 <button
+                  type="button"
                   onClick={() => imgInputRef.current?.click()}
-                  className="rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-[#141413] shadow-sm hover:bg-white transition-colors"
+                  className="flex h-10 items-center justify-center rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+                  style={{ border: `1px solid ${BORDER}`, color: INK }}
                 >
-                  Cambiar
+                  Cambiar foto
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setImageFile(null); setImagePreview(null); setRemoveImage(true); }}
-                  className="rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-red-500 shadow-sm hover:bg-white transition-colors"
+                  className="h-9 px-4 text-[14px] font-semibold hover:underline"
+                  style={{ color: DANGER }}
                 >
-                  Quitar
+                  Quitar foto
                 </button>
               </div>
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => imgInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#141413]/15 bg-[#faf9f5] px-4 py-6 text-xs font-medium text-[#141413]/45 hover:border-[#F28C38]/50 hover:text-[#F28C38] transition-all"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
             >
-              📷 Agregar foto del platillo (opcional)
+              <IconCamera />
+              Agregar foto del platillo
+              <span className="font-normal" style={{ color: INK_SOFT }}>· opcional</span>
             </button>
           )}
 
-          <input
-            type="text"
-            placeholder="Nombre del platillo *"
-            value={fName}
-            onChange={(e) => setFName(e.target.value)}
-            className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
-          />
-          <textarea
-            placeholder="Descripción (opcional)"
-            value={fDesc}
-            rows={2}
-            onChange={(e) => setFDesc(e.target.value)}
-            className="w-full resize-none rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
-          />
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>Nombre</span>
+            <input
+              type="text"
+              placeholder="Ej. Torta de pierna"
+              value={fName}
+              onChange={(e) => setFName(e.target.value)}
+              className={field}
+              style={fieldStyle}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>Descripción <span style={{ color: INK_SOFT }}>· opcional</span></span>
+            <textarea
+              placeholder="Qué lleva, cómo viene"
+              value={fDesc}
+              rows={2}
+              onChange={(e) => setFDesc(e.target.value)}
+              className="w-full resize-none rounded-xl bg-white px-3.5 py-3 text-[16px] leading-6 outline-none"
+              style={fieldStyle}
+            />
+          </label>
 
           {/* Opciones que el cliente elige al ordenar. Arranca con lo que se
               detecte en la descripción ("Elige tu salsa: A, B, C") y de ahí el
@@ -1144,24 +1304,34 @@ function ItemFormModal({
                 : null
             }
           />
+
           <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="Precio"
-              value={fPrice}
-              min={0}
-              step={0.5}
-              onChange={(e) => setFPrice(e.target.value)}
-              className="w-28 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
-            />
-            <input
-              type="text"
-              placeholder="Categoría (ej. Bebidas)"
-              value={fCategory}
-              list="menu-hub-categories"
-              onChange={(e) => setFCategory(e.target.value)}
-              className="flex-1 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
-            />
+            <label className="block w-32 shrink-0">
+              <span className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>Precio</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={fPrice}
+                min={0}
+                step={0.5}
+                onChange={(e) => setFPrice(e.target.value)}
+                className={`${field} tabular-nums`}
+                style={fieldStyle}
+              />
+            </label>
+            <label className="block min-w-0 flex-1">
+              <span className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>Categoría</span>
+              <input
+                type="text"
+                placeholder="Ej. Bebidas"
+                value={fCategory}
+                list="menu-hub-categories"
+                onChange={(e) => setFCategory(e.target.value)}
+                className={field}
+                style={fieldStyle}
+              />
+            </label>
             <datalist id="menu-hub-categories">
               {categories.map((c) => (
                 <option key={c} value={c} />
@@ -1169,69 +1339,92 @@ function ItemFormModal({
             </datalist>
           </div>
 
-          {/* Disponible */}
+          {/* Disponible: fila de 48 con interruptor en tinta */}
           <button
+            type="button"
+            role="switch"
+            aria-checked={fAvailable}
             onClick={() => setFAvailable((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 transition-colors"
+            className="flex h-12 w-full items-center justify-between rounded-xl bg-white px-3.5 transition"
+            style={{ border: `1px solid ${BORDER}` }}
           >
-            <span className="text-sm text-[#141413]">Disponible en el menú</span>
+            <span className="text-[15px]" style={{ color: INK }}>Disponible en el menú</span>
             <span
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                fAvailable ? "bg-emerald-500" : "bg-[#141413]/20"
-              }`}
+              className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+              style={{ background: fAvailable ? INK : BORDER }}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                  fAvailable ? "translate-x-[18px]" : "translate-x-0.5"
-                }`}
+                className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+                style={{ transform: fAvailable ? "translateX(22px)" : "translateX(2px)" }}
               />
             </span>
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={busy !== null || !fName.trim()}
-            className="w-full rounded-xl bg-[#141413] py-3 text-sm font-semibold text-white hover:bg-[#141413]/80 disabled:opacity-50 transition-colors"
-          >
-            {busy === "save" ? "Guardando…" : mode === "edit" ? "Guardar cambios" : "Agregar platillo"}
-          </button>
+          <div className="space-y-2 pt-1">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={busy !== null || !fName.trim()}
+              className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ background: BRAND, color: INK }}
+            >
+              {busy === "save" ? "Guardando…" : "Guardar platillo"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (!busy) onClose(); }}
+              disabled={busy !== null}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+            >
+              Cancelar
+            </button>
+          </div>
 
           {mode === "edit" && !confirmDelete && (
-            <div className="flex gap-2 pt-1">
+            <div className="flex items-center justify-between gap-2 pt-1">
               <button
+                type="button"
                 onClick={handleDuplicate}
                 disabled={busy !== null}
-                className="flex-1 rounded-xl border border-[#141413]/12 py-2.5 text-xs font-semibold text-[#141413]/60 hover:text-[#141413] disabled:opacity-50 transition-colors"
+                className="h-10 px-2 text-[14px] font-semibold hover:underline disabled:opacity-50"
+                style={{ color: LINK }}
               >
-                {busy === "duplicate" ? "Duplicando…" : "⧉ Duplicar"}
+                {busy === "duplicate" ? "Duplicando…" : "Duplicar platillo"}
               </button>
               <button
+                type="button"
                 onClick={() => { setModalError(null); setConfirmDelete(true); }}
                 disabled={busy !== null}
-                className="flex-1 rounded-xl border border-red-200 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                className="h-10 px-2 text-[14px] font-semibold hover:underline disabled:opacity-50"
+                style={{ color: DANGER }}
               >
-                🗑 Eliminar
+                Eliminar platillo
               </button>
             </div>
           )}
 
           {mode === "edit" && confirmDelete && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-xs font-medium text-red-600">
+            <div className="rounded-xl p-3.5" style={{ background: TILE }}>
+              <p className="text-[14px] leading-[18px]" style={{ color: INK }}>
                 ¿Eliminar “{item?.name}”? Esta acción no se puede deshacer.
               </p>
-              <div className="mt-2.5 flex gap-2">
+              <div className="mt-3 flex gap-2">
                 <button
+                  type="button"
                   onClick={handleDelete}
                   disabled={busy !== null}
-                  className="flex-1 rounded-lg bg-red-500 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+                  className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-50"
+                  style={{ border: `1px solid ${DANGER}`, color: DANGER }}
                 >
                   {busy === "delete" ? "Eliminando…" : "Sí, eliminar"}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setConfirmDelete(false)}
                   disabled={busy !== null}
-                  className="flex-1 rounded-lg border border-red-200 bg-white py-2 text-xs font-semibold text-red-500 disabled:opacity-50 transition-colors"
+                  className="flex h-11 flex-1 items-center justify-center rounded-xl text-[14px] font-semibold hover:underline disabled:opacity-50"
+                  style={{ color: LINK }}
                 >
                   Cancelar
                 </button>
@@ -1254,8 +1447,8 @@ export default function MenuSetupPage() {
 
 function Spinner() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
+    <div className="flex min-h-screen items-center justify-center" style={{ background: CREAM }}>
+      <svg className="h-6 w-6 animate-spin" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
       </svg>
@@ -1263,9 +1456,9 @@ function Spinner() {
   );
 }
 
-function Spin() {
+function Spin({ light = false }: { light?: boolean }) {
   return (
-    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 shrink-0 animate-spin" style={{ color: light ? CREAM : INK }} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
     </svg>

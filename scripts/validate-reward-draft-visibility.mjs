@@ -57,12 +57,15 @@ assert.ok(
 //     mismo lugar = dos puertas); solo con premios publicados y sin borrador.
 assert.ok(
   recompensas.includes("{!loading && restaurantId && hasAnyReward && !pendingDraft && ("),
-  'el link "✏️ Editar" del encabezado debe condicionarse a hasAnyReward && !pendingDraft — una sola puerta mientras el borrador espera',
+  'el link "Editar" del encabezado debe condicionarse a hasAnyReward && !pendingDraft — una sola puerta mientras el borrador espera',
 );
 {
-  const editarIdx = recompensas.indexOf("✏️ Editar\n");
+  // Opción A (23-sep-2026): el link ya no lleva lápiz; es un botón
+  // secundario con el texto "Editar" solo. Sigue siendo el primer "Editar\n"
+  // del archivo (el de abajo dice "Editar mis premios").
+  const editarIdx = recompensas.indexOf("Editar\n");
   const condIdx = recompensas.indexOf("hasAnyReward && !pendingDraft && (");
-  assert.ok(editarIdx > condIdx && condIdx > 0 && editarIdx - condIdx < 400, 'la condicional envuelve justo el "✏️ Editar" del encabezado');
+  assert.ok(editarIdx > condIdx && condIdx > 0 && editarIdx - condIdx < 400, 'la condicional envuelve justo el "Editar" del encabezado');
 }
 //  c. La ruta /vendor/recompensas/editar existe y re-exporta el paso del setup.
 {
