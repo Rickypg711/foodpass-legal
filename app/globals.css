@@ -214,3 +214,17 @@ a.menu-cta-enter[aria-disabled="true"] {
 @media (prefers-reduced-motion: reduce) {
   .tercera-skin .tercera-rise, .tercera-skin .tercera-bob { animation: none; }
 }
+
+/* ==========================================================================
+   iPhone: Safari hace ZOOM solo al tocar un campo con letra menor a 16px, y
+   la página se queda "acercada" y chueca (Ricardo lo veía en /vendor,
+   23-sep-2026). En teléfono TODO campo va a 16px; en escritorio cada uno
+   conserva su tamaño. !important porque Tailwind pone text-[13px] inline.
+   ========================================================================== */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
