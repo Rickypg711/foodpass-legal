@@ -131,7 +131,7 @@ check("Luzz: imprime sin pared", entitlementsOf(undefined, LUZZ, now).kitchenPri
     ["pared 4 — pedidos", "../app/vendor/pedidos/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "entsRef.current.kitchenPrintAccess", 'wall="kitchenPrint"', "onClick={() => openTicket(order.id)}"]],
     ["pared 4 — caja", "../app/vendor/pos/page.tsx", ["entsRef.current.kitchenPrintAccess", 'setWallKind("kitchenPrint")', "wall={wallKind}", "onTicket ? onTicket()"]],
     ["pared 4 — configuración", "../app/vendor/configuracion/page.tsx", ["ents.kitchenPrintAccess", 'wall="kitchenPrint"', "autoPrintTickets: autoPrintOn"]],
-    ["pared 4 — la hoja del ticket", "../app/vendor/ticket/[orderId]/page.tsx", ["fetchWithBilling(", "kitchenPrintAccess) setLocked(true)", 'wall="kitchenPrint"', "if (!order || !autoPrint || locked) return;"]],
+    ["pared 4 — la hoja del ticket", "../app/vendor/ticket/[orderId]/page.tsx", ["fetchWithBilling(", "kitchenPrintAccess) setLocked(true)", 'wall="kitchenPrint"', "if (!order || !autoPrint || locked) return;", "setDismissed(true)", 'href="/vendor/plan"', "{locked ? null : error ?"]],
   ]) {
     const src = read(path);
     for (const n of needles) check(`${name}: ${n}`, src.includes(n), true);

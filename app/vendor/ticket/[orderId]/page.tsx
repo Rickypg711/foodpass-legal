@@ -27,6 +27,7 @@
 // imprimir le avisa con postMessage(TICKET_PRINTED_MESSAGE).
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -119,6 +120,10 @@ export default function TicketPage() {
   /** Pared de Pro (kitchenPrint): con reja cerrada no se imprime; la pared
    * ofrece la prueba y, al abrirse, el ticket sigue solo. */
   const [locked, setLocked] = useState(false);
+  /** "Ahora no" en la pared: si la pestaña la abrió Pedidos se cierra sola;
+   * si la abrieron directo, el navegador no deja cerrarla y se queda un
+   * aviso corto en vez de la pared (23-sep, Ricardo: "¿y si le das Ahora no?"). */
+  const [dismissed, setDismissed] = useState(false);
   const [ent, setEnt] = useState<Entitlement | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const widthMm: 58 | 80 = search.get("w") === "58" ? 58 : search.get("w") === "80" ? 80 : paperMm;
@@ -252,16 +257,30 @@ export default function TicketPage() {
       `}</style>
 
       {/* Pared de Pro: el ticket de cocina y la impresora son Pro (23-sep). */}
-      {locked && ent && restaurantId && !inFrame ? (
+      {locked && dismissed ? (
+        <div className="no-print" style={{ flexDirection: "column", alignItems: "center", paddingTop: 48 }}>
+          <p style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", maxWidth: 320 }}>
+            El ticket de cocina es parte de Pro. Tu Caja y tus pedidos siguen gratis.
+          </p>
+          <Link href="/vendor/plan" className="primary" style={{ font: "inherit", fontFamily: "ui-sans-serif, system-ui, sans-serif", padding: "10px 16px", borderRadius: 10, background: "#000", color: "#fff", textDecoration: "none" }}>
+            Ver planes
+          </Link>
+          <Link href="/vendor/pedidos" style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 13, color: "#555" }}>
+            Volver a Pedidos
+          </Link>
+        </div>
+      ) : null}
+      {locked && !dismissed && ent && restaurantId && !inFrame ? (
         <ProWall
           wall="kitchenPrint"
           restaurantId={restaurantId}
           entitlement={ent}
           onClose={() => {
+            setDismissed(true);
             try {
               window.close();
             } catch {
-              /* pestaña que no abrimos nosotros */
+              /* pestaña que no abrimos nosotros: queda el aviso */
             }
           }}
           onUnlocked={(_ents, nextEnt) => {
@@ -270,7 +289,7 @@ export default function TicketPage() {
           }}
         />
       ) : null}
-      {error ? (
+      {locked ? null : error ? (
         <p className="center" style={{ padding: 24 }}>{error}</p>
       ) : !order ? (
         <p className="center" style={{ padding: 24 }}>Cargando ticket…</p>
