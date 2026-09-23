@@ -124,3 +124,66 @@ Candado en `scripts/validate-print-ticket.mjs`: platillo ≥ 20 px, opciones
 ≥ 16 px, a dónde va ≥ 18 px, nada de `formatPrice(line)`, el total sigue.
 
 QA: en producción con la sesión de Luzz Pizza (localhost no tiene sesión).
+
+## 23-sep-2026 (tarde) — el ticket de cocina es PRO, y sale solo
+
+**Por qué.** Zahir es el dueño que más pide (delivery, pre factura, letras
+grandes) y cero ha pagado. Ricardo: "quiero que lo use bien Y que pague".
+Lo que él pidió es justo lo que los grandes cobran aparte (Toast y Square
+cobran la cocina); nadie más en México lo usa hoy, así que no se le quita
+nada a nadie.
+
+**Pared 4 — `kitchenPrint`** (`lib/subscription/entitlement.ts`,
+`kitchenPrintAccess`; free = false, Pro = true; bypass de fundador abre).
+La misma `ProWall` de la Caja, con sus 14 días gratis de un toque y sin
+tarjeta. Título "Ticket de cocina e impresora"; resultado "Para que cada
+pedido salga solo en tu cocina, en grande, sin que nadie lo copie a mano".
+**Solo web:** la app no imprime, así que el nombre no tiene espejo en el Dart
+a propósito (el candado de paridad sigue leyendo los cuatro de siempre).
+
+Dónde está la reja (con reja cerrada, la pared sale AL TOCAR y, si se abre,
+repite la acción):
+- Pedidos → 🖨️ de cada tarjeta (`openTicket`).
+- Caja → "Imprimir ticket" del éxito (`onTicket`; la Caja ahora pinta
+  `wall={wallKind}`: mesas o ticket).
+- Configuración → "Imprimir ticket de prueba" y el interruptor "Sale solo".
+- La hoja `/vendor/ticket/{id}` misma (por si abren el link directo): lee el
+  plan con `fetchWithBilling` y no imprime con reja cerrada.
+
+**Sale solo — `autoPrintTickets`** (doc del restaurante, default false; se
+prende en Configuración → Impresora, solo con Pro/prueba):
+- Pedidos ya recibe los pedidos en vivo. Con el interruptor prendido y Pro,
+  cada pedido que ENTRA a la bandeja (pending/open_tab) después de abrir la
+  pestaña (colchón de 2 min, `shouldAutoPrint`) se abre en un **iframe
+  escondido** (420×640 fuera de la vista; uno de 0×0 imprime en blanco) y la
+  hoja llama `print()`. Uno a la vez: la hoja avisa con
+  `postMessage("comeleal:ticket-printed")` y Pedidos quita el iframe y sigue;
+  si nadie contesta en 45 s, sigue igual. Lo que ya estaba en la bandeja al
+  abrir NO se imprime (nada de 20 tickets de anoche).
+- **Sin ventana:** Chrome abierto con `--kiosk-printing` imprime a la
+  impresora predeterminada sin preguntar. Los pasos están en Configuración
+  (acceso directo → Propiedades → Destino). Sin ese modo sale la ventana y
+  basta un Enter.
+- La pestaña lo dice: "🖨️ Sale solo en tu impresora"; si se acabó la prueba,
+  "Impresión automática en pausa · es Pro" y abre la pared.
+- El interruptor se lee una vez al abrir Pedidos (getDoc): cambiarlo en
+  Configuración pide recargar Pedidos.
+
+**Cobrarle a Zahir (RD, sin Mercado Pago):** paga por PayPal o envío de
+dinero, y Pro se prende a mano en `restaurants/{id}/private/billing`:
+`subscriptionPlan: "pro"`, `subscriptionAccessStatus: "active"`,
+`subscriptionAccessExpiresAt: +31 días`, `subscriptionUpdatedAt`,
+`subscriptionReconcileSource: "manual"`. La regla única (`entitlementOf`)
+lo lee tal cual; al vencer, el barrido de billing lo regresa a free.
+
+**Candados:** `validate-caja-pro-gate.mjs` §6b (tabla, bypass, las cuatro
+superficies, ningún `window.open` directo en Pedidos) y
+`validate-print-ticket.mjs` §5 (tabla de `shouldAutoPrint`, postMessage,
+iframe con tamaño, cola, copy de Configuración).
+
+**Paridad app:** nada. La app no imprime ni ve esta pared (documentado en
+PARIDAD: "impresión = web-only").
+
+**QA:** en prod con Luzz (bypass: sin pared) se ve el interruptor, la
+etiqueta "Sale solo" y el ticket sigue saliendo. La pared con reja cerrada
+la afirman los candados; el primer dueño real que la vea es Zahir.

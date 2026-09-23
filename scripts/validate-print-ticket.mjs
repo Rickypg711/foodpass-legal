@@ -13,13 +13,25 @@
 //   3. Hay botón en Pedidos y en el éxito de la Caja; Configuración elige el
 //      ancho (58/80) y tiene ticket de prueba.
 //   4. Bluetooth JAMÁS desde nuestro código: solo window.print().
+//   5. (23-sep) Sale solo: con `autoPrintTickets` y Pro, Pedidos abre la hoja
+//      en un iframe escondido por cada pedido que ENTRA después de abrir la
+//      pestaña (no lo que ya estaba), uno a la vez; la hoja avisa con
+//      postMessage(TICKET_PRINTED_MESSAGE) al terminar. La reja es la pared
+//      kitchenPrint (validate-caja-pro-gate.mjs).
 //
 // Run: node --experimental-strip-types scripts/validate-print-ticket.mjs
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TICKET_SAMPLE_ID, ticketPaperMm } from "../lib/pos/ticketPaper.ts";
+import {
+  AUTO_PRINT_LOOKBACK_MS,
+  TICKET_PRINTED_MESSAGE,
+  TICKET_SAMPLE_ID,
+  autoPrintTickets,
+  shouldAutoPrint,
+  ticketPaperMm,
+} from "../lib/pos/ticketPaper.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => readFileSync(join(root, p), "utf8");
@@ -49,8 +61,48 @@ assert.ok(ticket.includes('className="item">{qty}x {it.name'), "cantidad + plati
 assert.ok(!ticket.includes("formatPrice(line)"), "sin precio por platillo (ticket de cocina)");
 assert.ok(ticket.includes('className="row total"'), "el total sigue al final (pre factura)");
 
+// Sale solo (23-sep): la tabla de shouldAutoPrint y el contrato de la cola.
+{
+  const T0 = 1_800_000_000_000;
+  const printed = new Set(["ya"]);
+  const o = (id, status, createdAtMs) => ({ id, status, createdAtMs });
+  assert.equal(autoPrintTickets({}), false, "sin campo = apagado");
+  assert.equal(autoPrintTickets({ autoPrintTickets: true }), true);
+  assert.equal(autoPrintTickets({ autoPrintTickets: "true" }), false, "solo booleano");
+  assert.equal(AUTO_PRINT_LOOKBACK_MS, 120000, "colchón de 2 min");
+  assert.equal(shouldAutoPrint(o("a", "pending", T0 + 1000), T0, printed), true, "pedido que entra después de abrir → imprime");
+  assert.equal(shouldAutoPrint(o("a", "open_tab", T0 + 1000), T0, printed), true, "cuenta de mesa nueva → imprime");
+  assert.equal(shouldAutoPrint(o("a", "pending", T0 - 60000), T0, printed), true, "entró 1 min antes de abrir → imprime (colchón)");
+  assert.equal(shouldAutoPrint(o("a", "pending", T0 - 3 * 60000), T0, printed), false, "los de anoche NO se imprimen al abrir");
+  assert.equal(shouldAutoPrint(o("ya", "pending", T0 + 1000), T0, printed), false, "ya impreso → no repite");
+  assert.equal(shouldAutoPrint(o("a", "preparing", T0 + 1000), T0, printed), false, "solo lo que llega a la bandeja");
+  assert.equal(shouldAutoPrint(o("a", "pending", null), T0, printed), false, "sin fecha → no");
+  assert.equal(TICKET_PRINTED_MESSAGE, "comeleal:ticket-printed");
+  for (const must of ["tellParentPrinted()", "window.parent.postMessage({ type: TICKET_PRINTED_MESSAGE", "window.location.origin)"]) {
+    assert.ok(ticket.includes(must), `la hoja avisa a Pedidos: ${must}`);
+  }
+  const ped = read("app/vendor/pedidos/page.tsx");
+  for (const must of [
+    "autoPrintRef.current && entsRef.current.kitchenPrintAccess",
+    "shouldAutoPrint({ id: o.id, status: o.status, createdAtMs }, openedAtMs.current, printedIds.current)",
+    'document.createElement("iframe")',
+    "e.origin !== window.location.origin",
+    "data?.type === TICKET_PRINTED_MESSAGE) finishPrint()",
+    "if (printingFrame.current || printQueue.current.length === 0) return;",
+    "Sale solo en tu impresora",
+  ]) {
+    assert.ok(ped.includes(must), `Pedidos imprime solo: ${must}`);
+  }
+  assert.ok(!/style\.cssText = "[^"]*width:0/.test(ped), "el iframe tiene tamaño real (0×0 imprime en blanco)");
+  const cfg = read("app/vendor/configuracion/page.tsx");
+  for (const must of ["Sale solo cuando entra un pedido", "--kiosk-printing", "RawBT", "impresora predeterminada"]) {
+    assert.ok(cfg.includes(must), `Configuración explica cómo sale solo: ${must}`);
+  }
+}
+
 const pedidos = read("app/vendor/pedidos/page.tsx");
-assert.ok(pedidos.includes("/vendor/ticket/${encodeURIComponent(order.id)}"), "Pedidos tiene el botón de imprimir");
+// 23-sep: el 🖨️ pasa por openTicket (pared kitchenPrint), no abre la hoja directo.
+assert.ok(pedidos.includes("onClick={() => openTicket(order.id)}") && pedidos.includes("/vendor/ticket/${encodeURIComponent(orderId)}"), "Pedidos tiene el botón de imprimir (vía la pared)");
 const pos = read("app/vendor/pos/page.tsx");
 assert.ok(pos.includes("ticketUrl: `/vendor/ticket/${encodeURIComponent(orderRef.id)}`"), "la Caja ofrece el ticket al cobrar");
 assert.ok(pos.includes("if (receiptUrl || ticketUrl) return;"), "con ticket, el éxito no se cierra solo");

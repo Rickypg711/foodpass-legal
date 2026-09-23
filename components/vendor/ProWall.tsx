@@ -6,6 +6,7 @@
  *   history   → ver más de 30 días (Reportes / historial)
  *   posStaff  → agregar el 2° PIN al equipo de la caja
  *   tableTabs → abrir una cuenta de mesa desde la Caja
+ *   kitchenPrint → imprimir el ticket de cocina / que salga solo (23-sep, solo web)
  *
  * Comportamiento (9-sep-2026, reverse trial con consentimiento — Verna /
  * Poyar / Hormozi): la pared NO arranca la prueba sola. Si el restaurante
@@ -56,12 +57,14 @@ export const WALL_OUTCOME: Record<CajaWall, string> = {
   history: "Para ver tu mes completo y saber si vas mejor que el pasado.",
   posStaff: "Para que cada venta quede con el nombre de quien cobró. Se acaba el \"yo no fui\" en la caja.",
   tableTabs: "Para que la mesa 4 no se te pierda entre rondas en la noche llena.",
+  kitchenPrint: "Para que cada pedido salga solo en tu cocina, en grande, sin que nadie lo copie a mano.",
 };
 
 const WALL_TITLE: Record<CajaWall, string> = {
   history: "Ver más de 30 días",
   posStaff: "Un PIN más para tu equipo",
   tableTabs: "Cuentas por mesa",
+  kitchenPrint: "Ticket de cocina e impresora",
 };
 
 

@@ -145,7 +145,8 @@ export function isProActive(
 //
 // Decisión de Ricardo (7-sep noche, FOODPASS/docs/PLAN_REJA_CAJA_8_SEP.md):
 // free = menú, QR, pedidos, puntos SIN tope, clientes, win-back, export.
-// Pro (499 MXN) = historial >30 días, 2° cajero con PIN, mesas, reportes >30 días.
+// Pro (499 MXN) = historial >30 días, 2° cajero con PIN, mesas, reportes >30 días
+// y, desde el 23-sep, el ticket de cocina + impresora (solo web).
 //
 // Espejo exacto de `EffectiveEntitlements` en
 // FOODPASS/lib/subscription/services/subscription_tier_service.dart — los
@@ -160,8 +161,9 @@ export const HISTORY_DAYS_FREE = 30;
 /** PINs de la caja en el plan gratis: 1 (el dueño). El 2° = pared 2. */
 export const POS_STAFF_FREE_LIMIT = 1;
 
-/** Las tres paredes de la Caja. `reports` usa la misma pared que `history`. */
-export type CajaWall = "history" | "posStaff" | "tableTabs";
+/** Las tres paredes de la Caja (`reports` usa la de `history`) + la cuarta,
+ * solo web: el ticket de cocina y la impresora (23-sep-2026). */
+export type CajaWall = "history" | "posStaff" | "tableTabs" | "kitchenPrint";
 
 export type Entitlements = {
   plan: "free" | "pro";
@@ -173,6 +175,10 @@ export type Entitlements = {
   tableTabsAccess: boolean;
   /** Reportes más allá de `historyDays` (7/30 días siguen gratis). */
   reportsAccess: boolean;
+  /** Ticket de cocina e impresora (23-sep-2026, Zahir): imprimir un pedido y
+   * que salga solo en la cocina. SOLO WEB: la app no imprime (docs/TICKET_IMPRESORA.md),
+   * así que este nombre no tiene espejo en el Dart a propósito. */
+  kitchenPrintAccess: boolean;
 };
 
 export const FREE_ENTITLEMENTS: Entitlements = Object.freeze({
@@ -181,6 +187,7 @@ export const FREE_ENTITLEMENTS: Entitlements = Object.freeze({
   posStaffAccess: false,
   tableTabsAccess: false,
   reportsAccess: false,
+  kitchenPrintAccess: false,
 });
 
 export const PRO_ENTITLEMENTS: Entitlements = Object.freeze({
@@ -189,6 +196,7 @@ export const PRO_ENTITLEMENTS: Entitlements = Object.freeze({
   posStaffAccess: true,
   tableTabsAccess: true,
   reportsAccess: true,
+  kitchenPrintAccess: true,
 });
 
 /**
@@ -221,5 +229,7 @@ export function wallClosed(e: Entitlements, wall: CajaWall): boolean {
       return !e.posStaffAccess;
     case "tableTabs":
       return !e.tableTabsAccess;
+    case "kitchenPrint":
+      return !e.kitchenPrintAccess;
   }
 }

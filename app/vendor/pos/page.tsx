@@ -23,6 +23,7 @@ import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import {
   entitlementOf,
   entitlementsOf,
+  type CajaWall,
   FREE_ENTITLEMENTS,
   type Entitlement,
   type Entitlements,
@@ -805,7 +806,7 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, onTicket, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; /** 🖨️ El ticket es Pro (23-sep): la página decide si abre la hoja o la pared. */ onTicket?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
@@ -865,7 +866,7 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptT
             {referralNotify}
             {ticketUrl ? (
               <button
-                onClick={() => window.open(ticketUrl, "_blank", "noopener,noreferrer")}
+                onClick={() => (onTicket ? onTicket() : window.open(ticketUrl, "_blank", "noopener,noreferrer"))}
                 className="w-full rounded-2xl py-3 text-[14px] font-bold"
                 style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
               >
@@ -886,7 +887,7 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptT
         {!receiptUrl && ticketUrl && (
           <div className="flex w-full flex-col gap-2">
             <button
-              onClick={() => window.open(ticketUrl, "_blank", "noopener,noreferrer")}
+              onClick={() => (onTicket ? onTicket() : window.open(ticketUrl, "_blank", "noopener,noreferrer"))}
               className="w-full rounded-2xl py-3.5 text-[15px] font-extrabold text-white"
               style={{ background: "#1C2526" }}
             >
@@ -926,6 +927,8 @@ export default function PosPage() {
   const [ents, setEnts] = useState<Entitlements>(FREE_ENTITLEMENTS);
   const entsRef = useRef<Entitlements>(FREE_ENTITLEMENTS);
   const [wallOpen, setWallOpen] = useState(false);
+  /** Qué pared enseñar: mesas (pared 3) o el ticket de cocina (23-sep, pared 4). */
+  const [wallKind, setWallKind] = useState<CajaWall>("tableTabs");
   /** La acción que la pared detuvo — se repite al abrirse la puerta. */
   const pendingAction = useRef<(() => void) | null>(null);
   // 🎚️ Formas de pago que el dueño dejó prendidas en Configuración. Hasta
@@ -1091,6 +1094,7 @@ export default function PosPage() {
     // Pared 3: agregar rondas a una mesa = llevar mesas = Pro.
     if (!entsRef.current.tableTabsAccess) {
       pendingAction.current = () => { void addItemsToTabTransaction(orderId, itemsToAdd); };
+      setWallKind("tableTabs");
       setWallOpen(true);
       return;
     }
@@ -1406,6 +1410,7 @@ export default function PosPage() {
       pendingAction.current = () => {
         void confirmOrder(mode, method, customerName, customerPhone, notes, redemption, discount, tip, tipMethod);
       };
+      setWallKind("tableTabs");
       setWallOpen(true);
       return;
     }
@@ -2108,29 +2113,8 @@ export default function PosPage() {
             // La pared sale al tocar "Cuenta abierta"; si se abre, el modal pasa
             // solo a ese modo y el dueño teclea el nombre. Nada que repetir.
             pendingAction.current = null;
-            setWallOpen(true);
-          }}
-        />
-      )}
-
-      {/* ── Pared 3: mesas ── */}
-      {wallOpen && ent && restaurantId && (
-        <ProWall
-          wall="tableTabs"
-          restaurantId={restaurantId}
-          entitlement={ent}
-          onClose={() => {
-            setWallOpen(false);
-            pendingAction.current = null;
-          }}
-          onUnlocked={(next, nextEnt) => {
-            setEnts(next);
-            entsRef.current = next;
-            setEnt(nextEnt);
-            setWallOpen(false);
-            const again = pendingAction.current;
-            pendingAction.current = null;
-            again?.();
+            setWallKind("tableTabs");
+      setWallOpen(true);
           }}
         />
       )}
@@ -2145,6 +2129,18 @@ export default function PosPage() {
           ticketUrl={success.ticketUrl}
           onReceiptTapped={() => {
             if (restaurantId && success.orderId) void markReceiptTapped(getFirebaseDb(), restaurantId, success.orderId);
+          }}
+          onTicket={() => {
+            const url = success.ticketUrl;
+            if (!url) return;
+            // Pared 4: el ticket de cocina es Pro. Si la puerta se abre, se imprime igual.
+            if (!entsRef.current.kitchenPrintAccess) {
+              pendingAction.current = () => window.open(url, "_blank", "noopener,noreferrer");
+              setWallKind("kitchenPrint");
+              setWallOpen(true);
+              return;
+            }
+            window.open(url, "_blank", "noopener,noreferrer");
           }}
           referralNotify={
             restaurantId && success.orderId ? (
@@ -2201,6 +2197,27 @@ export default function PosPage() {
           />
         );
       })()}
+      {/* ── Pared 3 (mesas) / Pared 4 (ticket de cocina): va DESPUÉS del éxito para pintarse encima ── */}
+      {wallOpen && ent && restaurantId && (
+        <ProWall
+          wall={wallKind}
+          restaurantId={restaurantId}
+          entitlement={ent}
+          onClose={() => {
+            setWallOpen(false);
+            pendingAction.current = null;
+          }}
+          onUnlocked={(next, nextEnt) => {
+            setEnts(next);
+            entsRef.current = next;
+            setEnt(nextEnt);
+            setWallOpen(false);
+            const again = pendingAction.current;
+            pendingAction.current = null;
+            again?.();
+          }}
+        />
+      )}
     </>
   );
 }

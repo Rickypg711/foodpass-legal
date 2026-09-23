@@ -114,6 +114,33 @@ check("wallClosed posStaff pro", wallClosed(PRO_ENTITLEMENTS, "posStaff"), false
 check("wallClosed tableTabs free", wallClosed(FREE_ENTITLEMENTS, "tableTabs"), true);
 check("wallClosed tableTabs pro", wallClosed(PRO_ENTITLEMENTS, "tableTabs"), false);
 
+// ── 6b. Pared 4 — ticket de cocina e impresora (23-sep-2026, SOLO WEB) ──
+// Zahir (Central Fast Food): "para la cocina", "letras más grandes"... y cero
+// pagado. Imprimir el ticket y que salga solo es Pro. La app no imprime, así
+// que este nombre NO tiene espejo en el Dart a propósito (docs/TICKET_IMPRESORA.md).
+check("free: sin ticket de cocina", FREE_ENTITLEMENTS.kitchenPrintAccess, false);
+check("pro: ticket de cocina", PRO_ENTITLEMENTS.kitchenPrintAccess, true);
+check("wallClosed kitchenPrint free", wallClosed(FREE_ENTITLEMENTS, "kitchenPrint"), true);
+check("wallClosed kitchenPrint pro", wallClosed(PRO_ENTITLEMENTS, "kitchenPrint"), false);
+check("Luzz: imprime sin pared", entitlementsOf(undefined, LUZZ, now).kitchenPrintAccess, true);
+{
+  const wall = read("../components/vendor/ProWall.tsx");
+  check("ProWall: título de la pared 4", wall.includes('kitchenPrint: "Ticket de cocina e impresora"'), true);
+  check("ProWall: resultado de la pared 4", wall.includes("Para que cada pedido salga solo en tu cocina, en grande, sin que nadie lo copie a mano."), true);
+  for (const [name, path, needles] of [
+    ["pared 4 — pedidos", "../app/vendor/pedidos/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "entsRef.current.kitchenPrintAccess", 'wall="kitchenPrint"', "onClick={() => openTicket(order.id)}"]],
+    ["pared 4 — caja", "../app/vendor/pos/page.tsx", ["entsRef.current.kitchenPrintAccess", 'setWallKind("kitchenPrint")', "wall={wallKind}", "onTicket ? onTicket()"]],
+    ["pared 4 — configuración", "../app/vendor/configuracion/page.tsx", ["ents.kitchenPrintAccess", 'wall="kitchenPrint"', "autoPrintTickets: autoPrintOn"]],
+    ["pared 4 — la hoja del ticket", "../app/vendor/ticket/[orderId]/page.tsx", ["fetchWithBilling(", "kitchenPrintAccess) setLocked(true)", 'wall="kitchenPrint"', "if (!order || !autoPrint || locked) return;"]],
+  ]) {
+    const src = read(path);
+    for (const n of needles) check(`${name}: ${n}`, src.includes(n), true);
+  }
+  // Ningún window.open al ticket que se salte la pared en Pedidos.
+  const pedidos = read("../app/vendor/pedidos/page.tsx");
+  check("pedidos: el 🖨️ no abre el ticket directo", /onClick=\{\(\) => window\.open\(`\/vendor\/ticket/.test(pedidos), false);
+}
+
 // ── 7. Free SIN tope: los puntos nunca caen a cero por conteo ──
 {
   // phonePoints.ts importa "@/lib" y firebase (node no lo resuelve): el
@@ -219,7 +246,8 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   for (const [name, path, needles] of [
     ["pared 1 — reportes", "../app/vendor/reportes/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "historyAllowed(", 'wall="history"']],
     ["pared 2 — configuración", "../app/vendor/configuracion/page.tsx", ["fetchWithBilling(", "entitlementsOf(", "canAddPosStaff(", 'wall="posStaff"']],
-    ["pared 3 — caja", "../app/vendor/pos/page.tsx", ["fetchWithBilling(", "entitlementsOf(", 'mode === "tab" && !entsRef.current.tableTabsAccess', 'wall="tableTabs"']],
+    // 23-sep: la Caja pinta wall={wallKind} (mesas o ticket de cocina).
+    ["pared 3 — caja", "../app/vendor/pos/page.tsx", ["fetchWithBilling(", "entitlementsOf(", 'mode === "tab" && !entsRef.current.tableTabsAccess', 'setWallKind("tableTabs")', "wall={wallKind}"]],
   ]) {
     const src = read(path);
     for (const n of needles) check(`${name}: ${n}`, src.includes(n), true);

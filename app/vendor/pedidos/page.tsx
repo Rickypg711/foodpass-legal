@@ -41,6 +41,16 @@ import {
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 import { entrarHref } from "@/lib/vendor/pedidoLink";
 import { buildWhatsappChatUrl } from "@/lib/order/formatWhatsappMessage";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import {
+  FREE_ENTITLEMENTS,
+  entitlementOf,
+  entitlementsOf,
+  type Entitlement,
+  type Entitlements,
+} from "@/lib/subscription/entitlement";
+import { ProWall } from "@/components/vendor/ProWall";
+import { TICKET_PRINTED_MESSAGE, autoPrintTickets, shouldAutoPrint } from "@/lib/pos/ticketPaper";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,6 +139,78 @@ function PedidosPageContent() {
   const searchParams = useSearchParams();
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  // ── 🖨️ Ticket de cocina = Pro (23-sep-2026, pared kitchenPrint) ──
+  // El plan se lee fundido con private/billing al arrancar. Con la reja
+  // cerrada, el 🖨️ abre LA pared (14 días gratis de un toque); si se abre,
+  // repite la acción que detuvo.
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [ents, setEnts] = useState<Entitlements>(FREE_ENTITLEMENTS);
+  const entsRef = useRef<Entitlements>(FREE_ENTITLEMENTS);
+  const [wallOpen, setWallOpen] = useState(false);
+  const pendingAction = useRef<(() => void) | null>(null);
+  const openTicket = useCallback((orderId: string) => {
+    if (!entsRef.current.kitchenPrintAccess) {
+      pendingAction.current = () => window.open(`/vendor/ticket/${encodeURIComponent(orderId)}`, "_blank", "noopener,noreferrer");
+      setWallOpen(true);
+      return;
+    }
+    window.open(`/vendor/ticket/${encodeURIComponent(orderId)}`, "_blank", "noopener,noreferrer");
+  }, []);
+
+  // ── 🖨️ Impresión automática (23-sep-2026, Pro) ──
+  // Con `autoPrintTickets` prendido en Configuración, cada pedido que ENTRA
+  // mientras esta pestaña está abierta se manda a la impresora solo: la hoja
+  // del ticket se abre en un iframe escondido y llama a print(). En un Chrome
+  // abierto con --kiosk-printing sale sin preguntar; si no, sale la ventana
+  // de imprimir y basta un Enter. Uno a la vez (cola), y nada de lo que ya
+  // estaba en la bandeja al abrir (shouldAutoPrint).
+  const [autoPrintOn, setAutoPrintOn] = useState(false);
+  const autoPrintRef = useRef(false);
+  const openedAtMs = useRef<number>(Date.now());
+  const printedIds = useRef<Set<string>>(new Set());
+  const printQueue = useRef<string[]>([]);
+  const printingFrame = useRef<HTMLIFrameElement | null>(null);
+  const printTimer = useRef<number | null>(null);
+  const finishPrint = useCallback(() => {
+    if (printTimer.current != null) {
+      window.clearTimeout(printTimer.current);
+      printTimer.current = null;
+    }
+    printingFrame.current?.remove();
+    printingFrame.current = null;
+    pumpPrintQueue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const pumpPrintQueue = useCallback(() => {
+    if (printingFrame.current || printQueue.current.length === 0) return;
+    const id = printQueue.current.shift()!;
+    const f = document.createElement("iframe");
+    f.src = `/vendor/ticket/${encodeURIComponent(id)}`;
+    f.title = "Ticket de cocina";
+    f.setAttribute("aria-hidden", "true");
+    // Fuera de la vista pero con tamaño real: un iframe de 0×0 imprime en blanco.
+    f.style.cssText = "position:fixed;left:-10000px;top:0;width:420px;height:640px;border:0;opacity:0;pointer-events:none;";
+    document.body.appendChild(f);
+    printingFrame.current = f;
+    // Si nadie contesta (pestaña sin permiso, error de red), seguir de todos modos.
+    printTimer.current = window.setTimeout(finishPrint, 45000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const enqueuePrint = useCallback((orderId: string) => {
+    printedIds.current.add(orderId);
+    printQueue.current.push(orderId);
+    pumpPrintQueue();
+  }, [pumpPrintQueue]);
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as { type?: string } | null;
+      if (data?.type === TICKET_PRINTED_MESSAGE) finishPrint();
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [finishPrint]);
 
   /** Premios apagados (5-sep): el recibo por WhatsApp no anuncia puntos. */
 
@@ -254,6 +336,16 @@ function PedidosPageContent() {
         setPaymentOptions(acceptedPaymentOptions(rSnap.data()));
         setLoyaltyLive(restaurantPromisesPoints(rSnap.data()));
         setPhoneCountry(phoneCountryOf(rSnap.data()));
+        // Pro (kitchenPrint) y la impresión automática, del doc fundido con billing.
+        const rdata = (rSnap.data() ?? {}) as Record<string, unknown>;
+        const merged = await fetchWithBilling(db, rid, rdata);
+        setEnt(entitlementOf(merged));
+        const es = entitlementsOf(merged, rid);
+        setEnts(es);
+        entsRef.current = es;
+        const ap = autoPrintTickets(rdata);
+        setAutoPrintOn(ap);
+        autoPrintRef.current = ap;
       } catch {
         // Sin lectura, las tres: nunca un cobro sin botones.
       }
@@ -309,6 +401,16 @@ function PedidosPageContent() {
             flashTabTitle();
           }
         }
+        // 🖨️ Sale solo: cada pedido nuevo (pending/open_tab) que entró después
+        // de abrir la pestaña, si el dueño lo prendió y tiene Pro.
+        if (autoPrintRef.current && entsRef.current.kitchenPrintAccess) {
+          for (const o of incoming) {
+            const createdAtMs = o.createdAt?.toMillis ? o.createdAt.toMillis() : null;
+            if (shouldAutoPrint({ id: o.id, status: o.status, createdAtMs }, openedAtMs.current, printedIds.current)) {
+              enqueuePrint(o.id);
+            }
+          }
+        }
 
         setOrders(list);
         setLoading(false);
@@ -357,7 +459,7 @@ function PedidosPageContent() {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, enqueuePrint]);
 
   // ── ?pedido=ID: bajar hasta el pedido del link ─────────────────────────────
   const focusScrolledId = useRef<string | null>(null);
@@ -596,6 +698,29 @@ function PedidosPageContent() {
               >
                 {avisoSilenciado ? "🔕 Aviso callado — activar" : "🔔 Aviso de pedidos encendido"}
               </button>
+              {/* 🖨️ Impresión automática (Pro): prendida en Configuración. Con
+                  la reja cerrada (se acabó la prueba) lo dice y abre la pared. */}
+              {autoPrintOn && ents.kitchenPrintAccess && (
+                <span
+                  className="rounded-xl px-3 py-2 text-[12px] font-bold"
+                  style={{ background: "#FFF3E8", color: "#C2410C", border: "1px solid rgba(242,140,56,0.4)" }}
+                  title="Cada pedido que entre sale solo en tu impresora"
+                >
+                  🖨️ Sale solo en tu impresora
+                </span>
+              )}
+              {autoPrintOn && !ents.kitchenPrintAccess && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    pendingAction.current = null;
+                    setWallOpen(true);
+                  }}
+                  className="rounded-xl border border-[#F28C38]/40 bg-white px-3 py-2 text-[12px] font-bold text-[#C2410C] hover:bg-[#FFF3E8]"
+                >
+                  🖨️ Impresión automática en pausa · es Pro
+                </button>
+              )}
               {notifPerm === "default" && (
                 <button
                   type="button"
@@ -920,7 +1045,7 @@ function PedidosPageContent() {
                           {/* 🖨️ Ticket para la impresora térmica (10-sep, Zahir/Aokia):
                               abre la hoja limpia y el navegador imprime. */}
                           <button
-                            onClick={() => window.open(`/vendor/ticket/${encodeURIComponent(order.id)}`, "_blank", "noopener,noreferrer")}
+                            onClick={() => openTicket(order.id)}
                             className="rounded-xl px-2.5 py-2.5 text-[11px] font-bold bg-gray-100 text-[#1C2526] hover:bg-gray-200 transition-colors"
                             title="Imprimir ticket"
                             aria-label="Imprimir ticket"
@@ -1056,6 +1181,28 @@ function PedidosPageContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── Pared 4: ticket de cocina e impresora (23-sep-2026) ── */}
+      {wallOpen && ent && restaurantId && (
+        <ProWall
+          wall="kitchenPrint"
+          restaurantId={restaurantId}
+          entitlement={ent}
+          onClose={() => {
+            setWallOpen(false);
+            pendingAction.current = null;
+          }}
+          onUnlocked={(next, nextEnt) => {
+            setEnts(next);
+            entsRef.current = next;
+            setEnt(nextEnt);
+            setWallOpen(false);
+            const again = pendingAction.current;
+            pendingAction.current = null;
+            again?.();
+          }}
+        />
       )}
     </>
   );

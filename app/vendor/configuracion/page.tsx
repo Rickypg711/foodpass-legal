@@ -12,7 +12,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { deliveryFeeOf, deliveryZoneOf, restaurantOffersDelivery } from "@/lib/order/deliveryOptions";
-import { TICKET_SAMPLE_ID, ticketPaperMm } from "@/lib/pos/ticketPaper";
+import { TICKET_SAMPLE_ID, autoPrintTickets, ticketPaperMm } from "@/lib/pos/ticketPaper";
 import {
   entitlementOf,
   entitlementsOf,
@@ -138,6 +138,12 @@ export default function ConfiguracionPage() {
   const [deliveryZone, setDeliveryZone] = useState("");
   /** 🖨️ Ancho del papel de la impresora térmica (10-sep): 80 o 58 mm. */
   const [paperMm, setPaperMm] = useState<58 | 80>(80);
+  /** 🖨️ Sale solo (23-sep, Pro): cada pedido que entra se imprime desde Pedidos. */
+  const [autoPrintOn, setAutoPrintOn] = useState(false);
+  /** Pared 4 (ticket de cocina e impresora): prender "sale solo" o imprimir
+   * la prueba con la reja cerrada abre LA pared; si se abre, repite. */
+  const [printWallOpen, setPrintWallOpen] = useState(false);
+  const printPending = useRef<(() => void) | null>(null);
   const [mpConnected, setMpConnected] = useState(false);
   const [mpEmail, setMpEmail] = useState<string | null>(null);
   /** Saving re-runs the readiness check; incomplete → restaurant demoted to
@@ -206,6 +212,7 @@ export default function ConfiguracionPage() {
       setDeliveryFee(fee > 0 ? fee : "");
       setDeliveryZone(deliveryZoneOf(data));
       setPaperMm(ticketPaperMm(data));
+      setAutoPrintOn(autoPrintTickets(data));
       const bday = data.birthdayReward as Record<string, unknown> | undefined;
       if (bday && typeof bday === "object") {
         setBirthdayEnabled(bday.enabled === true);
@@ -491,6 +498,7 @@ export default function ConfiguracionPage() {
         deliveryFee: deliveryFee !== "" && Number(deliveryFee) > 0 ? Number(deliveryFee) : 0,
         deliveryZone: deliveryZone.trim(),
         ticketPaperMm: paperMm,
+        autoPrintTickets: autoPrintOn,
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
         lastUpdated: serverTimestamp(),
       };
@@ -1296,9 +1304,50 @@ export default function ConfiguracionPage() {
                 limpia. Esta sección: ancho del papel, los pasos y una prueba. */}
             <SectionCard label="Impresora de tickets">
               <p className="mb-2 text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-                Imprime el ticket de cada pedido desde Pedidos (🖨️) o al cobrar
-                en la Caja. Sirve con impresoras térmicas de 80 y 58 mm.
+                El ticket de cocina de cada pedido, en grande: desde Pedidos (🖨️),
+                al cobrar en la Caja, o solo en cuanto entra el pedido. Sirve con
+                impresoras térmicas de 80 y 58 mm. Es parte de Pro.
               </p>
+              {/* 🖨️ Sale solo (23-sep, Pro): el interruptor abre la pared si la
+                  reja está cerrada; con Pro (o la prueba) se prende y se guarda. */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!autoPrintOn && !ents.kitchenPrintAccess) {
+                    printPending.current = () => { setAutoPrintOn(true); setSaved(false); };
+                    setPrintWallOpen(true);
+                    return;
+                  }
+                  setAutoPrintOn((v) => !v);
+                  setSaved(false);
+                }}
+                aria-pressed={autoPrintOn}
+                className="mb-3 flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                style={{
+                  background: autoPrintOn ? "#FFF3E8" : "#F5F3EF",
+                  border: autoPrintOn ? "1px solid rgba(242,140,56,0.5)" : "1px solid rgba(28,37,38,0.12)",
+                }}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold" style={{ color: "#1C2526" }}>
+                    🖨️ Sale solo cuando entra un pedido
+                  </span>
+                  <span className="mt-0.5 block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+                    Con Pedidos abierto en la compu de la impresora, cada pedido
+                    nuevo se imprime sin que nadie toque nada.
+                  </span>
+                </span>
+                <span
+                  className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                  style={{ background: autoPrintOn ? "#F28C38" : "rgba(28,37,38,0.2)" }}
+                  aria-hidden
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
+                    style={{ left: autoPrintOn ? "22px" : "2px" }}
+                  />
+                </span>
+              </button>
               <Field label="Ancho del papel">
                 <div className="flex gap-2">
                   {([80, 58] as const).map((mm) => {
@@ -1323,15 +1372,24 @@ export default function ConfiguracionPage() {
                 </div>
               </Field>
               <div className="mt-3 rounded-xl px-3.5 py-3 text-[12px] leading-relaxed" style={{ background: "#F5F3EF", color: "rgba(28,37,38,0.7)" }}>
-                <p className="font-semibold" style={{ color: "#1C2526" }}>Para dejarla lista desde tu celular (Android):</p>
-                <p className="mt-1">1. Prende el Bluetooth y empareja tu impresora en los ajustes del celular.</p>
-                <p>2. Instala la app gratis &quot;ESCPOS Bluetooth Print Service&quot; de Play Store y elige ahí tu impresora.</p>
-                <p>3. Al tocar Imprimir, escoge esa impresora en la ventana de Chrome.</p>
-                <p className="mt-1">En una computadora con la impresora por USB, Chrome la imprime directo.</p>
+                <p className="font-semibold" style={{ color: "#1C2526" }}>En una computadora (lo más fácil):</p>
+                <p className="mt-1">1. Conecta la impresora por USB y déjala como impresora predeterminada.</p>
+                <p>2. Abre comeleal.com/vendor/pedidos en Chrome y déjalo abierto todo el turno.</p>
+                <p>3. Para que salga sin preguntar: clic derecho al acceso directo de Chrome → Propiedades → al final de &quot;Destino&quot; escribe un espacio y <code>--kiosk-printing</code>. Abre Chrome desde ese acceso directo.</p>
+                <p className="mt-2 font-semibold" style={{ color: "#1C2526" }}>Desde un celular Android:</p>
+                <p className="mt-1">Por Bluetooth: empareja la impresora en los ajustes del celular e instala la app gratis &quot;ESCPOS Bluetooth Print Service&quot;. Por cable de red: instala &quot;RawBT&quot; y pon ahí la IP de la impresora. Al tocar Imprimir, escoge esa impresora en la ventana de Chrome.</p>
               </div>
               <button
                 type="button"
-                onClick={() => window.open(`/vendor/ticket/${TICKET_SAMPLE_ID}?w=${paperMm}`, "_blank", "noopener,noreferrer")}
+                onClick={() => {
+                  const go = () => window.open(`/vendor/ticket/${TICKET_SAMPLE_ID}?w=${paperMm}`, "_blank", "noopener,noreferrer");
+                  if (!ents.kitchenPrintAccess) {
+                    printPending.current = go;
+                    setPrintWallOpen(true);
+                    return;
+                  }
+                  go();
+                }}
                 className="mt-3 w-full rounded-xl px-3.5 py-3 text-[13px] font-bold"
                 style={{ background: "#1C2526", color: "#fff" }}
               >
@@ -1516,6 +1574,28 @@ export default function ConfiguracionPage() {
         )}
         </div>
       </main>
+
+      {/* ── Pared 4: ticket de cocina e impresora (23-sep-2026) ── */}
+      {printWallOpen && ent && restaurantId && (
+        <ProWall
+          wall="kitchenPrint"
+          restaurantId={restaurantId}
+          entitlement={ent}
+          onClose={() => {
+            setPrintWallOpen(false);
+            printPending.current = null;
+          }}
+          onUnlocked={(next, nextEnt) => {
+            setEnts(next);
+            setEnt(nextEnt);
+            setPlan("pro");
+            setPrintWallOpen(false);
+            const again = printPending.current;
+            printPending.current = null;
+            again?.();
+          }}
+        />
+      )}
     </>
   );
 }

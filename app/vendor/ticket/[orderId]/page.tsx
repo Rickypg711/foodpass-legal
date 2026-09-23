@@ -20,6 +20,11 @@
 // con sus opciones y notas. Sin precio por platillo. El total y cómo paga
 // quedan chicos al final para que la misma hoja siga sirviendo de pre factura
 // (lo que se le prometió a Zahir el 22-sep).
+//
+// 23-sep-2026, tarde: el ticket de cocina es PRO (pared kitchenPrint, la misma
+// ProWall de la Caja con sus 14 días gratis de un toque). Y cuando Pedidos lo
+// abre en un iframe escondido (impresión automática), al terminar de mandar a
+// imprimir le avisa con postMessage(TICKET_PRINTED_MESSAGE).
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -30,7 +35,10 @@ import { resolveVendorContext } from "@/lib/vendorContext";
 import { formatPrice } from "@/lib/priceFormat";
 import { tableLabel } from "@/lib/order/tableSession";
 import { POS_PAYMENT_OPTIONS } from "@/lib/pos/paidOrderFields";
-import { TICKET_SAMPLE_ID, ticketPaperMm } from "@/lib/pos/ticketPaper";
+import { TICKET_PRINTED_MESSAGE, TICKET_SAMPLE_ID, ticketPaperMm } from "@/lib/pos/ticketPaper";
+import { fetchWithBilling } from "@/lib/subscription/billingDoc";
+import { entitlementOf, entitlementsOf, type Entitlement } from "@/lib/subscription/entitlement";
+import { ProWall } from "@/components/vendor/ProWall";
 
 /** Pedido de muestra: enseña todo lo que un ticket puede traer. */
 function sampleOrder(): TicketOrder {
@@ -108,6 +116,11 @@ export default function TicketPage() {
   /** Ancho del papel: ?w= manda; si no, lo que el dueño eligió en Configuración; si no, 80. */
   const [paperMm, setPaperMm] = useState<58 | 80>(80);
   const [error, setError] = useState<string | null>(null);
+  /** Pared de Pro (kitchenPrint): con reja cerrada no se imprime; la pared
+   * ofrece la prueba y, al abrirse, el ticket sigue solo. */
+  const [locked, setLocked] = useState(false);
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const widthMm: 58 | 80 = search.get("w") === "58" ? 58 : search.get("w") === "80" ? 80 : paperMm;
 
   useEffect(() => {
@@ -129,6 +142,11 @@ export default function TicketPage() {
         const r = rSnap.data() as Record<string, unknown> | undefined;
         setRestaurantName(typeof r?.name === "string" ? r.name : "");
         setPaperMm(ticketPaperMm(r));
+        setRestaurantId(ctx.restaurantId);
+        // Plan fundido con private/billing: la regla única de Pro.
+        const merged = await fetchWithBilling(db, ctx.restaurantId, r ?? {});
+        setEnt(entitlementOf(merged));
+        if (!entitlementsOf(merged, ctx.restaurantId).kitchenPrintAccess) setLocked(true);
         // "prueba": ticket de muestra desde Configuración → Impresora, para
         // dejar la impresora lista sin esperar un pedido real.
         if (orderId === TICKET_SAMPLE_ID) {
@@ -150,17 +168,38 @@ export default function TicketPage() {
 
   // El diálogo de impresión sale solo en cuanto hay ticket que imprimir. El
   // dueño solo elige su impresora y ya.
+  const inFrame = typeof window !== "undefined" && window.parent !== window;
+  const tellParentPrinted = () => {
+    if (typeof window === "undefined" || window.parent === window) return;
+    try {
+      window.parent.postMessage({ type: TICKET_PRINTED_MESSAGE, orderId }, window.location.origin);
+    } catch {
+      /* sin padre que escuche */
+    }
+  };
   useEffect(() => {
-    if (!order || !autoPrint) return;
+    if (!order || !autoPrint || locked) return;
     const t = setTimeout(() => {
       try {
         window.print();
       } catch {
         /* sin diálogo (webview raro): queda el botón */
+      } finally {
+        // En el iframe de Pedidos: print() regresa cuando la impresora ya
+        // tiene el ticket (o cuando cerraron la ventana). Avisar para que
+        // Pedidos siga con el siguiente pedido.
+        tellParentPrinted();
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [order, autoPrint]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, autoPrint, locked]);
+  // Reja cerrada dentro del iframe: no hay quien vea la pared; avisar y salir
+  // para que la cola de Pedidos no se quede esperando.
+  useEffect(() => {
+    if (locked && inFrame) tellParentPrinted();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked, inFrame]);
 
   const contentMm = widthMm - 8;
   const shortCode = orderId === TICKET_SAMPLE_ID ? "PRUEBA" : orderId.slice(-6).toUpperCase();
@@ -210,6 +249,25 @@ export default function TicketPage() {
         @media screen { body { background: #e5e5e5 !important; } .ticket { background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.2); padding-left: 4mm; padding-right: 4mm; margin-top: 12px; } }
       `}</style>
 
+      {/* Pared de Pro: el ticket de cocina y la impresora son Pro (23-sep). */}
+      {locked && ent && restaurantId && !inFrame ? (
+        <ProWall
+          wall="kitchenPrint"
+          restaurantId={restaurantId}
+          entitlement={ent}
+          onClose={() => {
+            try {
+              window.close();
+            } catch {
+              /* pestaña que no abrimos nosotros */
+            }
+          }}
+          onUnlocked={(_ents, nextEnt) => {
+            setEnt(nextEnt);
+            setLocked(false);
+          }}
+        />
+      ) : null}
       {error ? (
         <p className="center" style={{ padding: 24 }}>{error}</p>
       ) : !order ? (
