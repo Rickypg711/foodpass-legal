@@ -698,11 +698,22 @@ function PedidosPageContent() {
 
   const waitingCount = groups.pending.length;
   const oldestWaitingMin = groups.pending.reduce((m, o) => Math.max(m, minutesOf(o)), 0);
+  // Edad en palabras llanas ("desde hace 2 h 15 min", "desde hace 3 d"); el chip
+  // de cada tarjeta ya trae la pregunta "¿ya lo entregaste?".
+  const ageShort = (min: number) => {
+    if (min < 1) return "ahorita";
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (h < 24) return m === 0 ? `hace ${h} h` : `hace ${h} h ${m} min`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? "desde ayer" : `hace ${d} días`;
+  };
   const subtitle = loading
     ? ""
     : waitingCount === 0
       ? "Nada esperando"
-      : `${waitingCount} esperando · el más viejo ${orderWaitLabel(oldestWaitingMin)}`;
+      : `${waitingCount} esperando · el más viejo ${ageShort(oldestWaitingMin)}`;
 
   return (
     <>
