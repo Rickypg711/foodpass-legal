@@ -128,6 +128,30 @@ function fmt(n: number) {
   return n.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 });
 }
 
+// Opción A (23-sep-2026, lienzo "Sistema Comeleal"): mismos tokens que el
+// Panel y Pedidos. Crema + tinta, naranja solo en la acción principal.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const TILE = "#F0EBE1";
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconLock({ open = false }: { open?: boolean }) {
+  return <svg {...ICON}><rect x="4" y="11" width="16" height="10" rx="2" /><path d={open ? "M8 11V7a4 4 0 0 1 7.5-2" : "M8 11V7a4 4 0 0 1 8 0v4"} /></svg>;
+}
+function IconPerson() { return <svg {...ICON}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>; }
+function IconTabs() { return <svg {...ICON}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M8 15h4" /></svg>; }
+function IconCart() { return <svg {...ICON}><circle cx="9" cy="20" r="1.5" /><circle cx="17" cy="20" r="1.5" /><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6" /></svg>; }
+function IconSearch() { return <svg {...ICON} stroke="#5B6366"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>; }
+function IconPlus({ size = 20 }: { size?: number }) { return <svg {...ICON} width={size} height={size} strokeWidth={2}><path d="M12 5v14M5 12h14" /></svg>; }
+function IconMinus({ size = 18 }: { size?: number }) { return <svg {...ICON} width={size} height={size} strokeWidth={2}><path d="M5 12h14" /></svg>; }
+function IconDish() { return <svg {...ICON} width={22} height={22} stroke="#5B6366"><path d="M5 3v7a3 3 0 0 0 6 0V3M8 3v18M18 3c-2 1-3 4-3 7v1h3v10" /></svg>; }
+function IconGift() { return <svg {...ICON}><rect x="3" y="8" width="18" height="13" rx="2" /><path d="M12 8v13M3 12h18M12 8c-2 0-4-1-4-3s3-2 4 3c1-5 4-5 4-3s-2 3-4 3" /></svg>; }
+
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function Spinner({ size = 20 }: { size?: number }) {
@@ -148,54 +172,26 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
   return (
     <button
       onClick={onAdd}
-      className="group relative flex flex-col overflow-hidden rounded-2xl text-left transition-all duration-150 active:scale-[0.97] hover:shadow-md"
-      style={{
-        background: "#ffffff",
-        border: "1px solid rgba(28,37,38,0.07)",
-        boxShadow: "0 1px 3px rgba(28,37,38,0.06)",
-      }}
+      className="group relative flex flex-col overflow-hidden rounded-xl bg-white text-left transition-all duration-150 active:scale-[0.97] hover:opacity-90"
+      style={{ border: `1px solid ${BORDER}` }}
     >
-      {/* Image or color block */}
       {item.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="h-24 w-full object-cover"
-        />
+        <img src={item.imageUrl} alt={item.name} className="h-24 w-full object-cover" />
       ) : (
-        <div
-          className="flex h-20 w-full items-center justify-center text-3xl"
-          style={{ background: "rgba(217,119,87,0.06)" }}
-        >
-          🍽️
+        <div className="flex h-20 w-full items-center justify-center" style={{ background: TILE }}>
+          <IconDish />
         </div>
       )}
-
       <div className="flex flex-1 flex-col p-3">
-        <p
-          className="text-[13px] font-semibold leading-tight line-clamp-2"
-          style={{ color: "#1C2526" }}
-        >
-          {item.name}
-        </p>
+        <p className="text-[14px] font-semibold leading-[18px] line-clamp-2" style={{ color: INK }}>{item.name}</p>
         {item.description && (
-          <p
-            className="mt-0.5 text-[11px] leading-snug line-clamp-1"
-            style={{ color: "rgba(28,37,38,0.45)" }}
-          >
-            {item.description}
-          </p>
+          <p className="mt-0.5 text-[12px] leading-4 line-clamp-1" style={{ color: INK_SOFT }}>{item.description}</p>
         )}
         <div className="mt-auto flex items-end justify-between pt-2">
-          <p className="text-[14px] font-bold" style={{ color: "#F28C38" }}>
-            {fmt(item.price)}
-          </p>
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[18px] font-bold text-[#1C2526] transition-transform group-hover:scale-110"
-            style={{ background: "#F28C38", lineHeight: 1 }}
-          >
-            +
+          <p className="text-[15px] font-semibold tabular-nums" style={{ color: INK }}>{fmt(item.price)}</p>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white transition-transform group-hover:scale-105" style={{ border: `1px solid ${INK}`, color: INK }} aria-hidden>
+            <IconPlus size={16} />
           </span>
         </div>
       </div>
@@ -215,45 +211,24 @@ function CartRow({
   onDecrement: (i: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 py-2.5" style={{ borderBottom: "1px solid rgba(28,37,38,0.05)" }}>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-[13px] font-semibold" style={{ color: "#1C2526" }}>
-          {cartItem.menuItem.name}
-        </p>
+    <div className="flex items-center gap-3 py-3" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>{cartItem.menuItem.name}</p>
         {cartItem.selectedOptions && cartItem.selectedOptions.length > 0 && (
-          <p className="truncate text-[11px]" style={{ color: "#F28C38" }}>
-            ↳ {describeSelectedOptions(cartItem.selectedOptions)}
-          </p>
+          <p className="truncate text-[13px] leading-4" style={{ color: INK_MUTED }}>{describeSelectedOptions(cartItem.selectedOptions)}</p>
         )}
-        <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>
-          {fmt(cartItem.unitPrice)} c/u
-        </p>
+        <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{fmt(cartItem.unitPrice)} c/u</p>
       </div>
-
-      {/* Qty controls */}
       <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => onDecrement(index)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[16px] font-bold transition-colors hover:bg-red-50"
-          style={{ background: "rgba(28,37,38,0.06)", color: "#1C2526" }}
-        >
-          −
+        <button type="button" onClick={() => onDecrement(index)} aria-label="Quitar uno" className="flex h-9 w-9 items-center justify-center rounded-full bg-white" style={{ border: `1px solid ${BORDER}`, color: INK }}>
+          <IconMinus size={16} />
         </button>
-        <span className="w-5 text-center text-[13px] font-bold" style={{ color: "#1C2526" }}>
-          {cartItem.quantity}
-        </span>
-        <button
-          onClick={() => onIncrement(index)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[16px] font-bold transition-colors"
-          style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38" }}
-        >
-          +
+        <span className="w-6 text-center text-[15px] font-bold tabular-nums" style={{ color: INK }}>{cartItem.quantity}</span>
+        <button type="button" onClick={() => onIncrement(index)} aria-label="Agregar otro" className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: INK, color: "#FAF9F5" }}>
+          <IconPlus size={16} />
         </button>
       </div>
-
-      <p className="w-16 text-right text-[13px] font-bold" style={{ color: "#1C2526" }}>
-        {fmt(cartItem.unitPrice * cartItem.quantity)}
-      </p>
+      <p className="w-16 text-right text-[15px] font-semibold tabular-nums" style={{ color: INK }}>{fmt(cartItem.unitPrice * cartItem.quantity)}</p>
     </div>
   );
 }
@@ -1624,22 +1599,14 @@ export default function PosPage() {
 
         {/* ── Top bar ── */}
         <div
-          className="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3 md:px-8"
-          style={{ background: "#F5F3EF", borderBottom: "1px solid rgba(28,37,38,0.07)" }}
+          className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5 py-3 md:px-8"
+          style={{ background: "#FAF9F5", borderBottom: `1px solid ${HAIRLINE}` }}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[18px]"
-              style={{ background: "#1C2526" }}
-            >
-              🧾
-            </div>
-            <div>
-              <p className="text-[16px] font-extrabold leading-tight" style={{ color: "#1C2526" }}>
-                Caja / POS
-              </p>
-              <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.45)" }}>{restaurantName}</p>
-            </div>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="text-[22px] font-semibold leading-[26px]" style={{ color: INK, fontFamily: SERIF }}>Caja</p>
+            <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>
+              {restaurantName}{currentSeller ? ` · cobra ${currentSeller.name}` : ""}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1652,11 +1619,12 @@ export default function PosPage() {
             {posStaff.some((m) => m.active && m.role === "gerente") && vendorRole !== "employee" && !cajaLocked && (
               <button
                 onClick={() => setLockDialogOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
-                style={{ background: "rgba(28,37,38,0.07)", border: "1px solid rgba(28,37,38,0.05)" }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white transition hover:opacity-90"
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
                 title="Modo Caja: bloquea esta pantalla a solo operación"
+                aria-label="Activar Modo Caja"
               >
-                <span className="text-[14px]">🔓</span>
+                <IconLock open />
               </button>
             )}
             {cajaLocked && (
@@ -1673,30 +1641,24 @@ export default function PosPage() {
                     /* sin listeners */
                   }
                 }}
-                className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[12px] font-bold"
-                style={{ background: "rgba(242,140,56,0.12)", color: "#F28C38" }}
-                title="Modo Caja activo — toca para salir (PIN de gerente)"
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: INK, color: "#FAF9F5" }}
+                title="Modo Caja activo: toca para salir (PIN de gerente)"
+                aria-label="Salir de Modo Caja"
               >
-                🔒
+                <IconLock />
               </button>
             )}
             {/* ¿Quién cobra? — switcher del equipo (solo si hay roster) */}
             {posStaff.length > 0 && (
               <button
                 onClick={() => setSellerDialogOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
-                style={{
-                  background: currentSeller ? "rgba(242,140,56,0.1)" : "rgba(28,37,38,0.07)",
-                  border: currentSeller
-                    ? "1px solid rgba(242,140,56,0.4)"
-                    : "1px solid rgba(28,37,38,0.05)",
-                }}
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-white px-2.5 transition hover:opacity-90"
+                style={{ border: `1px solid ${currentSeller ? INK : BORDER}`, color: INK }}
+                aria-label="¿Quién cobra?"
               >
-                <span className="text-[14px]">👤</span>
-                <span
-                  className="text-[12px] font-bold hidden sm:inline"
-                  style={{ color: currentSeller ? "#F28C38" : "#1C2526" }}
-                >
+                <IconPerson />
+                <span className="hidden text-[13px] font-semibold sm:inline">
                   {currentSeller ? currentSeller.name : "¿Quién cobra?"}
                 </span>
               </button>
@@ -1709,36 +1671,29 @@ export default function PosPage() {
                   setShowTabsModal(true);
                 }
               }}
-              className="relative flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition-all hover:bg-gray-100"
-              style={{ background: "rgba(28,37,38,0.07)", border: "1px solid rgba(28,37,38,0.05)" }}
+              className="relative flex h-10 items-center gap-1.5 rounded-xl bg-white px-2.5 transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+              aria-label="Cuentas abiertas"
             >
-              <span className="text-[14px]">📋</span>
-              <span className="text-[12px] font-bold text-[#1C2526] hidden sm:inline">Cuentas</span>
+              <IconTabs />
+              <span className="hidden text-[13px] font-semibold sm:inline">Cuentas</span>
               {activeOpenTabs.length > 0 && (
-                <span
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-[#1C2526] animate-pulse"
-                  style={{ background: "#F28C38" }}
-                >
-                  {activeOpenTabs.length}
-                </span>
+                <span className="text-[13px] font-semibold tabular-nums" style={{ color: LINK }}>{activeOpenTabs.length}</span>
               )}
             </button>
 
             {/* Mobile cart badge */}
             <button
-              className="relative flex items-center gap-2 rounded-xl px-4 py-2 md:hidden"
-              style={{ background: cartCount > 0 ? "#1C2526" : "rgba(28,37,38,0.07)" }}
+              className="relative flex h-10 items-center gap-2 rounded-xl px-3 md:hidden"
+              style={cartCount > 0 ? { background: INK, color: "#FAF9F5" } : { background: "#FFFFFF", border: `1px solid ${BORDER}`, color: INK }}
               onClick={() => setMobileCartOpen(true)}
+              aria-label="Ver carrito"
             >
-              <span className="text-[14px]">🛒</span>
-              {cartCount > 0 && (
-                <>
-                  <span className="text-[13px] font-bold text-white">{cartCount}</span>
-                  <span className="text-[13px] font-bold" style={{ color: "#FF9A45" }}>{fmt(subtotal)}</span>
-                </>
-              )}
-              {cartCount === 0 && (
-                <span className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Carrito</span>
+              <IconCart />
+              {cartCount > 0 ? (
+                <span className="text-[13px] font-semibold tabular-nums">{cartCount} · {fmt(subtotal)}</span>
+              ) : (
+                <span className="text-[13px] font-semibold">Carrito</span>
               )}
             </button>
           </div>
@@ -1751,26 +1706,31 @@ export default function PosPage() {
           <div className="flex flex-1 flex-col overflow-hidden">
 
             {/* Search + category filter */}
-            <div className="px-4 pt-4 pb-2 md:px-6 space-y-2">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar platillo..."
-                className="w-full rounded-2xl px-4 py-2.5 text-[13px] outline-none"
-                style={{ background: "#ffffff", border: "1px solid rgba(28,37,38,0.1)", color: "#1C2526" }}
-              />
+            <div className="space-y-2 px-5 pb-2 pt-4 md:px-6">
+              <label className="flex h-12 items-center gap-2.5 rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
+                <IconSearch />
+                <span className="sr-only">Buscar platillo</span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar platillo"
+                  className="min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-[#5B6366]"
+                  style={{ color: INK }}
+                />
+              </label>
 
               {addingToTab && (
-                <div className="p-3 rounded-xl flex items-center justify-between text-[13px] font-semibold animate-pulse" style={{ background: "rgba(217,119,87,0.12)", color: "#F28C38", border: "1px solid rgba(217,119,87,0.25)" }}>
-                  <span>📝 Agregando a: {addingToTab.customerName || `Cuenta #${addingToTab.id.slice(-4)}`}</span>
+                <div className="flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-[14px]" style={{ background: "#FFFBEB", color: INK }}>
+                  <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: "#B45309" }} />Agregando a {addingToTab.customerName || `la cuenta #${addingToTab.id.slice(-4)}`}</span>
                   <button
+                    type="button"
                     onClick={() => {
                       setAddingToTab(null);
                       clearCart();
                     }}
-                    className="rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#1C2526] transition-opacity hover:opacity-95"
-                    style={{ background: "#F28C38" }}
+                    className="text-[14px] font-semibold hover:underline"
+                    style={{ color: LINK }}
                   >
                     Cancelar
                   </button>
@@ -1780,28 +1740,26 @@ export default function PosPage() {
 
             {/* Category chips */}
             {categories.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto px-4 pb-3 md:px-6" style={{ scrollbarWidth: "none" }}>
+              <div className="flex gap-2 overflow-x-auto px-5 pb-3 md:px-6" style={{ scrollbarWidth: "none" }}>
                 <button
+                  type="button"
                   onClick={() => setSelectedCategory(null)}
-                  className="shrink-0 rounded-full px-4 py-1.5 text-[12px] font-bold transition-all"
-                  style={
-                    selectedCategory === null
-                      ? { background: "#1C2526", color: "#ffffff" }
-                      : { background: "rgba(28,37,38,0.08)", color: "rgba(28,37,38,0.6)" }
-                  }
+                  className="h-9 shrink-0 rounded-full px-3.5 text-[14px] transition-all"
+                  style={selectedCategory === null
+                    ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 }
+                    : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }}
                 >
                   Todo
                 </button>
                 {categories.map((cat) => (
                   <button
                     key={cat}
+                    type="button"
                     onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                    className="shrink-0 rounded-full px-4 py-1.5 text-[12px] font-bold transition-all"
-                    style={
-                      selectedCategory === cat
-                        ? { background: "#F28C38", color: "#ffffff" }
-                        : { background: "rgba(28,37,38,0.08)", color: "rgba(28,37,38,0.6)" }
-                    }
+                    className="h-9 shrink-0 rounded-full px-3.5 text-[14px] transition-all"
+                    style={selectedCategory === cat
+                      ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 }
+                      : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }}
                   >
                     {cat}
                   </button>
@@ -1810,23 +1768,20 @@ export default function PosPage() {
             )}
 
             {/* Menu grid */}
-            <div className="flex-1 overflow-y-auto px-4 pb-24 md:px-6 md:pb-6">
+            <div className="flex-1 overflow-y-auto px-5 pb-28 md:px-6 md:pb-6">
               {menuLoading ? (
                 <div className="flex items-center justify-center py-20">
                   <Spinner size={28} />
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center py-20 text-center">
-                  <div
-                    className="flex h-16 w-16 items-center justify-center rounded-3xl text-[28px]"
-                    style={{ background: "rgba(217,119,87,0.08)" }}
-                  >
-                    🍽️
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE }}>
+                    <IconDish />
                   </div>
-                  <p className="mt-4 text-[16px] font-bold" style={{ color: "#1C2526" }}>
+                  <p className="mt-4 text-[16px] font-semibold" style={{ color: INK }}>
                     {menuItems.length === 0 ? "Sin platillos" : "Sin resultados"}
                   </p>
-                  <p className="mt-1 text-[13px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+                  <p className="mt-1 text-[14px]" style={{ color: INK_SOFT }}>
                     {menuItems.length === 0
                       ? "Agrega platillos en la app para verlos aquí"
                       : "Intenta con otra búsqueda o categoría"}
@@ -1847,25 +1802,18 @@ export default function PosPage() {
             className="hidden md:flex flex-col"
             style={{
               width: 340,
-              background: "#ffffff",
-              borderLeft: "1px solid rgba(28,37,38,0.07)",
+              background: "#FFFFFF",
+              borderLeft: `1px solid ${HAIRLINE}`,
               flexShrink: 0,
             }}
           >
             {/* Cart header */}
-            <div
-              className="flex items-center justify-between px-5 pt-5 pb-3"
-              style={{ borderBottom: "1px solid rgba(28,37,38,0.06)" }}
-            >
-              <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>
-                Carrito {cartCount > 0 && <span style={{ color: "#F28C38" }}>({cartCount})</span>}
+            <div className="flex items-baseline justify-between px-5 pb-3 pt-5" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+              <p className="text-[17px] font-semibold" style={{ color: INK, fontFamily: SERIF }}>
+                Carrito{cartCount > 0 ? <span className="ml-1.5 text-[13px] font-normal tabular-nums" style={{ color: INK_SOFT, fontFamily: "inherit" }}>{cartCount}</span> : null}
               </p>
               {cart.length > 0 && (
-                <button
-                  onClick={clearCart}
-                  className="rounded-lg px-2.5 py-1 text-[11px] font-bold"
-                  style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}
-                >
+                <button type="button" onClick={clearCart} className="text-[13px] font-semibold hover:underline" style={{ color: LINK }}>
                   Vaciar
                 </button>
               )}
@@ -1875,18 +1823,17 @@ export default function PosPage() {
             <div className="flex-1 overflow-y-auto px-5">
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center py-16 text-center">
-                  <p className="text-[40px]">🛒</p>
-                  <p className="mt-3 text-[14px] font-semibold" style={{ color: "rgba(28,37,38,0.35)" }}>
-                    Agrega platillos
-                  </p>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: TILE, color: INK_SOFT }}><IconCart /></div>
+                  <p className="mt-3 text-[14px]" style={{ color: INK_SOFT }}>Toca un platillo para empezar</p>
                   {/* Pure redemption: customer came only to claim a reward. */}
                   {!addingToTab && (
                     <button
+                      type="button"
                       onClick={() => setShowCheckout(true)}
-                      className="mt-4 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-colors"
-                      style={{ background: "rgba(22,163,74,0.1)", color: "#16A34A", border: "1px solid rgba(22,163,74,0.3)" }}
+                      className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90"
+                      style={{ border: `1px solid ${BORDER}`, color: INK }}
                     >
-                      🎁 Canjear premio sin venta
+                      <IconGift /> Canjear premio sin venta
                     </button>
                   )}
                 </div>
@@ -1906,15 +1853,13 @@ export default function PosPage() {
             </div>
 
             {/* Total + CTA */}
-            <div
-              className="p-5 space-y-3"
-              style={{ borderTop: "1px solid rgba(28,37,38,0.07)" }}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Total</p>
-                <p className="text-[20px] font-extrabold" style={{ color: "#1C2526" }}>{fmt(subtotal)}</p>
+            <div className="space-y-3 p-5" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+              <div className="flex items-baseline justify-between">
+                <p className="text-[13px]" style={{ color: INK_SOFT }}>Total</p>
+                <p className="text-[22px] font-bold tabular-nums" style={{ color: INK }}>{fmt(subtotal)}</p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   if (addingToTab) {
                     addItemsToTabTransaction(addingToTab.id, cart);
@@ -1923,10 +1868,10 @@ export default function PosPage() {
                   }
                 }}
                 disabled={cart.length === 0}
-                className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-all disabled:opacity-30 hover:opacity-90 active:scale-[0.98]"
-                style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
+                className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                style={{ background: BRAND }}
               >
-                {addingToTab ? "Actualizar Cuenta" : "Listo →"}
+                {addingToTab ? "Actualizar cuenta" : "Cobrar"}
               </button>
             </div>
           </div>
@@ -1937,14 +1882,15 @@ export default function PosPage() {
             esto, la Caja móvil no tenía NINGÚN botón para cobrar). */}
         {cartCount > 0 && (
           <div
-            className="fixed bottom-[72px] left-0 right-0 z-30 flex items-center gap-4 px-4 py-3 md:hidden"
-            style={{ background: "#1C2526", boxShadow: "0 -4px 20px rgba(28,37,38,0.25)" }}
+            className="fixed bottom-[72px] left-0 right-0 z-30 flex items-center gap-4 px-5 py-3 md:hidden"
+            style={{ background: "#FFFFFF", borderTop: `1px solid ${HAIRLINE}` }}
           >
-            <div className="flex-1">
-              <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.5)" }}>{cartCount} producto{cartCount !== 1 ? "s" : ""}</p>
-              <p className="text-[16px] font-extrabold text-white">{fmt(subtotal)}</p>
-            </div>
+            <button type="button" onClick={() => setMobileCartOpen(true)} className="flex-1 text-left">
+              <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>{cartCount} platillo{cartCount !== 1 ? "s" : ""} · ver carrito</p>
+              <p className="text-[20px] font-bold leading-6 tabular-nums" style={{ color: INK }}>{fmt(subtotal)}</p>
+            </button>
             <button
+              type="button"
               onClick={() => {
                 if (addingToTab) {
                   addItemsToTabTransaction(addingToTab.id, cart);
@@ -1952,10 +1898,10 @@ export default function PosPage() {
                   setShowCheckout(true);
                 }
               }}
-              className="rounded-xl px-6 py-3 text-[14px] font-extrabold"
-              style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", color: "#fff" }}
+              className="flex h-12 items-center justify-center rounded-xl px-7 text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
+              style={{ background: BRAND }}
             >
-              {addingToTab ? "Actualizar Cuenta" : "Cobrar →"}
+              {addingToTab ? "Actualizar cuenta" : "Cobrar"}
             </button>
           </div>
         )}
@@ -1969,13 +1915,13 @@ export default function PosPage() {
           onClick={() => setMobileCartOpen(false)}
         >
           <div
-            className="flex flex-col rounded-t-3xl overflow-hidden"
-            style={{ background: "#ffffff", maxHeight: "70vh" }}
+            className="flex flex-col overflow-hidden rounded-t-2xl"
+            style={{ background: "#FFFFFF", maxHeight: "70vh" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(28,37,38,0.06)" }}>
-              <p className="text-[15px] font-extrabold" style={{ color: "#1C2526" }}>Carrito ({cartCount})</p>
-              <button onClick={() => setMobileCartOpen(false)} className="text-[20px]" style={{ color: "rgba(28,37,38,0.4)" }}>×</button>
+            <div className="flex items-center justify-between px-5 pb-3 pt-4" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+              <p className="text-[17px] font-semibold" style={{ color: INK, fontFamily: SERIF }}>Carrito <span className="text-[13px] font-normal tabular-nums" style={{ color: INK_SOFT, fontFamily: "inherit" }}>{cartCount}</span></p>
+              <button type="button" onClick={() => setMobileCartOpen(false)} aria-label="Cerrar" className="text-[22px] leading-none" style={{ color: INK_SOFT }}>×</button>
             </div>
             <div className="flex-1 overflow-y-auto px-5">
               {cart.map((c, i) => (
@@ -1983,7 +1929,7 @@ export default function PosPage() {
               ))}
               <div className="py-4">
                 {cart.length > 0 && (
-                  <button onClick={clearCart} className="w-full rounded-xl py-2 text-[12px] font-bold" style={{ color: "#ef4444", background: "rgba(239,68,68,0.06)" }}>
+                  <button type="button" onClick={clearCart} className="w-full py-2 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
                     Vaciar carrito
                   </button>
                 )}
@@ -1992,10 +1938,10 @@ export default function PosPage() {
             {/* Total + CTA (espejo del panel de escritorio): el drawer debe
                 poder CERRAR la venta él solo — dependía de la barra fija de
                 abajo, que el nav móvil tapaba. */}
-            <div className="px-5 py-4 space-y-3" style={{ borderTop: "1px solid rgba(28,37,38,0.07)", paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}>
-              <div className="flex items-center justify-between">
-                <p className="text-[13px]" style={{ color: "rgba(28,37,38,0.5)" }}>Total</p>
-                <p className="text-[20px] font-extrabold" style={{ color: "#1C2526" }}>{fmt(subtotal)}</p>
+            <div className="space-y-3 px-5 py-4" style={{ borderTop: `1px solid ${HAIRLINE}`, paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}>
+              <div className="flex items-baseline justify-between">
+                <p className="text-[13px]" style={{ color: INK_SOFT }}>Total</p>
+                <p className="text-[22px] font-bold tabular-nums" style={{ color: INK }}>{fmt(subtotal)}</p>
               </div>
               <button
                 onClick={() => {
@@ -2007,10 +1953,10 @@ export default function PosPage() {
                   }
                 }}
                 disabled={cart.length === 0}
-                className="w-full rounded-2xl py-4 text-[15px] font-extrabold text-white transition-all disabled:opacity-30 hover:opacity-90 active:scale-[0.98]"
-                style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)", boxShadow: cart.length > 0 ? "0 4px 16px rgba(217,119,87,0.35)" : "none" }}
+                className="flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                style={{ background: BRAND }}
               >
-                {addingToTab ? "Actualizar Cuenta" : "Listo →"}
+                {addingToTab ? "Actualizar cuenta" : "Cobrar"}
               </button>
             </div>
           </div>
