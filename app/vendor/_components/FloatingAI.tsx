@@ -355,7 +355,7 @@ export default function FloatingAI({
       {(open || pathname !== "/vendor") && (
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-[88px] right-4 z-[29] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 md:bottom-6 md:right-6 md:z-[49]"
+        className={`fixed bottom-[88px] right-4 z-[29] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 md:right-6 md:z-[49] ${pathname === "/vendor/pos" ? "md:bottom-24" : "md:bottom-6"}`}
         style={{
           background: "#1C2526",
           color: "#FAF9F5",
