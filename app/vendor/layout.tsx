@@ -66,12 +66,10 @@ function IconGear() {
     </svg>
   );
 }
-function IconMore() {
+function IconStore() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="5" cy="12" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="19" cy="12" r="2" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 20v-6h6v6" />
     </svg>
   );
 }
@@ -540,15 +538,11 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           {!isPro && vendorRole === "owner" && !cajaLocked && (
             <Link
               href="/vendor/plan"
-              className="mx-2 mb-2 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[11px] font-bold transition hover:opacity-90"
-              style={{
-                background: "linear-gradient(135deg, rgba(242,140,56,0.22) 0%, rgba(255,154,69,0.12) 100%)",
-                color: "#FF9A45",
-                border: "1px solid rgba(242,140,56,0.35)",
-              }}
-              title={`Pro ${PRO_PRICE_LABEL}/mes — todo tu historial, tu equipo con su PIN y mesas`}
+              className="mx-2 mb-2 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[12px] font-semibold transition hover:opacity-90"
+              style={{ color: "#FAF9F5", border: "1px solid rgba(250,249,245,0.35)" }}
+              title={`Pro ${PRO_PRICE_LABEL}/mes: todo tu historial, tu equipo con su PIN y mesas`}
             >
-              ⭐{open ? " Hazte Pro" : ""}
+              {open ? "Hazte Pro" : "Pro"}
             </Link>
           )}
 
@@ -697,13 +691,15 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* ── Nav móvil: barra inferior (la sidebar está oculta en teléfono) ── */}
+      {/* Opción A (23-sep-2026, lienzo "Sistema Comeleal"): la MISMA barra que
+          la app: tinta, cinco destinos, icono de trazo + etiqueta, activo en
+          naranja. "Negocio" reúne lo de vez en cuando (menú, reportes,
+          recompensas, mesas, configuración). */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 items-stretch md:hidden"
         style={{
-          background: "#ffffff",
-          borderColor: "rgba(28,37,38,0.08)",
+          background: "#1C2526",
           paddingBottom: "env(safe-area-inset-bottom)",
-          boxShadow: "0 -2px 12px rgba(28,37,38,0.06)",
         }}
       >
         {mobileTabs.map((item) => {
@@ -712,8 +708,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold"
-              style={{ color: active ? "#F28C38" : "rgba(28,37,38,0.45)" }}
+              className="flex flex-col items-center gap-1 pb-2.5 pt-2.5 text-[11px]"
+              style={{ color: active ? "#F28C38" : "#E6E0D6", fontWeight: active ? 600 : 500 }}
             >
               <span>{item.icon}</span>
               <span>{item.label === "Caja / POS" ? "Caja" : item.label}</span>
@@ -723,11 +719,11 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         {mobileRest.length > 0 && (
           <button
             onClick={() => setMoreOpen(true)}
-            className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold"
-            style={{ color: moreOpen ? "#F28C38" : "rgba(28,37,38,0.45)" }}
+            className="flex flex-col items-center gap-1 pb-2.5 pt-2.5 text-[11px]"
+            style={{ color: moreOpen ? "#F28C38" : "#E6E0D6", fontWeight: moreOpen ? 600 : 500 }}
           >
-            <IconMore />
-            <span>Más</span>
+            <IconStore />
+            <span>Negocio</span>
           </button>
         )}
       </nav>
@@ -779,10 +775,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               <Link
                 href="/vendor/plan"
                 onClick={() => setMoreOpen(false)}
-                className="mt-1 flex items-center justify-center gap-2 rounded-xl px-3.5 py-3 text-[13px] font-bold text-white"
-                style={{ background: "linear-gradient(135deg, #F28C38, #D97757)" }}
+                className="mt-1 flex items-center justify-center gap-2 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-[#1C2526]"
+                style={{ background: "#F28C38" }}
               >
-                ⭐ Hazte Pro
+                Hazte Pro
               </Link>
             )}
             {/* 🔒 Salir de Modo Caja TAMBIÉN en el celular (10-sep-2026). El

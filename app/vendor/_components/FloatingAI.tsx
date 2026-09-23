@@ -357,16 +357,20 @@ export default function FloatingAI({
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[88px] right-4 z-[29] flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 md:bottom-6 md:right-6 md:z-[49]"
         style={{
-          background: open ? "#1C2526" : "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)",
-          boxShadow: open
-            ? "0 4px 20px rgba(28,37,38,0.4)"
-            : "0 4px 20px rgba(217,119,87,0.5)",
+          background: "#1C2526",
+          color: "#FAF9F5",
+          boxShadow: "0 4px 16px rgba(28,37,38,0.25)",
           right: open ? 392 : 24,
-          transition: "right 0.25s cubic-bezier(0.32,0.72,0,1), background 0.2s",
+          transition: "right 0.25s cubic-bezier(0.32,0.72,0,1)",
         }}
-        title="Comeleal AI"
+        title="Pregúntale a Comeleal"
+        aria-label={open ? "Cerrar Comeleal AI" : "Pregúntale a Comeleal"}
       >
-        <span className="text-[20px]">{open ? "×" : "🧠"}</span>
+        {open ? (
+          <span className="text-[20px] leading-none">×</span>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.1-4.7A9 9 0 1 1 21 12z" /><path d="M8 12h.01M12 12h.01M16 12h.01" /></svg>
+        )}
       </button>
       )}
     </>
