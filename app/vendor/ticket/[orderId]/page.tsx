@@ -223,6 +223,8 @@ export default function TicketPage() {
         @page { size: ${widthMm}mm auto; margin: 0; }
         html, body { background: #fff !important; margin: 0; padding: 0; }
         .ticket-root { color: #000; background: #fff; font-family: "Courier New", ui-monospace, Menlo, monospace; }
+        /* La pared de Pro no es parte del ticket: letra del panel, no de máquina. */
+        .ticket-root [role="dialog"] { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
         .ticket { width: ${contentMm}mm; margin: 0 auto; padding: 3mm 0 6mm; font-size: 14px; line-height: 1.25; }
         .ticket p { margin: 0; }
         .center { text-align: center; }
