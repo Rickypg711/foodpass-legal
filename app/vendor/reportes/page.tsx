@@ -141,7 +141,7 @@ function PageTitle({ caption }: { caption?: string }) {
         {caption && <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>{caption}</p>}
       </div>
       <Link href="/vendor" className="shrink-0 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
-        ← Panel
+        Panel
       </Link>
     </div>
   );

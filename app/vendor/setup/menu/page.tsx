@@ -576,7 +576,7 @@ function MenuSetupPageInner() {
             <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
               <div className="mx-auto flex max-w-lg items-center gap-3">
                 <Link href="/vendor/setup" className="text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
-                  ← Volver
+                  Volver
                 </Link>
                 <span style={{ color: BORDER }}>/</span>
                 <span className="text-[14px] font-semibold" style={{ color: INK }}>Menú</span>
