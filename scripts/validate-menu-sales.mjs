@@ -77,7 +77,7 @@ check("aviso plural", menuUnpaidLine(3, 2085), "3 pedidos del menú sin cobrar (
 // ── El Panel lo pinta de verdad ─────────────────────────────────────────────
 const panel = readFileSync(new URL("../app/vendor/page.tsx", import.meta.url), "utf8");
 check("el Panel suma con la función", panel.includes("summarizeMenuSales("), true);
-check("el Panel dice 'Vendiste por tu menú'", panel.includes("🍽️ Vendiste por tu menú"), true);
+check("el Panel dice 'Vendiste por tu menú'", panel.includes("Vendiste por tu menú"), true);
 check("sin $0: se esconde si no hay nada", panel.includes("showMenuSales(menuSales)"), true);
 check("sin nada cobrado no pinta $0", panel.includes("{menuSales.paidCount > 0 && ("), true);
 check("el aviso lleva a Pedidos", panel.includes('href="/vendor/pedidos"'), true);
@@ -94,7 +94,7 @@ if (existsSync(`${APP}/pubspec.yaml`)) {
     check("app: mismas palabras (pedido del menú sin cobrar)", d.includes("pedidos del menú sin cobrar"), true);
     check("app: mismas palabras (cóbralos en Pedidos)", d.includes("· cóbralos en Pedidos"), true);
     const arb = readFileSync(`${APP}/lib/l10n/app_es.arb`, "utf8");
-    check("app: la pantalla dice 'Vendiste por tu menú'", arb.includes('"menuSalesTitle": "🍽️ Vendiste por tu menú"'), true);
+    check("app: la pantalla dice 'Vendiste por tu menú'", arb.includes('"menuSalesTitle": "Vendiste por tu menú"'), true);
   }
 }
 

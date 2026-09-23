@@ -108,7 +108,8 @@ const main = raw.slice(jsxStart, jsxEnd);
   const i = raw.indexOf("function AskComelealCard(");
   const block = raw.slice(i, raw.indexOf("function ToolsGrid(", i));
   assert.ok(block.includes("Pregúntale a Comeleal"), "Pregunta: título");
-  assert.ok(block.includes("Responde con datos reales de tu negocio"), "Pregunta: subtítulo");
+  // Opción A (23-sep-2026): el subtítulo "Responde con datos reales" se fue con la tarjeta; el placeholder lo dice.
+  assert.ok(block.includes("¿Qué quieres saber de tu negocio?"), "Pregunta: placeholder");
   assert.ok(block.includes("¿Qué debo hacer esta semana?") && block.includes("¿Cuáles son mis mejores clientes?"), "Pregunta: las 2 preguntas");
   assert.ok(block.includes("?q=${encodeURIComponent(clean)}"), "Pregunta: manda a Comeleal AI por ?q= (no es un chat nuevo)");
   assert.ok(!block.includes("httpsCallable") && !block.includes("queryRestaurantBrain"), "Pregunta: no llama al servidor por su cuenta");
@@ -126,7 +127,8 @@ const main = raw.slice(jsxStart, jsxEnd);
     assert.ok(j > cursor, `Herramientas: ${m} fuera de orden o ausente`);
     cursor = j;
   }
-  assert.ok(block.includes("grid-cols-2 gap-3 md:grid-cols-4"), "Herramientas: 2×2 / 4 en escritorio");
+  // Opción A (23-sep-2026): cuatro círculos en UNA fila, también en móvil.
+  assert.ok(block.includes("grid-cols-4 gap-2"), "Herramientas: 4 en fila");
   assert.ok(block.includes('id="compartir-qr"'), "Herramientas: #compartir-qr sigue vivo (destino del consejo)");
   assert.ok(block.includes("<MenuShareModal"), "Herramientas: Tu QR abre el modal único de compartir");
   assert.ok(block.includes("Ver mi menú ↗") && block.includes("Ver mi página ↗"), "Herramientas: ligas chicas debajo");

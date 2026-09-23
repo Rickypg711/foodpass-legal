@@ -384,7 +384,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#F5F3EF" }}>
+    <div className="flex min-h-screen" style={{ background: "#FAF9F5" }}>
 
       {/* ── Sidebar ── */}
       <aside

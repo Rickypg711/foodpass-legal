@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Lora } from "next/font/google";
 import { rootMetadata } from "@/lib/siteMetadata";
 import { MetaPixelProvider } from "@/components/analytics/MetaPixelProvider";
 import { AttributionCapture } from "@/components/analytics/AttributionCapture";
@@ -16,6 +16,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// La ÚNICA serif del producto (Opción A del panel, 23-sep-2026): nombre del
+// local y títulos de sección. Misma familia que la app (GoogleFonts.lora).
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+  weight: ["600"],
+});
+
 export const metadata: Metadata = rootMetadata;
 
 export default function RootLayout({
@@ -26,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased`}
       >
         {children}
         <MetaPixelProvider />

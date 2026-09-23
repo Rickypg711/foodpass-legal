@@ -491,7 +491,7 @@ export default function VendorDashboard() {
 
   if (loadState === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: "#F5F3EF" }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "#FAF9F5" }}>
         <Spinner />
       </div>
     );
@@ -500,7 +500,7 @@ export default function VendorDashboard() {
   if (loadState === "error" || !data) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center"
-        style={{ background: "#F5F3EF" }}>
+        style={{ background: "#FAF9F5" }}>
         <p className="text-sm" style={{ color: "rgba(28,37,38,0.45)" }}>
           No pudimos cargar tu panel.
         </p>
@@ -527,27 +527,23 @@ export default function VendorDashboard() {
   return (
     <>
         {/* Mobile header */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 md:hidden"
-          style={{
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid rgba(28,37,38,0.07)",
-          }}>
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <Image src="/comeleal-app-icon.png" alt="" width={26} height={26}
-                className="h-[26px] w-[26px] rounded-[6px]" />
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5 py-3 md:hidden"
+          style={{ background: "#FAF9F5", borderBottom: "1px solid #E9E3D7" }}>
+          <div className="flex min-w-0 items-center gap-3">
+            <Link href="/" className="shrink-0">
+              <Image src="/comeleal-app-icon.png" alt="" width={36} height={36}
+                className="h-9 w-9 rounded-full" style={{ border: "1px solid #D9D2C5" }} />
             </Link>
-            <span className="text-[14px] font-semibold" style={{ color: "#1C2526" }}>
+            <span className="truncate text-[18px] font-semibold" style={{ color: "#1C2526", fontFamily: SERIF }}>
               {data.restaurantName}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <ManualCloseToggle restaurantId={data.restaurantId} />
             <Link href="/vendor/pos"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-[#1C2526]"
+              className="flex h-9 items-center rounded-xl px-3.5 text-[13px] font-semibold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
-              💰 Cobrar
+              Cobrar
             </Link>
           </div>
         </header>
@@ -555,8 +551,8 @@ export default function VendorDashboard() {
         {/* Desktop top bar */}
         <div className="hidden items-center justify-between px-8 py-4 md:flex"
           style={{
-            background: "#ffffff",
-            borderBottom: "1px solid rgba(28,37,38,0.07)",
+            background: "#FAF9F5",
+            borderBottom: "1px solid #E9E3D7",
           }}>
           <div>
             {/* Sin CSS `capitalize`: ponía "26 De Agosto" — en español el mes
@@ -579,7 +575,7 @@ export default function VendorDashboard() {
                 Hoy: ${data.ventasHoy.toLocaleString("es-MX")}
                 {" · "}Ritmo:{" "}
                 <span style={{ color: data.pulseLastHourCount >= 3 ? "#16A34A" : data.pulseLastHourCount >= 1 ? "#B45309" : "rgba(28,37,38,0.45)" }}>
-                  {data.pulseLastHourCount >= 3 ? "Fuerte 🔥" : data.pulseLastHourCount >= 1 ? "Normal" : "Lento"}
+                  {data.pulseLastHourCount >= 3 ? "Fuerte" : data.pulseLastHourCount >= 1 ? "Normal" : "Lento"}
                 </span>
                 {data.dailyRevenueGoal ? ` · Meta: ${Math.round((data.ventasHoy / data.dailyRevenueGoal) * 100)}%` : ""}
                 {data.metaPaceLabel ? (
@@ -609,9 +605,9 @@ export default function VendorDashboard() {
                 Caja, phone loyalty rides along). Scanner stays in the sidebar
                 for app-QR customers. */}
             <Link href="/vendor/pos"
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[14px] font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)", boxShadow: "0 4px 16px rgba(242,140,56,0.28)" }}>
-              💰 Nueva venta
+              className="flex h-11 items-center rounded-xl px-5 text-[14px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
+              style={{ background: "#F28C38" }}>
+              Nueva venta
             </Link>
           </div>
         </div>
@@ -629,7 +625,7 @@ export default function VendorDashboard() {
 
         {/* ── Page content ── (día cero: columna con tope — en monitor ancho
             las tarjetas full-width se volvían salchichas de un metro) */}
-        <main className={`flex-1 px-4 pb-16 pt-5 md:px-8 md:pt-7${firstDay ? " mx-auto w-full max-w-3xl" : ""}`}>
+        <main className={`flex-1 px-5 pb-24 pt-5 md:px-8 md:pt-7${firstDay ? " mx-auto w-full max-w-3xl" : ""}`}>
 
           {/* Día cero: la brújula VA PRIMERO — la acción principal de un
               restaurante sin terminar de nacer es terminar de nacer, no
@@ -646,21 +642,9 @@ export default function VendorDashboard() {
               solo trae el pill "Cobrar"; este es el "Nueva venta" del header
               en versión móvil. */}
           <Link href="/vendor/pos"
-            className="mb-6 flex items-center justify-between rounded-2xl p-5 transition-transform active:scale-[0.98] md:hidden"
-            style={{
-              background: "linear-gradient(135deg, #FF9A45 0%, #F28C38 55%, #E07830 100%)",
-              boxShadow: "0 6px 28px rgba(242,140,56,0.28)",
-            }}>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
-                Acción principal
-              </p>
-              <p className="mt-0.5 text-[20px] font-bold text-white">Nueva venta</p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl text-[24px] text-white"
-              style={{ background: "rgba(255,255,255,0.2)" }}>
-              💰
-            </div>
+            className="mb-7 flex h-12 items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition-transform active:scale-[0.98] md:hidden"
+            style={{ background: "#F28C38" }}>
+            Nueva venta
           </Link>
 
           {/* ── 1 · Hoy (oculto el primer día: puro cero) ── */}
@@ -993,105 +977,93 @@ function AICoachPreviewCard({
 }) {
   const router = useRouter();
 
-  const displayTitle = nbaTitle || "Siguiente mejor acción";
-  const displayBody = nbaBody || getNbaFallbackBody(actionCode);
+  const displayTitle = plainCopy(nbaTitle || "Siguiente mejor acción");
+  const displayBody = plainCopy(nbaBody || getNbaFallbackBody(actionCode));
   const reachableRisk = metrics.atRiskReachableCount;
   const ctaLabel = actionCode === "send_winback" && typeof reachableRisk === "number" && reachableRisk > 0
     ? `Contactar ${reachableRisk} por WhatsApp`
     : getNbaCtaLabel(actionCode, metrics.atRiskCount);
   const ctaHref = getNbaCtaHref(actionCode);
 
-  const parts: string[] = [];
-  if (metrics.scans30d > 0) parts.push(`${metrics.scans30d} visitas`);
-  if (metrics.redemptions30d > 0) parts.push(`${metrics.redemptions30d} canjes`);
-  if (metrics.uniqueCustomers30d > 0) parts.push(`${metrics.uniqueCustomers30d} clientes`);
-  const metricsLine = parts.length > 0 ? `Actividad: ${parts.join(" · ")} (últimos 30d)` : null;
-
   // Only surface a weekly insight when the AI actually produced one — never filler.
   const hasInsight = !!(weeklyBriefText && weeklyBriefText.trim());
   const compactInsight = hasInsight
-    ? (weeklyBriefText!.length > 200 ? weeklyBriefText!.substring(0, 200) + "..." : weeklyBriefText!)
+    ? plainCopy(weeklyBriefText!.length > 200 ? weeklyBriefText!.substring(0, 200) + "..." : weeklyBriefText!)
     : "";
 
+  // Opción A: sección sin tarjeta — se fueron la caja negra con degradado,
+  // el emoji de cerebro, el eyebrow "⚡ TU SIGUIENTE MOVIMIENTO" y la línea
+  // de "📊 Actividad". Título, consejo, cuerpo y UN botón.
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl"
-      style={{
-        background: "linear-gradient(135deg, #1C2526 0%, #2A3739 100%)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-      }}>
-      <div className="p-6 text-white">
-        
-        {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[20px]">🧠</span>
-            <div>
-              <p className="text-[14px] font-extrabold tracking-tight" style={{ color: "#FF9A45" }}>Comeleal AI</p>
-              <p className="text-[11px] text-white/50 font-medium">Tu asistente de negocio con IA</p>
-            </div>
-          </div>
-          <button
-            onClick={() => router.push(`${window.location.pathname}?ai=1`)}
-            className="rounded-full px-3.5 py-1 text-[11.5px] font-bold text-[#FF9A45] transition hover:bg-white/5"
-            style={{ border: "1px solid rgba(255,154,69,0.3)" }}>
-            Abrir Comeleal AI →
-          </button>
-        </div>
-
-        {/* Next best action — the hero, full width, real button */}
-        <div className="rounded-xl p-5"
-          style={{ background: "rgba(255,154,69,0.06)", border: "1px solid rgba(255,154,69,0.15)" }}>
-          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#FF9A45]">
-            <span>⚡</span> Tu siguiente movimiento
-          </p>
-          <p className="text-[17px] font-extrabold leading-snug text-white">{displayTitle}</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-white/70">{displayBody}</p>
-
-          {metricsLine && (
-            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-white/40">
-              <span>📊</span> {metricsLine}
-            </p>
-          )}
-
-          <a href={ctaHref}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
-            style={{ background: "#FF9A45" }}>
-            {ctaLabel} <span>→</span>
-          </a>
-        </div>
-
-        {/* Weekly insight — only when the AI has a real one, never a filler apology */}
-        {hasInsight && (
-          <div className="mt-3 flex gap-3 rounded-xl p-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <span className="shrink-0 text-[15px]">💡</span>
-            <div>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-white/40">Consejo de la semana</p>
-              <p className="text-[12px] leading-relaxed text-white/75">{compactInsight}</p>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
+    <section className="mb-7">
+      <SectionTitle>Tu siguiente movimiento</SectionTitle>
+      <p className="text-[15px] font-semibold leading-[22px]" style={{ color: INK }}>{displayTitle}</p>
+      <p className="mt-1 text-[15px] leading-[22px]" style={{ color: INK }}>{displayBody}</p>
+      {hasInsight && (
+        <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
+      )}
+      <a href={ctaHref}
+        className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:w-auto md:px-6"
+        style={{ background: BRAND }}>
+        {ctaLabel}
+      </a>
+      <button
+        type="button"
+        onClick={() => router.push(`${window.location.pathname}?ai=1`)}
+        className="mt-3 text-[13px] font-semibold hover:underline"
+        style={{ color: LINK }}>
+        Abrir Comeleal AI →
+      </button>
+    </section>
   );
 }
 
 // ─── Bloques del panel (9-sep-2026) ───────────────────────────────────────────
 
-const CARD_STYLE: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid rgba(28,37,38,0.07)",
-  boxShadow: "0 1px 4px rgba(28,37,38,0.05)",
-};
+// Opción A (23-sep-2026): Magio (MenuBot) vio el panel en el celular y dijo
+// "se ve hecho con IA". Tenía razón en lo específico: eyebrows en mayúsculas,
+// tarjetas con sombra, emojis de icono, degradados, blanco sobre naranja.
+// Ricardo eligió la Opción A del lienzo "Panel móvil Comeleal" (Claude
+// Design; Design System "Comeleal"): crema + tinta, secciones sin tarjeta
+// separadas con aire, UNA serif (Lora) solo para nombre y títulos, sans para
+// números y botones, naranja solo en acciones con tinta encima. Espejo de
+// la app (owner_dashboard_screen.dart y sus widgets).
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
 
-function SectionKicker({ children }: { children: React.ReactNode }) {
+/** Encabezado de sección: título en Lora 17/600 y, a la derecha, el rango en
+ *  13px ("últimos 7 días"). Sin tarjeta debajo. */
+function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(28,37,38,0.4)" }}>
-      {children}
-    </h2>
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+        {children}
+      </h2>
+      {right ? <span className="shrink-0 text-[13px] leading-4" style={{ color: INK_SOFT }}>{right}</span> : null}
+    </div>
   );
+}
+
+/** Barra de 6px: línea fina con relleno naranja. */
+function ProgressBar({ fraction }: { fraction: number }) {
+  const pct = Math.max(0, Math.min(100, Math.round((Number.isFinite(fraction) ? fraction : 0) * 100)));
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: HAIRLINE }}>
+      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BRAND }} />
+    </div>
+  );
+}
+
+/** El consejo se dice como lo diría un amigo: fuera "¡" y "!" del texto que
+ *  escribe el cerebro. */
+function plainCopy(s: string): string {
+  return s.replace(/¡/g, "").replace(/!+/g, ".").replace(/\.\./g, ".").trim();
 }
 
 /** 1 · Hoy — $ del día, meta, pedidos en cola, cuentas abiertas, ticket, y
@@ -1118,9 +1090,10 @@ function TodayCard({
   const money = (n: number) =>
     `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const metaPct = dailyRevenueGoal ? Math.round((ventasHoy / dailyRevenueGoal) * 100) : null;
+  const todayLabel = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
 
   // La alerta: pedidos esperando (o listos sin entregar cuando no hay
-  // pendientes). Rojo cuando el más viejo pasa de 20 min.
+  // pendientes). Punto rojo cuando el más viejo pasa de 20 min.
   const alert = pendingOrdersCount > 0
     ? {
         text: `${pendingOrdersCount} pedido${pendingOrdersCount !== 1 ? "s" : ""} esperando · el más viejo ${formatOrderAge(oldestPendingMinutes)}`,
@@ -1130,75 +1103,77 @@ function TodayCard({
     ? { text: `${readyOrdersCount} listo${readyOrdersCount !== 1 ? "s" : ""} sin entregar`, severe: false }
     : null;
 
-  return (
-    <section className="mb-6">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <SectionKicker>Hoy</SectionKicker>
-        {/* Pulso en vivo — joya robada de la app: última hora + tendencia */}
-        <p className="mb-3 text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.45)" }}>
-          ⚡ Última hora: {pulseLastHourCount} pedido{pulseLastHourCount === 1 ? "" : "s"}
-          {pulseLastHourCount > 0 ? ` · $${pulseLastHourRevenue.toLocaleString("es-MX")}` : ""}
-          {pulseLastHourCount > pulsePrevHourCount ? " ↑" : pulseLastHourCount < pulsePrevHourCount ? " ↓" : ""}
-        </p>
-      </div>
-      <div className="rounded-2xl p-5" style={CARD_STYLE}>
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0">
-            <p className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.5)" }}>Ventas hoy</p>
-            <p className="mt-1 text-[30px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "#1C2526" }}>
-              {money(ventasHoy)}
-            </p>
-            {dailyRevenueGoal ? (
-              <p className="mt-2 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.5)" }}>
-                Meta: ${dailyRevenueGoal.toLocaleString("es-MX")} · <span style={{ color: "#1C2526" }}>{metaPct}%</span>
-                {metaPaceLabel ? (
-                  <>
-                    {" · "}
-                    <span style={{ color: metaPaceLabel === "Atrasado" ? "#DC2626" : metaPaceLabel === "En camino" ? "rgba(28,37,38,0.45)" : "#16A34A" }}>
-                      {metaPaceLabel}
-                    </span>
-                  </>
-                ) : null}
-              </p>
-            ) : (
-              <Link href="/vendor/reportes" className="mt-2 inline-block text-[11px] font-semibold text-[#F28C38] hover:underline">
-                Ver reportes →
-              </Link>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-x-5 gap-y-1">
-            <Link href="/vendor/pedidos" className="group">
-              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Pedidos en cola</p>
-              <p className="mt-1 text-[16px] font-bold tabular-nums group-hover:underline" style={{ color: "#1C2526" }}>{pedidosCola}</p>
-            </Link>
-            <Link href="/vendor/pos" className="group">
-              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Cuentas abiertas</p>
-              <p className="mt-1 text-[16px] font-bold tabular-nums group-hover:underline" style={{ color: "#1C2526" }}>{cuentasAbiertas}</p>
-            </Link>
-            <div>
-              <p className="text-[11px] font-medium" style={{ color: "rgba(28,37,38,0.52)" }}>Ticket promedio</p>
-              <p className="mt-1 text-[16px] font-bold tabular-nums" style={{ color: "#1C2526" }}>
-                {avgTicketToday !== null ? money(avgTicketToday) : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
+  const pulse = pulseLastHourCount > 0
+    ? `${pulseLastHourCount} pedido${pulseLastHourCount === 1 ? "" : "s"} en la última hora · $${pulseLastHourRevenue.toLocaleString("es-MX")}${pulseLastHourCount > pulsePrevHourCount ? " · subiendo" : pulseLastHourCount < pulsePrevHourCount ? " · bajando" : ""}`
+    : null;
 
-        {alert && (
-          <Link href="/vendor/pedidos"
-            className="mt-4 flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition hover:opacity-90"
-            style={{
-              background: alert.severe ? "rgba(220,38,38,0.08)" : "rgba(242,140,56,0.10)",
-              color: "#1C2526",
-            }}>
-            <span className="text-[15px]">⏳</span>
-            <span className="min-w-0 flex-1 text-[12.5px] font-semibold">{alert.text}</span>
-            <span className="shrink-0 text-[12.5px] font-bold" style={{ color: alert.severe ? "#B91C1C" : "#E07830" }}>
-              Ver →
-            </span>
-          </Link>
+  return (
+    <section className="mb-7">
+      <SectionTitle right={todayLabel}>Hoy</SectionTitle>
+
+      <div className="flex items-baseline gap-2.5">
+        <p className="text-[40px] font-bold leading-[44px] tracking-[-0.02em] tabular-nums" style={{ color: INK }}>
+          {money(ventasHoy)}
+        </p>
+        {avgTicketToday !== null && (
+          <p className="truncate text-[14px] leading-[18px]" style={{ color: INK_SOFT }}>
+            ticket {money(avgTicketToday)}
+          </p>
         )}
       </div>
+
+      {dailyRevenueGoal ? (
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between gap-3 text-[13px] leading-4" style={{ color: INK_MUTED }}>
+            <span>Meta del día ${dailyRevenueGoal.toLocaleString("es-MX")}</span>
+            <span className="tabular-nums" style={metaPaceLabel === "Atrasado" ? { color: "#B45309", fontWeight: 600 } : undefined}>
+              {money(ventasHoy)} · {metaPct}%{metaPaceLabel ? ` · ${metaPaceLabel}` : ""}
+            </span>
+          </div>
+          <div className="mt-1.5">
+            <ProgressBar fraction={(metaPct ?? 0) / 100} />
+          </div>
+        </div>
+      ) : (
+        <Link href="/vendor/reportes" className="mt-2 inline-block text-[13px] font-semibold hover:underline" style={{ color: LINK }}>
+          Ver reportes
+        </Link>
+      )}
+
+      {pulse && (
+        <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{pulse}</p>
+      )}
+
+      {/* Tres cifras del día en una fila con líneas finas (espejo de la
+          fila de Clientes): lo que se toca lleva a su pestaña. */}
+      <div className="mt-4 grid grid-cols-3 py-3" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+        <Link href="/vendor/pedidos" className="group flex flex-col items-center gap-0.5">
+          <p className="text-[22px] font-bold leading-[26px] tabular-nums group-hover:underline" style={{ color: INK }}>{pedidosCola}</p>
+          <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Pedidos en cola</p>
+        </Link>
+        <Link href="/vendor/pos" className="group flex flex-col items-center gap-0.5" style={{ borderLeft: `1px solid ${HAIRLINE}` }}>
+          <p className="text-[22px] font-bold leading-[26px] tabular-nums group-hover:underline" style={{ color: INK }}>{cuentasAbiertas}</p>
+          <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Cuentas abiertas</p>
+        </Link>
+        <div className="flex flex-col items-center gap-0.5" style={{ borderLeft: `1px solid ${HAIRLINE}` }}>
+          <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>
+            {avgTicketToday !== null ? money(avgTicketToday) : "—"}
+          </p>
+          <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Ticket promedio</p>
+        </div>
+      </div>
+
+      {alert && (
+        <Link href="/vendor/pedidos"
+          className="mt-3 flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-3 transition hover:opacity-90"
+          style={{ border: `1px solid ${BORDER}`, color: INK }}>
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: alert.severe ? "#B91C1C" : BRAND }} />
+          <span className="min-w-0 flex-1 text-[14px] leading-[18px]">{alert.text}</span>
+          <span className="shrink-0 text-[14px] font-semibold" style={{ color: LINK }}>
+            Ver →
+          </span>
+        </Link>
+      )}
     </section>
   );
 }
@@ -1207,40 +1182,31 @@ function TodayCard({
  *  ventas de la semana de negocio sabe quién las hizo. Espejo de
  *  IdentifiedSalesCard (app). Candado: validate-identified-sales-card. */
 function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSales" | "weekIdentifiedSales"> }) {
-  const pct = data.weekPaidSales > 0 && data.weekIdentifiedSales > 0
-    ? Math.round((100 * data.weekIdentifiedSales) / data.weekPaidSales)
-    : null;
+  const fraction = data.weekPaidSales > 0 ? data.weekIdentifiedSales / data.weekPaidSales : 0;
+  const hint = data.weekPaidSales > 0
+    ? `últimos 7 días · ${data.weekIdentifiedSales} de ${data.weekPaidSales}`
+    : "Aún ninguna en los últimos 7 días · pídelo al cobrar";
   return (
-    <section className="mb-6">
-      <Link href="/vendor/pos"
-        className="group flex items-center gap-4 rounded-2xl p-5 transition-all hover:shadow-md"
-        style={{ ...CARD_STYLE, border: "1px solid rgba(242,140,56,0.35)" }}>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[22px]"
-          style={{ background: "rgba(242,140,56,0.12)" }}>
-          🎯
-        </div>
+    <section className="mb-7">
+      <SectionTitle right="últimos 7 días"><span>Ventas con teléfono</span></SectionTitle>
+      <Link href="/vendor/pos" className="group flex items-center gap-3.5">
         <div className="min-w-0 flex-1">
-          <span className="text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.6)" }}>Ventas con teléfono</span>
-          <div className="mt-0.5 flex items-end gap-2">
-            <p className="text-[30px] font-extrabold leading-none tracking-tight tabular-nums"
-              style={{ color: data.weekIdentifiedSales > 0 ? "#F28C38" : "#1C2526" }}>
-              {data.weekIdentifiedSales}
+          <div className="flex items-baseline gap-2">
+            <p className="text-[28px] font-bold leading-8 tracking-[-0.01em] tabular-nums" style={{ color: INK }}>
+              {data.weekIdentifiedSales} de {data.weekPaidSales}
             </p>
-            {pct !== null && (
-              <span className="mb-0.5 rounded-lg px-2 py-0.5 text-[11px] font-bold"
-                style={{ background: "rgba(242,140,56,0.12)", color: "#E07830" }}>
-                {pct}%
-              </span>
-            )}
+            <span className="truncate text-[14px]" style={{ color: INK_MUTED }}>ventas con número</span>
           </div>
-          <p className="mt-1.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
-            {data.weekPaidSales > 0
-              ? `últimos 7 días · ${data.weekIdentifiedSales} de ${data.weekPaidSales}`
-              : "Aún ninguna en los últimos 7 días · pídelo al cobrar"}
+          <div className="mt-2"><ProgressBar fraction={fraction} /></div>
+          <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+            {data.weekIdentifiedSales > 0
+              ? `A ${data.weekIdentifiedSales === 1 ? "ese cliente le" : `esos ${data.weekIdentifiedSales} les`} puedes volver a escribir.`
+              : hint}
           </p>
         </div>
-        <span className="shrink-0 text-[12px] font-bold text-[#F28C38] group-hover:underline">Cobrar con número →</span>
+        <span className="shrink-0 text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número →</span>
       </Link>
+      <span className="sr-only">{hint}</span>
     </section>
   );
 }
@@ -1250,99 +1216,89 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
  *  ni promesa de puntos: "Cada venta con número suma aquí." */
 function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 0 }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary; referredOrders30d?: number }) {
   const lowSample = stats.withPhone < 5;
+  const cells = [
+    { label: "Con teléfono", value: `${stats.withPhone}` },
+    { label: "Volvieron", value: `${stats.returned}` },
+    { label: "% que volvió", value: stats.withPhone > 0 ? `${Math.round(stats.returnRatePercent)}%` : "—" },
+    { label: "Premios canjeados", value: `${stats.redemptions}` },
+  ];
   return (
-    <section className="mb-6">
-      <SectionKicker>Clientes · últimos 30 días</SectionKicker>
-      <div className="rounded-2xl p-5" style={CARD_STYLE}>
-        {/* Vendiste por tu menú (12-sep): el dinero que trajo el menú en línea,
-            arriba de todo — es lo que hace que el dueño se quede. Sin pedidos
-            en línea no se pinta: un $0 no le dice nada. */}
-        {showMenuSales(menuSales) && (
-          <div className="mb-4 rounded-xl px-4 py-3"
-            style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)" }}>
-            {/* Sin nada cobrado todavía no se pinta "$0 · 0 pedidos": solo el aviso. */}
-            {menuSales.paidCount > 0 && (
-              <>
-                <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.6)" }}>
-                  🍽️ Vendiste por tu menú
+    <section className="mb-7" aria-label="Clientes · últimos 30 días">
+      <SectionTitle right="últimos 30 días">Clientes</SectionTitle>
+
+      {/* Vendiste por tu menú (12-sep): el dinero que trajo el menú en línea,
+          arriba de todo — es lo que hace que el dueño se quede. Sin pedidos
+          en línea no se pinta: un $0 no le dice nada. */}
+      {showMenuSales(menuSales) && (
+        <div className="mb-3">
+          {/* Sin nada cobrado todavía no se pinta "$0 · 0 pedidos": solo el aviso. */}
+          {menuSales.paidCount > 0 && (
+            <>
+              <p className="text-[13px] leading-4" style={{ color: INK_MUTED }}>Vendiste por tu menú</p>
+              <div className="mt-0.5 flex items-baseline gap-2">
+                <p className="text-[22px] font-bold leading-[26px] tracking-[-0.01em] tabular-nums" style={{ color: "#15803D" }}>
+                  {menuSalesMoney(menuSales.paidTotal)}
                 </p>
-                <div className="mt-0.5 mb-2 flex items-baseline gap-2">
-                  <p className="text-[24px] font-extrabold leading-none tracking-tight tabular-nums" style={{ color: "#15803D" }}>
-                    {menuSalesMoney(menuSales.paidTotal)}
-                  </p>
-                  <span className="text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
-                    {menuSalesCaption(menuSales.paidCount)}
-                  </span>
-                </div>
-              </>
-            )}
-            {menuSales.unpaidCount > 0 && (
-              <Link href="/vendor/pedidos"
-                className="flex items-center gap-1 text-[12px] font-bold hover:underline"
-                style={{ color: "#B45309" }}>
-                {menuUnpaidLine(menuSales.unpaidCount, menuSales.unpaidTotal)}
-                <span className="ml-auto">›</span>
-              </Link>
-            )}
-          </div>
-        )}
-        {/* REFERIDOS (§10): lo que cierra el loop para el dueño. Con 0 no se
-            pinta — un cero no le dice nada y solo ocupa lugar. */}
-        {referredOrders30d > 0 && (
-          <div className="mb-4 rounded-xl px-4 py-3"
-            style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.18)" }}>
-            <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.6)" }}>
-              🎁 Tus clientes te trajeron gente
-            </p>
-            <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: "#C2620F" }}>
-              {referredOrders30d === 1
-                ? "1 persona vino por el link de un cliente"
-                : `${referredOrders30d} personas vinieron por el link de un cliente`}
-              <span className="ml-1 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.55)" }}>
-                · últimos 30 días
-              </span>
-            </p>
-          </div>
-        )}
-        {lowSample && (
-          <p className="mb-4 text-[12px]" style={{ color: "rgba(28,37,38,0.6)" }}>
-            Cada venta con número suma aquí.
-          </p>
-        )}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { label: "Con teléfono", value: `${stats.withPhone}` },
-            { label: "Volvieron", value: `${stats.returned}` },
-            { label: "% que volvió", value: stats.withPhone > 0 ? `${Math.round(stats.returnRatePercent)}%` : "—" },
-            { label: "Premios canjeados", value: `${stats.redemptions}` },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.52)" }}>{label}</p>
-              <p className="mt-1 text-[18px] font-bold tabular-nums" style={{ color: "#1C2526" }}>{value}</p>
-            </div>
-          ))}
+                <span className="text-[14px]" style={{ color: INK_SOFT }}>
+                  {menuSalesCaption(menuSales.paidCount)}
+                </span>
+              </div>
+            </>
+          )}
+          {menuSales.unpaidCount > 0 && (
+            <Link href="/vendor/pedidos"
+              className="mt-1 flex items-center gap-1 text-[14px] font-semibold hover:underline"
+              style={{ color: "#B45309" }}>
+              {menuUnpaidLine(menuSales.unpaidCount, menuSales.unpaidTotal)}
+              <span className="ml-auto">›</span>
+            </Link>
+          )}
         </div>
-        {/* En riesgo: solo cuando el consejo trae el dato (send_winback lo cubre). */}
-        {atRiskCount > 0 && (
-          <Link href="/vendor/clientes?segmento=riesgo"
-            className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-bold transition hover:opacity-90"
-            style={{ background: "rgba(242,140,56,0.06)", border: "1px solid rgba(242,140,56,0.12)", color: "#E07830" }}>
-            ⚠️ {atRiskCount} cliente{atRiskCount !== 1 ? "s" : ""} sin regresar en 14 días
-            <span className="ml-auto">›</span>
-          </Link>
-        )}
-        <div className="mt-4 flex gap-3">
-          <Link href="/vendor/clientes"
-            className="flex-1 rounded-xl py-2.5 text-center text-[12px] font-semibold text-[#1C2526] transition hover:opacity-90"
-            style={{ background: "#F28C38" }}>
-            Ver clientes
-          </Link>
-          <Link href="/vendor/recompensas"
-            className="flex-1 rounded-xl border py-2.5 text-center text-[12px] font-semibold transition hover:opacity-85"
-            style={{ borderColor: "rgba(217,119,87,0.35)", color: "#F28C38" }}>
-            Recompensas
-          </Link>
-        </div>
+      )}
+      {/* REFERIDOS (§10): lo que cierra el loop para el dueño. Con 0 no se
+          pinta — un cero no le dice nada y solo ocupa lugar. */}
+      {referredOrders30d > 0 && (
+        <p className="mb-3 text-[14px] leading-[18px]" style={{ color: INK }}>
+          {referredOrders30d === 1
+            ? "1 persona vino por el link de un cliente"
+            : `${referredOrders30d} personas vinieron por el link de un cliente`}
+          <span style={{ color: INK_SOFT }}> · últimos 30 días</span>
+        </p>
+      )}
+      {lowSample && (
+        <p className="mb-3 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+          Cada venta con número suma aquí.
+        </p>
+      )}
+      <div className="grid grid-cols-4 py-3" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+        {cells.map(({ label, value }, i) => (
+          <div key={label} className="flex flex-col items-center gap-0.5 px-1 text-center" style={i > 0 ? { borderLeft: `1px solid ${HAIRLINE}` } : undefined}>
+            <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{value}</p>
+            <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>{label}</p>
+          </div>
+        ))}
+      </div>
+      {/* En riesgo: solo cuando el consejo trae el dato (send_winback lo cubre). */}
+      {atRiskCount > 0 && (
+        <Link href="/vendor/clientes?segmento=riesgo"
+          className="mt-3 flex items-center gap-2.5 text-[14px] leading-[18px] hover:underline"
+          style={{ color: INK }}>
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: "#B45309" }} />
+          {atRiskCount} cliente{atRiskCount !== 1 ? "s" : ""} sin regresar en 14 días
+          <span className="ml-auto font-semibold" style={{ color: LINK }}>›</span>
+        </Link>
+      )}
+      <div className="mt-3 flex gap-2.5">
+        <Link href="/vendor/clientes"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
+          style={{ border: `1px solid ${INK}`, color: INK }}>
+          Ver clientes
+        </Link>
+        <Link href="/vendor/recompensas"
+          className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
+          style={{ border: `1px solid ${BORDER}`, color: INK }}>
+          Recompensas
+        </Link>
       </div>
     </section>
   );
@@ -1366,42 +1322,37 @@ function AskComelealCard({ setupIncomplete }: { setupIncomplete: boolean }) {
     router.push(`${window.location.pathname}?q=${encodeURIComponent(clean)}`);
   };
 
+  // Opción A: sin tarjeta, sin emoji de globo, sin subtítulo. Campo de 48px
+  // con el botón de enviar adentro y dos chips neutros de 40px.
   return (
-    <section className="mb-6">
-      <div className="rounded-2xl p-5" style={CARD_STYLE}>
-        <div className="flex items-center gap-2.5">
-          <span className="text-[18px]">💬</span>
-          <div>
-            <p className="text-[14px] font-bold" style={{ color: "#1C2526" }}>Pregúntale a Comeleal</p>
-            <p className="text-[11px]" style={{ color: "rgba(28,37,38,0.45)" }}>Responde con datos reales de tu negocio</p>
-          </div>
-        </div>
-        <form
-          className="mt-3 flex gap-2"
-          onSubmit={(e) => { e.preventDefault(); ask(question); }}>
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Escribe tu pregunta…"
-            aria-label="Pregúntale a Comeleal"
-            className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#F28C38]/40"
-            style={{ background: "#F5F3EF", color: "#1C2526", border: "1px solid rgba(28,37,38,0.08)" }}
-          />
-          <button type="submit"
-            className="shrink-0 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98]"
-            style={{ background: "#F28C38" }}>
-            Preguntar
+    <section className="mb-7">
+      <SectionTitle>Pregúntale a Comeleal</SectionTitle>
+      <form
+        className="flex h-12 items-center gap-2 rounded-xl bg-white pl-3.5 pr-1.5"
+        style={{ border: `1px solid ${BORDER}` }}
+        onSubmit={(e) => { e.preventDefault(); ask(question); }}>
+        <input
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="¿Qué quieres saber de tu negocio?"
+          aria-label="Pregúntale a Comeleal"
+          className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#5B6366]"
+          style={{ color: INK }}
+        />
+        <button type="submit" aria-label="Enviar pregunta"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:opacity-90 active:scale-[0.98]"
+          style={{ background: BRAND, color: INK }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h11M11 5l5 5-5 5" /></svg>
+        </button>
+      </form>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <button key={c} type="button" onClick={() => ask(c)}
+            className="h-10 rounded-full bg-white px-3.5 text-[14px] transition hover:bg-[#FAF9F5]"
+            style={{ border: `1px solid ${BORDER}`, color: INK }}>
+            {c}
           </button>
-        </form>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {chips.map((c) => (
-            <button key={c} type="button" onClick={() => ask(c)}
-              className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition hover:bg-[#F5F3EF]"
-              style={{ border: "1px solid rgba(28,37,38,0.12)", color: "#1C2526" }}>
-              {c}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
     </section>
   );
@@ -1414,41 +1365,45 @@ function ToolsGrid({ restaurantId }: { restaurantId: string }) {
   // marca, QR local, link bonito, imprimir). `#compartir-qr` es el destino
   // de los consejos share_with_customers / healthy / keep_going.
   const [shareOpen, setShareOpen] = useState(false);
-  const tileClass = "flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-5 text-center transition hover:bg-[#faf9f5] hover:shadow-md active:scale-[0.97]";
-  const tiles: { emoji: string; label: string; href?: string; onClick?: () => void }[] = [
-    { emoji: "🍽️", label: "Menú", href: "/vendor/menu" },
-    { emoji: "📊", label: "Reportes", href: "/vendor/reportes" },
-    { emoji: "👥", label: "Equipo", href: "/vendor/configuracion#equipo" },
-    { emoji: "📲", label: "Tu QR", onClick: () => setShareOpen(true) },
+  // Opción A: cuatro círculos con icono de trazo y etiqueta de 12px, sin
+  // tarjetas 2×2 idénticas ni emojis.
+  const tileClass = "flex flex-col items-center gap-2 rounded-xl py-1 text-center transition hover:opacity-80 active:scale-[0.97]";
+  const tiles: { icon: React.ReactNode; label: string; href?: string; onClick?: () => void }[] = [
+    { icon: <IconUtensils />, label: "Menú", href: "/vendor/menu" },
+    { icon: <IconBars />, label: "Reportes", href: "/vendor/reportes" },
+    { icon: <IconPeople />, label: "Equipo", href: "/vendor/configuracion#equipo" },
+    { icon: <IconQrCode />, label: "Tu QR", onClick: () => setShareOpen(true) },
   ];
 
   return (
-    <section className="mb-6" id="compartir-qr">
-      <SectionKicker>Herramientas</SectionKicker>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <section className="mb-7" id="compartir-qr">
+      <SectionTitle>Herramientas</SectionTitle>
+      <div className="grid grid-cols-4 gap-2 md:max-w-md">
         {tiles.map((t) => {
           const inner = (
             <>
-              <span className="text-[24px]">{t.emoji}</span>
-              <span className="text-[12px] font-semibold" style={{ color: "#1C2526" }}>{t.label}</span>
+              <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full" style={{ background: "#F0EBE1", color: INK }}>
+                {t.icon}
+              </span>
+              <span className="text-[12px] leading-[14px] font-medium" style={{ color: INK }}>{t.label}</span>
             </>
           );
           return t.href ? (
-            <Link key={t.label} href={t.href} className={tileClass} style={CARD_STYLE}>{inner}</Link>
+            <Link key={t.label} href={t.href} className={tileClass}>{inner}</Link>
           ) : (
-            <button key={t.label} type="button" onClick={t.onClick} className={tileClass} style={CARD_STYLE}>{inner}</button>
+            <button key={t.label} type="button" onClick={t.onClick} className={tileClass}>{inner}</button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 px-1">
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
         {/* Ver el menú como lo ve el cliente, y la página pública /r/ (la
             que sale en Google; acepta el ID y redirige sola al slug). */}
         <a href={`/menu/${restaurantId}`} target="_blank" rel="noopener noreferrer"
-          className="text-[12px] font-semibold text-[#F28C38] hover:underline">
+          className="text-[13px] font-semibold hover:underline" style={{ color: LINK }}>
           Ver mi menú ↗
         </a>
         <a href={`/r/${restaurantId}`} target="_blank" rel="noopener noreferrer"
-          className="text-[12px] font-semibold text-[#F28C38] hover:underline">
+          className="text-[13px] font-semibold hover:underline" style={{ color: LINK }}>
           Ver mi página ↗
         </a>
       </div>
@@ -1460,7 +1415,23 @@ function ToolsGrid({ restaurantId }: { restaurantId: string }) {
     </section>
   );
 }
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
+
+const ICON_PROPS = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
+function IconUtensils() {
+  return <svg {...ICON_PROPS}><path d="M5 3v7a3 3 0 0 0 6 0V3M8 3v18M18 3c-2 1-3 4-3 7v1h3v10" /></svg>;
+}
+function IconBars() {
+  return <svg {...ICON_PROPS}><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" /></svg>;
+}
+function IconPeople() {
+  return <svg {...ICON_PROPS}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2" /></svg>;
+}
+function IconQrCode() {
+  return <svg {...ICON_PROPS}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3M21 14v7h-4M14 21h1" /></svg>;
+}
 
 // (AtRiskCustomersCard removed — lives in /vendor/clientes AI CRM)
 
