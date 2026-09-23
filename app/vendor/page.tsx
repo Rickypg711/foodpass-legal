@@ -529,17 +529,21 @@ export default function VendorDashboard() {
         {/* Mobile header */}
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5 py-3 md:hidden"
           style={{ background: "#FAF9F5", borderBottom: "1px solid #E9E3D7" }}>
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Link href="/" className="shrink-0">
-              <Image src="/comeleal-app-icon.png" alt="" width={36} height={36}
-                className="h-9 w-9 rounded-full" style={{ border: "1px solid #D9D2C5" }} />
+              <Image src="/comeleal-app-icon.png" alt="" width={40} height={40}
+                className="h-10 w-10 rounded-full" style={{ border: "1px solid #D9D2C5" }} />
             </Link>
-            <span className="truncate text-[18px] font-semibold" style={{ color: "#1C2526", fontFamily: SERIF }}>
-              {data.restaurantName}
-            </span>
+            {/* Como en la app: nombre arriba, estado (tocable) debajo. Con el
+                pill al lado el nombre quedaba en "T…" a 390px (23-sep). */}
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+              <span className="w-full truncate text-[18px] font-semibold leading-[22px]" style={{ color: "#1C2526", fontFamily: SERIF }}>
+                {data.restaurantName}
+              </span>
+              <ManualCloseToggle restaurantId={data.restaurantId} />
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ManualCloseToggle restaurantId={data.restaurantId} />
             <Link href="/vendor/pos"
               className="flex h-9 items-center rounded-xl px-3.5 text-[13px] font-semibold text-[#1C2526]"
               style={{ background: "#F28C38" }}>
@@ -1003,7 +1007,7 @@ function AICoachPreviewCard({
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
       )}
       <a href={ctaHref}
-        className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:w-auto md:px-6"
+        className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:inline-flex md:w-auto md:px-6"
         style={{ background: BRAND }}>
         {ctaLabel}
       </a>
@@ -1189,22 +1193,22 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
   return (
     <section className="mb-7">
       <SectionTitle right="últimos 7 días"><span>Ventas con teléfono</span></SectionTitle>
-      <Link href="/vendor/pos" className="group flex items-center gap-3.5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <p className="text-[28px] font-bold leading-8 tracking-[-0.01em] tabular-nums" style={{ color: INK }}>
-              {data.weekIdentifiedSales} de {data.weekPaidSales}
-            </p>
-            <span className="truncate text-[14px]" style={{ color: INK_MUTED }}>ventas con número</span>
-          </div>
-          <div className="mt-2"><ProgressBar fraction={fraction} /></div>
-          <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
-            {data.weekIdentifiedSales > 0
-              ? `A ${data.weekIdentifiedSales === 1 ? "ese cliente le" : `esos ${data.weekIdentifiedSales} les`} puedes volver a escribir.`
-              : hint}
+      {/* En 390px el link a la derecha partía "1 de 1" en dos renglones
+          (cazado en producción, 23-sep): la puerta a la Caja va DEBAJO. */}
+      <Link href="/vendor/pos" className="group block">
+        <div className="flex items-baseline gap-2">
+          <p className="whitespace-nowrap text-[28px] font-bold leading-8 tracking-[-0.01em] tabular-nums" style={{ color: INK }}>
+            {data.weekIdentifiedSales} de {data.weekPaidSales}
           </p>
+          <span className="truncate text-[14px]" style={{ color: INK_MUTED }}>ventas con número</span>
         </div>
-        <span className="shrink-0 text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número →</span>
+        <div className="mt-2"><ProgressBar fraction={fraction} /></div>
+        <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+          {data.weekIdentifiedSales > 0
+            ? `A ${data.weekIdentifiedSales === 1 ? "ese cliente le" : `esos ${data.weekIdentifiedSales} les`} puedes volver a escribir.`
+            : hint}
+        </p>
+        <span className="mt-2 inline-block text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número →</span>
       </Link>
       <span className="sr-only">{hint}</span>
     </section>
