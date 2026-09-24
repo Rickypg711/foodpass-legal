@@ -237,6 +237,11 @@ function RecompensasSetupPageInner() {
   // (sidebar): sin su propio encabezado "← Volver" y al guardar o descartar
   // regresa a /vendor/recompensas, no al setup (mismo patrón que /vendor/menu).
   const inPanel = usePathname() === "/vendor/recompensas/editar";
+  // Escritorio del panel (lienzo "Premios · escritorio", 24-sep-2026): dos
+  // columnas (guía a la izquierda, formulario a la derecha) y dentro de cada
+  // premio los puntos y el platillo en una fila. En el wizard y en el
+  // teléfono sigue una sola columna.
+  const SPAN2 = inPanel ? " md:col-span-2" : "";
   const cameFromPanel = inPanel || searchParams.get("from") === "recompensas";
   const backHref = cameFromPanel ? "/vendor/recompensas" : "/vendor/setup";
   // born=demo: el claim disparó la generación de la IA hace SEGUNDOS y el
@@ -944,7 +949,8 @@ function RecompensasSetupPageInner() {
       {/* En el panel (escritorio) la columna angosta se veía apretada en medio
           (Ricardo, 24-sep): ahí va alineada a la izquierda y más ancha, y los
           premios en dos columnas. En el wizard sigue la columna centrada. */}
-      <main className={inPanel ? "max-w-3xl space-y-7 px-5 pb-24 pt-5 md:px-8 md:pt-7" : "mx-auto max-w-lg space-y-7 px-5 pb-24 pt-5 sm:px-6 md:pt-7"}>
+      <main className={inPanel ? "px-5 pb-24 pt-5 md:grid md:grid-cols-[340px_minmax(0,720px)] md:items-start md:gap-10 md:px-8 md:pt-7" : "mx-auto max-w-lg space-y-7 px-5 pb-24 pt-5 sm:px-6 md:pt-7"}>
+        <div className={inPanel ? "space-y-7" : "contents"}>
         {/* Título de pantalla (Lora 22) + caption + cómo se ganan los puntos */}
         <div>
           <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Recompensas</h1>
@@ -1007,6 +1013,8 @@ function RecompensasSetupPageInner() {
           )}
         </section>
 
+        </div>
+        <div className={inPanel ? "space-y-7" : "contents"}>
         {/* ── Editor ── */}
         <div className="space-y-7">
           {/* Lo apagado dice lo que significa — antes la página se quedaba muda. */}
@@ -1085,7 +1093,7 @@ function RecompensasSetupPageInner() {
           </section>
 
           {/* Premios por puntos */}
-          <div className={inPanel ? "grid grid-cols-1 gap-7 md:grid-cols-2" : "space-y-7"}>
+          <div className="space-y-7">
           {currentTiers.map((tier, i) => (
             <section key={i}>
               <SwitchHeader
@@ -1093,7 +1101,7 @@ function RecompensasSetupPageInner() {
                 onToggle={() => requestTierToggle(i)}
                 title={`Premio ${i + 1}`}
               />
-              <div className="mt-2 space-y-3 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+              <div className={`mt-2 space-y-3 rounded-xl bg-white p-4${inPanel ? " md:grid md:grid-cols-[220px_minmax(0,1fr)] md:items-end md:gap-x-4 md:gap-y-3 md:space-y-0" : ""}`} style={{ border: `1px solid ${BORDER}` }}>
                 <div>
                   <label htmlFor={`tier-points-${i}`} className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>
                     Puntos para ganarlo
@@ -1160,30 +1168,30 @@ function RecompensasSetupPageInner() {
                           updated[i] = { ...tier, menuItemDescription: e.target.value };
                           setCurrentTiers(updated);
                         }}
-                        className={INPUT_CLS}
+                        className={`${INPUT_CLS}${SPAN2}`}
                       />
                     )}
                     {tier.menuItemId && tier.pointsRequired > 0 && (
-                      <ClientPreview
+                      <div className={SPAN2.trim() || undefined}><ClientPreview
                         foto={tier.menuItemImageUrl || menuItems.find((m) => m.id === tier.menuItemId)?.imageUrl}
                         name={tier.menuItemName}
                         description={tier.menuItemDescription}
                         pill={`${tier.pointsRequired} pts`}
-                      />
+                      /></div>
                     )}
                     {(() => {
                       const validation = getTierValidation(tier);
                       if (!validation) return null;
                       if (validation.type === "ok") {
                         return (
-                          <p className="text-[14px] leading-5" style={{ color: SUCCESS }}>{validation.message}</p>
+                          <p className={`text-[14px] leading-5${SPAN2}`} style={{ color: SUCCESS }}>{validation.message}</p>
                         );
                       }
                       // Error (regala de más), caro y "tarda mucho": los tres
                       // son avisos ámbar; el de error además detiene Guardar.
                       const showFix = "fixPoints" in validation && validation.fixPoints !== tier.pointsRequired;
                       return (
-                        <div className="rounded-xl px-4 py-3" style={{ background: WARN_SURFACE }}>
+                        <div className={`rounded-xl px-4 py-3${SPAN2}`} style={{ background: WARN_SURFACE }}>
                           <p className="text-[14px] leading-5" style={{ color: validation.type === "error" ? DANGER : WARN }}>{validation.message}</p>
                           {showFix && (
                             <button
@@ -1210,24 +1218,30 @@ function RecompensasSetupPageInner() {
         </div>
 
         {/* Botón principal: uno por pantalla */}
-        <div>
+        <div className={inPanel ? "flex flex-col gap-3 pt-4 md:flex-row md:items-center md:justify-between" : ""} style={inPanel ? { borderTop: `1px solid ${HAIRLINE}` } : undefined}>
+          {inPanel && (
+            <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>Se publican al guardar. Los puedes cambiar cuando quieras.</p>
+          )}
+          <div className={inPanel ? "md:flex md:items-center md:gap-3" : ""}>
           <button
             type="button"
             onClick={() => handleSave()}
             disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}
-            className={BTN_PRIMARY}
+            className={`${BTN_PRIMARY}${inPanel ? " md:w-auto md:px-6" : ""}`}
             style={saved ? { background: "#ffffff", color: SUCCESS, border: `1px solid ${BORDER}` } : { background: BRAND, color: INK }}
           >
             {saved ? "Guardado" : saving ? <><Spin />Guardando…</> : formIsDeliberatelyOff ? "Guardar así, sin premios" : "Guardar mis premios"}
           </button>
 
           {aiApplied && (
-            <div className="mt-2 flex justify-center">
+            <div className={inPanel ? "mt-2 flex justify-center md:order-first md:mt-0" : "mt-2 flex justify-center"}>
               <button type="button" onClick={handleDismissDraft} className={BTN_TERTIARY}>
                 Descartar sugerencia
               </button>
             </div>
           )}
+          </div>
+        </div>
         </div>
       </main>
     </div>
