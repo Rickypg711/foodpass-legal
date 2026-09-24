@@ -278,6 +278,8 @@ function RecompensasSetupPageInner() {
   /** Qué pasó con la última propuesta pedida: nueva, igual a la anterior, o nada. */
   const [aiLanded, setAiLanded] = useState<"new" | "same" | null>(null);
   const prevProposalRef = useRef<string | null>(null);
+  /** Cuándo se pidió la última propuesta: el escucha ignora borradores más viejos. */
+  const requestedAtRef = useRef<number>(0);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [aiApplied, setAiApplied] = useState(false);
@@ -459,6 +461,12 @@ function RecompensasSetupPageInner() {
         // reemplazado y lo volvía a pintar como si fuera el nuevo (cazado 9-sep).
         const closed = data.status === "superseded" || data.status === "dismissed" || data.status === "applied";
         if (closed) return; // esperar al borrador nuevo
+        // El primer snapshot trae el borrador de ANTES de pedir: no es la
+        // respuesta. Solo cuenta lo creado después de la petición.
+        const createdMs = typeof (data.createdAt as { toMillis?: () => number } | undefined)?.toMillis === "function"
+          ? (data.createdAt as { toMillis: () => number }).toMillis()
+          : 0;
+        if (createdMs && requestedAtRef.current && createdMs < requestedAtRef.current - 10_000) return;
         const isSuccess = data.status === "draft" || data.status === "ready" || (!data.status && (data.firstPurchaseReward || data.proposedFirstPurchaseReward));
         const isFailed = data.status === "failed" || data.status === "error";
 
@@ -530,28 +538,21 @@ function RecompensasSetupPageInner() {
       fpr: currentFPR.menuItemId,
       tiers: currentTiers.map((t) => [t.menuItemId, t.pointsRequired]),
     });
+    requestedAtRef.current = Date.now();
     setAiStep("generating");
     try {
-      // "Regenerar" con un borrador abierto: el servidor contesta "existing"
-      // y NO genera (cazado 9-sep: botón muerto sin decir nada). El borrador
-      // viejo se marca reemplazado y se pide uno nuevo — el loop cerrado
-      // (applied / dismissed / superseded) sigue midiendo la aceptación.
-      if (activeDraftId) {
-        const db = getFirebaseDb();
-        const { updateDoc, serverTimestamp } = await import("firebase/firestore");
-        // Las rules solo dejan al cliente tocar status + updatedAt
-        // (rewardRecommendationDraftClientUpdateOnly): ni un campo más.
-        await updateDoc(doc(db, "restaurants", restaurantId, "rewardRecommendationDrafts", activeDraftId), {
-          status: "superseded",
-          updatedAt: serverTimestamp(),
-        });
-        setActiveDraftId(null);
-      }
+      // "Pedir otra" con un borrador abierto: lo cierra el SERVIDOR
+      // (replaceOpen), que así se queda con los platillos de la propuesta
+      // anterior y pide una distinta. Antes lo cerraba la página y el servidor
+      // no tenía nada que evitar: el modelo devolvía lo mismo (24-sep, Luzz).
+      // El loop cerrado (applied / dismissed / superseded) sigue midiendo.
+      const hadOpenDraft = !!activeDraftId;
+      setActiveDraftId(null);
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       const generateRewardDraft = httpsCallable(functions, "generateRewardDraft");
       // replaceOpen: el servidor cierra la propuesta abierta y pide una DISTINTA
       // (antes contestaba "ya hay una abierta" si quedaba otra por ahí).
-      const res = await generateRewardDraft({ restaurantId, replaceOpen: formHasContent });
+      const res = await generateRewardDraft({ restaurantId, replaceOpen: hadOpenDraft || formHasContent });
       const resultData = res.data as { status: string; reason?: string };
       if (resultData?.status === "existing") {
         setAiError("Ya hay una propuesta abierta. Descártala para pedir otra.");
