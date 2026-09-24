@@ -71,6 +71,6 @@ export function shouldRemindLateOrders(p: {
 /** El letrero de arriba cuando hay pedidos en rojo. */
 export function lateOrdersBanner(lateCount: number): string {
   return lateCount === 1
-    ? "1 pedido lleva más de 20 min — ¿ya lo entregaste?"
-    : `${lateCount} pedidos llevan más de 20 min — ¿ya los entregaste?`;
+    ? "1 pedido lleva más de 20 min. ¿Ya lo entregaste?"
+    : `${lateCount} pedidos llevan más de 20 min. ¿Ya los entregaste?`;
 }

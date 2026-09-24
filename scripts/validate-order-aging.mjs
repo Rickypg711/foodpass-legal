@@ -78,8 +78,8 @@ check("4:59 despues => todavia no", shouldRemindLateOrders({ lateCount: 2, lastR
 check("5:00 despues => otra vez", shouldRemindLateOrders({ lateCount: 2, lastRemindAtMs: 0, nowMs: 5 * MIN }), true);
 
 // ── El letrero ──────────────────────────────────────────────────────────────
-check("letrero singular", lateOrdersBanner(1), "1 pedido lleva más de 20 min — ¿ya lo entregaste?");
-check("letrero plural", lateOrdersBanner(4), "4 pedidos llevan más de 20 min — ¿ya los entregaste?");
+check("letrero singular", lateOrdersBanner(1), "1 pedido lleva más de 20 min. ¿Ya lo entregaste?");
+check("letrero plural", lateOrdersBanner(4), "4 pedidos llevan más de 20 min. ¿Ya los entregaste?");
 
 // ── La pantalla de Pedidos lo usa de verdad ─────────────────────────────────
 const page = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.url), "utf8");
