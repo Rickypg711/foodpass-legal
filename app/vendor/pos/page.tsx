@@ -8,6 +8,8 @@ import {
   collection,
   query,
   where,
+  orderBy,
+  limit,
   getDocs,
   addDoc,
   serverTimestamp,
@@ -19,6 +21,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import {
   entitlementOf,
@@ -248,6 +251,7 @@ const DANGER = "#B91C1C";
 const INPUT_CLS = "h-12 w-full rounded-xl bg-white px-4 text-[16px] outline-none placeholder:text-[#5B6366]";
 const INPUT_STYLE = { border: `1px solid ${BORDER}`, color: INK } as const;
 
+function IconCash() { return <svg {...ICON}><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 12h.01M18 12h.01" /></svg>; }
 function IconClose() { return <svg {...ICON} width={20} height={20}><path d="M6 6l12 12M18 6L6 18" /></svg>; }
 function IconCheck() { return <svg {...ICON} width={26} height={26} strokeWidth={2}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>; }
 function IconBackspace() { return <svg {...ICON} width={22} height={22}><path d="M21 6H8l-5 6 5 6h13a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z" /><path d="M12 9l6 6M18 9l-6 6" /></svg>; }
@@ -1032,6 +1036,9 @@ export default function PosPage() {
   const [activeOpenTabs, setActiveOpenTabs] = useState<any[]>([]);
   const [tabsLoading, setTabsLoading] = useState(false);
   const [showTabsModal, setShowTabsModal] = useState(false);
+  // "Efectivo" (24-sep-2026): paridad con el botón "Caja" de la Caja de la app
+  // (dinero que entra y sale de la caja, restaurants/{rid}/register_movements).
+  const [showCashModal, setShowCashModal] = useState(false);
   const [addingToTab, setAddingToTab] = useState<any | null>(null);
   // Llave del GRUPO en cobro (tabId, o el id de la cuenta si es pre-tabId).
   const [checkoutTabId, setCheckoutTabId] = useState<string | null>(null);
@@ -1752,6 +1759,17 @@ export default function PosPage() {
                 </span>
               </button>
             )}
+            {/* Efectivo: dinero que entra y sale de la caja */}
+            <button
+              type="button"
+              onClick={() => setShowCashModal(true)}
+              className="flex h-10 items-center gap-1.5 rounded-xl bg-white px-2.5 transition hover:opacity-90"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+              aria-label="Efectivo en caja"
+            >
+              <IconCash />
+              <span className="hidden text-[13px] font-semibold sm:inline">Efectivo</span>
+            </button>
             {/* Cuentas Abiertas button */}
             <button
               onClick={() => {
@@ -2189,6 +2207,9 @@ export default function PosPage() {
       )}
 
       {/* ── Open Tabs Modal ── */}
+      {showCashModal && restaurantId && (
+        <CashDrawerModal restaurantId={restaurantId} onClose={() => setShowCashModal(false)} />
+      )}
       {showTabsModal && (
         <OpenTabsModal
           groups={openTabGroups}
@@ -2254,6 +2275,146 @@ export default function PosPage() {
 }
 
 // ─── Open Tabs Subcomponents ──────────────────────────────────────────────────
+
+// ─── Efectivo en caja ────────────────────────────────────────────────────────
+// Misma colección y mismos campos que la app (lib/services/pos_service.dart:
+// recordCashIn / recordCashOut): type cash_in|cash_out, amount, reason, note,
+// createdAt, createdBy. Solo se crea; nunca se edita ni se borra (rules).
+type CashMovement = { id: string; type: "cash_in" | "cash_out"; amount: number; reason: string; note?: string; createdAt?: Date | null };
+const CASH_IN_REASONS: Array<[string, string]> = [["inicio_turno", "Inicio de turno"], ["ajuste", "Ajuste de caja"], ["pago_fuera", "Pago fuera de la Caja"], ["other", "Otro"]];
+const CASH_OUT_REASONS: Array<[string, string]> = [["bank", "Depósito al banco"], ["supplier", "Pago a proveedor"], ["withdrawal", "Retiro de efectivo"], ["other", "Otro"]];
+function cashReasonLabel(type: string, reason: string): string {
+  const list = type === "cash_in" ? CASH_IN_REASONS : CASH_OUT_REASONS;
+  return list.find(([k]) => k === reason)?.[1] ?? "Otro";
+}
+
+function CashDrawerModal({ restaurantId, onClose }: { restaurantId: string; onClose: () => void }) {
+  const [mode, setMode] = useState<"cash_in" | "cash_out">("cash_in");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("inicio_turno");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [rows, setRows] = useState<CashMovement[] | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const db = getFirebaseDb();
+      const snap = await getDocs(query(collection(db, "restaurants", restaurantId, "register_movements"), orderBy("createdAt", "desc"), limit(30)));
+      setRows(snap.docs.map((d) => {
+        const x = d.data() as Record<string, unknown>;
+        const ts = x.createdAt as { toDate?: () => Date } | undefined;
+        return {
+          id: d.id,
+          type: x.type === "cash_out" ? "cash_out" : "cash_in",
+          amount: Number(x.amount ?? 0),
+          reason: String(x.reason ?? "other"),
+          note: typeof x.note === "string" ? x.note : undefined,
+          createdAt: typeof ts?.toDate === "function" ? ts.toDate() : null,
+        };
+      }));
+      setLoadErr(false);
+    } catch {
+      setRows([]);
+      setLoadErr(true);
+    }
+  }, [restaurantId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const amountNum = Number(amount.replace(",", "."));
+  const valid = Number.isFinite(amountNum) && amountNum > 0;
+  const reasons = mode === "cash_in" ? CASH_IN_REASONS : CASH_OUT_REASONS;
+
+  async function save() {
+    if (!valid || saving) return;
+    setSaving(true);
+    setErr(null);
+    try {
+      const db = getFirebaseDb();
+      const data: Record<string, unknown> = {
+        type: mode,
+        amount: amountNum,
+        reason,
+        createdAt: serverTimestamp(),
+        createdBy: getAuth().currentUser?.uid ?? null,
+      };
+      if (note.trim()) data.note = note.trim();
+      await addDoc(collection(db, "restaurants", restaurantId, "register_movements"), data);
+      setAmount("");
+      setNote("");
+      await load();
+    } catch {
+      setErr("No se guardó. Intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalFrame onBackdrop={onClose} widthClass="md:w-[480px]" maxHeight="85vh">
+      <DialogHeader title="Efectivo en caja" caption="Dinero que entra y sale, aparte de las ventas" onClose={onClose} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
+        <div className="grid grid-cols-2 gap-2">
+          <Seg active={mode === "cash_in"} onClick={() => { setMode("cash_in"); setReason("inicio_turno"); }}>Entra</Seg>
+          <Seg active={mode === "cash_out"} onClick={() => { setMode("cash_out"); setReason("bank"); }}>Sale</Seg>
+        </div>
+        <div className="mt-4">
+          <FieldLabel htmlFor="cash-amount">Cantidad</FieldLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[16px]" style={{ color: INK_SOFT }}>$</span>
+            <input id="cash-amount" type="number" inputMode="decimal" min={0} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className={`${INPUT_CLS} pl-8 font-bold tabular-nums`} style={INPUT_STYLE} />
+          </div>
+        </div>
+        <div className="mt-4">
+          <FieldLabel>Motivo</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {reasons.map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setReason(k)} className="flex h-9 items-center rounded-full px-3.5 text-[14px] transition" style={reason === k ? { background: INK, color: "#FAF9F5", border: `1px solid ${INK}`, fontWeight: 600 } : { background: "#FFFFFF", color: INK, border: `1px solid ${BORDER}` }} aria-pressed={reason === k}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4">
+          <FieldLabel htmlFor="cash-note">Nota · opcional</FieldLabel>
+          <input id="cash-note" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej. cambio para el turno" className={INPUT_CLS} style={INPUT_STYLE} />
+        </div>
+        {err && <p className="mt-3 text-[14px]" style={{ color: DANGER }} role="alert">{err}</p>}
+        <button type="button" onClick={save} disabled={!valid || saving} className="mt-4 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-40" style={{ background: BRAND, color: INK }}>
+          {saving ? "Guardando…" : mode === "cash_in" ? "Registrar entrada" : "Registrar salida"}
+        </button>
+
+        <p className="mt-6 text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Movimientos recientes</p>
+        {rows === null ? (
+          <div className="flex justify-center py-6"><Spinner size={22} /></div>
+        ) : loadErr ? (
+          <p className="mt-2 text-[14px]" style={{ color: DANGER }}>No se pudieron cargar. Intenta de nuevo.</p>
+        ) : rows.length === 0 ? (
+          <p className="mt-2 text-[14px]" style={{ color: INK_MUTED }}>Todavía no hay movimientos.</p>
+        ) : (
+          <ul className="mt-1">
+            {rows.map((m) => (
+              <li key={m.id} className="flex items-start justify-between gap-3 py-2.5" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+                <div className="min-w-0">
+                  <p className="text-[15px] leading-5" style={{ color: INK }}>{cashReasonLabel(m.type, m.reason)}</p>
+                  <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                    {m.createdAt ? m.createdAt.toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : ""}
+                    {m.note ? ` · ${m.note}` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: m.type === "cash_in" ? SUCCESS : INK }}>
+                  {m.type === "cash_in" ? "+" : "−"}${m.amount.toLocaleString("es-MX", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </ModalFrame>
+  );
+}
 
 function OpenTabsModal({
   groups,
