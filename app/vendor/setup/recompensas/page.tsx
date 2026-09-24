@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { WizardStepper } from "@/components/vendor/WizardStepper";
@@ -275,6 +275,9 @@ function RecompensasSetupPageInner() {
   // AI recommendation state
   const [aiStep, setAiStep] = useState<AiStep>("idle");
   const [aiError, setAiError] = useState<string | null>(null);
+  /** Qué pasó con la última propuesta pedida: nueva, igual a la anterior, o nada. */
+  const [aiLanded, setAiLanded] = useState<"new" | "same" | null>(null);
+  const prevProposalRef = useRef<string | null>(null);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [aiApplied, setAiApplied] = useState(false);
@@ -490,6 +493,13 @@ function RecompensasSetupPageInner() {
           setAiApplied(true);
           settled = true;
           clearTimeout(timeoutId);
+          // ¿Cambió algo? Si la propuesta sale igual, se dice (Ricardo, 24-sep:
+          // "parece atorado" cuando la nueva es idéntica y la página calla).
+          const landedKey = JSON.stringify({
+            fpr: fpr.menuItemId ?? "",
+            tiers: (tiers as any[]).map((t) => [t.menuItemId ?? "", t.visitsRequired ?? t.pointsRequired ?? 0]),
+          });
+          setAiLanded(prevProposalRef.current !== null && landedKey === prevProposalRef.current ? "same" : "new");
           setAiStep("idle");
         } else if (isFailed) {
           settled = true;
@@ -515,6 +525,11 @@ function RecompensasSetupPageInner() {
   async function handleGenerateDraft() {
     if (!restaurantId) return;
     setAiError(null);
+    setAiLanded(null);
+    prevProposalRef.current = JSON.stringify({
+      fpr: currentFPR.menuItemId,
+      tiers: currentTiers.map((t) => [t.menuItemId, t.pointsRequired]),
+    });
     setAiStep("generating");
     try {
       // "Regenerar" con un borrador abierto: el servidor contesta "existing"
@@ -534,7 +549,9 @@ function RecompensasSetupPageInner() {
       }
       const functions = getFunctions(getFirebaseApp(), "us-central1");
       const generateRewardDraft = httpsCallable(functions, "generateRewardDraft");
-      const res = await generateRewardDraft({ restaurantId });
+      // replaceOpen: el servidor cierra la propuesta abierta y pide una DISTINTA
+      // (antes contestaba "ya hay una abierta" si quedaba otra por ahí).
+      const res = await generateRewardDraft({ restaurantId, replaceOpen: formHasContent });
       const resultData = res.data as { status: string; reason?: string };
       if (resultData?.status === "existing") {
         setAiError("Ya hay una propuesta abierta. Descártala para pedir otra.");
@@ -981,6 +998,12 @@ function RecompensasSetupPageInner() {
                 Pedir otra propuesta
               </button>
             )}
+            {aiStep === "generating" && formHasContent && (
+              <button type="button" disabled className={`${BTN_SECONDARY} gap-2 opacity-80`} aria-live="polite">
+                <Spin />
+                Armando otra propuesta…
+              </button>
+            )}
           </div>
           <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
             {aiApplied
@@ -996,9 +1019,17 @@ function RecompensasSetupPageInner() {
 
           {aiStep === "generating" && (
             <div className="mt-3 flex items-center gap-2.5 text-[14px]" style={{ color: INK_MUTED }}>
-              <Spin />
-              <span>Leyendo tu menú…</span>
+              {!formHasContent && <Spin />}
+              <span>{formHasContent ? "Leyendo tu menú. Tarda unos 15 segundos." : "Leyendo tu menú…"}</span>
             </div>
+          )}
+          {aiStep === "idle" && aiLanded === "new" && (
+            <p className="mt-3 text-[14px] leading-5" style={{ color: SUCCESS }} role="status">Propuesta nueva lista. Revísala abajo.</p>
+          )}
+          {aiStep === "idle" && aiLanded === "same" && (
+            <p className="mt-3 text-[14px] leading-5" style={{ color: INK_MUTED }} role="status">
+              Salió igual: con tu menú de hoy, esta sigue siendo la mejor combinación. Cámbiala a mano si quieres otra cosa.
+            </p>
           )}
 
           {aiError && (
@@ -1008,7 +1039,9 @@ function RecompensasSetupPageInner() {
           {aiReasoning && (
             <div className="mt-3 rounded-xl px-3.5 py-3" style={{ background: TILE }}>
               <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>Por qué estos</p>
-              <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>{aiReasoning}</p>
+              <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
+                {aiReasoning.replace(/^\s*Sugerencia generada por IA\.\s*(Revisa antes de publicar\.)?\s*/i, "").replace(/\s*Revisa antes de publicar\.\s*$/i, "")}
+              </p>
             </div>
           )}
         </section>
@@ -1016,7 +1049,7 @@ function RecompensasSetupPageInner() {
         </div>
         <div className={inPanel ? "space-y-7" : "contents"}>
         {/* ── Editor ── */}
-        <div className="space-y-7">
+        <div className="space-y-7 transition-opacity" style={aiStep === "generating" ? { opacity: 0.45, pointerEvents: "none" } : undefined} aria-busy={aiStep === "generating"}>
           {/* Lo apagado dice lo que significa — antes la página se quedaba muda. */}
           {(!currentFPR.enabled || !anyTierOn) && (
             <div className="space-y-1 rounded-xl px-4 py-3 text-[14px] leading-5" style={{ background: WARN_SURFACE, color: WARN }}>
