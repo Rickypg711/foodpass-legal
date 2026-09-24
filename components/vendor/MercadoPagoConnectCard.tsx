@@ -65,33 +65,38 @@ export function MercadoPagoConnectCard({
   }
 
   return (
-    <section className="rounded-2xl border border-[#e8e6dc] bg-white p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">
+    // Opción A (24-sep-2026): título 15/600 en tinta, tarjeta con borde,
+    // conectado = punto + palabra, botón fuerte en tinta.
+    <section className="rounded-xl border border-[#D9D2C5] bg-white p-4">
+      <p className="text-[15px] font-semibold leading-5 text-[#1C2526]">
         Cobrar con tarjeta en línea
       </p>
 
       {connected ? (
-        <div className="mt-3 rounded-xl border border-[#16A34A]/40 bg-[#16A34A]/8 px-4 py-3">
-          <p className="text-sm font-bold text-[#16A34A]">✓ Mercado Pago conectado</p>
+        <div className="mt-3 rounded-xl bg-[#F0EBE1] px-4 py-3">
+          <p className="flex items-center gap-2 text-[14px] font-semibold text-[#15803D]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#15803D]" aria-hidden />
+            Mercado Pago conectado
+          </p>
           {accountEmail ? (
-            <p className="mt-0.5 text-xs text-[#141413]/60">Cuenta: {accountEmail}</p>
+            <p className="mt-0.5 text-[13px] text-[#5B6366]">Cuenta: {accountEmail}</p>
           ) : null}
-          <p className="mt-1 text-xs text-[#141413]/60">
+          <p className="mt-1 text-[13px] text-[#3F4A4D]">
             Tus clientes ya pueden pagar en línea desde tu menú. El dinero llega a tu
             cuenta de Mercado Pago, no a la nuestra.
           </p>
         </div>
       ) : (
         <>
-          <p className="mt-1 text-sm text-[#141413]/70">
+          <p className="mt-1 text-[14px] leading-[20px] text-[#3F4A4D]">
             Conecta tu cuenta de Mercado Pago y tus clientes podrán pagar con tarjeta
             desde tu menú. Sin conectarla solo puedes recibir pedidos de{" "}
             <b>pagar al recoger</b>.
           </p>
 
-          <div className="mt-3 rounded-xl border border-[#B45309] bg-[#FFFBEB] px-4 py-3">
-            <p className="text-xs font-bold text-[#B45309]">Lo que cuesta</p>
-            <ul className="mt-1.5 space-y-1 text-xs text-[#141413]/75">
+          <div className="mt-3 rounded-xl bg-[#FFFBEB] px-4 py-3">
+            <p className="text-[13px] font-semibold text-[#B45309]">Lo que cuesta</p>
+            <ul className="mt-1.5 space-y-1 text-[13px] leading-[18px] text-[#3F4A4D]">
               <li>
                 <b>Comeleal te cobra {COMMISSION_LABEL}</b> de cada pedido que te
                 paguen en línea. Se descuenta solo, no te llega recibo aparte.
@@ -111,11 +116,11 @@ export function MercadoPagoConnectCard({
             type="button"
             onClick={connect}
             disabled={busy}
-            className="mt-3 w-full rounded-xl bg-[#141413] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-[#1C2526] px-4 text-[15px] font-semibold text-[#FAF9F5] transition hover:opacity-90 disabled:opacity-60"
           >
             {busy ? "Abriendo Mercado Pago…" : "Conectar Mercado Pago"}
           </button>
-          {err ? <p className="mt-2 text-xs text-[#B91C1C]">{err}</p> : null}
+          {err ? <p className="mt-2 text-[13px] text-[#B91C1C]">{err}</p> : null}
         </>
       )}
     </section>

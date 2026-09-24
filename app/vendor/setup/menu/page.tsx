@@ -616,7 +616,7 @@ function MenuSetupPageInner() {
 
         {/* ── Acciones de arriba: UN botón principal, el resto con borde ── */}
         {photoStep === "idle" && nPlatillos > 0 && (
-          <div className="mb-5 flex flex-wrap gap-2">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() => setModal({ mode: "create" })}

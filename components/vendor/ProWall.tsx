@@ -228,7 +228,7 @@ export function ProWall({
           className={`mt-5 ${PRIMARY_BTN}`}
           style={PRIMARY_STYLE}
         >
-          Ver planes — {PRO_PRICE_LABEL}/mes →
+          Ver planes · {PRO_PRICE_LABEL}/mes
         </Link>
         <button type="button" onClick={onClose} className={SECONDARY_BTN} style={SECONDARY_STYLE}>
           Ahora no

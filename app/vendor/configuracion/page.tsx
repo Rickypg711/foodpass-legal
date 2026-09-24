@@ -795,7 +795,7 @@ export default function ConfiguracionPage() {
                       Pago seguro con Mercado Pago · cancela cuando quieras
                     </p>
                     <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 block text-center`}>
-                      Ver la comparación completa →
+                      Ver la comparación completa
                     </Link>
                   </div>
                 </div>
@@ -1433,7 +1433,7 @@ export default function ConfiguracionPage() {
                     {payAtPickup ? " (Pagar al recoger sigue funcionando)" : ""}.
                   </p>
                   <Link href="/vendor/setup" className="mt-2 inline-block font-semibold underline underline-offset-2" style={{ color: WARN }}>
-                    Completar configuración →
+                    Completar configuración
                   </Link>
                 </Notice>
               );
@@ -1841,7 +1841,7 @@ function DiscountProfilesSection({
           por cliente. La Caja los aplica sola al cobrar.
         </p>
         <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 inline-block`}>
-          Ver el plan Pro →
+          Ver el plan Pro
         </Link>
       </SectionCard>
     );
