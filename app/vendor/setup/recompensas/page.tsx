@@ -941,7 +941,10 @@ function RecompensasSetupPageInner() {
         </ConfirmSheet>
       )}
 
-      <main className="mx-auto max-w-lg space-y-7 px-5 pb-24 pt-5 sm:px-6 md:pt-7">
+      {/* En el panel (escritorio) la columna angosta se veía apretada en medio
+          (Ricardo, 24-sep): ahí va alineada a la izquierda y más ancha, y los
+          premios en dos columnas. En el wizard sigue la columna centrada. */}
+      <main className={inPanel ? "max-w-3xl space-y-7 px-5 pb-24 pt-5 md:px-8 md:pt-7" : "mx-auto max-w-lg space-y-7 px-5 pb-24 pt-5 sm:px-6 md:pt-7"}>
         {/* Título de pantalla (Lora 22) + caption + cómo se ganan los puntos */}
         <div>
           <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Recompensas</h1>
@@ -1082,6 +1085,7 @@ function RecompensasSetupPageInner() {
           </section>
 
           {/* Premios por puntos */}
+          <div className={inPanel ? "grid grid-cols-1 gap-7 md:grid-cols-2" : "space-y-7"}>
           {currentTiers.map((tier, i) => (
             <section key={i}>
               <SwitchHeader
@@ -1202,6 +1206,7 @@ function RecompensasSetupPageInner() {
               </div>
             </section>
           ))}
+          </div>
         </div>
 
         {/* Botón principal: uno por pantalla */}
