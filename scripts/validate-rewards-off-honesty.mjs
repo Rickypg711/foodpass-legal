@@ -63,7 +63,9 @@ for (let at = idx; at !== -1; at = page.indexOf(consequence, at + 1)) {
 // 4. Todo apagado a propósito se guarda, sin festejo
 assert.ok(page.includes("formIsDeliberatelyOff"), "debe distinguir vacío-nunca-armado de apagado-a-propósito");
 assert.ok(page.includes("rewardTiers: [],"), "con todo apagado se escribe rewardTiers: [] directo (el servidor rechaza lista vacía)");
-assert.ok(page.includes('"Guardar así, sin premios →"'), "el botón dice la verdad cuando guarda apagado");
+// Opción A (24-sep): el botón principal ya no lleva flecha; el literal sigue
+// fijo para que el botón diga la verdad cuando guarda apagado.
+assert.ok(page.includes('"Guardar así, sin premios"'), "el botón dice la verdad cuando guarda apagado");
 const saveFn = page.slice(page.indexOf("async function handleSave"), page.indexOf("// ¿El formulario tiene algo PRENDIDO"));
 assert.ok(saveFn.includes("if (allOff) {") && saveFn.includes("router.push(exitTo ?? backHref)"), "apagado no festeja: vuelve al panel");
 assert.ok(page.includes("disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}"), "Guardar vive cuando lo apagado fue a propósito");

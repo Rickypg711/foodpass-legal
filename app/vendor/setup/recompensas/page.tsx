@@ -90,6 +90,139 @@ type AiStep =
   | "review"        // draft ready
   | "saving";       // applying
 
+// ─── Piel Opción A (24-sep-2026) ─────────────────────────────────────────────
+// Mismos tokens que Panel, Pedidos, Caja, Clientes y la página de
+// Recompensas: crema + tinta, Lora solo en títulos, naranja solo en el
+// botón principal (con tinta encima), sin sombras, sin emojis, sin eyebrows.
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
+const INK = "#1C2526";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const CREAM = "#FAF9F5";
+const HAIRLINE = "#E9E3D7";
+const BORDER = "#D9D2C5";
+const TILE = "#F0EBE1";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const WARN = "#B45309";
+const WARN_SURFACE = "#FFFBEB";
+const SUCCESS = "#15803D";
+const DANGER = "#B91C1C";
+
+/** Campo: 48px, blanco, borde, radio 12, letra 16 (evita el zoom del iPhone). */
+const INPUT_CLS =
+  "h-12 w-full rounded-xl border border-[#D9D2C5] bg-white px-3.5 text-[16px] text-[#1C2526] outline-none transition-colors placeholder:text-[#5B6366] focus:border-[#1C2526] disabled:opacity-50";
+const BTN_PRIMARY =
+  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] disabled:opacity-60";
+const BTN_SECONDARY =
+  "inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#D9D2C5] bg-white px-3.5 text-[14px] font-semibold text-[#1C2526] transition hover:bg-[#FAF9F5] disabled:opacity-50";
+const BTN_SECONDARY_STRONG =
+  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1C2526] bg-white px-4 text-[14px] font-semibold text-[#1C2526] transition hover:bg-[#FAF9F5] disabled:opacity-50";
+const BTN_TERTIARY = "inline-flex h-11 items-center justify-center text-[14px] font-semibold text-[#8A4B12] hover:underline disabled:opacity-50";
+
+const ICON = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function IconChevronDown() { return <svg {...ICON} stroke={INK_SOFT} aria-hidden><path d="M6 9l6 6 6-6" /></svg>; }
+function IconGift() { return <svg {...ICON} stroke={INK_SOFT} aria-hidden><path d="M3.5 11h17v9.5h-17zM3 7.5h18V11H3zM12 7.5v13M12 7.5c-1.5-2.5-3.5-4-5-3s-.5 3 .5 3zM12 7.5c1.5-2.5 3.5-4 5-3s.5 3-.5 3z" /></svg>; }
+
+/** Interruptor: pista tinta cuando está prendido, línea fina cuando no. */
+function Switch({ on }: { on: boolean }) {
+  return (
+    <span className="relative h-6 w-11 shrink-0 rounded-full transition-colors" style={{ background: on ? INK : HAIRLINE }} aria-hidden>
+      <span
+        className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+        style={{ left: on ? "22px" : "2px", border: on ? "none" : `1px solid ${BORDER}` }}
+      />
+    </span>
+  );
+}
+
+/** Encabezado de sección con interruptor: título 15/600 a la izquierda,
+ *  switch a la derecha. Toda la fila es el botón (toque de 48px). */
+function SwitchHeader({ on, onToggle, title, caption }: { on: boolean; onToggle: () => void; title: string; caption?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      className="flex min-h-12 w-full items-center justify-between gap-4 py-1 text-left"
+    >
+      <span className="min-w-0">
+        <span className="block text-[15px] font-semibold leading-5" style={{ color: INK }}>{title}</span>
+        {caption ? <span className="mt-0.5 block text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>{caption}</span> : null}
+      </span>
+      <Switch on={on} />
+    </button>
+  );
+}
+
+/** Select con la misma anatomía que el campo: 48px, borde, chevron de trazo. */
+function SelectField({ value, onChange, children, ariaLabel }: { value: string; onChange: (v: string) => void; children: React.ReactNode; ariaLabel: string }) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={ariaLabel}
+        className={`${INPUT_CLS} appearance-none pr-10`}
+      >
+        {children}
+      </select>
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"><IconChevronDown /></span>
+    </div>
+  );
+}
+
+/** Vista previa "Así lo ve tu cliente": miniatura 40, nombre 15, pastilla tile. */
+function ClientPreview({ foto, name, description, pill }: { foto?: string; name: string; description?: string; pill: string }) {
+  return (
+    <div className="mt-3" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+      <p className="mt-3 text-[13px] leading-4" style={{ color: INK_SOFT }}>Así lo ve tu cliente</p>
+      <div className="mt-2 flex items-center gap-3">
+        {foto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={foto} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+        ) : (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ background: TILE }}><IconGift /></div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-medium leading-5" style={{ color: INK }}>{name}</p>
+          {description ? <p className="mt-0.5 line-clamp-1 text-[13px] leading-4" style={{ color: INK_SOFT }}>{description}</p> : null}
+        </div>
+        <span className="inline-flex h-[24px] shrink-0 items-center rounded-full px-2.5 text-[12px] font-semibold tabular-nums" style={{ background: TILE, color: INK_MUTED }}>{pill}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Hoja de confirmación: blanco, borde, radio 12; título Lora 17; principal
+ *  naranja con tinta y terciario como link. */
+function ConfirmSheet({ title, children, primaryLabel, onPrimary, secondaryLabel, onSecondary, busy = false }: {
+  title: string;
+  children: React.ReactNode;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel: string;
+  onSecondary: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" style={{ background: "rgba(28,37,38,0.5)" }}>
+      <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-xl bg-white p-5" style={{ border: `1px solid ${BORDER}` }}>
+        <h3 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>{title}</h3>
+        <p className="mt-2 text-[14px] leading-5" style={{ color: INK_MUTED }}>{children}</p>
+        <button type="button" disabled={busy} onClick={onPrimary} className={`${BTN_PRIMARY} mt-5`} style={{ background: BRAND }}>
+          {primaryLabel}
+        </button>
+        <div className="mt-1 flex justify-center">
+          <button type="button" disabled={busy} onClick={onSecondary} className={BTN_TERTIARY}>
+            {secondaryLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function RecompensasSetupPageInner() {
@@ -297,7 +430,7 @@ function RecompensasSetupPageInner() {
     const timeoutId = setTimeout(() => {
       if (settled) return;
       settled = true;
-      setAiError("La IA no respondió a tiempo. Reintenta o edita manualmente.");
+      setAiError("No pudimos armar la propuesta a tiempo. Vuelve a intentar o ponlos a mano.");
       setAiStep("idle");
     }, 120_000);
 
@@ -356,7 +489,7 @@ function RecompensasSetupPageInner() {
         } else if (isFailed) {
           settled = true;
           clearTimeout(timeoutId);
-          setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
+          setAiError("No pudimos armar la propuesta ahora. Ponlos a mano.");
           setAiStep("idle");
         }
       },
@@ -364,7 +497,7 @@ function RecompensasSetupPageInner() {
         if (settled) return;
         settled = true;
         clearTimeout(timeoutId);
-        setAiError("Se perdió la conexión con la IA. Reintenta o edita manualmente.");
+        setAiError("Se perdió la conexión. Vuelve a intentar o ponlos a mano.");
         setAiStep("idle");
       }
     );
@@ -399,22 +532,22 @@ function RecompensasSetupPageInner() {
       const res = await generateRewardDraft({ restaurantId });
       const resultData = res.data as { status: string; reason?: string };
       if (resultData?.status === "existing") {
-        setAiError("Ya hay una sugerencia abierta. Descártala para pedir otra.");
+        setAiError("Ya hay una propuesta abierta. Descártala para pedir otra.");
         setAiStep("idle");
       }
       if (resultData?.status === "skipped") {
         if (resultData.reason === "insufficient_menu_items") {
-          setAiError("Necesitas agregar al menos 2 platillos en tu menú para usar la IA.");
+          setAiError("Agrega al menos 2 platillos a tu menú para que te propongamos premios.");
         } else if (resultData.reason === "rate_limited") {
-          setAiError("Has excedido el límite de intentos de la IA. Por favor intenta más tarde.");
+          setAiError("Ya pediste muchas propuestas hoy. Intenta más tarde.");
         } else {
-          setAiError("La IA no pudo generar sugerencias ahora. Edita manualmente.");
+          setAiError("No pudimos armar la propuesta ahora. Ponlos a mano.");
         }
         setAiStep("idle");
       }
     } catch (e) {
       console.error(e);
-      setAiError("No se pudo conectar con la IA. Edita manualmente.");
+      setAiError("No pudimos conectar. Ponlos a mano.");
       setAiStep("idle");
     }
   }
@@ -519,7 +652,7 @@ function RecompensasSetupPageInner() {
         type: "warning" as const,
         fixPoints,
         message:
-          `⚠️ Un poco caro: a ${tier.pointsRequired} puntos regalas el ${pct}% ` +
+          `Un poco caro: a ${tier.pointsRequired} puntos regalas el ${pct}% ` +
           `de lo que gasta tu cliente. Lo sano es ${minPct}%–${maxPct}%.`,
       };
     }
@@ -534,7 +667,7 @@ function RecompensasSetupPageInner() {
     }
     return {
       type: "ok" as const,
-      message: `✓ Bien puesto: regalas el ${pct}% de lo que gasta tu cliente — dentro de lo sano (${minPct}%–${maxPct}%).`,
+      message: `Bien puesto: regalas el ${pct}% de lo que gasta tu cliente, dentro de lo sano (${minPct}%–${maxPct}%).`,
     };
   };
 
@@ -752,19 +885,25 @@ function RecompensasSetupPageInner() {
 
   if (loading) return <Spinner />;
 
+  const menuOptions = menuItems.map((item) => (
+    <option key={item.id} value={item.id}>
+      {item.name}{etiquetaTamanoBase(item)} (${item.price.toFixed(2)})
+    </option>
+  ));
+
   return (
     <div className={inPanel ? "bg-[#faf9f5]" : "min-h-screen bg-[#faf9f5]"}>
       {/* Nav */}
       {inPanel ? null : (
-      <div className="sticky top-0 z-10 bg-white shadow-sm">
+      <div className="sticky top-0 z-10" style={{ background: CREAM }}>
         {isWizard ? (
           <WizardStepper current="rewards" doneKeys={stepperDone} onPanelClick={handlePanelExit} />
         ) : (
-          <div className="border-b border-[#141413]/8 px-4 py-4 sm:px-6">
-            <div className="mx-auto flex max-w-lg items-center gap-3">
-              <Link href={backHref} className="text-sm text-[#141413]/45 hover:text-[#141413] transition-colors">← Volver</Link>
-              <span className="text-[#141413]/20">/</span>
-              <h1 className="text-sm font-semibold text-[#141413]">Recompensas</h1>
+          <div className="px-5 py-3 sm:px-6" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+            <div className="mx-auto flex max-w-lg items-center">
+              <Link href={backHref} className="flex h-9 items-center text-[13px] font-semibold hover:underline" style={{ color: LINK }}>
+                Volver
+              </Link>
             </div>
           </div>
         )}
@@ -772,184 +911,130 @@ function RecompensasSetupPageInner() {
       )}
 
       {showExitOffer && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-2xl">🎁</p>
-            <h3 className="mt-2 text-lg font-bold text-[#141413]">Tus premios ya están listos</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[#141413]/60">
-              La IA los armó con tu menú. Si sales sin guardarlos, tu programa de
-              puntos queda apagado y tus clientes no ganan nada todavía.
-            </p>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => handleSave("/vendor")}
-              className="mt-5 w-full rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526] transition-opacity disabled:opacity-60"
-            >
-              {saving ? "Guardando…" : "Guardarlos y salir"}
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => router.push("/vendor")}
-              className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-[#141413]/45 transition-colors hover:text-[#141413]"
-            >
-              Salir sin premios
-            </button>
-          </div>
-        </div>
+        <ConfirmSheet
+          title="Tus premios ya están listos"
+          primaryLabel={saving ? "Guardando…" : "Guardarlos y salir"}
+          onPrimary={() => handleSave("/vendor")}
+          secondaryLabel="Salir sin premios"
+          onSecondary={() => router.push("/vendor")}
+          busy={saving}
+        >
+          Los armamos con tu menú. Si sales sin guardarlos, tu programa de
+          puntos queda apagado y tus clientes no ganan nada todavía.
+        </ConfirmSheet>
       )}
 
       {offAsk && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-2xl">{offAsk.kind === "welcome" ? "🎁" : "⭐"}</p>
-            <h3 className="mt-2 text-lg font-bold text-[#141413]">
-              {offAsk.kind === "welcome" ? "¿Apagar la bienvenida?" : "¿Apagar tu último premio?"}
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[#141413]/60">
-              {offAsk.kind === "welcome"
-                ? "Se regala en la segunda visita, nunca en la misma. Sin regalo, tu cliente escanea una vez y no vuelve."
-                : "Sin ningún premio, los puntos que juntan tus clientes no valen nada. Y el premio es la razón por la que te dan su número en la caja."}
-              {(offAsk.kind === "welcome" ? welcomeOffWouldBlock : tiersOffWouldBlock) && (
-                <> Y mientras siga así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</>
-              )}
-            </p>
-            <button
-              type="button"
-              onClick={() => setOffAsk(null)}
-              className="mt-5 w-full rounded-xl bg-[#F28C38] py-3 text-sm font-bold text-[#1C2526]"
-            >
-              {offAsk.kind === "welcome" ? "Mejor la dejo" : "Mejor lo dejo"}
-            </button>
-            <button
-              type="button"
-              onClick={confirmOff}
-              className="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-[#141413]/45 transition-colors hover:text-[#141413]"
-            >
-              Apagar de todos modos
-            </button>
-          </div>
-        </div>
+        <ConfirmSheet
+          title={offAsk.kind === "welcome" ? "¿Apagar la bienvenida?" : "¿Apagar tu último premio?"}
+          primaryLabel={offAsk.kind === "welcome" ? "Mejor la dejo" : "Mejor lo dejo"}
+          onPrimary={() => setOffAsk(null)}
+          secondaryLabel="Apagar de todos modos"
+          onSecondary={confirmOff}
+        >
+          {offAsk.kind === "welcome"
+            ? "Se regala en la segunda visita, nunca en la misma. Sin regalo, tu cliente escanea una vez y no vuelve."
+            : "Sin ningún premio, los puntos que juntan tus clientes no valen nada. Y el premio es la razón por la que te dan su número en la caja."}
+          {(offAsk.kind === "welcome" ? welcomeOffWouldBlock : tiersOffWouldBlock) && (
+            <> Y mientras siga así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</>
+          )}
+        </ConfirmSheet>
       )}
 
-      <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 space-y-6">
+      <main className="mx-auto max-w-lg space-y-7 px-5 pb-24 pt-5 sm:px-6 md:pt-7">
+        {/* Título de pantalla (Lora 22) + caption + cómo se ganan los puntos */}
         <div>
-          <h2 className="text-lg font-bold text-[#141413]">Programa de lealtad</h2>
-          <p className="mt-1 text-sm text-[#141413]/50">
-            La IA diseña premios a la medida de tu menú y tu tipo de comida.
-          </p>
-          <p className="mt-2 rounded-xl bg-[#F28C38]/8 px-3 py-2 text-xs text-[#141413]/70">
-            💡 Tus clientes ganan <strong>1 punto por visita</strong> más{" "}
-            <strong>1 punto por cada ${spendStepAmount}</strong> que gastan. Así que{" "}
-            <strong>${spendStepAmount * 10} gastados ≈ 10 puntos</strong>.
+          <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Recompensas</h1>
+          <p className="mt-0.5 text-[13px] leading-4" style={{ color: INK_SOFT }}>Lo que tus clientes ganan por regresar</p>
+          <p className="mt-3 text-[13px] leading-[18px] tabular-nums" style={{ color: INK_SOFT }}>
+            Tus clientes ganan 1 punto por visita más 1 punto por cada ${spendStepAmount} que gastan.
+            Así que ${(spendStepAmount * 10).toLocaleString("es-MX")} gastados ≈ 10 puntos.
           </p>
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+          <p className="text-[14px] font-semibold leading-5" style={{ color: DANGER }} role="alert">{error}</p>
         )}
 
-        {/* ── AI Recommendation Assistant ──
+        {/* ── Te sugerimos tus premios ──
             UN trono por estado (regla del festejo, 1-sep): con el formulario
-            VACÍO el rey es "Armarlos por mí" (botonzote full-width) y Guardar
-            se apaga; con contenido, Guardar es el rey y la IA queda de
-            escudero ("Regenerar" chico). */}
-        <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F28C38]/10 text-lg">🤖</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#141413]">
-                {aiApplied ? "✨ Sugerencia cargada por Comeleal" : "Sugerencia de la IA"}
-              </p>
-              <p className="text-xs text-[#141413]/50">
-                {aiApplied ? "Revísala y ajústala si quieres antes de guardar." : "La IA arma tu programa con tu menú — tú solo lo apruebas."}
-              </p>
-            </div>
+            VACÍO el rey es "Armarlos por mí" y Guardar se apaga; con contenido,
+            Guardar es el rey y la propuesta queda de escudera ("Pedir otra"). */}
+        <section>
+          {/* A 390px el título y "Pedir otra propuesta" no caben en una fila:
+              el botón baja a la siguiente línea en vez de aplastar el título. */}
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2">
+            <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
+              {aiApplied ? "Te sugerimos estos premios" : "Te sugerimos tus premios"}
+            </h2>
             {aiStep === "idle" && formHasContent && (
-              <button
-                type="button"
-                onClick={handleGenerateDraft}
-                className="shrink-0 rounded-xl bg-[#F28C38]/10 hover:bg-[#F28C38]/15 px-3 py-1.5 text-xs font-semibold text-[#F28C38] transition-all"
-              >
-                ✨ Regenerar
+              <button type="button" onClick={handleGenerateDraft} className={BTN_SECONDARY}>
+                Pedir otra propuesta
               </button>
             )}
-            {aiStep === "generating" && (
-              <div className="flex items-center gap-2.5 py-1 text-xs text-[#141413]/50">
-                <svg className="h-4 w-4 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
-                </svg>
-                <span>Analizando menú...</span>
-              </div>
-            )}
           </div>
+          <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
+            {aiApplied
+              ? "Comeleal los propuso con tu menú. Revísalos y ajústalos si quieres antes de guardar."
+              : "Comeleal te propone premios con lo que hay en tu menú. Tú solo los apruebas."}
+          </p>
 
           {aiStep === "idle" && !formHasContent && (
-            <button
-              type="button"
-              onClick={handleGenerateDraft}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-extrabold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
-            >
-              ✨ Armarlos por mí — 30 segundos
+            <button type="button" onClick={handleGenerateDraft} className={`${BTN_SECONDARY_STRONG} mt-3`}>
+              Armarlos por mí
             </button>
           )}
 
+          {aiStep === "generating" && (
+            <div className="mt-3 flex items-center gap-2.5 text-[14px]" style={{ color: INK_MUTED }}>
+              <Spin />
+              <span>Leyendo tu menú…</span>
+            </div>
+          )}
+
           {aiError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{aiError}</div>
+            <p className="mt-3 text-[14px] font-semibold leading-5" style={{ color: DANGER }} role="alert">{aiError}</p>
           )}
 
           {aiReasoning && (
-            <div className="rounded-xl bg-[#F28C38]/5 border border-[#F28C38]/15 p-3.5 space-y-1.5">
-              <p className="text-xs font-bold text-[#F28C38] uppercase tracking-wider">🤖 Análisis de la IA</p>
-              <p className="text-xs text-[#141413]/70 leading-relaxed font-medium">{aiReasoning}</p>
+            <div className="mt-3 rounded-xl px-3.5 py-3" style={{ background: TILE }}>
+              <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>Por qué estos</p>
+              <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>{aiReasoning}</p>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* ── Manual Editor ── */}
-        <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#141413]/45">Tus premios</p>
-
+        {/* ── Editor ── */}
+        <div className="space-y-7">
           {/* Lo apagado dice lo que significa — antes la página se quedaba muda. */}
           {(!currentFPR.enabled || !anyTierOn) && (
-            <div className="rounded-xl border border-[#141413]/10 bg-[#141413]/[0.03] px-3.5 py-3 text-xs leading-relaxed text-[#141413]/70 space-y-1">
+            <div className="space-y-1 rounded-xl px-4 py-3 text-[14px] leading-5" style={{ background: WARN_SURFACE, color: WARN }}>
               {!currentFPR.enabled && (
-                <p>🎁 Bienvenida apagada: tus clientes nuevos no tienen un regalo que los haga volver.</p>
+                <p>Bienvenida apagada: tus clientes nuevos no tienen un regalo que los haga volver.</p>
               )}
               {!anyTierOn && (
-                <p>⭐ Sin premios por puntos: lo que juntan tus clientes hoy no vale nada.</p>
+                <p>Sin premios por puntos: lo que juntan tus clientes hoy no vale nada.</p>
               )}
               {rewardsOffBlocksNow && (
-                <p className="font-semibold text-[#141413]">Así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</p>
+                <p className="font-semibold">Así, tu local no sale en la app y el escáner queda en pausa. Tu Caja, tu menú y tu QR siguen igual.</p>
               )}
             </div>
           )}
 
-          {/* First Purchase Reward */}
-          <div className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-[#141413]">Recompensa de bienvenida</p>
-              <button
-                type="button"
-                onClick={requestWelcomeToggle}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                  currentFPR.enabled ? "bg-[#F28C38]" : "bg-[#141413]/20"
-                }`}
-              >
-                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                  currentFPR.enabled ? "translate-x-4" : "translate-x-0"
-                }`} />
-              </button>
-            </div>
-            <p className="text-xs text-[#141413]/45">Se desbloquea en la 1ra visita y se regala en la 2da. ¡Ideal para crear el hábito de regresar!</p>
+          {/* Bienvenida */}
+          <section>
+            <SwitchHeader
+              on={currentFPR.enabled}
+              onToggle={requestWelcomeToggle}
+              title="Bienvenida"
+              caption="Se desbloquea en la 1ª visita y se regala en la 2ª. Así se hace el hábito de regresar."
+            />
             {currentFPR.enabled && (
-              <>
-                <select
+              <div className="mt-2 space-y-3 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+                <SelectField
+                  ariaLabel="Platillo de bienvenida"
                   value={currentFPR.menuItemId || ""}
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
+                  onChange={(selectedId) => {
                     const item = menuItems.find((m) => m.id === selectedId);
                     if (item) {
                       setCurrentFPR((f) => ({
@@ -969,227 +1054,176 @@ function RecompensasSetupPageInner() {
                       }));
                     }
                   }}
-                  className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
                 >
-                  <option value="">-- Selecciona un platillo del menú --</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}{etiquetaTamanoBase(item)} (${item.price.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
+                  <option value="">Elige un platillo del menú</option>
+                  {menuOptions}
+                </SelectField>
                 {currentFPR.menuItemId && (
                   <input
                     type="text"
                     placeholder="Texto que ve tu cliente (opcional)"
                     value={currentFPR.menuItemDescription ?? ""}
                     onChange={(e) => setCurrentFPR((f) => ({ ...f, menuItemDescription: e.target.value }))}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
+                    className={INPUT_CLS}
                   />
                 )}
                 {currentFPR.menuItemId && (
-                  <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#141413]/35">
-                      👀 Así lo ve tu cliente
-                    </p>
-                    <div className="flex items-center gap-3 rounded-xl border border-[#F28C38]/20 bg-[#F28C38]/5 p-3">
-                      {(() => {
-                        // La foto sale del MENÚ vivo: los premios aplicados por
-                        // la IA se guardan con imageUrl null aunque el platillo
-                        // sí tenga foto (cazado por Ricardo, 1-sep).
-                        const foto = currentFPR.menuItemImageUrl ||
-                          menuItems.find((m) => m.id === currentFPR.menuItemId)?.imageUrl;
-                        return foto ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={foto} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                        ) : (
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#F28C38]/15 text-lg">⭐</div>
-                        );
-                      })()}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[#141413]">{currentFPR.menuItemName}</p>
-                        <p className="text-[11px] font-bold text-[#F28C38]">GRATIS en su 2ª visita</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ClientPreview
+                    // La foto sale del MENÚ vivo: los premios aplicados por
+                    // la propuesta se guardan con imageUrl null aunque el
+                    // platillo sí tenga foto (cazado por Ricardo, 1-sep).
+                    foto={currentFPR.menuItemImageUrl || menuItems.find((m) => m.id === currentFPR.menuItemId)?.imageUrl}
+                    name={currentFPR.menuItemName}
+                    pill="GRATIS en su 2ª visita"
+                  />
                 )}
-              </>
+              </div>
             )}
-          </div>
+          </section>
 
-          {/* Reward Tiers */}
+          {/* Premios por puntos */}
           {currentTiers.map((tier, i) => (
-            <div key={i} className="rounded-2xl border border-[#141413]/8 bg-white p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#141413]">Premio {i + 1}</p>
-                <button
-                  type="button"
-                  onClick={() => requestTierToggle(i)}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                    tier.hasMenuItem ? "bg-[#F28C38]" : "bg-[#141413]/20"
-                  }`}
-                >
-                  <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    tier.hasMenuItem ? "translate-x-4" : "translate-x-0"
-                  }`} />
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-[#141413]/50 shrink-0">Puntos para ganarlo:</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={tier.pointsRequired}
-                  onChange={(e) => {
-                    const updated = [...currentTiers];
-                    updated[i] = { ...tier, pointsRequired: parseInt(e.target.value) || 0 };
-                    setCurrentTiers(updated);
-                  }}
-                  className="w-24 rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
-                />
-                {tier.pointsRequired > 0 && (
-                  <span className="text-[11px] text-[#141413]/40">
-                    ≈ ${(tier.pointsRequired * spendStepAmount).toLocaleString("es-MX")} gastados
-                  </span>
-                )}
-              </div>
-              {tier.hasMenuItem && (
-                <>
-                  <select
-                    value={tier.menuItemId || ""}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const item = menuItems.find((m) => m.id === selectedId);
-                      const updated = [...currentTiers];
-                      if (item) {
-                        updated[i] = {
-                          ...tier,
-                          menuItemId: item.id,
-                          menuItemName: item.name,
-                          menuItemDescription: item.description ?? "",
-                          menuItemImageUrl: item.imageUrl ?? "",
-                        };
-                      } else {
-                        updated[i] = {
-                          ...tier,
-                          menuItemId: "",
-                          menuItemName: "",
-                          menuItemDescription: "",
-                          menuItemImageUrl: "",
-                        };
-                      }
-                      setCurrentTiers(updated);
-                    }}
-                    className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] focus:border-[#F28C38] focus:outline-none"
-                  >
-                    <option value="">-- Selecciona un platillo del menú --</option>
-                    {menuItems.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}{etiquetaTamanoBase(item)} (${item.price.toFixed(2)})
-                      </option>
-                    ))}
-                  </select>
-                  {tier.menuItemId && (
+            <section key={i}>
+              <SwitchHeader
+                on={tier.hasMenuItem}
+                onToggle={() => requestTierToggle(i)}
+                title={`Premio ${i + 1}`}
+              />
+              <div className="mt-2 space-y-3 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+                <div>
+                  <label htmlFor={`tier-points-${i}`} className="mb-1.5 block text-[13px] leading-4" style={{ color: INK_MUTED }}>
+                    Puntos para ganarlo
+                  </label>
+                  <div className="flex items-center gap-3">
                     <input
-                      type="text"
-                      placeholder="Texto que ve tu cliente (opcional)"
-                      value={tier.menuItemDescription ?? ""}
+                      id={`tier-points-${i}`}
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={tier.pointsRequired}
                       onChange={(e) => {
                         const updated = [...currentTiers];
-                        updated[i] = { ...tier, menuItemDescription: e.target.value };
+                        updated[i] = { ...tier, pointsRequired: parseInt(e.target.value) || 0 };
                         setCurrentTiers(updated);
                       }}
-                      className="w-full rounded-xl border border-[#141413]/12 bg-[#faf9f5] px-3 py-2.5 text-sm text-[#141413] placeholder-[#141413]/30 focus:border-[#F28C38] focus:outline-none"
+                      className={`${INPUT_CLS} w-28 font-bold tabular-nums`}
                     />
-                  )}
-                  {tier.menuItemId && tier.pointsRequired > 0 && (
-                    <div>
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-[#141413]/35">
-                        👀 Así lo ve tu cliente
-                      </p>
-                      <div className="flex items-center gap-3 rounded-xl border border-[#141413]/8 bg-[#F5F3EF] p-3">
-                        <div className="flex min-w-[52px] shrink-0 flex-col items-center justify-center rounded-lg bg-[#1C2526] px-2.5 py-2">
-                          <p className="font-mono text-[15px] font-bold leading-none text-white">{tier.pointsRequired}</p>
-                          <p className="mt-0.5 text-[8px] font-semibold uppercase leading-none text-white/55">pts</p>
-                        </div>
-                        {(() => {
-                          const foto = tier.menuItemImageUrl ||
-                            menuItems.find((m) => m.id === tier.menuItemId)?.imageUrl;
-                          return foto ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={foto} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                          ) : null;
-                        })()}
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#141413]">{tier.menuItemName}</p>
-                          {tier.menuItemDescription && (
-                            <p className="line-clamp-1 text-[11px] text-[#141413]/45">{tier.menuItemDescription}</p>
+                    {tier.pointsRequired > 0 && (
+                      <span className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+                        ≈ ${(tier.pointsRequired * spendStepAmount).toLocaleString("es-MX")} gastados
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {tier.hasMenuItem && (
+                  <>
+                    <SelectField
+                      ariaLabel={`Platillo del premio ${i + 1}`}
+                      value={tier.menuItemId || ""}
+                      onChange={(selectedId) => {
+                        const item = menuItems.find((m) => m.id === selectedId);
+                        const updated = [...currentTiers];
+                        if (item) {
+                          updated[i] = {
+                            ...tier,
+                            menuItemId: item.id,
+                            menuItemName: item.name,
+                            menuItemDescription: item.description ?? "",
+                            menuItemImageUrl: item.imageUrl ?? "",
+                          };
+                        } else {
+                          updated[i] = {
+                            ...tier,
+                            menuItemId: "",
+                            menuItemName: "",
+                            menuItemDescription: "",
+                            menuItemImageUrl: "",
+                          };
+                        }
+                        setCurrentTiers(updated);
+                      }}
+                    >
+                      <option value="">Elige un platillo del menú</option>
+                      {menuOptions}
+                    </SelectField>
+                    {tier.menuItemId && (
+                      <input
+                        type="text"
+                        placeholder="Texto que ve tu cliente (opcional)"
+                        value={tier.menuItemDescription ?? ""}
+                        onChange={(e) => {
+                          const updated = [...currentTiers];
+                          updated[i] = { ...tier, menuItemDescription: e.target.value };
+                          setCurrentTiers(updated);
+                        }}
+                        className={INPUT_CLS}
+                      />
+                    )}
+                    {tier.menuItemId && tier.pointsRequired > 0 && (
+                      <ClientPreview
+                        foto={tier.menuItemImageUrl || menuItems.find((m) => m.id === tier.menuItemId)?.imageUrl}
+                        name={tier.menuItemName}
+                        description={tier.menuItemDescription}
+                        pill={`${tier.pointsRequired} pts`}
+                      />
+                    )}
+                    {(() => {
+                      const validation = getTierValidation(tier);
+                      if (!validation) return null;
+                      if (validation.type === "ok") {
+                        return (
+                          <p className="text-[14px] leading-5" style={{ color: SUCCESS }}>{validation.message}</p>
+                        );
+                      }
+                      // Error (regala de más), caro y "tarda mucho": los tres
+                      // son avisos ámbar; el de error además detiene Guardar.
+                      const showFix = "fixPoints" in validation && validation.fixPoints !== tier.pointsRequired;
+                      return (
+                        <div className="rounded-xl px-4 py-3" style={{ background: WARN_SURFACE }}>
+                          <p className="text-[14px] leading-5" style={{ color: validation.type === "error" ? DANGER : WARN }}>{validation.message}</p>
+                          {showFix && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...currentTiers];
+                                updated[i] = { ...tier, pointsRequired: validation.fixPoints };
+                                setCurrentTiers(updated);
+                              }}
+                              className={`${BTN_SECONDARY} mt-2`}
+                            >
+                              Ponerlo en {validation.fixPoints} puntos
+                            </button>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  )}
-                  {(() => {
-                    const validation = getTierValidation(tier);
-                    if (!validation) return null;
-                    const tone =
-                      validation.type === "error"
-                        ? { text: "text-red-600", bg: "bg-red-50 border-red-200" }
-                        : validation.type === "warning"
-                        ? { text: "text-amber-700", bg: "bg-amber-50 border-amber-200" }
-                        : validation.type === "ok"
-                        ? { text: "text-emerald-600", bg: "" }
-                        : { text: "text-[#141413]/60", bg: "bg-[#F28C38]/5 border-[#F28C38]/15" };
-                    if (validation.type === "ok") {
-                      return (
-                        <p className={`text-xs mt-1.5 font-medium ${tone.text}`}>{validation.message}</p>
                       );
-                    }
-                    return (
-                      <div className={`mt-1.5 rounded-xl border px-3 py-2.5 ${tone.bg}`}>
-                        <p className={`text-xs font-medium ${tone.text}`}>{validation.message}</p>
-                        {"fixPoints" in validation && validation.fixPoints !== tier.pointsRequired && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = [...currentTiers];
-                              updated[i] = { ...tier, pointsRequired: validation.fixPoints };
-                              setCurrentTiers(updated);
-                            }}
-                            className="mt-2 rounded-lg bg-[#1C2526] px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-85"
-                          >
-                            Ponerlo en {validation.fixPoints} puntos ✓
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
-            </div>
+                    })()}
+                  </>
+                )}
+              </div>
+            </section>
           ))}
         </div>
 
-        <button
-          onClick={() => handleSave()}
-          disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-4 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:opacity-40"
-        >
-          {saved ? "✓ Guardado" : saving ? <><Spin />Guardando…</> : formIsDeliberatelyOff ? "Guardar así, sin premios →" : "Guardar mis premios →"}
-        </button>
+        {/* Botón principal: uno por pantalla */}
+        <div>
+          <button
+            type="button"
+            onClick={() => handleSave()}
+            disabled={saving || saved || (!formHasContent && !formIsDeliberatelyOff)}
+            className={BTN_PRIMARY}
+            style={saved ? { background: "#ffffff", color: SUCCESS, border: `1px solid ${BORDER}` } : { background: BRAND, color: INK }}
+          >
+            {saved ? "Guardado" : saving ? <><Spin />Guardando…</> : formIsDeliberatelyOff ? "Guardar así, sin premios" : "Guardar mis premios"}
+          </button>
 
-        {aiApplied && (
-          <div className="flex justify-center mt-2">
-            <button
-              type="button"
-              onClick={handleDismissDraft}
-              className="text-xs text-[#141413]/40 hover:text-red-500 transition-colors font-medium"
-            >
-              Descartar sugerencia
-            </button>
-          </div>
-        )}
+          {aiApplied && (
+            <div className="mt-2 flex justify-center">
+              <button type="button" onClick={handleDismissDraft} className={BTN_TERTIARY}>
+                Descartar sugerencia
+              </button>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
@@ -1206,7 +1240,7 @@ export default function RecompensasSetupPage() {
 function Spinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf9f5]">
-      <svg className="h-6 w-6 animate-spin text-[#F28C38]" fill="none" viewBox="0 0 24 24">
+      <svg className="h-6 w-6 animate-spin" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 5.373 12 12H4z"/>
       </svg>

@@ -158,56 +158,45 @@ export default function FloatingAI({
         style={{
           width: 380,
           maxWidth: "100vw",
-          background: "#ffffff",
-          borderLeft: "1px solid rgba(28,37,38,0.1)",
-          boxShadow: "-8px 0 32px rgba(28,37,38,0.12)",
+          background: "#FFFFFF",
+          borderLeft: "1px solid #D9D2C5",
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.25s cubic-bezier(0.32,0.72,0,1)",
         }}
       >
         {/* Header */}
+        {/* Opción A (24-sep-2026): cabecera crema con título en Lora, sin
+            cerebro ni "Beta"; el contexto va como caption. */}
         <div
           className="flex shrink-0 items-center gap-3 px-5 py-4"
-          style={{
-            background: "linear-gradient(135deg, #1C2526 0%, #2d3a3b 100%)",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-          }}
+          style={{ background: "#FAF9F5", borderBottom: "1px solid #E9E3D7" }}
         >
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-[17px]"
-            style={{ background: "rgba(217,119,87,0.2)" }}
-          >
-            🧠
-          </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-[14px] font-bold text-white">Comeleal AI</p>
-              <span
-                className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                style={{ background: "rgba(217,119,87,0.2)", color: "#FF9A45" }}
-              >
-                Beta
-              </span>
-            </div>
-            <p className="text-[11px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Viendo: {pageLabel}
+            <p className="text-[17px] font-semibold leading-[22px]" style={{ color: "#1C2526", fontFamily: "var(--font-lora), Lora, Georgia, serif" }}>
+              Pregúntale a Comeleal
+            </p>
+            <p className="truncate text-[13px] leading-4" style={{ color: "#5B6366" }}>
+              Sobre {pageLabel}
             </p>
           </div>
           {messages.length > 0 && (
             <button
+              type="button"
               onClick={() => setMessages([])}
-              className="rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors hover:bg-white/10"
-              style={{ color: "rgba(255,255,255,0.4)" }}
+              className="flex h-11 items-center px-2 text-[14px] font-semibold hover:underline"
+              style={{ color: "#8A4B12" }}
             >
               Limpiar
             </button>
           )}
           <button
+            type="button"
             onClick={handleClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[18px] transition-colors hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            aria-label="Cerrar"
+            className="flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-[#F0EBE1]"
+            style={{ color: "#1C2526" }}
           >
-            ×
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
 
@@ -216,15 +205,15 @@ export default function FloatingAI({
           {messages.length === 0 && !asking && (
             <div className="flex flex-col items-center py-10 text-center">
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl text-[26px]"
-                style={{ background: "rgba(217,119,87,0.08)" }}
+                className="flex h-14 w-14 items-center justify-center rounded-full"
+                style={{ background: "#F0EBE1", color: "#5B6366" }}
               >
-                🧠
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12a8 8 0 0 1-11.6 7.2L4 21l1.8-4.6A8 8 0 1 1 21 12z" /></svg>
               </div>
-              <p className="mt-4 text-[15px] font-bold" style={{ color: "#1C2526" }}>
-                Pregúntale a Comeleal AI
+              <p className="mt-4 text-[17px] font-semibold" style={{ color: "#1C2526", fontFamily: "var(--font-lora), Lora, Georgia, serif" }}>
+                ¿Qué quieres saber de tu negocio?
               </p>
-              <p className="mt-1.5 text-[12px] leading-relaxed max-w-[220px]" style={{ color: "rgba(28,37,38,0.45)" }}>
+              <p className="mt-1.5 max-w-[240px] text-[14px] leading-[20px]" style={{ color: "#3F4A4D" }}>
                 {setupIncomplete
                   ? "Te ayudo a arrancar: puntos, premios, tu QR y tus pedidos."
                   : "Analiza tus clientes, ventas y tendencias en segundos."}
@@ -237,12 +226,8 @@ export default function FloatingAI({
                     key={chip}
                     onClick={() => ask(chip)}
                     disabled={!restaurantId}
-                    className="rounded-full px-3 py-1.5 text-[11px] font-medium transition-all hover:scale-[1.02] disabled:opacity-40"
-                    style={{
-                      background: "rgba(217,119,87,0.08)",
-                      color: "#F28C38",
-                      border: "1px solid rgba(217,119,87,0.18)",
-                    }}
+                    className="flex h-9 items-center rounded-full bg-white px-3.5 text-[14px] transition hover:bg-[#F0EBE1] disabled:opacity-40"
+                    style={{ color: "#1C2526", border: "1px solid #D9D2C5" }}
                   >
                     {chip}
                   </button>
@@ -255,18 +240,19 @@ export default function FloatingAI({
             <div key={i} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
               {msg.role === "ai" && (
                 <div
-                  className="shrink-0 flex h-7 w-7 items-center justify-center rounded-xl text-[13px]"
-                  style={{ background: "rgba(217,119,87,0.1)" }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
+                  style={{ background: "#F0EBE1", color: "#1C2526" }}
+                  aria-hidden
                 >
-                  🧠
+                  C
                 </div>
               )}
               <div
-                className="rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap"
+                className="whitespace-pre-wrap rounded-xl px-4 py-2.5 text-[14px] leading-[20px]"
                 style={
                   msg.role === "user"
-                    ? { background: "#1C2526", color: "#ffffff", maxWidth: "80%", borderBottomRightRadius: 6 }
-                    : { background: "rgba(217,119,87,0.07)", color: "#1C2526", maxWidth: "85%", border: "1px solid rgba(217,119,87,0.14)", borderBottomLeftRadius: 6 }
+                    ? { background: "#1C2526", color: "#FAF9F5", maxWidth: "80%", borderBottomRightRadius: 4 }
+                    : { background: "#F0EBE1", color: "#1C2526", maxWidth: "85%", borderBottomLeftRadius: 4 }
                 }
               >
                 {msg.text}
@@ -278,17 +264,18 @@ export default function FloatingAI({
           {asking && (
             <div className="flex gap-2.5">
               <div
-                className="shrink-0 flex h-7 w-7 items-center justify-center rounded-xl text-[13px]"
-                style={{ background: "rgba(217,119,87,0.1)" }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
+                style={{ background: "#F0EBE1", color: "#1C2526" }}
+                aria-hidden
               >
-                🧠
+                C
               </div>
               <div
-                className="flex items-center gap-2 rounded-2xl px-4 py-3"
-                style={{ background: "rgba(217,119,87,0.07)", border: "1px solid rgba(217,119,87,0.14)", borderBottomLeftRadius: 6 }}
+                className="flex items-center gap-2 rounded-xl px-4 py-3"
+                style={{ background: "#F0EBE1", borderBottomLeftRadius: 4 }}
               >
                 <Spinner />
-                <span className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>Analizando…</span>
+                <span className="text-[13px]" style={{ color: "#3F4A4D" }}>Revisando tus números…</span>
               </div>
             </div>
           )}
@@ -301,12 +288,8 @@ export default function FloatingAI({
                   key={chip}
                   onClick={() => ask(chip)}
                   disabled={!restaurantId}
-                  className="rounded-full px-3 py-1 text-[11px] font-medium transition-all hover:scale-[1.02] disabled:opacity-40"
-                  style={{
-                    background: "rgba(217,119,87,0.06)",
-                    color: "#F28C38",
-                    border: "1px solid rgba(217,119,87,0.14)",
-                  }}
+                  className="flex h-9 items-center rounded-full bg-white px-3.5 text-[14px] transition hover:bg-[#F0EBE1] disabled:opacity-40"
+                  style={{ color: "#1C2526", border: "1px solid #D9D2C5" }}
                 >
                   {chip}
                 </button>
@@ -318,7 +301,7 @@ export default function FloatingAI({
         {/* Input */}
         <div
           className="shrink-0 px-4 py-4"
-          style={{ borderTop: "1px solid rgba(28,37,38,0.07)", background: "#fafaf9" }}
+          style={{ borderTop: "1px solid #E9E3D7", background: "#FAF9F5" }}
         >
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
@@ -326,22 +309,20 @@ export default function FloatingAI({
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Escribe tu pregunta..."
+              placeholder="Escribe tu pregunta"
+              aria-label="Tu pregunta"
               disabled={asking || !restaurantId}
-              className="flex-1 rounded-xl px-4 py-2.5 text-[13px] outline-none disabled:opacity-50"
-              style={{
-                background: "#ffffff",
-                border: "1px solid rgba(28,37,38,0.12)",
-                color: "#1C2526",
-              }}
+              className="h-12 min-w-0 flex-1 rounded-xl px-4 text-[16px] outline-none placeholder:text-[#5B6366] focus:border-[#1C2526] disabled:opacity-50"
+              style={{ background: "#FFFFFF", border: "1px solid #D9D2C5", color: "#1C2526" }}
             />
             <button
               type="submit"
               disabled={!question.trim() || asking || !restaurantId}
-              className="rounded-xl px-4 py-2.5 text-[13px] font-bold text-white transition-opacity disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #F28C38 0%, #FF9A45 100%)" }}
+              aria-label="Enviar pregunta"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition hover:opacity-90 disabled:opacity-40"
+              style={{ background: "#F28C38", color: "#1C2526" }}
             >
-              →
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
           </form>
         </div>
