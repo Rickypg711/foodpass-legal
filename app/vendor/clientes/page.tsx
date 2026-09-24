@@ -19,6 +19,7 @@ import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
+import { logOwnerAction, shortTarget } from "@/lib/ownerActions";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import {
   parseDiscountProfiles,
@@ -211,6 +212,9 @@ function CustomerCard({
   async function generateAndOpen() {
     if (!customer.phone) return;
     const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
+    // Rastro del toque (24-sep): el dueño quiso escribirle a este cliente.
+    // Se anota antes de abrir WhatsApp, en los tres caminos de abajo.
+    logOwnerAction(restaurantId, "winback_send", { target: shortTarget(phone10) });
     if (msg) {
       const waUrl = buildWhatsappUrl(customer.phone, msg, phoneCountry);
       window.open(waUrl, "_blank");

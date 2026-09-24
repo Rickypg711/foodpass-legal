@@ -32,6 +32,8 @@ import {
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
+import { OwnerPushCard } from "@/components/vendor/OwnerPushCard";
+import { logOwnerAction } from "@/lib/ownerActions";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import ManualCloseToggle from "./_components/ManualCloseToggle";
@@ -642,6 +644,11 @@ export default function VendorDashboard() {
               una vez, sin bloquear nada. Se esconde sola cuando ya hay correo. */}
           <OwnerEmailCard />
 
+          {/* 68 de 76 dueños entran solo por la web (24-sep): sin permiso de
+              notificaciones ningún aviso del sistema les llega. Se pide una
+              vez, desde un clic, y guarda users.fcmWebToken. */}
+          <OwnerPushCard />
+
           {/* Mobile primary CTA — la venta ES el loop. En teléfono el header
               solo trae el pill "Cobrar"; este es el "Nueva venta" del header
               en versión móvil. */}
@@ -674,6 +681,7 @@ export default function VendorDashboard() {
 
           {/* ── 3 · Tu siguiente movimiento ── */}
           <AICoachPreviewCard
+            restaurantId={data.restaurantId}
             actionCode={data.nbaActionCode}
             nbaTitle={data.nbaTitle}
             nbaBody={data.nbaBody}
@@ -965,12 +973,14 @@ function getNbaCtaHref(actionCode: string): string {
 }
 
 function AICoachPreviewCard({
+  restaurantId,
   actionCode,
   nbaTitle,
   nbaBody,
   metrics,
   weeklyBriefText,
 }: {
+  restaurantId: string;
   actionCode: string;
   nbaTitle: string;
   nbaBody: string;
@@ -1005,6 +1015,7 @@ function AICoachPreviewCard({
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
       )}
       <a href={ctaHref}
+        onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}
         className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:inline-flex md:w-auto md:px-6"
         style={{ background: BRAND }}>
         {ctaLabel}
