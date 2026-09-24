@@ -1014,7 +1014,7 @@ function AICoachPreviewCard({
         onClick={() => router.push(`${window.location.pathname}?ai=1`)}
         className="mt-3 block text-[13px] font-semibold hover:underline"
         style={{ color: LINK }}>
-        Abrir Comeleal AI →
+        Abrir Comeleal AI
       </button>
     </section>
   );
@@ -1172,7 +1172,7 @@ function TodayCard({
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: alert.severe ? "#B91C1C" : BRAND }} />
           <span className="min-w-0 flex-1 text-[14px] leading-[18px]">{alert.text}</span>
           <span className="shrink-0 text-[14px] font-semibold" style={{ color: LINK }}>
-            Ver →
+            Ver
           </span>
         </Link>
       )}
@@ -1206,7 +1206,7 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
             ? `A ${data.weekIdentifiedSales === 1 ? "ese cliente le" : `esos ${data.weekIdentifiedSales} les`} puedes volver a escribir.`
             : hint}
         </p>
-        <span className="mt-2 inline-block text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número →</span>
+        <span className="mt-2 inline-block text-[14px] font-semibold group-hover:underline" style={{ color: LINK }}>Cobrar con número</span>
       </Link>
     </section>
   );
