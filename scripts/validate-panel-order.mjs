@@ -73,7 +73,8 @@ const main = raw.slice(jsxStart, jsxEnd);
   const block = raw.slice(i, raw.indexOf("function IdentifiedSalesCard(", i));
   assert.ok(block.includes("esperando · el más viejo ${formatOrderAge(oldestPendingMinutes)}"), "Hoy: copy '{n} pedidos esperando · el más viejo {edad}'");
   assert.ok(block.includes('<Link href="/vendor/pedidos"'), "Hoy: la alerta lleva a Pedidos");
-  assert.ok(block.includes("Ver →"), "Hoy: 'Ver →'");
+  // Opción A (24-sep-2026): el link dice "Ver", sin flecha.
+  assert.ok(/>\s*Ver\s*</.test(block), "Hoy: link 'Ver' en la alerta");
   assert.ok(block.includes(">Ticket promedio</p>"), "Hoy: ticket promedio");
   assert.ok(block.includes(">Pedidos en cola</p>") && block.includes(">Cuentas abiertas</p>"), "Hoy: pedidos en cola y cuentas abiertas");
   // Pedidos esperando = pending/preparing (jamás payment_pending); listos = ready.
