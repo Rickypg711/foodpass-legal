@@ -211,7 +211,14 @@ assert.ok(
 // antes de pedir otro; si el servidor aun así dice "existing", la pantalla lo dice.
 {
   const editor = read("app/vendor/setup/recompensas/page.tsx");
-  assert.ok(editor.includes('status: "superseded"'), "Regenerar: el borrador abierto se marca superseded antes de pedir otro");
+  // 24-sep-2026: el borrador abierto ya NO lo cierra la página: manda
+// replaceOpen y lo cierra el servidor (generateRewardDraft), que así se
+// queda con los platillos de la propuesta anterior y pide una DISTINTA.
+assert.ok(
+  editor.includes("replaceOpen: hadOpenDraft || formHasContent") &&
+    !editor.includes('status: "superseded"'),
+  "Regenerar: la página manda replaceOpen y no cierra el borrador por su cuenta",
+);
   assert.ok(editor.includes('resultData?.status === "existing"'), "Regenerar: el estado 'existing' del servidor se muestra, no se traga");
   assert.ok(!editor.includes("regen-debug"), "sin logs de depuración");
   // Las rules (rewardRecommendationDraftClientUpdateOnly) solo permiten status + updatedAt.
