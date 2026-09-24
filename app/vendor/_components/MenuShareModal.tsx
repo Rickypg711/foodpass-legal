@@ -24,17 +24,8 @@ import { toPng } from "html-to-image";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 
-import { normalizeBrandColor, onBrandColor, PAINT_BRAND_COLOR } from "@/lib/brand/brandColor";
 
-const ORANGE = "#F28C38";
-// Naranja profundo SOLO para texto dentro de la tarjeta imprimible. El
-// #F28C38 sobre el crema de la tarjeta da 2.29:1 y el piso es 4.5:1 — en
-// pantalla se salva porque el pixel emite luz, pero la tarjeta vive impresa en
-// un mostrador, donde el papel solo refleja la que haya. Este da 5.23:1 y
-// sigue siendo el mismo naranja, mas profundo: no cambia de familia de color.
-// NO usar en pantalla: ahi manda ORANGE, que es la identidad.
-const ORANGE_PRINT = "#A84E0A";
-const CREAM = "#FAF7F2";
+const ORANGE = "#F28C38"; // solo el botón Compartir (acción principal)
 const INK = "#1C2526";
 // Opción A (23-sep-2026, lienzo "Sistema Comeleal"): la cáscara del modal usa
 // los mismos tokens que el Panel; la TARJETA de abajo es un objeto impreso y
@@ -60,9 +51,6 @@ export default function MenuShareModal({
 }) {
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  // Color de marca del local (8-sep): la tarjeta lleva SU color en borde,
-  // barra y monograma; sin color propio, el naranja de siempre.
-  const [brandColor, setBrandColor] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
   // 24-sep-2026 (Ricardo): si el local NO tiene premios, la tarjeta y el
   // mensaje no prometen puntos. `loyaltyReady` lo persisten todos los
@@ -82,8 +70,6 @@ export default function MenuShareModal({
         const d = (snap.data() as Record<string, unknown>) ?? {};
         if (cancelled) return;
         setName(typeof d.name === "string" ? d.name : "");
-        // Se guarda, no se pinta (Ricardo, 8-sep noche) — ver PAINT_BRAND_COLOR.
-        setBrandColor(PAINT_BRAND_COLOR ? normalizeBrandColor(d.brandColor) : null);
         setLogoUrl(getRestaurantImageUrl(d));
         const fpr = d.firstPurchaseReward as { enabled?: unknown } | undefined;
         setHasRewards(
@@ -236,15 +222,19 @@ export default function MenuShareModal({
           </button>
         </div>
 
-        {/* La tarjeta de marca — lo que se comparte/imprime es EXACTAMENTE esto. */}
+        {/* La tarjeta de marca — lo que se comparte/imprime es EXACTAMENTE esto.
+            Opción A (Ricardo, 24-sep-2026, lienzo "Sistema Comeleal"): tinta y
+            crema, una sola instrucción arriba del QR, link legible, y el pie de
+            puntos solo si el local tiene premios. El color de marca ya no se
+            pinta aquí (misma regla que el panel). */}
         <div
           ref={cardRef}
           className="flex flex-col items-center text-center"
           style={{
-            background: CREAM,
-            border: `3px solid ${brandColor ?? ORANGE}`,
-            borderRadius: 20,
-            padding: "20px 18px 16px",
+            background: "#FAF9F5",
+            border: `1px solid ${BORDER}`,
+            borderRadius: 16,
+            padding: "24px 20px 16px",
           }}
         >
           {logoUrl ? (
@@ -260,38 +250,37 @@ export default function MenuShareModal({
               className="h-14 w-14 rounded-full object-cover"
             />
           ) : (
-            // Sin logo: MONOGRAMA de marca (inicial en círculo naranja) — el
-            // mismo patrón del avatar de la sidebar. El 🏪 genérico se veía
-            // de relleno en la tarjeta más compartible de la casa (cazado
-            // por Ricardo, 26-ago).
+            // Sin logo: monograma en tostado con tinta (el 🏪 genérico se veía
+            // de relleno; cazado por Ricardo, 26-ago).
             <div
-              className="flex h-14 w-14 items-center justify-center rounded-full text-[24px] font-extrabold"
-              style={{ background: brandColor ?? ORANGE, color: brandColor ? onBrandColor(brandColor) : "#1C2526" }}
+              className="flex h-14 w-14 items-center justify-center rounded-full text-[24px] font-semibold"
+              style={{ background: "#F0EBE1", color: INK, fontFamily: SERIF }}
             >
               {(name || "C").trim().charAt(0).toUpperCase()}
             </div>
           )}
-          <p className="mt-2 text-[20px] font-extrabold leading-tight" style={{ color: INK }}>
+          <p className="mt-3 text-[24px] font-semibold leading-7" style={{ color: INK, fontFamily: SERIF }}>
             {name || " "}
           </p>
-          <div className="mt-1.5 h-1 w-14 rounded-full" style={{ background: brandColor ?? ORANGE }} />
-          <p className="mt-2.5 text-[14px] font-bold" style={{ color: INK }}>
-            {hasRewards ? "Pide en línea y junta puntos" : "Pide en línea"}
+          <p className="mt-3 text-[16px] font-semibold leading-5" style={{ color: INK }}>
+            Escanea y pide
           </p>
-          <div className="mt-3 rounded-[14px] bg-white p-2.5">
+          <div className="mt-3 rounded-xl bg-white p-3" style={{ border: "1px solid #E9E3D7" }}>
             <QRCodeSVG value={qrUrl} size={180} fgColor={INK} bgColor="#FFFFFF" />
           </div>
-          <p className="mt-2.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.75)" }}>
-            Escanea para ver el menú
-          </p>
-          {hasRewards && (
-            <p className="mt-1 text-[12px] font-bold" style={{ color: ORANGE_PRINT }}>
-              Cada compra suma puntos — canjéalos por platillos gratis
-            </p>
-          )}
-          <p className="mt-2 text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.65)" }}>
+          <p className="mt-3 text-[14px] leading-[18px] tabular-nums" style={{ color: "#3F4A4D" }}>
             {cardText}
           </p>
+          {hasRewards && (
+            <div className="mt-4 w-full pt-3" style={{ borderTop: "1px solid #E9E3D7" }}>
+              <p className="text-[13px] font-semibold leading-[18px]" style={{ color: INK }}>
+                Con cada compra juntas puntos
+              </p>
+              <p className="mt-0.5 text-[12px] leading-4" style={{ color: INK_SOFT }}>
+                Da tu número al pagar y tu premio queda apuntado.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* El link que se manda NO es el que imprime la tarjeta (la tarjeta va
