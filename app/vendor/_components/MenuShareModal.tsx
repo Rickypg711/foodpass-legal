@@ -64,6 +64,11 @@ export default function MenuShareModal({
   // barra y monograma; sin color propio, el naranja de siempre.
   const [brandColor, setBrandColor] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
+  // 24-sep-2026 (Ricardo): si el local NO tiene premios, la tarjeta y el
+  // mensaje no prometen puntos. `loyaltyReady` lo persisten todos los
+  // escritores de readiness; si el doc es viejo y no lo trae, se mira si hay
+  // niveles o bienvenida.
+  const [hasRewards, setHasRewards] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -80,6 +85,12 @@ export default function MenuShareModal({
         // Se guarda, no se pinta (Ricardo, 8-sep noche) — ver PAINT_BRAND_COLOR.
         setBrandColor(PAINT_BRAND_COLOR ? normalizeBrandColor(d.brandColor) : null);
         setLogoUrl(getRestaurantImageUrl(d));
+        const fpr = d.firstPurchaseReward as { enabled?: unknown } | undefined;
+        setHasRewards(
+          d.loyaltyReady === true ||
+            (d.loyaltyReady === undefined &&
+              ((Array.isArray(d.rewardTiers) && d.rewardTiers.length > 0) || fpr?.enabled === true)),
+        );
         const s = d.slug;
         setSlug(
           typeof s === "string" && s.length >= 3 && /^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(s)
@@ -114,7 +125,9 @@ export default function MenuShareModal({
   // estas, si abriste y como llamarte. La portada trae todo eso y su boton
   // principal es "Ver menu y ordenar", asi que no pierde el menu, gana el resto.
   const shareUrl = `https://comeleal.com/r/${slug ?? restaurantId}`;
-  const shareText = `Mira el menú de ${name || "nuestro restaurante"}, pide en línea y junta puntos 🍽️ ${shareUrl}`;
+  const shareText = hasRewards
+    ? `Mira el menú de ${name || "nuestro restaurante"}, pide en línea y junta puntos 🍽️ ${shareUrl}`
+    : `Mira el menú de ${name || "nuestro restaurante"} y pide en línea 🍽️ ${shareUrl}`;
 
   async function cardPngFile(): Promise<File | null> {
     if (!cardRef.current) return null;
@@ -263,7 +276,7 @@ export default function MenuShareModal({
           </p>
           <div className="mt-1.5 h-1 w-14 rounded-full" style={{ background: brandColor ?? ORANGE }} />
           <p className="mt-2.5 text-[14px] font-bold" style={{ color: INK }}>
-            Pide en línea y junta puntos
+            {hasRewards ? "Pide en línea y junta puntos" : "Pide en línea"}
           </p>
           <div className="mt-3 rounded-[14px] bg-white p-2.5">
             <QRCodeSVG value={qrUrl} size={180} fgColor={INK} bgColor="#FFFFFF" />
@@ -271,9 +284,11 @@ export default function MenuShareModal({
           <p className="mt-2.5 text-[12px] font-semibold" style={{ color: "rgba(28,37,38,0.75)" }}>
             Escanea para ver el menú
           </p>
-          <p className="mt-1 text-[12px] font-bold" style={{ color: ORANGE_PRINT }}>
-            Cada compra suma puntos — canjéalos por platillos gratis
-          </p>
+          {hasRewards && (
+            <p className="mt-1 text-[12px] font-bold" style={{ color: ORANGE_PRINT }}>
+              Cada compra suma puntos — canjéalos por platillos gratis
+            </p>
+          )}
           <p className="mt-2 text-[12px] font-bold" style={{ color: "rgba(28,37,38,0.65)" }}>
             {cardText}
           </p>
