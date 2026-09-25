@@ -60,11 +60,17 @@ export default function ReceiptRewardsBlock({
   orderId,
   restaurantName,
   className,
+  onInviteAvailable,
 }: {
   restaurantId: string;
   orderId: string;
   restaurantName: string;
   className?: string;
+  /**
+   * 25-sep-2026: la página necesita saber si la barra fija de invitar está
+   * puesta, para dejarle aire abajo (si no, tapa "Volver al menú").
+   */
+  onInviteAvailable?: (ready: boolean) => void;
 }) {
   const [items, setItems] = useState<ApiItem[] | null>(null);
   /** La frase que escribió la IA (§8). null = se usa el texto fijo. */
@@ -135,6 +141,10 @@ export default function ReceiptRewardsBlock({
     };
   }, [restaurantId, orderId]);
 
+  useEffect(() => {
+    onInviteAvailable?.(!!invite);
+  }, [invite, onInviteAvailable]);
+
   // "Visto" = se dibujó en SU pantalla. Una sola vez, y luego se recarga la
   // lista para que la fecha que se muestra ya sea la del reloj corriendo.
   useEffect(() => {
@@ -162,8 +172,9 @@ export default function ReceiptRewardsBlock({
 
   const tacos = items ?? [];
   // Un solo "ahora" para toda la lista: si cada taco leyera su propio reloj,
-  // dos tacos nacidos igual podrían pintar días distintos.
-  const ahora = Date.now();
+  // dos tacos nacidos igual podrían pintar días distintos. Se fija al montar
+  // (lint de pureza: un render no lee el reloj).
+  const [ahora] = useState(() => Date.now());
   if (tacos.length === 0 && !invite) return null;
 
   const primero = tacos[0];
@@ -177,6 +188,11 @@ export default function ReceiptRewardsBlock({
           restaurantName,
           link: invite.link,
         })
+    : "";
+  // Lo que se enseña en la tarjeta: el mismo mensaje, sin el link.
+  // Sin el link queda "Entra con este link:" colgando; se le quita el ":" final.
+  const textoSinLink = invite
+    ? texto.replace(invite.link, "").replace(/\s+/g, " ").trim().replace(/[:\s]+$/, "")
     : "";
 
   return (
@@ -212,32 +228,57 @@ export default function ReceiptRewardsBlock({
       ) : null}
 
       {invite ? (
-        <div className="mt-3 rounded-2xl border border-[#1C2526]/10 bg-white px-4 py-3">
-          <p className="text-[15px] font-bold text-[#1C2526]">
-            Invita a un amigo y los dos ganan
-          </p>
-          <p className="mt-1 text-[12px] leading-snug text-[#1C2526]/70">
-            Con su primer pedido tu amigo se gana un{" "}
-            {primero?.itemName || "premio"} para su siguiente visita, y tú te
-            ganas otro cuando él pague.
-          </p>
-          <a
-            href={buildWhatsappShareUrl(texto)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              // Primera medida del embudo del referido (§10).
-              fetch("/api/referral-code", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ restaurantId, orderId, tapped: true }),
-              }).catch(() => {});
-            }}
-            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#1ebe5b]"
+        <>
+          {/* 25-sep-2026 (Opción 2 del lienzo "Recibo Suadero: invitar
+              primero"): la tarjeta explica y enseña el mensaje; el BOTÓN vive
+              en una barra fija abajo, visible sin importar dónde se quede el
+              scroll. Antes el botón era el sexto bloque de la página: 10
+              recibos abiertos, 0 toques. */}
+          <div className="mt-3 rounded-2xl border border-[#1C2526]/10 bg-white px-4 py-3">
+            <p className="text-[15px] font-bold text-[#1C2526]">
+              Invita a un amigo y los dos ganan
+            </p>
+            <p className="mt-1 text-[12px] leading-snug text-[#1C2526]/70">
+              Con su primer pedido tu amigo se gana un{" "}
+              {primero?.itemName || "premio"} para su siguiente visita, y tú te
+              ganas otro cuando él pague.
+            </p>
+            {/* Ver el mensaje antes de mandarlo quita el miedo de "¿qué le va
+                a llegar?". Sin el link: el link lo pega el sistema al mandar. */}
+            <div className="mt-2.5 rounded-xl bg-[#F0EBE1] px-3 py-2">
+              <p className="text-[12px] text-[#1C2526]/60">Lo que le llega a tu amigo</p>
+              <p className="mt-0.5 text-[13px] leading-snug text-[#1C2526]">{textoSinLink}</p>
+            </div>
+          </div>
+
+          <div
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E9E3D7] bg-white"
+            style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+            data-testid="receipt-invite-bar"
           >
-            Mandar mi link por WhatsApp
-          </a>
-        </div>
+            <div className="mx-auto max-w-md px-4 pt-3">
+              <a
+                href={buildWhatsappShareUrl(texto)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  // Primera medida del embudo del referido (§10).
+                  fetch("/api/referral-code", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ restaurantId, orderId, tapped: true }),
+                  }).catch(() => {});
+                }}
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-2.5 text-[15px] font-semibold text-[#1C2526] transition-colors hover:bg-[#1ebe5b]"
+              >
+                Mandar mi link por WhatsApp
+              </a>
+              <p className="mt-1.5 text-center text-[12px] text-[#1C2526]/60">
+                Con su primer pedido tu amigo se gana un {primero?.itemName || "premio"}. Tú, otro.
+              </p>
+            </div>
+          </div>
+        </>
       ) : null}
     </div>
   );

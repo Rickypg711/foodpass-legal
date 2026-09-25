@@ -159,6 +159,8 @@ function OrderStatusPageContent() {
   // en Firestore sería cliente-escribible (falsificable) y aquí solo queremos
   // no estorbar.
   const [reviewAskSeen, setReviewAskSeen] = useState(false);
+  /** 25-sep: la barra fija de invitar está puesta → aire abajo para que no tape nada. */
+  const [inviteBar, setInviteBar] = useState(false);
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   /** Doc del local: la ropa del flujo (piel) sale de aquí. */
   const [rdata, setRdata] = useState<Record<string, unknown> | null>(null);
@@ -533,7 +535,7 @@ function OrderStatusPageContent() {
         back={false}
       />
 
-      <main className="mx-auto max-w-md px-4 py-6">
+      <main className={`mx-auto max-w-md px-4 py-6 ${inviteBar ? "pb-32" : ""}`}>
         {showLoading ? (
           <OrderStatusSkeleton theme={th} />
         ) : loadError ? (
@@ -753,6 +755,24 @@ function OrderStatusPageContent() {
               </p>
             )}
 
+            {/* REFERIDOS (docs/REFERIDOS_POR_TELEFONO.md §3, §7, §9): sus tacos
+                vivos con hasta cuándo puede pedirlos, y el botón de invitar.
+                AQUÍ ARRANCA EL RELOJ: cuando este bloque se dibuja de verdad en
+                su pantalla se marca "visto" y el taco vive 7 días desde ese
+                momento — el preview de WhatsApp no cuenta porque no corre
+                scripts. Si el local no está en esto, no pinta nada.
+                25-sep: va ANTES de los puntos (Opción 2 del lienzo): el
+                recibo primero, luego el taco y la invitación, y los puntos
+                después. El botón de invitar vive en la barra fija de abajo. */}
+            {order?.customerPhone ? (
+              <ReceiptRewardsBlock
+                restaurantId={restaurantId}
+                orderId={orderId}
+                restaurantName={displayRestaurant}
+                onInviteAvailable={setInviteBar}
+              />
+            ) : null}
+
             {/* Phone Points v1: real balance behind an SMS verification.
                 Only rendered once points were actually credited — before
                 that, the estimate banner below sets the expectation. */}
@@ -763,20 +783,6 @@ function OrderStatusPageContent() {
                 restaurantName={displayRestaurant}
                 phone={order.customerPhone}
                 phoneCountryCode={phoneCountry}
-              />
-            ) : null}
-
-            {/* REFERIDOS (docs/REFERIDOS_POR_TELEFONO.md §3, §7, §9): sus tacos
-                vivos con hasta cuándo puede pedirlos, y el botón de invitar.
-                AQUÍ ARRANCA EL RELOJ: cuando este bloque se dibuja de verdad en
-                su pantalla se marca "visto" y el taco vive 7 días desde ese
-                momento — el preview de WhatsApp no cuenta porque no corre
-                scripts. Si el local no está en esto, no pinta nada. */}
-            {order?.customerPhone ? (
-              <ReceiptRewardsBlock
-                restaurantId={restaurantId}
-                orderId={orderId}
-                restaurantName={displayRestaurant}
               />
             ) : null}
 
@@ -797,13 +803,14 @@ function OrderStatusPageContent() {
                 if (credited) {
                   return (
                     <>
+                      {/* 25-sep: la tarjeta de arriba ya dice que los puntos
+                          están en su número; esta vende la app, no lo repite. */}
                       <p className={`text-base font-bold ${th.ink}`}>
-                        ⭐ Tus puntos ya están guardados en tu número
+                        Llévate tus puntos en la app
                       </p>
                       <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
-                        Llévalos contigo: con la app Comeleal entras con tu
-                        número, ves tus puntos de todos tus lugares y te
-                        avisamos cuando tengas premios. 🔔
+                        Entras con tu número, ves tus puntos de todos tus
+                        lugares y te avisamos cuando tengas premios.
                       </p>
                       <a
                         href={downloadHref}
