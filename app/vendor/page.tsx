@@ -1,6 +1,7 @@
 "use client";
 
 import { atRiskShown, type AtRiskMetrics } from "@/lib/vendor/atRisk";
+import { IN_TRAY_STATUSES } from "@/lib/order/trayOrders";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -215,7 +216,7 @@ export default function VendorDashboard() {
         // visitHistory). Se fueron con sus secciones: reEngagementStats,
         // phoneCustomers (bienvenidas por vencer / win-back manual) y la
         // búsqueda de nombres en `users` para "Actividad reciente".
-        const [restaurantSnap, insightsSnap, visits30dSnap, todayOrdersSnap, monthOrdersSnap] =
+        const [restaurantSnap, insightsSnap, visits30dSnap, todayOrdersSnap, monthOrdersSnap, inTraySnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -231,6 +232,14 @@ export default function VendorDashboard() {
             getDocs(query(
               collection(db, "restaurants", rid, "orders"),
               where("createdAt", ">=", thirtyDaysAgo)
+            )).catch(() => null),
+            // 25-sep: la bandeja POR ESTADO, sin fecha, igual que Pedidos
+            // (lib/order/trayOrders.ts). "Pedidos en cola" contaba solo los
+            // de HOY: Suadero tenía 3 de anoche esperando y el Panel decía 0
+            // mientras Pedidos decía "3 esperando".
+            getDocs(query(
+              collection(db, "restaurants", rid, "orders"),
+              where("status", "in", [...IN_TRAY_STATUSES])
             )).catch(() => null),
           ]);
 
@@ -273,8 +282,6 @@ export default function VendorDashboard() {
         todayOrdersSnap.forEach((doc) => {
           const o = doc.data();
           const total = (o.total as number) ?? 0;
-          const status = o.status as string;
-          const isOpenTab = o.isOpenTab as boolean | undefined;
           const paymentStatus = o.paymentStatus as string | undefined;
           const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
 
@@ -291,7 +298,17 @@ export default function VendorDashboard() {
             }
           }
 
-          // 2. Pedidos en cola: status in ['pending', 'preparing', 'ready']
+        });
+
+        // 2 y 3. Pedidos en cola y cuentas abiertas: desde la BANDEJA (por
+        // estado, sin fecha), el mismo número que Pedidos enseña como
+        // "esperando". Un pedido de anoche sin entregar sigue en cola hoy.
+        (inTraySnap?.docs ?? todayOrdersSnap.docs).forEach((doc) => {
+          const o = doc.data();
+          const status = (o.status as string) ?? "";
+          const paymentStatus = (o.paymentStatus as string) ?? "";
+          const isOpenTab = o.isOpenTab as boolean | undefined;
+          const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
           if (["pending", "preparing", "ready"].includes(status)) {
             pedidosCola++;
           }
@@ -302,8 +319,6 @@ export default function VendorDashboard() {
           } else if (status === "ready") {
             readyOrdersCount++;
           }
-
-          // 3. Cuentas abiertas: isOpenTab === true, status in ['pending', 'preparing', 'ready'], and paymentStatus !== 'paid'
           if (isOpenTab === true && ["pending", "preparing", "ready"].includes(status) && paymentStatus !== "paid") {
             cuentasAbiertas++;
           }
