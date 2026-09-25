@@ -1,5 +1,6 @@
 "use client";
 
+import { atRiskShown, type AtRiskMetrics } from "@/lib/vendor/atRisk";
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -512,7 +513,8 @@ export default function ReportesPage() {
         if (insightsData?.metrics) {
           const m = insightsData.metrics;
           metrics30d = {
-            atRiskCount: (m.atRiskCount as number) ?? 0,
+            // 25-sep: app + teléfono, como el Panel, el consejo y la app.
+            atRiskCount: atRiskShown(m as AtRiskMetrics),
             scans30d: ((m.scans30d as number) ?? 0) + phoneVisits30d,
             redemptions30d: ((m.redemptions30d as number) ?? 0) + phoneRedemptions30d,
             uniqueCustomers30d: ((m.uniqueCustomers30d as number) ?? 0) + uniquePhones30d.size,

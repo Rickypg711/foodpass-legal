@@ -1,5 +1,6 @@
 "use client";
 
+import { atRiskShown, type AtRiskMetrics } from "@/lib/vendor/atRisk";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -418,7 +419,9 @@ export default function VendorDashboard() {
           weekPaidSales,
           weekIdentifiedSales,
           weeklyBriefText: ins?.weeklyBriefText as string | undefined,
-          atRiskCount: (insMetrics.atRiskCount as number | undefined) ?? (ins?.atRiskCount as number | undefined),
+          // 25-sep: app + teléfono (lib/vendor/atRisk.ts), el mismo número que
+          // el consejo y que la app. Antes solo los de la app: "0" en Suadero.
+          atRiskCount: atRiskShown(insMetrics as AtRiskMetrics),
           isSetupComplete: (r.isSetupComplete as boolean) ?? true,
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
           loyaltyReady: r.loyaltyReady !== false,
@@ -994,7 +997,7 @@ function AICoachPreviewCard({
   const reachableRisk = metrics.atRiskReachableCount;
   const ctaLabel = actionCode === "send_winback" && typeof reachableRisk === "number" && reachableRisk > 0
     ? `Contactar ${reachableRisk} por WhatsApp`
-    : getNbaCtaLabel(actionCode, metrics.atRiskCount);
+    : getNbaCtaLabel(actionCode, atRiskShown(metrics));
   const ctaHref = getNbaCtaHref(actionCode);
 
   // Only surface a weekly insight when the AI actually produced one — never filler.

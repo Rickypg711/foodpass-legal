@@ -62,11 +62,17 @@ import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
 
+// 25-sep-2026: PRIMERO la recencia, luego las visitas. Antes "Nuevo" (1 visita)
+// y "VIP" ganaban, y un cliente de 1 visita con 16 días sin volver salía como
+// "Nuevo": Clientes decía "0 en riesgo" mientras el consejo del Panel decía
+// "10 clientes que no han vuelto". Ventana = la del cerebro
+// (functions/restaurant_brain.js, atRiskCutoff): 14 a 29 días = en riesgo,
+// 30+ = perdido. Espejo exacto en lib/pages/clientes/clientes_screen.dart.
 function computeSegment(visits: number, daysSince: number): Segment {
+  if (daysSince >= 30) return "perdido";
+  if (daysSince >= 14) return "riesgo";
   if (visits >= 5) return "campeon";
   if (visits === 1) return "nuevo";
-  if (daysSince > 30) return "perdido";
-  if (daysSince > 14) return "riesgo";
   return "regular";
 }
 
