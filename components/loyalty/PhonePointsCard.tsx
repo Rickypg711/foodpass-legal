@@ -205,13 +205,13 @@ export function PhonePointsCard({
         {balance ? (
           <div className="text-center">
             <p className={`text-base font-bold ${th.ink}`}>
-              ⭐ Tienes {balance.points} punto{balance.points !== 1 ? "s" : ""} en{" "}
+              Tienes {balance.points} punto{balance.points !== 1 ? "s" : ""} en{" "}
               {restaurantName}
             </p>
             <p className={`mt-1 text-xs ${th.ink}/60`}>
               {balance.visits} visita{balance.visits !== 1 ? "s" : ""}
               {balance.firstVisitRewardUnlocked
-                ? " · 🎁 Tienes tu premio de bienvenida — pídelo al pagar"
+                ? " · Tienes tu premio de bienvenida, pídelo al pagar"
                 : ""}
             </p>
             {(() => {
@@ -222,10 +222,10 @@ export function PhonePointsCard({
                 <div className={`mt-3 space-y-1.5 border-t ${th.dividerAccent} pt-3 text-left`}>
                   {unlocked.map((t) => (
                     <p key={t.id} className={`text-xs font-semibold ${th.ink}`}>
-                      🎁 Ya puedes canjear:{" "}
+                      Ya puedes canjear:{" "}
                       <span style={th.accentStyle}>{t.name}</span>{" "}
                       <span className={`${th.ink}/50`}>
-                        ({t.points} pts) — pídelo al pagar en el local
+                        ({t.points} pts), pídelo al pagar en el local
                       </span>
                     </p>
                   ))}
@@ -252,8 +252,8 @@ export function PhonePointsCard({
           </div>
         ) : (
           <p className={`text-center text-sm ${th.ink}/70`}>
-            Aún no tienes puntos aquí — se acreditan cuando el restaurante
-            confirma tu pago. ⭐
+            Aún no tienes puntos aquí, se acreditan cuando el restaurante
+            confirma tu pago.
           </p>
         )}
         {/* Shown even at zero points — that customer is exactly the one who
@@ -291,7 +291,7 @@ export function PhonePointsCard({
       ) : (
         <div className="text-center">
           <p className={`text-sm font-semibold ${th.ink}`}>
-            ⭐ Tus puntos quedan guardados en tu número
+            Tus puntos quedan guardados en tu número
           </p>
           <p className={`mt-1 text-xs ${th.ink}/60`}>
             Verifica tu WhatsApp ({phone10.slice(0, 3)} ··· {phone10.slice(-2)}) y

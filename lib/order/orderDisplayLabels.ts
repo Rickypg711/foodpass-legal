@@ -28,21 +28,21 @@ export function customerOrderDisplay(
     }
     if (ps === "paid" && s === "pending") {
       return {
-        title: "¡Pedido pagado! ✅",
-        subtitle: "El restaurante ya lo tiene — en un momento lo empiezan a preparar.",
+        title: "Pedido pagado",
+        subtitle: "El restaurante ya lo tiene, en un momento lo empiezan a preparar.",
       };
     }
-    if (s === "preparing") return { title: "Preparando tu pedido 👨‍🍳" };
+    if (s === "preparing") return { title: "Preparando tu pedido" };
     if (s === "ready") {
       return {
-        title: "¡Ya va en camino! 🛵",
+        title: "Ya va en camino",
         subtitle: "Ten a la mano tu pago si pagas al recibir.",
       };
     }
-    if (s === "completed") return { title: "Entregado en tu puerta ✔️" };
+    if (s === "completed") return { title: "Entregado en tu puerta" };
     return {
-      title: "¡Pedido recibido! 🛎️",
-      subtitle: "El restaurante ya lo tiene — te lo llevan a la dirección que escribiste.",
+      title: "Pedido recibido",
+      subtitle: "El restaurante ya lo tiene, te lo llevan a la dirección que escribiste.",
     };
   }
   // Pedido DE MESA: el cliente está SENTADO — nada de "pasa por él" ni
@@ -58,21 +58,21 @@ export function customerOrderDisplay(
     }
     if (s === "preparing") {
       return {
-        title: "Preparando tu pedido 👨‍🍳",
+        title: "Preparando tu pedido",
         subtitle: `Va directo a tu mesa ${mesa}.`,
       };
     }
     if (s === "ready") {
       return {
-        title: "¡Ya sale! 🛎️",
+        title: "Ya sale",
         subtitle: `El mesero va en camino a tu mesa ${mesa}.`,
       };
     }
-    if (s === "completed") return { title: "Entregado en tu mesa ✔️" };
+    if (s === "completed") return { title: "Entregado en tu mesa" };
     // pending / open tab — el caso normal de la mesa
     return {
-      title: "¡Va a tu mesa! 🍽️",
-      subtitle: `La cocina ya lo tiene — te lo llevan a la mesa ${mesa}. Pide más rondas cuando quieras; pagas todo junto al final.`,
+      title: "Va a tu mesa",
+      subtitle: `La cocina ya lo tiene, te lo llevan a la mesa ${mesa}. Pide más rondas cuando quieras; pagas todo junto al final.`,
     };
   }
 
@@ -83,8 +83,8 @@ export function customerOrderDisplay(
       return { title: "Pedido cancelado" };
     }
     return {
-      title: "¡Gracias por tu compra! 🧾",
-      subtitle: "Aquí queda tu recibo digital — y tus puntos, guardados en tu número.",
+      title: "Gracias por tu compra",
+      subtitle: "Aquí queda tu recibo, y tus puntos en tu número.",
     };
   }
 
@@ -92,8 +92,8 @@ export function customerOrderDisplay(
   // not a bank statement.
   if (ps === "paid" && s === "pending") {
     return {
-      title: "¡Pedido pagado! ✅",
-      subtitle: "El restaurante ya lo tiene — en un momento lo empiezan a preparar.",
+      title: "Pedido pagado",
+      subtitle: "El restaurante ya lo tiene, en un momento lo empiezan a preparar.",
     };
   }
 
@@ -106,24 +106,24 @@ export function customerOrderDisplay(
 
   if (s === "pending") {
     return {
-      title: "¡Pedido recibido! 🛎️",
-      subtitle: "El restaurante ya lo tiene — te avisan cuando esté listo.",
+      title: "Pedido recibido",
+      subtitle: "El restaurante ya lo tiene, te avisan cuando esté listo.",
     };
   }
 
   if (s === "preparing") {
-    return { title: "Preparando tu pedido 👨‍🍳" };
+    return { title: "Preparando tu pedido" };
   }
 
   if (s === "ready") {
     return {
-      title: "¡Listo! Pasa por él 🛍️",
+      title: "Listo, pasa por él",
       subtitle: "Muestra tu PIN al recoger.",
     };
   }
 
   if (s === "completed") {
-    return { title: "Entregado ✔️" };
+    return { title: "Entregado" };
   }
 
   if (s === "cancelled") {

@@ -574,13 +574,16 @@ function OrderStatusPageContent() {
                 {returnBanner}
               </div>
             ) : null}
-            <div className={`${th.cardFlat} text-center`}>
-              <p className={`text-sm ${th.ink}/70`}>Estado del pedido</p>
-              <p className="mt-1 text-xl font-bold" style={th.statusStyle}>
+            {/* 25-sep: estado y pedido en UNA tarjeta (antes eran dos que
+                decían lo mismo y gastaban media pantalla): así el taco y la
+                invitación suben a la primera pantalla sin scroll. */}
+            <div className={th.cardFlat} ref={receiptCardRef}>
+              <p className={`text-xs ${th.ink}/60`}>Estado del pedido</p>
+              <p className="mt-0.5 text-xl font-bold" style={th.statusStyle}>
                 {orderDisplay.title}
               </p>
               {orderDisplay.subtitle ? (
-                <p className={`mt-2 text-sm ${th.ink}/80`}>{orderDisplay.subtitle}</p>
+                <p className={`mt-1 text-sm ${th.ink}/80`}>{orderDisplay.subtitle}</p>
               ) : null}
               {/* Abandoned MP checkout → reopen the payment (web parity with
                   the app's "Pagar ahora"). Reuses the same preference flow. */}
@@ -595,17 +598,46 @@ function OrderStatusPageContent() {
                   {retryingPayment ? "Abriendo Mercado Pago…" : "Pagar ahora con Mercado Pago"}
                 </button>
               ) : null}
-            </div>
-
-            <div className={th.cardFlat} ref={receiptCardRef}>
-              <p className={`text-xs ${th.ink}/60`}>Pedido</p>
-              <p className="font-mono text-lg font-bold tracking-wider">
-                #{shortOrderCode(orderId)}
+              <p className={`mt-3 border-t ${th.divider} pt-3 text-sm`}>
+                <span className={`${th.ink}/60`}>Pedido</span>{" "}
+                <span className="font-mono text-base font-bold tracking-wider">
+                  #{shortOrderCode(orderId)}
+                </span>
               </p>
+              {order?.items?.length ? (
+                <ul className={`mt-2 border-b ${th.divider} pb-2 text-sm`}>
+                  {order.items.map((it, i) => (
+                    <li key={i} className="flex justify-between gap-3 py-1">
+                      <span className="min-w-0">
+                        {it.quantity}x {it.name}
+                        {/* Sin esto el cliente lee "1x KAMARONZA $89" sobre un
+                            platillo de $74 y no sabe de donde salieron los $15. */}
+                        {it.selectedModifiers?.length ? (
+                          <span className={th.modifiers}>
+                            {it.selectedModifiers
+                              .map((m) => `${m.modifierName}: ${m.selectedOptions.join(", ")}`)
+                              .join(" · ")}
+                          </span>
+                        ) : null}
+                        {it.notes?.trim() ? (
+                          <span className={`block text-xs ${th.ink}/55`}>{it.notes.trim()}</span>
+                        ) : null}
+                      </span>
+                      <span className="shrink-0">{formatPrice(it.subtotal ?? 0)}</span>
+                    </li>
+                  ))}
+                  {envio > 0 ? (
+                    <li className={`flex justify-between gap-3 border-t ${th.divider} py-1 pt-2 ${th.ink}/70`}>
+                      <span>Envío a domicilio</span>
+                      <span className="shrink-0">{formatPrice(envio)}</span>
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
               {/* POS/counter orders have no pickup PIN — the customer is at the
                   restaurant already (this page is their WhatsApp receipt). */}
               {isPosOrder ? null : publicReceipt && esDomicilio ? (
-                <p className="mt-3 text-base font-bold leading-snug">🛵 Pedido a domicilio</p>
+                <p className="mt-3 text-base font-bold leading-snug">Pedido a domicilio</p>
               ) : direccion ? (
                 <>
                   {/* 🛵 A domicilio no hay mostrador donde enseñar un PIN: lo
@@ -613,7 +645,7 @@ function OrderStatusPageContent() {
                       bien, y corregirla por WhatsApp si no. */}
                   <p className={`mt-3 text-xs ${th.ink}/60`}>Te lo llevamos a</p>
                   <p className="text-base font-bold leading-snug" suppressHydrationWarning>
-                    🛵 {direccion}
+                    {direccion}
                   </p>
                 </>
               ) : (
@@ -665,7 +697,7 @@ function OrderStatusPageContent() {
               {order?.paymentMethod === "pay_at_pickup" && paymentStatus !== "paid" ? (
                 <p className={`mt-1 text-sm font-semibold ${th.ink}/75`}>
                   {mesaLabel
-                    ? "💵 Pagas al final, aquí en tu mesa"
+                    ? "Pagas al final, aquí en tu mesa"
                     : esDomicilio
                       ? deliveryPaymentLine(order?.pickupPaymentMethod)
                       : pickupPaymentLine(order?.pickupPaymentMethod)}
@@ -695,46 +727,16 @@ function OrderStatusPageContent() {
               ) : null}
               {order?.redemptionRequest && order?.redemptionResult !== "insufficient" ? (
                 <p className="mt-1 text-sm font-semibold" style={{ color: "#16A34A" }}>
-                  🎁 Premio en este pedido: {order.redemptionRequest.name} — GRATIS
+                  Premio en este pedido: {order.redemptionRequest.name}, gratis
                 </p>
               ) : null}
             </div>
 
-            {order?.items?.length ? (
-              <ul className={`${th.cardFlat} text-sm`}>
-                {order.items.map((it, i) => (
-                  <li key={i} className="flex justify-between gap-3 py-1">
-                    <span className="min-w-0">
-                      {it.quantity}x {it.name}
-                      {/* Sin esto el cliente lee "1x KAMARONZA $89" sobre un
-                          platillo de $74 y no sabe de donde salieron los $15. */}
-                      {it.selectedModifiers?.length ? (
-                        <span className={th.modifiers}>
-                          {it.selectedModifiers
-                            .map((m) => `${m.modifierName}: ${m.selectedOptions.join(", ")}`)
-                            .join(" · ")}
-                        </span>
-                      ) : null}
-                      {it.notes?.trim() ? (
-                        <span className={`block text-xs ${th.ink}/55`}>{it.notes.trim()}</span>
-                      ) : null}
-                    </span>
-                    <span className="shrink-0">{formatPrice(it.subtotal ?? 0)}</span>
-                  </li>
-                ))}
-                {envio > 0 ? (
-                  <li className={`flex justify-between gap-3 border-t ${th.divider} py-1 pt-2 ${th.ink}/70`}>
-                    <span>🛵 Envío a domicilio</span>
-                    <span className="shrink-0">{formatPrice(envio)}</span>
-                  </li>
-                ) : null}
-              </ul>
-            ) : null}
 
             {isPosOrder || publicReceipt || status === "completed" || status === "cancelled" ? null : whatsapp ? (
               <div className="rounded-2xl border border-[#25D366]/40 bg-[#F0FBF4] p-4 text-center">
                 <p className={`text-sm font-bold ${th.ink}`}>
-                  📲 Confírmalo por WhatsApp
+                  Confírmalo por WhatsApp
                 </p>
                 <p className={`mt-1 text-xs ${th.ink}/60`}>
                   {direccion
@@ -792,73 +794,59 @@ function OrderStatusPageContent() {
             {loyaltyLive ? (<>
             {/* Points banner — Phone Points v1 truth (§4): points credit to
                 the customer's NUMBER on confirmed payment; no app required.
-                Pre-payment: future tense promise. Post-credit: the app is
-                pitched as the wallet (see + notifications), never the gate. */}
-            <div className={th.highlightBox}>
-              {(() => {
-                const pts = mounted
-                  ? estimateOrderPoints(displayTotal, order?.items, earnPolicy)
-                  : 0;
-                const credited = order?.loyaltyAwarded === true;
-                if (credited) {
+                Pre-payment: future tense promise. Post-credit (25-sep): la
+                tarjeta de puntos ya lo dijo todo; aquí solo queda la reseña
+                de Google (pico de gusto de una visita verificada) y, al final
+                de la página, UNA línea para la app. Antes era una tarjeta con
+                botón naranja que competía con "Mandar mi link". */}
+            {order?.loyaltyAwarded === true ? (
+              googleReviewUrl && !reviewAskSeen ? (
+                <a
+                  href={googleReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem(`greview_tapped_${restaurantId}`, "1");
+                    } catch { /* sin localStorage no hay throttle */ }
+                    setReviewAskSeen(true);
+                  }}
+                  className={`inline-flex min-h-11 w-full items-center justify-center ${th.btnOutline}`}
+                >
+                  ¿Te gustó? Déjale una reseña en Google
+                </a>
+              ) : null
+            ) : (
+              <div className={th.highlightBox}>
+                {(() => {
+                  const pts = mounted
+                    ? estimateOrderPoints(displayTotal, order?.items, earnPolicy)
+                    : 0;
                   return (
                     <>
-                      {/* 25-sep: la tarjeta de arriba ya dice que los puntos
-                          están en su número; esta vende la app, no lo repite. */}
                       <p className={`text-base font-bold ${th.ink}`}>
-                        Llévate tus puntos en la app
+                        {pts > 0
+                          ? `Esta orden te va a dar ${pts} puntos en ${displayRestaurant}`
+                          : "Esta orden te da puntos en Comeleal"}
                       </p>
                       <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
-                        Entras con tu número, ves tus puntos de todos tus
-                        lugares y te avisamos cuando tengas premios.
+                        Se guardan solitos en tu número cuando pagues, sin apps,
+                        sin tarjetitas.
+                        {firstVisitReward
+                          ? ` Y tu ${firstVisitReward} va gratis en tu próxima visita.`
+                          : ""}
                       </p>
-                      <a
-                        href={downloadHref}
-                        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center ${th.btn}`}
-                      >
-                        Descargar Comeleal
-                      </a>
-                      {/* Momento reseña: puntos recién acreditados = pico de
-                          gusto de una visita verificada. Espejo del botón en
-                          RewardPopup (app), con el mismo throttle de una vez
-                          por local. Solo con googleReviewUrl puesto. */}
-                      {googleReviewUrl && !reviewAskSeen ? (
-                        <a
-                          href={googleReviewUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            try {
-                              localStorage.setItem(`greview_tapped_${restaurantId}`, "1");
-                            } catch { /* sin localStorage no hay throttle */ }
-                            setReviewAskSeen(true);
-                          }}
-                          className={`mt-2 inline-flex min-h-11 w-full items-center justify-center ${th.btnOutline}`}
-                        >
-                          ¿Te gustó? Déjale una reseña en Google ⭐
-                        </a>
-                      ) : null}
                     </>
                   );
-                }
-                return (
-                  <>
-                    <p className={`text-base font-bold ${th.ink}`}>
-                      {pts > 0
-                        ? `🎉 Esta orden te va a dar ${pts} puntos en ${displayRestaurant} ⭐`
-                        : "Esta orden te da puntos en Comeleal"}
-                    </p>
-                    <p className={`mt-1 text-xs leading-relaxed ${th.ink}/65`}>
-                      Se guardan solitos en tu número cuando pagues — sin apps,
-                      sin tarjetitas.
-                      {firstVisitReward
-                        ? ` Y tu ${firstVisitReward} va gratis en tu próxima visita 🎁`
-                        : ""}
-                    </p>
-                  </>
-                );
-              })()}
-            </div>
+                })()}
+              </div>
+            )}
+            <p className={`text-center text-sm ${th.ink}/70`}>
+              ¿Quieres tus puntos en tu celular?{" "}
+              <a href={downloadHref} className={th.link}>
+                Descarga la app
+              </a>
+            </p>
             </>) : null}
           </div>
         )}
@@ -878,7 +866,7 @@ function OrderStatusPageContent() {
             href={`/menu/${encodeURIComponent(restaurantId)}?mesa=${encodeURIComponent(mesaLabel)}`}
             className={`mt-6 flex min-h-11 w-full items-center justify-center ${th.btn}`}
           >
-            🍽️ Pedir más — va a la misma cuenta
+            Pedir más, va a la misma cuenta
           </Link>
         ) : (
           <Link
