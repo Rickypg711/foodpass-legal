@@ -557,6 +557,14 @@ function MenuSetupPageInner() {
 
   const nPlatillos = menuItems.length;
   const nGrupos = categories.length;
+  // Conteos del índice de escritorio (25-sep): "Disponibles 13", "Tacos 2".
+  const nDisponibles = menuItems.filter((i) => i.isAvailable).length;
+  const nAgotados = nPlatillos - nDisponibles;
+  const countByCat = new Map<string, number>();
+  for (const i of menuItems) {
+    const c = i.category.trim();
+    if (c) countByCat.set(c, (countByCat.get(c) ?? 0) + 1);
+  }
   const caption =
     nPlatillos === 0
       ? "Todavía no hay platillos"
@@ -586,11 +594,42 @@ function MenuSetupPageInner() {
         </div>
       )}
 
-      <main className={inPanel ? "max-w-2xl px-5 pb-24 pt-5 md:px-8 md:pt-7" : "mx-auto max-w-lg px-5 pb-24 pt-5"}>
-        {/* Título de pantalla (Lora) + qué hay debajo */}
-        <div className="mb-5 flex flex-col gap-0.5">
-          <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Menú</h1>
-          <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{caption}</p>
+      {/* 25-sep: en el panel, el ancho completo como Clientes, Pedidos y Reportes
+          (antes max-w-2xl: en escritorio el menú quedaba apretado a la izquierda);
+          los grupos van en dos columnas. El wizard sigue en columna centrada. */}
+      <main className={inPanel ? "px-5 pb-24 pt-5 md:px-8 md:pt-7" : "mx-auto max-w-lg px-5 pb-24 pt-5"}>
+        {/* Título de pantalla (Lora) + qué hay debajo. En el panel de escritorio
+            (25-sep, lienzo "Menú del panel en escritorio") las acciones van en
+            esta misma fila, a la derecha: el naranja al borde, el de borde a su
+            izquierda. En móvil siguen apiladas debajo del título. */}
+        <div className={`mb-5 flex flex-col gap-4 ${inPanel ? "md:flex-row md:items-start md:justify-between md:gap-6" : ""}`}>
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>Menú</h1>
+            <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{caption}</p>
+          </div>
+          {/* ── Acciones de arriba: UN botón principal, el resto con borde ── */}
+          {photoStep === "idle" && nPlatillos > 0 && (
+            <div className={`flex flex-col gap-2 sm:flex-row ${inPanel ? "md:flex-row-reverse md:shrink-0" : ""}`}>
+              <button
+                type="button"
+                onClick={() => setModal({ mode: "create" })}
+                className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition hover:opacity-90 ${inPanel ? "md:flex-none md:px-6" : ""}`}
+                style={{ background: BRAND, color: INK }}
+              >
+                <IconPlus />
+                Agregar platillo
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90 ${inPanel ? "md:flex-none md:px-6" : ""}`}
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
+              >
+                <IconCamera />
+                Subir foto del menú
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -614,29 +653,6 @@ function MenuSetupPageInner() {
           }}
         />
 
-        {/* ── Acciones de arriba: UN botón principal, el resto con borde ── */}
-        {photoStep === "idle" && nPlatillos > 0 && (
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => setModal({ mode: "create" })}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition hover:opacity-90"
-              style={{ background: BRAND, color: INK }}
-            >
-              <IconPlus />
-              Agregar platillo
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold transition hover:opacity-90"
-              style={{ border: `1px solid ${BORDER}`, color: INK }}
-            >
-              <IconCamera />
-              Subir foto del menú
-            </button>
-          </div>
-        )}
 
         {/* ── Leyendo la foto ── */}
         {(photoStep === "uploading" || photoStep === "processing") && (
@@ -810,7 +826,12 @@ function MenuSetupPageInner() {
 
         {/* ── Lista del menú: buscar, chips, grupos con filas ── */}
         {nPlatillos > 0 && (
-          <section>
+          <section className={inPanel ? "md:grid md:grid-cols-[220px_minmax(0,760px)] md:items-start md:gap-8" : ""}>
+            {/* Escritorio del panel (25-sep): índice pegajoso a la izquierda
+                (buscar, Ver, Grupos con conteo) y UNA columna cómoda a la
+                derecha. Antes todo iba en 672 px apretado a la izquierda. En
+                móvil: buscador y chips en fila, como siempre. */}
+            <div className={inPanel ? "md:sticky md:top-7" : ""}>
             {/* Búsqueda: 48px, letra de 16 (sin zoom en iPhone) */}
             <label className="flex h-12 items-center gap-2.5 rounded-xl bg-white px-3.5" style={{ border: `1px solid ${BORDER}` }}>
               <IconSearch />
@@ -826,14 +847,20 @@ function MenuSetupPageInner() {
             </label>
 
             {/* Chips: saltan entre grupos y estados; activo = tinta */}
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              <FilterChip label="Todos" selected={availFilter === "all" && catFilter === null} onClick={() => { setAvailFilter("all"); setCatFilter(null); }} />
-              <FilterChip label="Disponibles" selected={availFilter === "on"} onClick={() => setAvailFilter(availFilter === "on" ? "all" : "on")} />
-              <FilterChip label="Agotados" selected={availFilter === "off"} onClick={() => setAvailFilter(availFilter === "off" ? "all" : "off")} />
+            <div className={`mt-3 flex gap-2 overflow-x-auto pb-1 ${inPanel ? "md:flex-col md:gap-0.5 md:overflow-visible md:pb-0" : ""}`} style={{ scrollbarWidth: "none" }}>
+              {inPanel ? <p className="hidden px-3 pb-1.5 text-[12px] leading-4 md:block" style={{ color: INK_SOFT }}>Ver</p> : null}
+              <FilterChip label="Todos" count={nPlatillos} rail={inPanel} selected={availFilter === "all" && catFilter === null} onClick={() => { setAvailFilter("all"); setCatFilter(null); }} />
+              <FilterChip label="Disponibles" count={nDisponibles} rail={inPanel} selected={availFilter === "on"} onClick={() => setAvailFilter(availFilter === "on" ? "all" : "on")} />
+              <FilterChip label="Agotados" count={nAgotados} rail={inPanel} selected={availFilter === "off"} onClick={() => setAvailFilter(availFilter === "off" ? "all" : "off")} />
+              {inPanel ? <div className="mx-3 my-2.5 hidden h-px md:block" style={{ background: HAIRLINE }} /> : null}
+              {inPanel ? <p className="hidden px-3 pb-1.5 text-[12px] leading-4 md:block" style={{ color: INK_SOFT }}>Grupos</p> : null}
               {categories.map((c) => (
-                <FilterChip key={c} label={c} selected={catFilter === c} onClick={() => setCatFilter(catFilter === c ? null : c)} />
+                <FilterChip key={c} label={c} count={countByCat.get(c) ?? 0} rail={inPanel} selected={catFilter === c} onClick={() => setCatFilter(catFilter === c ? null : c)} />
               ))}
             </div>
+            </div>
+
+            <div className="min-w-0">
 
             {hasFilters && (
               <div className="mt-2 flex items-center justify-between gap-3">
@@ -858,7 +885,7 @@ function MenuSetupPageInner() {
                 <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>Prueba con otro nombre o quita los filtros.</p>
               </div>
             ) : (
-              <div className="mt-4 space-y-7">
+              <div className={inPanel ? "mt-4 space-y-7 md:mt-0" : "mt-4 space-y-7"}>
                 {grupos.map((g) => (
                   <div key={g.name}>
                     <div className="mb-1 flex items-baseline justify-between gap-3">
@@ -882,6 +909,7 @@ function MenuSetupPageInner() {
                 ))}
               </div>
             )}
+            </div>
           </section>
         )}
 
@@ -892,7 +920,7 @@ function MenuSetupPageInner() {
             type="button"
             onClick={handleDone}
             disabled={saving || saved}
-            className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-6 text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+            className={`mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-6 text-[15px] font-semibold transition hover:opacity-90 disabled:opacity-60 ${inPanel ? "md:w-auto md:min-w-[280px]" : ""}`}
             style={{ background: INK, color: CREAM }}
           >
             {saved ? "Guardado" : saving ? <><Spin light />Guardando…</> : isWizard ? "Guardar menú y continuar" : inPanel ? "Guardar menú y volver al panel" : "Guardar menú"}
@@ -982,16 +1010,34 @@ function MenuRow({
 
 // ─── Chip de filtro (36px, borde; activo = tinta) ────────────────────────────
 
-function FilterChip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function FilterChip({ label, selected, onClick, count, rail = false }: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+  /** Conteo que se ve en el índice de escritorio ("Tacos 2"). */
+  count?: number;
+  /** En el panel de escritorio el chip es una fila del índice: ancho completo,
+      conteo a la derecha, sin borde; en móvil sigue siendo chip. */
+  rail?: boolean;
+}) {
+  const base = "inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[14px] transition hover:opacity-90";
+  const look = selected
+    ? " bg-[#1C2526] text-[#FAF9F5]"
+    : " border border-[#D9D2C5] bg-white text-[#1C2526]";
+  const railCls = rail
+    ? ` md:h-10 md:w-full md:justify-between md:rounded-[10px] md:px-3${selected ? " md:font-semibold" : " md:border-0 md:bg-transparent"}`
+    : "";
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className="inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[14px] transition hover:opacity-90"
-      style={selected ? { background: INK, color: CREAM } : { background: "#FFFFFF", border: `1px solid ${BORDER}`, color: INK }}
+      className={base + look + railCls}
     >
-      {label}
+      <span className="truncate">{label}</span>
+      {rail && typeof count === "number" ? (
+        <span className="hidden tabular-nums md:inline" style={{ color: selected ? "#E6E0D6" : INK_SOFT }}>{count}</span>
+      ) : null}
     </button>
   );
 }
