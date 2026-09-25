@@ -68,6 +68,9 @@ export type DemoJob = {
   items?: DemoItem[];
   info?: DemoInfo;
   whatsapp?: string;
+  /** País y moneda elegidos en /demo (25-sep-2026). Ausentes = México/MXN. */
+  phoneCountryCode?: string;
+  currencyCode?: string;
   errorMessage?: string;
   expiresAt?: Timestamp;
   convertedToRestaurantId?: string;
@@ -145,6 +148,7 @@ async function compressImage(file: File): Promise<File> {
 export async function createDemoJob(
   photos: File[],
   whatsapp10: string | null,
+  country?: { phoneCountryCode: string; currencyCode: string } | null,
 ): Promise<string> {
   const user = await ensureAnonymousUser();
   const db = getFirebaseDb();
@@ -172,6 +176,11 @@ export async function createDemoJob(
     updatedAt: serverTimestamp(),
   };
   if (whatsapp10 && /^[0-9]{10}$/.test(whatsapp10)) payload.whatsapp = whatsapp10;
+  // País y moneda (25-sep-2026): las reglas los piden con esta forma exacta.
+  if (country && /^[0-9]{1,3}$/.test(country.phoneCountryCode) && /^[A-Z]{3}$/.test(country.currencyCode)) {
+    payload.phoneCountryCode = country.phoneCountryCode;
+    payload.currencyCode = country.currencyCode;
+  }
   await setDoc(jobRef, payload);
   rememberDemoJob(jobRef.id);
   return jobRef.id;

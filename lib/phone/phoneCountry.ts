@@ -146,6 +146,33 @@ export function isoCountryOf(
 }
 
 /**
+ * La entrada del selector que delata un número escrito con "+" (ej.
+ * "+1 809 952 4637" → República Dominicana). Sin "+" devuelve null.
+ *
+ * Nació el 25-sep-2026: el alta web nunca preguntaba país y tres locales
+ * de fuera (Honduras, Colombia, Argentina) quedaron cosidos a 52/MXN. El
+ * selector manda desde el primer paso; esto sólo sirve para que, si el
+ * dueño escribe su "+", el selector se ponga solo en su país.
+ */
+export function entryFromTypedPhone(raw: string): PhoneCountry | null {
+  const iso = isoFromTypedPhone(raw);
+  return iso ? PHONE_COUNTRIES.find((c) => c.iso === iso) ?? null : null;
+}
+
+/**
+ * Con qué país arranca el alta: lo que ya eligió en /demo
+ * (`phoneCountryCode` + `currencyCode` del job), si no el "+" de su número,
+ * si no México. UNA función para el modal y para cualquier otro alta.
+ */
+export function signupCountryEntry(
+  seed: { phoneCountryCode?: unknown; currencyCode?: unknown; phone?: unknown } | null | undefined,
+): PhoneCountry {
+  if (seed && isSupportedPhoneCountry(seed.phoneCountryCode)) return phoneCountryEntryOf(seed);
+  const typed = typeof seed?.phone === "string" ? entryFromTypedPhone(seed.phone) : null;
+  return typed ?? PHONE_COUNTRIES[0];
+}
+
+/**
  * País ISO de un número que el dueño escribió con "+" (ej. "+1 809 952 4637").
  * Sin "+" devuelve null: 10 dígitos pelones NO dicen el país y adivinar fue
  * justo el error que dejó a Central Fast Food sin pin.

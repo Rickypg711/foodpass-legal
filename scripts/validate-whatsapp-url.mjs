@@ -91,8 +91,8 @@ if (!/const phone10 = phone\.replace\(\/\\D\/g, ""\)\.slice\(-10\)/.test(modalSr
 if (!/phone: phone10/.test(modalSrc) || !/whatsapp: phone10/.test(modalSrc)) {
   fail("ActivarModal debe guardar phone10 en phone y whatsapp — jamás el crudo");
 }
-if (!/phoneCountryCode: countryFromTypedPhone\(phone\) \?\? DEFAULT_PHONE_COUNTRY/.test(modalSrc)) {
-  fail("ActivarModal debe guardar phoneCountryCode (del '+' escrito, o México)");
+if (!/phoneCountryCode: signupCountry\.code/.test(modalSrc)) {
+  fail("ActivarModal debe guardar phoneCountryCode del país ELEGIDO en el selector (25-sep-2026)");
 }
 if (/\+52 614 123 4567/.test(modalSrc)) {
   fail("el placeholder no debe enseñar '+52...' — enseña el formato que rompía los links");

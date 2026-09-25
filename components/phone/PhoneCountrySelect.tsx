@@ -15,6 +15,7 @@ export function PhoneCountrySelect({
   disabled = false,
   className = "",
   ariaLabel = "País del teléfono",
+  compact = false,
 }: {
   /** Código de país en dígitos ("52", "1", "57"). */
   value: string;
@@ -25,6 +26,13 @@ export function PhoneCountrySelect({
   disabled?: boolean;
   className?: string;
   ariaLabel?: string;
+  /**
+   * Bandera + código nada más ("🇲🇽 +52"). Para cuando vive PEGADO al campo
+   * del número en un celular (alta, /demo; 25-sep-2026): el <select> nativo
+   * mide lo que mide su opción más larga y "República Dominicana" se comía
+   * el campo. Configuración sigue con el nombre completo.
+   */
+  compact?: boolean;
 }) {
   // DO y US comparten "+1": el <select> necesita un valor único por opción,
   // así que el valor es el índice y el país se traduce al salir.
@@ -46,7 +54,7 @@ export function PhoneCountrySelect({
     >
       {PHONE_COUNTRIES.map((c, i) => (
         <option key={`${c.code}-${c.label}`} value={String(i)}>
-          {c.flag} +{c.code} · {c.label}
+          {compact ? `${c.flag} +${c.code}` : `${c.flag} +${c.code} · ${c.label}`}
         </option>
       ))}
     </select>

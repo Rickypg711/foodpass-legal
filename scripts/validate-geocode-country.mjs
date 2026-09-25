@@ -104,8 +104,8 @@ assert.match(
 const activar = readFileSync("components/home/ActivarModal.tsx", "utf8");
 assert.match(
   activar,
-  /country:\s*isoFromTypedPhone\(/,
-  "el alta debe mandar el país cuando el dueño escribió su número con +",
+  /country:\s*signupCountry\.iso/,
+  "el alta manda el país que el dueño ELIGIÓ en el selector (25-sep-2026), ya no el adivinado del +",
 );
 
 console.log("✅ validate-geocode-country: el país del pin es el que eligió el dueño");

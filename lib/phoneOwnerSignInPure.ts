@@ -12,9 +12,13 @@ import {
 
 export type PhonePrecheck = "free" | "phone_account" | "social_account";
 
-/** "+52 614 123 4567" | "6141234567" | "+1 809 952 4637" → E.164 o null. */
-export function ownerPhoneToE164(raw: string): string | null {
-  const cc = countryFromTypedPhone(raw) ?? DEFAULT_PHONE_COUNTRY;
+/**
+ * "+52 614 123 4567" | "6141234567" | "+1 809 952 4637" → E.164 o null.
+ * `countryCode` es el país que el dueño ELIGIÓ en el selector (25-sep-2026);
+ * un "+" escrito a mano le gana, y sin nada de eso, México.
+ */
+export function ownerPhoneToE164(raw: string, countryCode: string = DEFAULT_PHONE_COUNTRY): string | null {
+  const cc = countryFromTypedPhone(raw) ?? countryCode;
   const last10 = phoneLast10(raw);
   if (last10.length !== 10) return null;
   return toE164(raw, cc);

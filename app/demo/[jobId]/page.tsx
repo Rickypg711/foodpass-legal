@@ -694,6 +694,8 @@ export default function DemoPreviewPage() {
             items: job.items ?? [],
             info: job.info ?? null,
             whatsapp: job.whatsapp ?? null,
+            phoneCountryCode: job.phoneCountryCode ?? null,
+            currencyCode: job.currencyCode ?? null,
           }}
         />
       )}

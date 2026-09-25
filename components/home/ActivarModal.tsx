@@ -43,7 +43,15 @@ import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { isInternalConversion } from "@/lib/meta/internal";
 import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStore";
 import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
-import { DEFAULT_PHONE_COUNTRY, countryFromTypedPhone, currencyForTypedPhone, isoFromTypedPhone, formatPhoneForDisplay } from "@/lib/phone/phoneCountry";
+import {
+  DEFAULT_PHONE_COUNTRY,
+  countryFromTypedPhone,
+  entryFromTypedPhone,
+  formatPhoneForDisplay,
+  signupCountryEntry,
+  type PhoneCountry,
+} from "@/lib/phone/phoneCountry";
+import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
 import { newVenueEarnPolicy } from "@/lib/loyalty/earnPolicy";
 import { detectInAppBrowser, chromeIntentUrl, type InAppBrowser } from "@/lib/inAppBrowser";
 import {
@@ -74,6 +82,9 @@ export interface DemoClaim {
   items: DemoItem[];
   info?: DemoInfo | null;
   whatsapp?: string | null;
+  /** País y moneda que eligió en /demo (25-sep-2026); si no vienen, México. */
+  phoneCountryCode?: string | null;
+  currencyCode?: string | null;
 }
 
 interface ActivarModalProps {
@@ -102,6 +113,23 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   const [name, setName] = useState(demo?.info?.restaurantName ?? "");
   const [address, setAddress] = useState(demo?.info?.address ?? "");
   const [phone, setPhone] = useState(demo?.whatsapp ?? demo?.info?.phone ?? "");
+  // País del local (25-sep-2026): se pregunta DESDE el primer paso, con
+  // México por defecto. Antes se adivinaba por el número y tres altas de
+  // fuera (Honduras, Colombia, Argentina) nacieron cosidas a 52/MXN: menú en
+  // pesos, WhatsApp marcando a México y SMS de sus clientes que nunca llegó.
+  // Viene pre-elegido si ya lo dijo en /demo; un "+" escrito a mano lo mueve.
+  const [country, setCountry] = useState<PhoneCountry>(() =>
+    signupCountryEntry({
+      phoneCountryCode: demo?.phoneCountryCode,
+      currencyCode: demo?.currencyCode,
+      phone: demo?.whatsapp ?? demo?.info?.phone ?? "",
+    }),
+  );
+  function onPhoneTyped(value: string, set: (v: string) => void) {
+    set(value);
+    const typed = entryFromTypedPhone(value);
+    if (typed) setCountry(typed);
+  }
   // El tipo tampoco se pregunta si ya se puede leer: primero la clasificación
   // de Gemini (info.category), si no el fallback de palabras clave. El dueño
   // solo lo cambia si no le atinamos.
@@ -313,9 +341,9 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
 
   async function handlePhoneSend() {
     setError(null);
-    const e164 = ownerPhoneToE164(phoneInput);
+    const e164 = ownerPhoneToE164(phoneInput, country.code);
     if (!e164) {
-      setError("Pon tus 10 dígitos. Si no estás en México, ponlo con + y tu país, como +1 809 123 4567.");
+      setError("Pon tus 10 dígitos. Si no estás en México, elige tu país a la izquierda del número.");
       return;
     }
     setStage("signing");
@@ -385,9 +413,12 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
     // el dueño: los links wa.me anteponen "52", y un "+52..." guardado tal
     // cual armaba wa.me/5252... — WhatsApp roto (cazado por Ricardo 26-ago).
     const phone10 = phone.replace(/\D/g, "").slice(-10);
-    const signupCurrency = currencyForTypedPhone(phone) ?? "MXN";
+    // El país que ELIGIÓ manda (25-sep-2026); un "+" escrito a mano le gana
+    // porque es más específico. De aquí salen código, moneda y país del pin.
+    const signupCountry = entryFromTypedPhone(phone) ?? country;
+    const signupCurrency = signupCountry.currency;
     if (phone10.length !== 10) {
-      setError("Pon tus 10 dígitos. Si no estás en México, ponlo con + y tu país, como +1 809 123 4567.");
+      setError("Pon tus 10 dígitos. Si no estás en México, elige tu país a la izquierda del número.");
       return;
     }
     setStage("creating");
@@ -398,15 +429,15 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         address: address.trim(),
         phone: phone10,
         whatsapp: phone10,
-        // País del teléfono (5-sep): si escribió "+1 809..." se guarda "1";
-        // 10 dígitos pelones son México. Se cambia después en Configuración.
-        phoneCountryCode: countryFromTypedPhone(phone) ?? DEFAULT_PHONE_COUNTRY,
+        // País del teléfono: el del selector (25-sep-2026). Se puede cambiar
+        // después en Configuración, pero ya no nace adivinado.
+        phoneCountryCode: signupCountry.code,
         categories: cats.slice(0, 3),
         ownerId: user.uid,
         billingOwnerUserId: user.uid,
         createdAt: serverTimestamp(),
-        // Moneda y regla de puntos según el país del número (5-sep): "+1 809"
-        // es RD (DOP, paso 100); otro "+1" es USD; "+57" COP; 10 pelones MXN.
+        // Moneda y regla de puntos según el país elegido: MXN 30 · USD 2 ·
+        // DOP 100 · COP 8,000 (earnPolicy.ts).
         currencyCode: signupCurrency,
         loyaltyEarnPolicy: newVenueEarnPolicy(signupCurrency),
         pointsPerVisit: 1,
@@ -504,7 +535,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             {
               email: user.email,
               phone: phone10,
-              phoneCountry: countryFromTypedPhone(phone) ?? DEFAULT_PHONE_COUNTRY,
+              phoneCountry: signupCountry.code,
               externalId: user.uid,
             },
           );
@@ -538,9 +569,9 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
           body: JSON.stringify({
             address: address.trim(),
             phone: phone10,
-            // Si escribió su número con "+", ahí viene su país de verdad
-            // (12-sep-2026). Sin "+" va null y el servidor usa lo de siempre.
-            country: isoFromTypedPhone(phone),
+            // El país que eligió en el selector (25-sep-2026): Google busca
+            // la dirección en ESE país, no en el que adivine del número.
+            country: signupCountry.iso,
           }),
         });
         const verdict = await geoRes.json();
@@ -793,17 +824,27 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             <label className="text-xs font-semibold text-[#141413]/60" htmlFor="activar-phone">
               Tu número de WhatsApp
             </label>
-            <input
-              id="activar-phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="614 123 4567"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              disabled={stage === "signing"}
-              className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]"
-            />
+            <div className="flex gap-2">
+              <PhoneCountrySelect
+                value={country.code}
+                currency={country.currency}
+                onChange={setCountry}
+                disabled={stage === "signing"}
+                className="w-[96px] shrink-0"
+                compact
+              />
+              <input
+                id="activar-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder={country.example}
+                value={phoneInput}
+                onChange={(e) => onPhoneTyped(e.target.value, setPhoneInput)}
+                disabled={stage === "signing"}
+                className="min-w-0 flex-1 rounded-xl border border-[#e8e6dc] bg-white px-4 py-2.5 text-sm text-[#141413] outline-none placeholder:text-[#141413]/30 focus:border-[#F28C38]"
+              />
+            </div>
             <button
               type="button"
               onClick={handlePhoneSend}
@@ -828,7 +869,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             <p className="text-sm text-[#141413]/70">
               Te mandamos un código al{" "}
               <strong className="text-[#141413]">
-                {formatPhoneForDisplay(phoneInput, countryFromTypedPhone(phoneInput) ?? DEFAULT_PHONE_COUNTRY)}
+                {formatPhoneForDisplay(phoneInput, countryFromTypedPhone(phoneInput) ?? country.code)}
               </strong>. Puede tardar un par de minutos en llegar.
             </p>
             <input
@@ -1023,14 +1064,27 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
               <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">
                 WhatsApp / Teléfono *
               </label>
-              <input
-                data-claim-field={phone.trim() ? "full" : "empty"}
-                type="tel" required value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="614 123 4567"
-                disabled={stage === "creating"}
-                className="w-full rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
-              />
+              <div className="flex gap-2">
+                <PhoneCountrySelect
+                  value={country.code}
+                  currency={country.currency}
+                  onChange={setCountry}
+                  disabled={stage === "creating"}
+                  className="w-[96px] shrink-0"
+                compact
+                />
+                <input
+                  data-claim-field={phone.trim() ? "full" : "empty"}
+                  type="tel" required value={phone}
+                  onChange={(e) => onPhoneTyped(e.target.value, setPhone)}
+                  placeholder={country.example}
+                  disabled={stage === "creating"}
+                  className="min-w-0 flex-1 rounded-xl border border-[#e8e6dc] bg-white px-4 py-3 text-sm text-[#141413] placeholder:text-[#141413]/30 focus:border-[#F28C38] focus:outline-none focus:ring-2 focus:ring-[#F28C38]/15 disabled:opacity-50"
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-[#141413]/35">
+                Tus precios quedan en {country.currency}. Se puede cambiar después en Configuración.
+              </p>
             </div>
             <div>
               <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[#141413]/45">

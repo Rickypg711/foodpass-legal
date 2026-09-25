@@ -22,7 +22,8 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { isInternalConversion } from "@/lib/meta/internal";
 import { readAndPersistUtms } from "@/lib/vendorLead/utmStore";
-import { DEFAULT_PHONE_COUNTRY } from "@/lib/phone/phoneCountry";
+import { PHONE_COUNTRIES, entryFromTypedPhone, type PhoneCountry } from "@/lib/phone/phoneCountry";
+import { PhoneCountrySelect } from "@/components/phone/PhoneCountrySelect";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 
@@ -31,6 +32,10 @@ export default function DemoUploadPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [whatsapp, setWhatsapp] = useState("");
+  // País del local (25-sep-2026): se pregunta aquí, en el PRIMER paso, con
+  // México por defecto. Viaja en el job para que el alta nazca con su país,
+  // su moneda y su pin; antes se adivinaba y los de fuera quedaban en MXN.
+  const [country, setCountry] = useState<PhoneCountry>(PHONE_COUNTRIES[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resumeId, setResumeId] = useState<string | null>(null);
@@ -91,6 +96,7 @@ export default function DemoUploadPage() {
       const jobId = await createDemoJob(
         files,
         digits.length === 10 ? digits : null,
+        { phoneCountryCode: country.code, currencyCode: country.currency },
       );
       // ── Meta: "subió su menú" (17-sep-2026) ───────────────────────────
       // El paso con volumen antes del alta. Anónimo: no hay correo, así que
@@ -117,7 +123,7 @@ export default function DemoUploadPage() {
               },
             ],
             digits.length === 10
-              ? { phone: digits, phoneCountry: DEFAULT_PHONE_COUNTRY }
+              ? { phone: digits, phoneCountry: country.code }
               : undefined,
           );
         }
@@ -234,15 +240,31 @@ export default function DemoUploadPage() {
             para que no pierdas tu menú: te avisamos antes de que tu vista
             previa se borre
           </span>
-          <input
-            type="tel"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            placeholder="614 123 4567"
-            disabled={busy}
-            className="mt-1.5 w-full rounded-xl border px-4 py-3 text-[15px] outline-none focus:ring-2 disabled:opacity-60"
-            style={{ borderColor: "rgba(28,37,38,0.12)", background: "#fff", color: "#1C2526" }}
-          />
+          <div className="mt-1.5 flex gap-2">
+            <PhoneCountrySelect
+              value={country.code}
+              currency={country.currency}
+              onChange={setCountry}
+              disabled={busy}
+              className="w-[96px] shrink-0 !py-3 !text-[14px]"
+              compact
+            />
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={whatsapp}
+              onChange={(e) => {
+                setWhatsapp(e.target.value);
+                const typed = entryFromTypedPhone(e.target.value);
+                if (typed) setCountry(typed);
+              }}
+              placeholder={country.example}
+              disabled={busy}
+              className="min-w-0 flex-1 rounded-xl border px-4 py-3 text-[15px] outline-none focus:ring-2 disabled:opacity-60"
+              style={{ borderColor: "rgba(28,37,38,0.12)", background: "#fff", color: "#1C2526" }}
+            />
+          </div>
         </label>
 
         {error && (
