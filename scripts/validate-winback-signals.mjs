@@ -50,6 +50,8 @@ const f = s.winbackFieldsForVisit({
 assert.equal(f.winbackReturns, 2);
 assert.ok(f.winbackReturnedAt);
 assert.equal(f.winbackHistory[1].daysToReturn, 3);
+assert.equal(f.winbackHistory[1].returnedTotal, 250, "el dinero que regresó va en la fila");
+assert.equal(f.winbackRecoveredTotal, 250, "y sumado en el cliente");
 assert.equal(f.winbackHistory[0].daysToReturn, undefined, "el viejo no se toca");
 assert.deepEqual(f.recentItems, ["Pepperoni"]);
 assert.deepEqual(Object.keys(s.winbackFieldsForVisit({ prev: {}, now, total: 10, via: "pos" })), ["visitLog"]);

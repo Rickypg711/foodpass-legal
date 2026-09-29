@@ -105,7 +105,7 @@ export function winbackReturnDetected(prev: Row, now: Date): boolean {
 }
 
 /** Marca en el historial el mensaje que trajo al cliente (el último sin returnedAt). */
-export function markWinbackReturned(prevHistory: unknown, now: Date): Row[] {
+export function markWinbackReturned(prevHistory: unknown, now: Date, total = 0): Row[] {
   const out: Row[] = Array.isArray(prevHistory)
     ? prevHistory.filter((r): r is Row => !!r && typeof r === "object").map((r) => ({ ...r }))
     : [];
@@ -114,6 +114,8 @@ export function markWinbackReturned(prevHistory: unknown, now: Date): Row[] {
     const sent = toDate(out[i].sentAt);
     out[i].returnedAt = Timestamp.fromDate(now);
     out[i].daysToReturn = sent ? Math.floor((now.getTime() - sent.getTime()) / 86400000) : null;
+    // Dinero que regresó con ese mensaje ("recuperaste $X").
+    out[i].returnedTotal = Math.round(total * 100) / 100;
     break;
   }
   return out.length > WINBACK_HISTORY_MAX ? out.slice(out.length - WINBACK_HISTORY_MAX) : out;
@@ -140,7 +142,8 @@ export function winbackFieldsForVisit(params: {
   if (winbackReturnDetected(prev, now)) {
     fields.winbackReturnedAt = Timestamp.fromDate(now);
     fields.winbackReturns = (Number(prev.winbackReturns) || 0) + 1;
-    fields.winbackHistory = markWinbackReturned(prev.winbackHistory, now);
+    fields.winbackRecoveredTotal = Math.round(((Number(prev.winbackRecoveredTotal) || 0) + total) * 100) / 100;
+    fields.winbackHistory = markWinbackReturned(prev.winbackHistory, now, total);
   }
   return fields;
 }

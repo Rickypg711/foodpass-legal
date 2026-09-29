@@ -58,6 +58,7 @@ interface Customer {
   winbackReturnedAt?: Timestamp | null;
   winbackCount?: number;
   winbackReturns?: number;
+  winbackRecoveredTotal?: number;
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
@@ -440,6 +441,7 @@ export default function ClientesPage() {
   // automáticos de la app: el número no medía el botón que el dueño toca.
   const winbackSent = customers.reduce((n, c) => n + (c.winbackCount ?? 0), 0);
   const winbackReturned = customers.reduce((n, c) => n + (c.winbackReturns ?? 0), 0);
+  const winbackRecovered = customers.reduce((n, c) => n + (c.winbackRecoveredTotal ?? 0), 0);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
   const [search, setSearch] = useState("");
 
@@ -587,6 +589,7 @@ export default function ClientesPage() {
           winbackReturnedAt: (data.winbackReturnedAt as Timestamp) ?? null,
           winbackCount: (data.winbackCount as number) ?? 0,
           winbackReturns: (data.winbackReturns as number) ?? 0,
+          winbackRecoveredTotal: (data.winbackRecoveredTotal as number) ?? 0,
         });
       });
     } catch {
@@ -702,7 +705,7 @@ export default function ClientesPage() {
               <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
                 {customers.length} con teléfono
                 {(winbackSent > 0 || winbackReturned > 0) && (
-                  <> · {winbackSent} mensaje{winbackSent === 1 ? "" : "s"} enviado{winbackSent === 1 ? "" : "s"} · {winbackReturned} regres{winbackReturned === 1 ? "ó" : "aron"}</>
+                  <> · {winbackSent} mensaje{winbackSent === 1 ? "" : "s"} enviado{winbackSent === 1 ? "" : "s"} · {winbackReturned} regres{winbackReturned === 1 ? "ó" : "aron"}{winbackRecovered > 0 ? ` · $${Math.round(winbackRecovered)} recuperados` : ""}</>
                 )}
               </p>
             )}
