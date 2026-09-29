@@ -490,7 +490,9 @@ export default function VendorDashboard() {
             const expected = expectedDayProgressPercent(r as Record<string, unknown>);
             if (expected === null) return null;
             if (metaPct >= expected + 10) return "Adelantado";
-            if (metaPct < expected - 10) return "Atrasado";
+            // "Atrasado" solo cuando ya corrió un tercio de la jornada (29-sep):
+            // a las 2 PM con $0 regañaba antes de la comida. Espejo app.
+            if (metaPct < expected - 10) return expected >= PACE_BEHIND_MIN_EXPECTED ? "Atrasado" : null;
             return "En camino";
           })(),
           pulseLastHourCount,
@@ -700,6 +702,7 @@ export default function VendorDashboard() {
               pendingOrdersCount={data.pendingOrdersCount}
               oldestPendingMinutes={data.oldestPendingMinutes}
               readyOrdersCount={data.readyOrdersCount}
+            menuSales={data.menuSales}
             />
           )}
 
@@ -1136,10 +1139,13 @@ function plainCopy(s: string): string {
 /** 1 · Hoy — $ del día, meta, pedidos en cola, cuentas abiertas, ticket, y
  *  UNA línea de alerta de pedidos esperando (→ Pedidos). Espejo de
  *  TodayOverviewCard (app). */
+/** Antes de este % de jornada transcurrida no se dice "Atrasado". */
+const PACE_BEHIND_MIN_EXPECTED = 35;
+
 function TodayCard({
   ventasHoy, dailyRevenueGoal, metaPaceLabel, pedidosCola, cuentasAbiertas, avgTicketToday,
   pulseLastHourCount, pulseLastHourRevenue, pulsePrevHourCount,
-  pendingOrdersCount, oldestPendingMinutes, readyOrdersCount,
+  pendingOrdersCount, oldestPendingMinutes, readyOrdersCount, menuSales,
 }: {
   ventasHoy: number;
   dailyRevenueGoal: number | null;
@@ -1153,6 +1159,8 @@ function TodayCard({
   pendingOrdersCount: number;
   oldestPendingMinutes: number;
   readyOrdersCount: number;
+  /** Pedidos del menú sin cobrar: dinero por cobrar HOY, aquí arriba (29-sep). */
+  menuSales: MenuSalesSummary;
 }) {
   const money = (n: number) =>
     `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1213,7 +1221,8 @@ function TodayCard({
 
       {/* Tres cifras del día en una fila con líneas finas (espejo de la
           fila de Clientes): lo que se toca lleva a su pestaña. */}
-      <div className="mt-4 grid grid-cols-3 py-3" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+      {/* Sin ventas hoy la celda del ticket no se pinta: un "—" se lee como roto. */}
+      <div className={`mt-4 grid py-3 ${avgTicketToday !== null ? "grid-cols-3" : "grid-cols-2"}`} style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
         <Link href="/vendor/pedidos" className="group flex flex-col items-center gap-0.5">
           <p className="text-[22px] font-bold leading-[26px] tabular-nums group-hover:underline" style={{ color: INK }}>{pedidosCola}</p>
           <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Pedidos en cola</p>
@@ -1222,12 +1231,14 @@ function TodayCard({
           <p className="text-[22px] font-bold leading-[26px] tabular-nums group-hover:underline" style={{ color: INK }}>{cuentasAbiertas}</p>
           <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Cuentas abiertas</p>
         </Link>
-        <div className="flex flex-col items-center gap-0.5" style={{ borderLeft: `1px solid ${HAIRLINE}` }}>
-          <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>
-            {avgTicketToday !== null ? money(avgTicketToday) : "—"}
-          </p>
-          <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Ticket promedio</p>
-        </div>
+        {avgTicketToday !== null && (
+          <div className="flex flex-col items-center gap-0.5" style={{ borderLeft: `1px solid ${HAIRLINE}` }}>
+            <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>
+              {money(avgTicketToday)}
+            </p>
+            <p className="text-[12px] leading-[14px]" style={{ color: INK_MUTED }}>Ticket promedio</p>
+          </div>
+        )}
       </div>
 
       {alert && (
@@ -1239,6 +1250,16 @@ function TodayCard({
           <span className="shrink-0 text-[14px] font-semibold" style={{ color: LINK }}>
             Ver
           </span>
+        </Link>
+      )}
+      {/* Dinero por cobrar (29-sep): misma fila que la alerta, tap → Pedidos. */}
+      {menuSales.unpaidCount > 0 && (
+        <Link href="/vendor/pedidos"
+          className="mt-2 flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-3 transition hover:opacity-90"
+          style={{ border: `1px solid ${BORDER}`, color: INK }}>
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: "#B45309" }} />
+          <span className="min-w-0 flex-1 text-[14px] leading-[18px]">{menuUnpaidLine(menuSales.unpaidCount, menuSales.unpaidTotal)}</span>
+          <span className="shrink-0 text-[14px] font-semibold" style={{ color: LINK }}>Ver</span>
         </Link>
       )}
     </section>
@@ -1282,11 +1303,13 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
  *  ni promesa de puntos: "Cada venta con número suma aquí." */
 function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 0 }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary; referredOrders30d?: number }) {
   const lowSample = stats.withPhone < 5;
+  // Sin valor no se pinta la celda (29-sep): "—" y "Premios canjeados 0" se
+  // leían como roto. Espejo app.
   const cells = [
     { label: "Con teléfono", value: `${stats.withPhone}` },
     { label: "Volvieron", value: `${stats.returned}` },
-    { label: "% que volvió", value: stats.withPhone > 0 ? `${Math.round(stats.returnRatePercent)}%` : "—" },
-    { label: "Premios canjeados", value: `${stats.redemptions}` },
+    ...(stats.withPhone > 0 ? [{ label: "% que volvió", value: `${Math.round(stats.returnRatePercent)}%` }] : []),
+    ...(stats.redemptions > 0 ? [{ label: "Premios canjeados", value: `${stats.redemptions}` }] : []),
   ];
   return (
     <section className="mb-7" aria-label="Clientes · últimos 30 días">
@@ -1295,9 +1318,9 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 
       {/* Vendiste por tu menú (12-sep): el dinero que trajo el menú en línea,
           arriba de todo — es lo que hace que el dueño se quede. Sin pedidos
           en línea no se pinta: un $0 no le dice nada. */}
-      {showMenuSales(menuSales) && (
+      {/* Solo lo cobrado; lo sin cobrar vive en Hoy (29-sep). */}
+      {showMenuSales(menuSales) && menuSales.paidCount > 0 && (
         <div className="mb-3">
-          {/* Sin nada cobrado todavía no se pinta "$0 · 0 pedidos": solo el aviso. */}
           {menuSales.paidCount > 0 && (
             <>
               <p className="text-[13px] leading-4" style={{ color: INK_MUTED }}>Vendiste por tu menú</p>
@@ -1310,14 +1333,6 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 
                 </span>
               </div>
             </>
-          )}
-          {menuSales.unpaidCount > 0 && (
-            <Link href="/vendor/pedidos"
-              className="mt-1 flex items-center gap-1 text-[14px] font-semibold hover:underline"
-              style={{ color: "#B45309" }}>
-              {menuUnpaidLine(menuSales.unpaidCount, menuSales.unpaidTotal)}
-              <span className="ml-auto">›</span>
-            </Link>
           )}
         </div>
       )}
@@ -1336,7 +1351,7 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 
           Cada venta con número suma aquí.
         </p>
       )}
-      <div className="grid grid-cols-4 py-3" style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
+      <div className={`grid py-3 ${cells.length === 4 ? "grid-cols-4" : cells.length === 3 ? "grid-cols-3" : "grid-cols-2"}`} style={{ borderTop: `1px solid ${HAIRLINE}`, borderBottom: `1px solid ${HAIRLINE}` }}>
         {cells.map(({ label, value }, i) => (
           <div key={label} className="flex flex-col items-center gap-0.5 px-1 text-center" style={i > 0 ? { borderLeft: `1px solid ${HAIRLINE}` } : undefined}>
             <p className="text-[22px] font-bold leading-[26px] tabular-nums" style={{ color: INK }}>{value}</p>
@@ -1354,18 +1369,12 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 
           <span className="ml-auto font-semibold" style={{ color: LINK }}>›</span>
         </Link>
       )}
-      <div className="mt-3 flex gap-2.5">
-        <Link href="/vendor/clientes"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
-          style={{ border: `1px solid ${INK}`, color: INK }}>
-          Ver clientes
-        </Link>
-        <Link href="/vendor/recompensas"
-          className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90"
-          style={{ border: `1px solid ${BORDER}`, color: INK }}>
-          Recompensas
-        </Link>
-      </div>
+      {/* Un link discreto (29-sep): los dos botones duplicaban la barra y el ⋮. */}
+      <Link href="/vendor/clientes"
+        className="mt-3 inline-block text-[14px] font-semibold hover:underline"
+        style={{ color: LINK }}>
+        Ver clientes
+      </Link>
     </section>
   );
 }

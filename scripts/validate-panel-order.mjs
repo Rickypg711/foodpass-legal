@@ -99,7 +99,12 @@ const main = raw.slice(jsxStart, jsxEnd);
   assert.ok(block.includes("Clientes · últimos 30 días"), "Clientes 30d: título");
   assert.ok(block.includes("Cada venta con número suma aquí."), "Clientes 30d: pista sin promesa de puntos");
   assert.ok(block.includes('href="/vendor/clientes"') && />\s*Ver clientes\s*</.test(block), "Clientes 30d: 'Ver clientes' → Clientes");
-  assert.ok(block.includes('href="/vendor/recompensas"') && />\s*Recompensas\s*</.test(block), "Clientes 30d: 'Recompensas'");
+  // 29-sep: sin botón "Recompensas" (vive en ⋮ y Configuración) y sin pedidos sin cobrar (viven en Hoy).
+  assert.ok(!block.includes('href="/vendor/recompensas"'), "Clientes 30d: sin botón 'Recompensas'");
+  assert.ok(!block.includes("menuUnpaidLine("), "Clientes 30d: lo sin cobrar ya no vive aquí");
+  const today = raw.slice(raw.indexOf("function TodayCard("), raw.indexOf("function IdentifiedSalesCard("));
+  assert.ok(today.includes("menuUnpaidLine("), "Hoy: pedidos del menú sin cobrar viven aquí");
+  assert.ok(raw.includes("const PACE_BEHIND_MIN_EXPECTED = 35;"), "Hoy: 'Atrasado' solo tras un tercio de la jornada");
   assert.ok(!block.includes("/vendor/scanner") && !block.includes("/vendor/pos") && !block.includes("Cobrar con número"), "Clientes 30d: sin escáner ni 'Cobrar con número'");
   assert.ok(!/escane/i.test(block), "Clientes 30d: copy sin 'escanear'");
 }
