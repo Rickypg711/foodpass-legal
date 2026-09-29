@@ -736,8 +736,14 @@ function PedidosPageContent() {
   };
 
   // El pedido del link ya no está en ninguna columna (entregado otro día o cancelado; lo que sigue en bandeja siempre sale).
+  // El pedido del link puede ser VIEJO (en la tira): cuenta como presente y la tira se abre sola.
+  const focusIsStale =
+    focusOrderId !== null && Object.values(staleGroups).some((list) => list.some((o) => o.id === focusOrderId));
   const focusMissing =
-    focusOrderId !== null && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
+    focusOrderId !== null && !focusIsStale && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
+  useEffect(() => {
+    if (focusIsStale) setShowStale(true);
+  }, [focusIsStale]);
 
   /** Columnas del tablero. Opción A (23-sep-2026, lienzo "Sistema Comeleal"):
    *  sin fondos de color por columna; el estado se dice con palabra y punto. */
