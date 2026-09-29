@@ -60,7 +60,8 @@ const orders = [
   { orderSource: "customer_web", status: "pending", paymentStatus: "pending", total: 40, isOpenTab: true, createdAtMs: NOW - 9 * H },
   { orderSource: "customer_web", status: "ready", paymentStatus: "pending", total: 40, tabId: "t2", createdAtMs: NOW - 9 * H },
 ];
-check("suma", summarizeMenuSales(orders, NOW), { paidCount: 3, paidTotal: 421, unpaidCount: 2, unpaidTotal: 445 });
+check("suma", summarizeMenuSales(orders, NOW), { paidCount: 3, paidTotal: 421, unpaidCount: 2, unpaidTotal: 445, unpaidOrderIds: [] });
+check("con UN pedido sin cobrar, trae su id (la línea de Hoy lo abre)", summarizeMenuSales([{ id: "o1", orderSource: "customer_web", status: "completed", paymentStatus: "pending", total: 400, createdAtMs: NOW }], NOW).unpaidOrderIds, ["o1"]);
 check("total basura = 0", summarizeMenuSales([{ orderSource: "customer_web", paymentStatus: "paid", total: "abc", createdAtMs: 0 }], NOW).paidTotal, 0);
 check("sin pedidos no se pinta", showMenuSales(summarizeMenuSales([], NOW)), false);
 check("solo sin cobrar sí se pinta", showMenuSales({ paidCount: 0, paidTotal: 0, unpaidCount: 1, unpaidTotal: 85 }), true);
@@ -71,8 +72,8 @@ check("dinero chico", menuSalesMoney(85), "$85");
 check("dinero grande", menuSalesMoney(1234567.4), "$1,234,567");
 check("1 pedido", menuSalesCaption(1), "1 pedido");
 check("21 pedidos", menuSalesCaption(21), "21 pedidos");
-check("aviso singular", menuUnpaidLine(1, 85), "1 pedido del menú sin cobrar ($85) · cóbralos en Pedidos");
-check("aviso plural", menuUnpaidLine(3, 2085), "3 pedidos del menú sin cobrar ($2,085) · cóbralos en Pedidos");
+check("aviso singular", menuUnpaidLine(1, 85), "1 pedido en línea sin cobrar ($85) · cóbralo en Pedidos");
+check("aviso plural", menuUnpaidLine(3, 2085), "3 pedidos en línea sin cobrar ($2,085) · cóbralos en Pedidos");
 
 // ── El Panel lo pinta de verdad ─────────────────────────────────────────────
 const panel = readFileSync(new URL("../app/vendor/page.tsx", import.meta.url), "utf8");
@@ -81,6 +82,7 @@ check("el Panel dice 'Vendiste por tu menú'", panel.includes("Vendiste por tu m
 check("sin $0: se esconde si no hay nada", panel.includes("showMenuSales(menuSales)"), true);
 check("sin nada cobrado no pinta $0", panel.includes("{menuSales.paidCount > 0 && ("), true);
 check("el aviso lleva a Pedidos", panel.includes('href="/vendor/pedidos"'), true);
+check("Hoy: con un solo pedido el link va a ese pedido", panel.includes("`/vendor/pedidos?pedido=${menuSales.unpaidOrderIds[0]}`"), true);
 
 // ── Espejo en la app (lee el Dart) ──────────────────────────────────────────
 const APP = "/Users/ricardoparedes/projects/FOODPASS";
@@ -91,8 +93,8 @@ if (existsSync(`${APP}/pubspec.yaml`)) {
     const d = readFileSync(DART, "utf8");
     check("app: en curso = las mismas horas", Number(d.match(/const int kMenuSalesInProgressHours = (\d+);/)?.[1]) * H, MENU_SALES_IN_PROGRESS_MS);
     check("app: la Caja no cuenta", d.includes("o['orderSource'] == 'pos'"), true);
-    check("app: mismas palabras (pedido del menú sin cobrar)", d.includes("pedidos del menú sin cobrar"), true);
-    check("app: mismas palabras (cóbralos en Pedidos)", d.includes("· cóbralos en Pedidos"), true);
+    check("app: mismas palabras (pedidos en línea sin cobrar)", d.includes("pedidos en línea sin cobrar"), true);
+    check("app: mismas palabras (cóbralo/cóbralos en Pedidos)", d.includes("cóbralos") && d.includes("cóbralo") && d.includes(" en Pedidos"), true);
     const arb = readFileSync(`${APP}/lib/l10n/app_es.arb`, "utf8");
     check("app: la pantalla dice 'Vendiste por tu menú'", arb.includes('"menuSalesTitle": "Vendiste por tu menú"'), true);
   }

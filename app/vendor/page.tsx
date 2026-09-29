@@ -358,7 +358,7 @@ export default function VendorDashboard() {
         // del MISMO lote de 30 días, cero lecturas extra.
         let referredOrders30d = 0;
         monthOrdersSnap?.forEach((d) => {
-          const o = d.data() as Record<string, unknown>;
+          const o: Record<string, unknown> = { ...(d.data() as Record<string, unknown>), id: d.id };
           monthOrders.push(o);
           if (o.redemptionResult === "applied") phoneRedemptions30d++;
           if (typeof o.referredBy === "string" && o.referredBy) referredOrders30d++;
@@ -367,6 +367,7 @@ export default function VendorDashboard() {
         // "Vendiste por tu menú" — mismo lote de 30 días, cero lecturas extra.
         const menuSales = summarizeMenuSales(
           monthOrders.map((o) => ({
+            id: o.id,
             orderSource: o.orderSource,
             status: o.status,
             paymentStatus: o.paymentStatus,
@@ -1159,7 +1160,7 @@ function TodayCard({
   pendingOrdersCount: number;
   oldestPendingMinutes: number;
   readyOrdersCount: number;
-  /** Pedidos del menú sin cobrar: dinero por cobrar HOY, aquí arriba (29-sep). */
+  /** Pedidos en línea sin cobrar: dinero por cobrar HOY, aquí arriba (29-sep). */
   menuSales: MenuSalesSummary;
 }) {
   const money = (n: number) =>
@@ -1254,7 +1255,7 @@ function TodayCard({
       )}
       {/* Dinero por cobrar (29-sep): misma fila que la alerta, tap → Pedidos. */}
       {menuSales.unpaidCount > 0 && (
-        <Link href="/vendor/pedidos"
+        <Link href={menuSales.unpaidCount === 1 && menuSales.unpaidOrderIds?.[0] ? `/vendor/pedidos?pedido=${menuSales.unpaidOrderIds[0]}` : "/vendor/pedidos"}
           className="mt-2 flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-3 transition hover:opacity-90"
           style={{ border: `1px solid ${BORDER}`, color: INK }}>
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: "#B45309" }} />

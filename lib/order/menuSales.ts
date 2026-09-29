@@ -24,6 +24,8 @@
 export const MENU_SALES_IN_PROGRESS_MS = 2 * 60 * 60 * 1000;
 
 export interface MenuSalesOrder {
+  /** Id del doc: con UN pedido sin cobrar, la línea de Hoy abre ese pedido. */
+  id?: unknown;
   orderSource?: unknown;
   status?: unknown;
   paymentStatus?: unknown;
@@ -38,6 +40,8 @@ export interface MenuSalesSummary {
   paidTotal: number;
   unpaidCount: number;
   unpaidTotal: number;
+  /** Ids de los pedidos sin cobrar (máx 5). */
+  unpaidOrderIds?: string[];
 }
 
 export function isMenuOrder(o: MenuSalesOrder): boolean {
@@ -46,7 +50,7 @@ export function isMenuOrder(o: MenuSalesOrder): boolean {
 }
 
 export function summarizeMenuSales(orders: MenuSalesOrder[], nowMs: number): MenuSalesSummary {
-  const s: MenuSalesSummary = { paidCount: 0, paidTotal: 0, unpaidCount: 0, unpaidTotal: 0 };
+  const s: MenuSalesSummary = { paidCount: 0, paidTotal: 0, unpaidCount: 0, unpaidTotal: 0, unpaidOrderIds: [] };
   for (const o of orders) {
     if (!isMenuOrder(o)) continue;
     const total = typeof o.total === "number" && Number.isFinite(o.total) ? o.total : 0;
@@ -59,6 +63,7 @@ export function summarizeMenuSales(orders: MenuSalesOrder[], nowMs: number): Men
     if (o.status === "completed" || nowMs - o.createdAtMs > MENU_SALES_IN_PROGRESS_MS) {
       s.unpaidCount++;
       s.unpaidTotal += total;
+      if (typeof o.id === "string" && o.id && s.unpaidOrderIds!.length < 5) s.unpaidOrderIds!.push(o.id);
     }
   }
   s.paidTotal = Math.round(s.paidTotal);
@@ -78,8 +83,11 @@ export function menuSalesCaption(paidCount: number): string {
 
 /** La línea de aviso cuando hay pedidos del menú sin Cobrar. */
 export function menuUnpaidLine(unpaidCount: number, unpaidTotal: number): string {
-  const n = unpaidCount === 1 ? "1 pedido del menú sin cobrar" : `${unpaidCount} pedidos del menú sin cobrar`;
-  return `${n} (${menuSalesMoney(unpaidTotal)}) · cóbralos en Pedidos`;
+  // "en línea", no "del menú" (29-sep): todo pedido viene del menú; lo que
+  // distingue a estos es que llegaron por el link. Singular/plural en el verbo.
+  const n = unpaidCount === 1 ? "1 pedido en línea sin cobrar" : `${unpaidCount} pedidos en línea sin cobrar`;
+  const verb = unpaidCount === 1 ? "cóbralo" : "cóbralos";
+  return `${n} (${menuSalesMoney(unpaidTotal)}) · ${verb} en Pedidos`;
 }
 
 /** Se pinta solo si hay algo que contar: un $0 no le vende nada al dueño. */
