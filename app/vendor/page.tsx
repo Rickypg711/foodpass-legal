@@ -1050,20 +1050,30 @@ function AICoachPreviewCard({
       {hasInsight && (
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
       )}
-      {actionCode === "send_winback" && winbackToday.length > 0 && (
-        <WinbackTodayList
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          phoneCountry={phoneCountry}
-          rows={winbackToday}
-        />
+      {actionCode === "send_winback" && winbackToday.length > 0 ? (
+        <>
+          <WinbackTodayList
+            restaurantId={restaurantId}
+            restaurantName={restaurantName}
+            phoneCountry={phoneCountry}
+            rows={winbackToday}
+          />
+          {/* La lista YA es la acción: el botón grande se vuelve un link discreto (una acción principal por sección). */}
+          <a href={ctaHref}
+            onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}
+            className="mt-3 inline-block text-[14px] font-semibold hover:underline"
+            style={{ color: LINK }}>
+            {atRiskShown(metrics) > winbackToday.length ? `Ver los ${atRiskShown(metrics)} en riesgo` : "Ver en Clientes"}
+          </a>
+        </>
+      ) : (
+        <a href={ctaHref}
+          onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:inline-flex md:w-auto md:px-6"
+          style={{ background: BRAND }}>
+          {ctaLabel}
+        </a>
       )}
-      <a href={ctaHref}
-        onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}
-        className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:inline-flex md:w-auto md:px-6"
-        style={{ background: BRAND }}>
-        {ctaLabel}
-      </a>
       <button
         type="button"
         onClick={() => router.push(`${window.location.pathname}?ai=1`)}

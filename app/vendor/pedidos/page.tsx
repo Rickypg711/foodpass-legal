@@ -673,10 +673,14 @@ function PedidosPageContent() {
   // de la 1 AM siguen siendo del turno en curso, no de un día nuevo.
   const startOfToday = businessDayStart().getTime();
 
+  // Columnas de trabajo: el MÁS VIEJO arriba (es el que está por atrasarse),
+  // como cualquier pantalla de cocina. Entregados es historial: el más nuevo
+  // arriba. `orders` llega del más nuevo al más viejo (mergeOrdersById).
+  const oldestFirst = (list: Order[]) => [...list].reverse();
   const groups: Record<OrderTab, Order[]> = {
-    pending: orders.filter((o) => o.status === "pending" || o.status === "open_tab"),
-    preparing: orders.filter((o) => o.status === "preparing"),
-    ready: orders.filter((o) => o.status === "ready"),
+    pending: oldestFirst(orders.filter((o) => o.status === "pending" || o.status === "open_tab")),
+    preparing: oldestFirst(orders.filter((o) => o.status === "preparing")),
+    ready: oldestFirst(orders.filter((o) => o.status === "ready")),
     completed: orders.filter((o) => {
       const dateMs = o.createdAt?.toMillis ? o.createdAt.toMillis() : 0;
       return o.status === "completed" && dateMs >= startOfToday;

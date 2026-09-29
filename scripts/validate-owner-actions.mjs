@@ -32,7 +32,20 @@ assert.doesNotMatch(lib, /phone:\s*phone|target: phone10\b/, "nunca el teléfono
 const cta = page.slice(page.indexOf("<a href={ctaHref}"), page.indexOf("Abrir Comeleal AI"));
 assert.match(cta, /logOwnerAction\(restaurantId, "nba_tap", \{ actionCode \}\)/, "el botón del consejo deja rastro con su actionCode");
 assert.match(clientes, /logOwnerAction\(restaurantId, "winback_send", \{ target: shortTarget\(phone10\) \}\)/, "el WhatsApp a un cliente deja rastro");
-assert.ok(clientes.indexOf('logOwnerAction(restaurantId, "winback_send"') < clientes.indexOf("if (msg) {"), "se anota ANTES de abrir WhatsApp, en todos los caminos");
+// 29-sep: dos pasos — el primer clic solo ESCRIBE y muestra el mensaje; el
+// segundo ("Enviar") es aprobar: rastro → marca en el cliente → WhatsApp. El
+// rastro va dentro del bloque de envío, antes de abrir, y solo ahí se abre.
+{
+  const fnStart = clientes.indexOf("async function generateAndOpen()");
+  const fn = clientes.slice(fnStart, clientes.indexOf("\n  }\n", fnStart));
+  const sendStart = fn.indexOf("if (msg) {");
+  const sendBlock = fn.slice(sendStart, fn.indexOf("return;", sendStart));
+  assert.ok(sendStart > -1, "existe el bloque de envío (if (msg))");
+  assert.ok(sendBlock.indexOf('logOwnerAction(restaurantId, "winback_send"') > -1, "el envío deja rastro");
+  assert.ok(sendBlock.indexOf('logOwnerAction(restaurantId, "winback_send"') < sendBlock.indexOf("window.open("), "se anota ANTES de abrir WhatsApp");
+  assert.equal((fn.match(/window\.open\(/g) || []).length, 1, "WhatsApp se abre SOLO al aprobar, nunca al escribir");
+  assert.ok(sendBlock.indexOf("stampWinbackSent(") > -1, "al aprobar se marca lastWinbackAt (la Caja mide el regreso)");
+}
 
 // ── 2. Push web ────────────────────────────────────────────────────────────
 assert.ok(existsSync("public/firebase-messaging-sw.js"), "existe el service worker");

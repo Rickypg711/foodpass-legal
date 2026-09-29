@@ -84,19 +84,24 @@ export async function writePhoneWinback(params: {
     if (!message) throw new Error("empty message");
     return { message, hook: (res.data?.hook ?? "unknown").trim(), fromAi: true };
   } catch {
-    const fb = fallbackWinback({ firstName, restaurantName, points });
-    // El callable deja el rastro cuando contesta; si no contestó, lo deja la
-    // web, para que "regresó después de tu mensaje" siga siendo verdad.
-    setDoc(
-      doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
-      {
-        lastWinbackAt: serverTimestamp(),
-        lastWinbackHook: fb.hook,
-        winbackCount: increment(1),
-        winbackHistory: arrayUnion({ sentAt: Timestamp.now(), hook: fb.hook }),
-      },
-      { merge: true },
-    ).catch(() => {});
-    return fb;
+    return fallbackWinback({ firstName, restaurantName, points });
   }
+}
+
+/**
+ * El rastro se deja AL MANDAR (29-sep): el dueño lee el mensaje y puede no
+ * aprobarlo. Sin esto "regresó después de tu mensaje" no existe. La Caja
+ * compara lastVisitAt contra lastWinbackAt al cobrar.
+ */
+export function stampWinbackSent(restaurantId: string, phone10: string, hook: string): Promise<void> {
+  return setDoc(
+    doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
+    {
+      lastWinbackAt: serverTimestamp(),
+      lastWinbackHook: hook,
+      winbackCount: increment(1),
+      winbackHistory: arrayUnion({ sentAt: Timestamp.now(), hook }),
+    },
+    { merge: true },
+  ).catch(() => {});
 }

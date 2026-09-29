@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 import { logOwnerAction, shortTarget } from "@/lib/ownerActions";
-import { writePhoneWinback } from "@/lib/vendor/winbackMessage";
+import { stampWinbackSent, writePhoneWinback, type WinbackMessage } from "@/lib/vendor/winbackMessage";
 
 export type WinbackTodayRow = {
   phone10: string;
@@ -17,6 +17,11 @@ export type WinbackTodayRow = {
   daysSince: number;
   usualLabel: string;
   recentItem: string | null;
+  /** 'riesgo' (14–29 d) o 'perdido' (30–90 d). */
+  segment: "riesgo" | "perdido";
+  /** Mensaje YA escrito por la IA anoche (null = se escribe al tocar). */
+  message: string | null;
+  hook: string | null;
 };
 
 export function parseWinbackToday(raw: unknown): WinbackTodayRow[] {
@@ -34,6 +39,9 @@ export function parseWinbackToday(raw: unknown): WinbackTodayRow[] {
       daysSince: Number(o.daysSince) || 0,
       usualLabel: typeof o.usualLabel === "string" ? o.usualLabel : "",
       recentItem: typeof o.recentItem === "string" ? o.recentItem : null,
+      segment: o.segment === "perdido" ? "perdido" : "riesgo",
+      message: typeof o.message === "string" && o.message.trim() ? o.message.trim() : null,
+      hook: typeof o.hook === "string" ? o.hook : null,
     });
     if (out.length >= 3) break;
   }
@@ -56,36 +64,53 @@ export function WinbackTodayList({
   rows: WinbackTodayRow[];
 }) {
   const [busy, setBusy] = useState<string | null>(null);
-  const [written, setWritten] = useState<Record<string, string>>({});
+  // Mensaje por cliente: el que dejó la IA anoche o el que se escribió al
+  // tocar. Se LEE antes de mandar; "Enviar" es aprobar.
+  const [written, setWritten] = useState<Record<string, WinbackMessage>>({});
+  const [sent, setSent] = useState<Record<string, true>>({});
 
   if (rows.length === 0) return null;
+
+  const messageFor = (r: WinbackTodayRow): WinbackMessage | null =>
+    written[r.phone10] ?? (r.message ? { message: r.message, hook: r.hook ?? "unknown", fromAi: true } : null);
 
   async function tap(r: WinbackTodayRow) {
     setBusy(r.phone10);
     try {
+      const m = messageFor(r);
+      if (!m) {
+        const w = await writePhoneWinback({
+          restaurantId,
+          restaurantName,
+          phone10: r.phone10,
+          firstName: r.name ? r.name.split(" ")[0] : "Hola",
+        });
+        setWritten((prev) => ({ ...prev, [r.phone10]: w }));
+        return; // primero se lee; el siguiente clic manda
+      }
       logOwnerAction(restaurantId, "winback_send", { target: shortTarget(r.phone10) });
-      const m = await writePhoneWinback({
-        restaurantId,
-        restaurantName,
-        phone10: r.phone10,
-        firstName: r.name ? r.name.split(" ")[0] : "Hola",
-      });
-      setWritten((w) => ({ ...w, [r.phone10]: m.message }));
+      await stampWinbackSent(restaurantId, r.phone10, m.hook);
+      setSent((prev) => ({ ...prev, [r.phone10]: true }));
       window.open(buildWhatsappUrl(r.phone10, m.message, phoneCountry), "_blank");
     } finally {
       setBusy(null);
     }
   }
 
+  const anyWritten = rows.some((r) => messageFor(r) !== null);
+
   return (
     <div className="mt-3">
-      <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: INK_SOFT }}>Escríbele hoy</p>
+      <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
+        {anyWritten ? "Ya te escribimos el mensaje. Léelo y mándalo si te gusta." : "Escríbele hoy"}
+      </p>
       {rows.map((r) => {
         const detail = [
           `${r.visits} visita${r.visits === 1 ? "" : "s"}`,
-          `${r.daysSince} días sin venir`,
+          r.segment === "perdido" ? `perdido · ${r.daysSince} días sin venir` : `${r.daysSince} días sin venir`,
           r.usualLabel || null,
         ].filter(Boolean).join(" · ");
+        const m = messageFor(r);
         const name = r.name || `…${r.phone10.slice(-4)}`;
         return (
           <div key={r.phone10} className="mt-2.5">
@@ -100,13 +125,13 @@ export function WinbackTodayList({
                 disabled={busy !== null}
                 className="h-10 shrink-0 rounded-xl bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-60"
                 style={{ border: `1px solid ${INK}`, color: INK }}>
-                {busy === r.phone10 ? "Escribiendo" : written[r.phone10] ? "Abrir" : "WhatsApp"}
+                {busy === r.phone10 ? (m ? "Abriendo" : "Escribiendo") : sent[r.phone10] ? "Enviado" : m ? "Enviar" : "Escribir"}
               </button>
             </div>
-            {written[r.phone10] && (
+            {m && (
               <div className="mt-2 rounded-lg px-3 py-2.5 text-[13px] leading-[18px]" style={{ background: TILE, color: INK }}>
-                <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Mensaje sugerido</p>
-                {written[r.phone10]}
+                <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Tu mensaje</p>
+                {m.message}
               </div>
             )}
           </div>

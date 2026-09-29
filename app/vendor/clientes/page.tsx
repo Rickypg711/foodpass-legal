@@ -16,7 +16,7 @@ import {
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
-import { winbackStatusLabel, writePhoneWinback } from "@/lib/vendor/winbackMessage";
+import { stampWinbackSent, winbackStatusLabel, writePhoneWinback } from "@/lib/vendor/winbackMessage";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
 import { logOwnerAction, shortTarget } from "@/lib/ownerActions";
@@ -177,6 +177,7 @@ function CustomerCard({
 }) {
   const [msgLoading, setMsgLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [msgHook, setMsgHook] = useState<string>("unknown");
   const [msgError, setMsgError] = useState(false);
   const [discOpen, setDiscOpen] = useState(false);
   const [discBusy, setDiscBusy] = useState(false);
@@ -215,10 +216,11 @@ function CustomerCard({
   async function generateAndOpen() {
     if (!customer.phone) return;
     const phone10 = customer.phone.replace(/\D/g, "").slice(-10);
-    // Rastro del toque (24-sep): el dueño quiso escribirle a este cliente.
-    // Se anota antes de abrir WhatsApp, en los tres caminos de abajo.
-    logOwnerAction(restaurantId, "winback_send", { target: shortTarget(phone10) });
+    // Segundo clic = aprobar: rastro del dueño + marca en el cliente → WhatsApp.
+    // (El primer clic solo escribe y muestra el mensaje; el dueño lo lee.)
     if (msg) {
+      logOwnerAction(restaurantId, "winback_send", { target: shortTarget(phone10) });
+      if (customer.isPhoneOnly) await stampWinbackSent(restaurantId, phone10, msgHook);
       const waUrl = buildWhatsappUrl(customer.phone, msg, phoneCountry);
       window.open(waUrl, "_blank");
       return;
@@ -239,7 +241,8 @@ function CustomerCard({
           points: customer.totalPoints,
         });
         setMsg(m.message);
-        window.open(buildWhatsappUrl(phone10, m.message, phoneCountry), "_blank");
+        setMsgHook(m.hook);
+        // Primero se lee; el siguiente clic ("Enviar") manda.
       } finally {
         setMsgLoading(false);
       }
@@ -265,8 +268,7 @@ function CustomerCard({
       });
       const generated = res.data.message;
       setMsg(generated);
-      const waUrl = buildWhatsappUrl(customer.phone, generated, phoneCountry);
-      window.open(waUrl, "_blank");
+      // Primero se lee; el siguiente clic ("Enviar") manda.
     } catch {
       setMsgError(true);
     } finally {
@@ -320,7 +322,7 @@ function CustomerCard({
       {/* Mensaje sugerido: lo que escribió la IA, antes de mandarlo */}
       {msg && (
         <div className="mt-3 rounded-lg px-3 py-2.5 text-[13px] leading-[18px]" style={{ background: TILE, color: INK }}>
-          <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Mensaje sugerido</p>
+          <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Tu mensaje · léelo y mándalo si te gusta</p>
           {msg}
         </div>
       )}
@@ -335,7 +337,7 @@ function CustomerCard({
             className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-[14px] font-semibold transition hover:opacity-90 disabled:opacity-60"
             style={{ border: `1px solid ${INK}`, color: INK }}>
             {msgLoading ? <Spinner small /> : <IconWhatsapp />}
-            {msgLoading ? "Escribiendo el mensaje" : msg ? "Abrir WhatsApp" : "Escribirle por WhatsApp"}
+            {msgLoading ? "Escribiendo el mensaje" : msg ? "Enviar por WhatsApp" : "Escribir mensaje"}
           </button>
         ) : (
           <span className="text-[13px]" style={{ color: INK_SOFT }}>Sin número registrado</span>
@@ -746,7 +748,7 @@ export default function ClientesPage() {
                 <div className="mb-3 flex items-baseline justify-between gap-3">
                   <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Escríbeles hoy</h2>
                   <span className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
-                    {actuaHoy.length} cliente{actuaHoy.length !== 1 ? "s" : ""} · el mensaje ya está escrito
+                    {actuaHoy.length} cliente{actuaHoy.length !== 1 ? "s" : ""} · toca y te escribimos el mensaje
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
