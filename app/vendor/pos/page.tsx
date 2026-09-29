@@ -40,6 +40,7 @@ import { isCajaModeLocked, setCajaModeLocked } from "@/lib/cajaMode";
 import { creditPhonePointsForOrder } from "@/lib/loyalty/phonePoints";
 import { groupOpenTabs, type TabGroup } from "@/lib/pos/tabGroups";
 import { registerTabGroupPayment } from "@/lib/pos/registerPayment";
+import { cashChangeLabel } from "@/lib/pos/cashChange";
 import {
   POS_PAYMENT_OPTIONS,
   acceptedPaymentOptions,
@@ -582,6 +583,8 @@ function CheckoutDialog({
    * (pedido por Pecado Escondido: "a veces pagan en tarjeta y dejan la propina
    * en cash"). null = todavia no lo tocan, sigue al metodo de pago. */
   const [tipMethod, setTipMethod] = useState<PaymentMethod | null>(null);
+  /** Efectivo recibido (solo para calcular el cambio; no se guarda). */
+  const [cashReceived, setCashReceived] = useState<number | "">("");
 
   // No cart total = pure reward redemption ("Canjear premio sin venta").
   // There's nothing to charge, so we hide the payment flow and speak "canje",
@@ -680,6 +683,27 @@ function CheckoutDialog({
                 </Seg>
               ))}
             </div>
+            {/* Cambio en efectivo (29-sep, paridad app): solo con Efectivo; no se guarda. */}
+            {method === "cash" && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex h-11 flex-1 items-center gap-1 rounded-xl bg-white px-3" style={{ border: `1px solid ${BORDER}` }}>
+                  <span className="text-[14px]" style={{ color: INK_SOFT }}>Recibido $</span>
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="decimal"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder={String(Math.ceil(effTotal + tipAmount))}
+                    className="w-full bg-transparent text-[16px] tabular-nums outline-none"
+                    style={{ color: INK }}
+                  />
+                </div>
+                <span className="text-[14px] font-semibold tabular-nums" style={{ color: cashChangeLabel(effTotal + tipAmount, cashReceived)?.startsWith("Faltan") ? WARN : INK }}>
+                  {cashChangeLabel(effTotal + tipAmount, cashReceived) ?? ""}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -696,7 +720,8 @@ function CheckoutDialog({
               inputMode="numeric"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder={loyaltyLive ? "Para sus puntos — 614 123 4567" : "Para su ticket y promos — 614 123 4567"}
+              // El guion de David (97 % de captura): "¿me das tu número, para tu recibo y tus puntos?" (29-sep).
+              placeholder={loyaltyLive ? "Para su recibo y sus puntos — 614 123 4567" : "Para su recibo — 614 123 4567"}
               maxLength={16}
               className={INPUT_CLS}
               style={INPUT_STYLE}
@@ -705,7 +730,7 @@ function CheckoutDialog({
               {/* Con el número de ESTA venta, no "junta puntos" a secas. */}
               {loyaltyLive
                 ? `${cashierEarnLine(earnPreview) ?? "Junta puntos automáticamente"}. Si el número tiene descuento asignado (staff o familia), se aplica solo.`
-                : "Le mandas su ticket y le avisas de promos. Si el número tiene descuento asignado (staff o familia), se aplica solo."}{" "}
+                : "Le mandas su recibo por WhatsApp y le queda tu menú a la mano. Si el número tiene descuento asignado (staff o familia), se aplica solo."}{" "}
               Al darlo acepta el{" "}
               <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: LINK }}>
                 Aviso de Privacidad
