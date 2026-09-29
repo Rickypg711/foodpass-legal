@@ -22,6 +22,8 @@ export type WinbackTodayRow = {
   /** Mensaje YA escrito por la IA anoche (null = se escribe al tocar). */
   message: string | null;
   hook: string | null;
+  /** "viernes en la tarde": un rato antes de cuando suele venir. */
+  bestSendLabel: string;
 };
 
 export function parseWinbackToday(raw: unknown): WinbackTodayRow[] {
@@ -42,6 +44,7 @@ export function parseWinbackToday(raw: unknown): WinbackTodayRow[] {
       segment: o.segment === "perdido" ? "perdido" : "riesgo",
       message: typeof o.message === "string" && o.message.trim() ? o.message.trim() : null,
       hook: typeof o.hook === "string" ? o.hook : null,
+      bestSendLabel: typeof o.bestSendLabel === "string" ? o.bestSendLabel : "",
     });
     if (out.length >= 3) break;
   }
@@ -109,6 +112,7 @@ export function WinbackTodayList({
           `${r.visits} visita${r.visits === 1 ? "" : "s"}`,
           r.segment === "perdido" ? `perdido · ${r.daysSince} días sin venir` : `${r.daysSince} días sin venir`,
           r.usualLabel || null,
+          r.bestSendLabel ? `mejor mandarlo el ${r.bestSendLabel}` : null,
         ].filter(Boolean).join(" · ");
         const m = messageFor(r);
         const name = r.name || `…${r.phone10.slice(-4)}`;
