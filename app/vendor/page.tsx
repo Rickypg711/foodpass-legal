@@ -983,7 +983,7 @@ function getNbaCtaHref(actionCode: string): string {
     case "get_first_scan": return "/vendor/pos";
     case "healthy":
     case "keep_going": return "#compartir-qr";
-    case "send_winback": return "/vendor/clientes";
+    case "send_winback": return "/vendor/clientes?segmento=riesgo"; // 29-sep: llega al chip "En riesgo"
     case "trial_ending_soon":
     case "trial_ended": return "/vendor/plan";
     default: return "/vendor/recompensas";
