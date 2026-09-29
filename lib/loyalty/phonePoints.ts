@@ -20,6 +20,7 @@
 // Idempotency: order.loyaltyAwarded flag, checked and set inside the
 // transaction — an order can never credit twice.
 
+import { itemNamesOfOrder, winbackFieldsForVisit } from "@/lib/loyalty/winbackSignals";
 import {
   arrayUnion,
   doc,
@@ -278,6 +279,16 @@ export async function creditPhonePointsForOrder(params: {
             }
           : {}),
         lastVisitAt: serverTimestamp(),
+        // Win-back (29-sep): platillos, cuándo vino y, si el dueño le
+        // escribió hace poco, esta visita cuenta como "regresó". Espejo de
+        // winbackFieldsForVisit en phone_points_service.dart.
+        ...winbackFieldsForVisit({
+          prev,
+          now,
+          total,
+          via: redemptionVia,
+          orderItems: itemNamesOfOrder(items),
+        }),
         ...(discountAmount > 0
           ? {
               discountsGivenTotal:

@@ -36,6 +36,8 @@ import { waitForAuthReady } from "@/lib/auth";
 import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
 import { OwnerPushCard } from "@/components/vendor/OwnerPushCard";
 import { logOwnerAction } from "@/lib/ownerActions";
+import { WinbackTodayList, parseWinbackToday, type WinbackTodayRow } from "./_components/WinbackTodayList";
+import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
 import type { User } from "firebase/auth";
 import ManualCloseToggle from "./_components/ManualCloseToggle";
@@ -100,6 +102,10 @@ interface DashboardData {
   nbaTitle: string;
   nbaBody: string;
   nbaMetrics: NbaMetrics;
+  /** "Escríbele hoy" (29-sep): hasta 3 clientes en riesgo con nombre, del cerebro. */
+  winbackToday: WinbackTodayRow[];
+  /** País del teléfono del local: el WhatsApp marca como él. */
+  phoneCountry: string;
   lookback: LookbackStats;
   /** "Vendiste por tu menú" (12-sep, el marcador de Owner.com): pedidos en
    *  línea de los últimos 30 días — lib/order/menuSales.ts. */
@@ -463,6 +469,9 @@ export default function VendorDashboard() {
             menuItemCount: (insMetrics.menuItemCount as number) ?? 0,
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
+          // Si el código se corrigió a otra acción, la lista hablaría de otra cosa.
+          winbackToday: nbaOverridden ? [] : parseWinbackToday(ins?.winbackToday),
+          phoneCountry: phoneCountryOf(r as Record<string, unknown>),
           lookback,
           menuSales,
           referredOrders30d,
@@ -700,11 +709,14 @@ export default function VendorDashboard() {
           {/* ── 3 · Tu siguiente movimiento ── */}
           <AICoachPreviewCard
             restaurantId={data.restaurantId}
+            restaurantName={data.restaurantName}
+            phoneCountry={data.phoneCountry}
             actionCode={data.nbaActionCode}
             nbaTitle={data.nbaTitle}
             nbaBody={data.nbaBody}
             metrics={data.nbaMetrics}
             weeklyBriefText={data.weeklyBriefText}
+            winbackToday={data.winbackToday}
           />
 
           {/* ── 4 · Clientes · últimos 30 días ── */}
@@ -992,18 +1004,24 @@ function getNbaCtaHref(actionCode: string): string {
 
 function AICoachPreviewCard({
   restaurantId,
+  restaurantName,
+  phoneCountry,
   actionCode,
   nbaTitle,
   nbaBody,
   metrics,
   weeklyBriefText,
+  winbackToday = [],
 }: {
   restaurantId: string;
+  restaurantName: string;
+  phoneCountry: string;
   actionCode: string;
   nbaTitle: string;
   nbaBody: string;
   metrics: NbaMetrics;
   weeklyBriefText?: string;
+  winbackToday?: WinbackTodayRow[];
 }) {
   const router = useRouter();
 
@@ -1031,6 +1049,14 @@ function AICoachPreviewCard({
       <p className="mt-1 text-[15px] leading-[22px]" style={{ color: INK }}>{displayBody}</p>
       {hasInsight && (
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
+      )}
+      {actionCode === "send_winback" && winbackToday.length > 0 && (
+        <WinbackTodayList
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          phoneCountry={phoneCountry}
+          rows={winbackToday}
+        />
       )}
       <a href={ctaHref}
         onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}

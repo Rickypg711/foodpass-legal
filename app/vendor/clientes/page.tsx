@@ -10,13 +10,13 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp,
   Timestamp,
   updateDoc,
   deleteField,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
+import { winbackStatusLabel, writePhoneWinback } from "@/lib/vendor/winbackMessage";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { waitForAuthReady } from "@/lib/auth";
 import { logOwnerAction, shortTarget } from "@/lib/ownerActions";
@@ -53,11 +53,16 @@ interface Customer {
   discountProfileName?: string | null;
   /** App user whose phone has a phoneCustomers doc — assignable target. */
   hasPhoneDoc?: boolean;
+  /** Win-back (29-sep): cuándo le escribió el dueño y si regresó después. */
+  lastWinbackAt?: Timestamp | null;
+  winbackReturnedAt?: Timestamp | null;
+  winbackCount?: number;
+  winbackReturns?: number;
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
 import { FIRST_VISIT_CLAIM_DAYS } from "@/lib/loyalty/rewardCatalog";
-import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
+import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
 // ─── Segment logic ────────────────────────────────────────────────────────────
@@ -206,14 +211,6 @@ function CustomerCard({
     }
   }
 
-  /** Marks the winback tap on the phoneCustomer doc (closes the measure leg
-   * of the loop — AI_NATIVE_CLOSED_LOOPS §3.1). Fire-and-forget. */
-  function logPhoneWinbackTap(phone10: string) {
-    updateDoc(
-      doc(getFirebaseDb(), "restaurants", restaurantId, "phoneCustomers", phone10),
-      { lastWinbackAt: serverTimestamp() },
-    ).catch(() => {});
-  }
 
   async function generateAndOpen() {
     if (!customer.phone) return;
@@ -227,24 +224,25 @@ function CustomerCard({
       return;
     }
 
-    // Phone-only customers: no app user for the Gemini fn — build the message
-    // locally from what we know (points + unclaimed reward = the hook).
+    // Cliente de TELÉFONO (29-sep): el cerebro escribe con lo que sabe de él
+    // (platillos, cuándo viene, puntos, premio sin usar) y elige el gancho;
+    // el rastro (lastWinbackAt) lo deja el servidor. Si falla, plantilla.
     if (customer.isPhoneOnly) {
-      const d = customer.rewardDaysLeft;
-      const rewardLine = customer.rewardUnlocked
-        ? d !== undefined && d <= 2
-          ? ` Y tu premio de bienvenida vence ${d === 0 ? "HOY" : d === 1 ? "mañana" : "en 2 días"} 🎁⏰`
-          : " Y tienes un premio de bienvenida sin usar 🎁"
-        : "";
-      const generated =
-        `¡Hola${customer.name && !customer.name.startsWith("··") ? ` ${customer.name}` : ""}! ` +
-        `Te extrañamos en ${restaurantName}. ` +
-        `Tienes ${customer.totalPoints} punto${customer.totalPoints === 1 ? "" : "s"} guardados en tu número ⭐${rewardLine} ` +
-        `¡Te esperamos pronto!`;
-      setMsg(generated);
-      logPhoneWinbackTap(phone10);
-      const waUrl = buildWhatsappUrl(phone10, generated, phoneCountry);
-      window.open(waUrl, "_blank");
+      setMsgLoading(true);
+      setMsgError(false);
+      try {
+        const m = await writePhoneWinback({
+          restaurantId,
+          restaurantName,
+          phone10,
+          firstName: customer.name && !customer.name.startsWith("··") ? customer.name : "Hola",
+          points: customer.totalPoints,
+        });
+        setMsg(m.message);
+        window.open(buildWhatsappUrl(phone10, m.message, phoneCountry), "_blank");
+      } finally {
+        setMsgLoading(false);
+      }
       return;
     }
 
@@ -277,7 +275,7 @@ function CustomerCard({
   }
 
   const initials = (customer.name[0] ?? "C").toUpperCase();
-  const m = SEGMENT_META[customer.segment];
+  const winbackStatus = winbackStatusLabel(customer);
 
   return (
     <div className="rounded-xl bg-white p-3.5" style={{ border: `1px solid ${isActuaHoy ? WARN : BORDER}` }}>
@@ -311,8 +309,16 @@ function CustomerCard({
         </div>
       </div>
 
-      {/* Mensaje sugerido (solo en "Escríbeles hoy") */}
-      {isActuaHoy && msg && (
+      {/* Estado del win-back (29-sep): le escribiste / regresó */}
+      {winbackStatus && (
+        <p className="mt-2 flex items-center gap-1.5 text-[12px] leading-4" style={{ color: winbackStatus.returned ? "#15803D" : INK_SOFT }}>
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: winbackStatus.returned ? "#16A34A" : INK_SOFT }} />
+          {winbackStatus.label}
+        </p>
+      )}
+
+      {/* Mensaje sugerido: lo que escribió la IA, antes de mandarlo */}
+      {msg && (
         <div className="mt-3 rounded-lg px-3 py-2.5 text-[13px] leading-[18px]" style={{ background: TILE, color: INK }}>
           <p className="mb-1 text-[12px]" style={{ color: INK_SOFT }}>Mensaje sugerido</p>
           {msg}
@@ -427,8 +433,11 @@ export default function ClientesPage() {
   const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [winbackSent, setWinbackSent] = useState<number>(0);
-  const [winbackReturned, setWinbackReturned] = useState<number>(0);
+  // Mensajes DEL DUEÑO a clientes de teléfono y cuántos regresaron después
+  // (29-sep). Antes salía de reEngagementStats, que cuenta los avisos
+  // automáticos de la app: el número no medía el botón que el dueño toca.
+  const winbackSent = customers.reduce((n, c) => n + (c.winbackCount ?? 0), 0);
+  const winbackReturned = customers.reduce((n, c) => n + (c.winbackReturns ?? 0), 0);
   const [activeTab, setActiveTab] = useState<Segment | "todos">("todos");
   const [search, setSearch] = useState("");
 
@@ -572,6 +581,10 @@ export default function ClientesPage() {
           discountProfileId: (data.discountProfileId as string) ?? null,
           discountProfileName: (data.discountProfileName as string) ?? null,
           hasPhoneDoc: true,
+          lastWinbackAt: (data.lastWinbackAt as Timestamp) ?? null,
+          winbackReturnedAt: (data.winbackReturnedAt as Timestamp) ?? null,
+          winbackCount: (data.winbackCount as number) ?? 0,
+          winbackReturns: (data.winbackReturns as number) ?? 0,
         });
       });
     } catch {
@@ -603,13 +616,7 @@ export default function ClientesPage() {
       if (ctx.role === "employee") { router.push(vendorHomeForRole(ctx.role)); return; }
       const rid = ctx.restaurantId;
       const isOwner = ctx.role === "owner";
-      const [restSnap, statsSnap] = await Promise.all([
-        getDoc(doc(db, "restaurants", rid)),
-        getDoc(doc(db, "restaurants", rid, "reEngagementStats", "current")).catch(() => null)
-      ]);
-      const stats = statsSnap?.exists() ? statsSnap.data() ?? {} : {};
-      setWinbackSent(typeof stats.totalSent === "number" ? stats.totalSent : 0);
-      setWinbackReturned(typeof stats.returned === "number" ? stats.returned : 0);
+      const restSnap = await getDoc(doc(db, "restaurants", rid));
       setRestaurantId(rid);
       const rdata = restSnap.data() ?? {};
       setRestaurantName((rdata.name as string | undefined) ?? "");
@@ -693,7 +700,7 @@ export default function ClientesPage() {
               <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
                 {customers.length} con teléfono
                 {(winbackSent > 0 || winbackReturned > 0) && (
-                  <> · {winbackSent} mensajes enviados · {winbackReturned} regresaron</>
+                  <> · {winbackSent} mensaje{winbackSent === 1 ? "" : "s"} enviado{winbackSent === 1 ? "" : "s"} · {winbackReturned} regres{winbackReturned === 1 ? "ó" : "aron"}</>
                 )}
               </p>
             )}
