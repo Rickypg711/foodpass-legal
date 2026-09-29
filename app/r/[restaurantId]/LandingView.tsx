@@ -20,6 +20,7 @@ import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuPoweredByFooter } from "@/components/menu/MenuPoweredByFooter";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import {
+  landingViaFromLocation,
   trackWebLandingMenuClick,
   trackWebLandingView,
   trackWebLandingWhatsappClick,
@@ -319,7 +320,7 @@ export default function LandingView({
   // Vista registrada una vez que hay datos (server o client).
   useEffect(() => {
     if (restaurant && restaurantId) {
-      trackWebLandingView({ restaurantId, restaurantName: restaurant.name });
+      trackWebLandingView({ restaurantId, restaurantName: restaurant.name, via: landingViaFromLocation() });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId, restaurant?.name]);

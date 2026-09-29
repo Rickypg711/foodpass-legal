@@ -124,12 +124,29 @@ export function trackWebMenuDownloadClick(p: ClickParams): void {
 }
 
 /** Vista de la página pública del restaurante (/r/{id} — landing). */
-export function trackWebLandingView(p: ClickParams): void {
+/**
+ * `?m=wa` en la portada = llegó por el WhatsApp de win-back del dueño
+ * (functions/winback_signals.js menuShareLink). Corto a propósito: un utm
+ * largo en el mensaje del cliente parecía spam. Se manda como parámetro del
+ * evento (via) para contar los toques en GA4.
+ */
+export function landingViaFromLocation(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const m = new URLSearchParams(window.location.search).get("m");
+    return m === "wa" ? "winback_whatsapp" : null;
+  } catch {
+    return null;
+  }
+}
+
+export function trackWebLandingView(p: ClickParams & { via?: string | null }): void {
   if (typeof window === "undefined") return;
   try {
     void logEventSafe(WEB_MENU_EVENTS.landingView, {
       restaurantId: p.restaurantId,
       restaurantName: p.restaurantName,
+      ...(p.via ? { via: p.via } : {}),
     });
   } catch {
     // no-op
