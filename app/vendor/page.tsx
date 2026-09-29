@@ -1,6 +1,7 @@
 "use client";
 
 import { atRiskShown, type AtRiskMetrics } from "@/lib/vendor/atRisk";
+import { isStaleOrder } from "@/lib/order/orderAging";
 import { IN_TRAY_STATUSES } from "@/lib/order/trayOrders";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
@@ -315,6 +316,9 @@ export default function VendorDashboard() {
           const paymentStatus = (o.paymentStatus as string) ?? "";
           const isOpenTab = o.isOpenTab as boolean | undefined;
           const createdMs = (o.createdAt as Timestamp | undefined)?.toMillis?.() ?? 0;
+          // Pedidos VIEJOS (24 h+, 29-sep): de otro día y sin marcar; viven
+          // apartados en Pedidos y NO cuentan aquí. Espejo app.
+          if (createdMs > 0 && isStaleOrder(Math.floor((ahora - createdMs) / 60000))) return;
           if (["pending", "preparing", "ready"].includes(status)) {
             pedidosCola++;
           }

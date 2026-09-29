@@ -8,7 +8,6 @@ import {
   collection,
   query,
   where,
-  getDocs,
   doc,
   getDoc,
   increment,
@@ -18,6 +17,7 @@ import {
   orderBy,
   onSnapshot,
   Timestamp,
+  writeBatch,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { registerOrderPayment } from "@/lib/pos/registerPayment";
@@ -38,6 +38,7 @@ import {
   orderWaitLevel,
   orderWaitingMinutes,
   shouldRemindLateOrders,
+  isStaleOrder,
 } from "@/lib/order/orderAging";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { entrarHref } from "@/lib/vendor/pedidoLink";
@@ -315,7 +316,7 @@ function PedidosPageContent() {
   const minutesOf = (o: Order) =>
     orderWaitingMinutes(o.createdAt?.toMillis ? o.createdAt.toMillis() : now, now);
   const lateCount = orders.filter(
-    (o) => isWaitingOrder(o) && orderWaitLevel(minutesOf(o)) === "late",
+    (o) => isWaitingOrder(o) && orderWaitLevel(minutesOf(o)) === "late" && !isStaleOrder(minutesOf(o)),
   ).length;
   const lastRemindAt = useRef<number | null>(null);
   useEffect(() => {
@@ -505,6 +506,38 @@ function PedidosPageContent() {
 
   // ── Order State Transitions ──────────────────────────────────────────────────
 
+  const [showStale, setShowStale] = useState(false);
+  /** "Pedidos viejos": entregados en bloque, sin tocar el cobro. */
+  const markStaleDelivered = async (ids: string[]) => {
+    if (!restaurantId || ids.length === 0) return;
+    const ok = window.confirm(
+      ids.length === 1
+        ? "¿Marcar 1 pedido como entregado? Se va a Entregados; si sigue sin cobrar, sigue sin cobrar."
+        : `¿Marcar ${ids.length} pedidos como entregados? Se van a Entregados; lo que siga sin cobrar sigue sin cobrar.`,
+    );
+    if (!ok) return;
+    try {
+      const db = getFirebaseDb();
+      for (let i = 0; i < ids.length; i += 400) {
+        const batch = writeBatch(db);
+        for (const id of ids.slice(i, i + 400)) {
+          batch.update(doc(db, "restaurants", restaurantId, "orders", id), {
+            status: "completed",
+            completedAt: serverTimestamp(),
+            statusUpdatedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            completedInBulkAt: serverTimestamp(),
+          });
+        }
+        await batch.commit();
+      }
+      setShowStale(false);
+    } catch (e) {
+      console.error("bulk mark stale failed", e);
+      setError("No se pudo, intenta de nuevo.");
+    }
+  };
+
   const updateStatus = async (orderId: string, newStatus: Order["status"]) => {
     if (!restaurantId) return;
     try {
@@ -677,10 +710,25 @@ function PedidosPageContent() {
   // como cualquier pantalla de cocina. Entregados es historial: el más nuevo
   // arriba. `orders` llega del más nuevo al más viejo (mergeOrdersById).
   const oldestFirst = (list: Order[]) => [...list].reverse();
-  const groups: Record<OrderTab, Order[]> = {
+  // Pedidos VIEJOS (24 h+, 29-sep): de otro día y sin marcar. Van apartados al
+  // final de su columna en una tira, no suenan, no cuentan, y se marcan
+  // entregados en bloque. Espejo app.
+  const notStale = (o: Order) => !isStaleOrder(minutesOf(o));
+  const staleOf = (list: Order[]) => list.filter((o) => !notStale(o));
+  const liveAll = {
     pending: oldestFirst(orders.filter((o) => o.status === "pending" || o.status === "open_tab")),
     preparing: oldestFirst(orders.filter((o) => o.status === "preparing")),
     ready: oldestFirst(orders.filter((o) => o.status === "ready")),
+  };
+  const staleGroups: Record<"pending" | "preparing" | "ready", Order[]> = {
+    pending: staleOf(liveAll.pending),
+    preparing: staleOf(liveAll.preparing),
+    ready: staleOf(liveAll.ready),
+  };
+  const groups: Record<OrderTab, Order[]> = {
+    pending: liveAll.pending.filter(notStale),
+    preparing: liveAll.preparing.filter(notStale),
+    ready: liveAll.ready.filter(notStale),
     completed: orders.filter((o) => {
       const dateMs = o.createdAt?.toMillis ? o.createdAt.toMillis() : 0;
       return o.status === "completed" && dateMs >= startOfToday;
@@ -824,21 +872,8 @@ function PedidosPageContent() {
                 apilan; en escritorio, cuatro columnas. Vivo con onSnapshot. */}
             {COLUMNS.map((col) => {
               const list = groups[col.key];
-              return (
-                <section key={col.key} className="flex min-w-0 flex-col gap-2.5">
-                  <header className="flex items-baseline justify-between px-0.5 pb-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
-                    <h2 className="text-[14px] font-semibold" style={{ color: INK }}>{col.label}</h2>
-                    <span className="text-[13px] font-semibold tabular-nums" style={{ color: list.length > 0 && col.key === "pending" ? LINK : INK_SOFT }}>
-                      {list.length}
-                    </span>
-                  </header>
-                  {list.length === 0 ? (
-                    <div className="flex h-24 items-center justify-center rounded-xl text-[13px]" style={{ border: `1px dashed ${BORDER}`, color: INK_SOFT }}>
-                      {col.emptyCopy}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2.5">
-                      {list.map((order) => {
+              const staleList = col.key === "completed" ? [] : staleGroups[col.key as "pending" | "preparing" | "ready"];
+              const renderCard = (order: Order, dim: boolean) => {
                         const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
                         const formattedTime = date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
                         const isPaid = order.paymentStatus === "paid";
@@ -874,25 +909,31 @@ function PedidosPageContent() {
                           <article
                             key={order.id}
                             id={`pedido-${order.id}`}
-                            className="flex flex-col gap-3 rounded-xl bg-white p-3.5"
+                            className={`flex flex-col gap-3 rounded-xl bg-white p-3.5${dim ? " opacity-90" : ""}`}
                             style={{
-                              border: `1px solid ${level === "late" ? WARN : BORDER}`,
+                              border: `1px solid ${level === "late" && !dim ? WARN : BORDER}`,
                               ...(order.id === focusOrderId
                                 ? { outline: `2px solid ${INK}`, outlineOffset: "2px", scrollMarginTop: "96px" }
                                 : {}),
                             }}
                           >
+                            {/* QUIÉN arriba y grande (29-sep, pantalla de cocina); el id y
+                                la hora en una línea chica. */}
                             <div className="flex items-baseline justify-between gap-2">
-                              <span className="text-[15px] font-semibold tabular-nums" style={{ color: INK }}>#{order.id.slice(-6).toUpperCase()}</span>
-                              <span className="text-[13px]" style={{ color: INK_SOFT }}>{formattedTime}</span>
+                              <span className="min-w-0 truncate text-[16px] font-semibold" style={{ color: INK }}>
+                                {order.customerName || (order.tableNumber ? tableLabel(order.tableNumber) : null) || (src === "pos" ? "Caja" : typeLabel)}
+                              </span>
+                              <span className="shrink-0 text-[13px] tabular-nums" style={{ color: INK_SOFT }}>
+                                #{order.id.slice(-6).toUpperCase()} · {formattedTime}
+                              </span>
                             </div>
 
                             {/* Chips: origen y tipo con borde; cuánto lleva con punto y
                                 palabra (ámbar desde los 10 min). La mesa va en tinta,
                                 es lo único que le dice al mesero a dónde llevar el plato. */}
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {sourceLabel && <Chip>{sourceLabel}</Chip>}
-                              <Chip>{typeLabel}</Chip>
+                              {/* Origen y tipo en UN chip: "Web · Para llevar", "Caja". */}
+                              <Chip>{[src === "pos" ? "Caja" : sourceLabel, order.tableNumber ? null : typeLabel].filter(Boolean).join(" · ")}</Chip>
                               {order.tableNumber ? (
                                 <span className="inline-flex h-[26px] items-center rounded-full px-2.5 text-[12px] font-semibold" style={{ background: INK, color: "#FAF9F5" }}>
                                   {tableLabel(order.tableNumber)}{order.diners ? ` · ${order.diners} personas` : ""}
@@ -1078,7 +1119,46 @@ function PedidosPageContent() {
                             </div>
                           </article>
                         );
-                      })}
+              };
+              return (
+                <section key={col.key} className="flex min-w-0 flex-col gap-2.5">
+                  <header className="flex items-baseline justify-between px-0.5 pb-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+                    <h2 className="text-[14px] font-semibold" style={{ color: INK }}>{col.label}</h2>
+                    <span className="text-[13px] font-semibold tabular-nums" style={{ color: list.length > 0 && col.key === "pending" ? LINK : INK_SOFT }}>
+                      {list.length}
+                    </span>
+                  </header>
+                  {list.length === 0 ? (
+                    <div className="flex h-24 items-center justify-center rounded-xl text-[13px]" style={{ border: `1px dashed ${BORDER}`, color: INK_SOFT }}>
+                      {col.emptyCopy}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {list.map((order) => renderCard(order, false))}
+                      {staleList.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-2 rounded-xl px-3.5 py-3" style={{ background: "#F0EBE1" }}>
+                          <p className="text-[14px] font-semibold leading-[18px]" style={{ color: INK }}>
+                            {staleList.length === 1 ? "1 pedido viejo" : `${staleList.length} pedidos viejos`}
+                          </p>
+                          <p className="text-[13px] leading-4" style={{ color: INK_SOFT }}>De otro día y sin marcar. No suenan ni cuentan en la cola.</p>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => markStaleDelivered(staleList.map((o) => o.id))}
+                              className="inline-flex h-10 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-semibold transition hover:opacity-90"
+                              style={{ border: `1px solid ${INK}`, color: INK }}>
+                              Marcar entregados
+                            </button>
+                            <button type="button" onClick={() => setShowStale((v) => !v)}
+                              className="inline-flex h-10 items-center px-2 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+                              {showStale ? "Ocultar" : "Ver"}
+                            </button>
+                          </div>
+                          {showStale && (
+                            <div className="flex flex-col gap-2.5 opacity-75">
+                              {staleList.map((order) => renderCard(order, true))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>

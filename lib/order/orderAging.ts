@@ -18,6 +18,13 @@
 export const ORDER_WAIT_WARN_MINUTES = 10;
 export const ORDER_WAIT_LATE_MINUTES = 20;
 export const ORDER_REMINDER_EVERY_MINUTES = 5;
+/** A las 24 h un pedido ya no es "tarde": es VIEJO (apartado, no suena, no cuenta). */
+export const ORDER_STALE_MINUTES = 24 * 60;
+
+/** >= 24 h → viejo (apartado). */
+export function isStaleOrder(minutes: number): boolean {
+  return minutes >= ORDER_STALE_MINUTES;
+}
 
 export type OrderWaitLevel = "ok" | "warn" | "late";
 
@@ -43,18 +50,20 @@ export function isWaitingOrder(p: { status?: string | null; isOpenTab?: boolean 
   return p.status === "pending" || p.status === "preparing" || p.status === "ready";
 }
 
-function span(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h} h` : `${h} h ${m} min`;
-}
-
-/** Lo que dice la tarjeta: "Ahora", "Hace 12 min", "Lleva 25 min · ¿ya lo entregaste?". */
+/**
+ * Lo que dice la tarjeta: un reloj, no un regaño (29-sep-2026). "Ahora",
+ * "12 min", "1 h 5 min", "3 d". La pregunta "¿ya lo entregaste?" vive UNA
+ * vez, en el letrero de arriba (lateOrdersBanner).
+ */
 export function orderWaitLabel(minutes: number): string {
   if (minutes < 1) return "Ahora";
-  if (orderWaitLevel(minutes) === "late") return `Lleva ${span(minutes)} · ¿ya lo entregaste?`;
-  return `Hace ${span(minutes)}`;
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < ORDER_STALE_MINUTES) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  }
+  return `${Math.floor(minutes / ORDER_STALE_MINUTES)} d`;
 }
 
 /** ¿Suena otra vez? Sí si hay alguno en rojo y ya pasaron 5 min del último aviso. */

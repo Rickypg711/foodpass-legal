@@ -23,6 +23,8 @@ import {
   isWaitingOrder,
   shouldRemindLateOrders,
   lateOrdersBanner,
+  ORDER_STALE_MINUTES,
+  isStaleOrder,
 } from "../lib/order/orderAging.ts";
 
 let failed = 0;
@@ -55,14 +57,19 @@ check("20 min => rojo", orderWaitLevel(20), "late");
 
 // ── Lo que dice la tarjeta ──────────────────────────────────────────────────
 check("recien llegado", orderWaitLabel(0), "Ahora");
-check("3 min", orderWaitLabel(3), "Hace 3 min");
-check("12 min (naranja, sin regaño)", orderWaitLabel(12), "Hace 12 min");
-check("25 min (rojo, pregunta)", orderWaitLabel(25), "Lleva 25 min · ¿ya lo entregaste?");
-check("59 min", orderWaitLabel(59), "Lleva 59 min · ¿ya lo entregaste?");
-check("60 min => en horas", orderWaitLabel(60), "Lleva 1 h · ¿ya lo entregaste?");
-check("65 min", orderWaitLabel(65), "Lleva 1 h 5 min · ¿ya lo entregaste?");
+check("3 min", orderWaitLabel(3), "3 min");
+check("12 min (naranja, sin regaño)", orderWaitLabel(12), "12 min");
+check("25 min (rojo, sin pregunta: la pregunta vive en el letrero)", orderWaitLabel(25), "25 min");
+check("59 min", orderWaitLabel(59), "59 min");
+check("60 min => en horas", orderWaitLabel(60), "1 h");
+check("65 min", orderWaitLabel(65), "1 h 5 min");
+check("23 h 59", orderWaitLabel(1439), "23 h 59 min");
+check("24 h => dias, y es VIEJO", orderWaitLabel(1440), "1 d");
+check("7 dias", orderWaitLabel(10256), "7 d");
+check("viejo a las 24 h", ORDER_STALE_MINUTES, 1440);
+check("1439 no es viejo", isStaleOrder(1439), false);
+check("1440 es viejo", isStaleOrder(1440), true);
 
-// ── Que cuenta como "esperando" ─────────────────────────────────────────────
 check("pendiente cuenta", isWaitingOrder({ status: "pending" }), true);
 check("en cocina cuenta", isWaitingOrder({ status: "preparing" }), true);
 check("listo cuenta", isWaitingOrder({ status: "ready" }), true);
