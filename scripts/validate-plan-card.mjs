@@ -34,9 +34,25 @@ for (const line of PRO_LINES) {
   must(i > cursor, `renglón de Pro fuera de orden o ausente: ${line}`);
   cursor = i;
 }
-must(page.includes("Menú QR, Caja, pedidos, puntos sin tope, tus clientes y reportes: gratis siempre."), "línea del plan Gratis");
-must(page.includes("Plan Gratis — para operar"), "título del plan Gratis");
-must(page.includes("Plan Pro activo"), "título del plan Pro activo");
+// 30-sep: los DOS planes siempre, con "Tu plan" marcado (lente Duolingo/Square).
+const FREE_LINES = [
+  "Menú QR y tu página en Google",
+  "Caja, pedidos en línea y por WhatsApp",
+  "Puntos para tus clientes, sin tope",
+  "Tus clientes y mensajes para que regresen",
+  "Reportes e historial de 30 días",
+  "Un PIN de la Caja (el tuyo)",
+];
+let c2 = -1;
+for (const line of FREE_LINES) {
+  const i = page.indexOf(`"${line}"`);
+  must(i > c2, `renglón de Gratis fuera de orden o ausente: ${line}`);
+  c2 = i;
+}
+must(page.includes("Gratis — para operar"), "título del plan Gratis");
+must(page.includes("Plan Pro activo · cancela cuando quieras"), "línea del plan Pro activo");
+must(page.includes("Todo esto sigue igual en Pro."), "el que paga ve que lo gratis sigue");
+must((page.match(/>Tu plan<\/Pill>/g) || []).length === 2, "pastilla Tu plan en las dos tarjetas (una por plan)");
 must(page.includes("{PRO_PRICE_LABEL}/mes — para cuando tu Caja crece"), "el precio sale de PRO_PRICE_LABEL, no a mano");
 must(/export const PRO_AMOUNT_MXN = 499;/.test(pricing), "PRO_AMOUNT_MXN = 499");
 must(!/\$?299/.test(page), "el 299 viejo no aparece en Configuración");

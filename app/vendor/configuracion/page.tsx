@@ -738,70 +738,92 @@ export default function ConfiguracionPage() {
 
   // Estas dos tarjetas viven en la columna izquierda en desktop y al FINAL
   // de la página en móvil (el formulario del negocio va primero en teléfono).
+  // 30-sep-2026 (Ricardo, lente Duolingo/Square): los DOS planes se enseñan
+  // siempre, con "Tu plan" marcado; el que paga ve qué tiene y el gratis ve
+  // qué le falta. La app (SubscriptionTiersPage) pinta lo mismo.
+  const PLAN_FREE_LINES = [
+    "Menú QR y tu página en Google",
+    "Caja, pedidos en línea y por WhatsApp",
+    "Puntos para tus clientes, sin tope",
+    "Tus clientes y mensajes para que regresen",
+    "Reportes e historial de 30 días",
+    "Un PIN de la Caja (el tuyo)",
+  ];
+  const PLAN_PRO_LINES = [
+    "Todo tu historial de ventas (más de 30 días)",
+    "Tu equipo cobra con su PIN",
+    "Cuentas por mesa",
+    "Cuentas con acceso propio para tu equipo, cada quien con su rol",
+    "Pregúntale a Comeleal sin límite",
+    "Descuentos especiales (staff y familia) — la Caja los aplica sola",
+  ];
+  const planLines = (lines: string[]) => (
+    <ul className="mt-2">
+      {lines.map((line, i) => (
+        <li
+          key={line}
+          className="flex items-start gap-2 py-2 text-[14px] leading-5"
+          style={{ color: INK, borderTop: i > 0 ? `1px solid ${HAIRLINE}` : undefined }}
+        >
+          <span className="mt-0.5 shrink-0"><IconCheck /></span>
+          <span>{line}</span>
+        </li>
+      ))}
+    </ul>
+  );
   const planCard = (
             <SectionCard label="Tu plan" plain>
-              {plan === "pro" ? (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+              <div className="space-y-4">
+                {/* Gratis */}
+                <div className="rounded-xl bg-white p-4" style={{ border: `1px solid ${plan === "pro" ? BORDER : INK}` }}>
+                  <div className="flex items-start justify-between gap-3">
                     <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
-                      Plan Pro activo
+                      Gratis — para operar
                     </p>
-                    <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
-                      Todo tu historial, tu equipo con su PIN, mesas, descuentos especiales y Pregúntale a Comeleal sin límite
-                    </p>
+                    {plan !== "pro" && <Pill bg={INK} color={CREAM}>Tu plan</Pill>}
                   </div>
-                  <Pill bg={INK} color={CREAM}>Pro</Pill>
+                  {planLines(PLAN_FREE_LINES)}
+                  {plan === "pro" && (
+                    <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                      Todo esto sigue igual en Pro.
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <div>
-                  <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
-                    Plan Gratis — para operar
-                  </p>
-                  <p className="mt-0.5 text-[13px] leading-[18px]" style={{ color: INK_MUTED }}>
-                    Menú QR, Caja, pedidos, puntos sin tope, tus clientes y reportes: gratis siempre.
-                  </p>
-                  {/* Lo que trae Pro es una LISTA: por eso sí va en tarjeta. */}
-                  <div className="mt-4 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
+
+                {/* Pro */}
+                <div className="rounded-xl bg-white p-4" style={{ border: `1px solid ${plan === "pro" ? INK : BORDER}` }}>
+                  <div className="flex items-start justify-between gap-3">
                     <p className="text-[15px] font-semibold leading-5" style={{ color: INK }}>
                       Pro · {PRO_PRICE_LABEL}/mes — para cuando tu Caja crece
                     </p>
-                    <ul className="mt-2">
-                      {[
-                        "Todo tu historial de ventas (más de 30 días)",
-                        "Tu equipo cobra con su PIN",
-                        "Cuentas por mesa",
-                        "Cuentas con acceso propio para tu equipo, cada quien con su rol",
-                        "Pregúntale a Comeleal sin límite",
-                        "Descuentos especiales (staff y familia) — la Caja los aplica sola",
-                      ].map((line, i) => (
-                        <li
-                          key={line}
-                          className="flex items-start gap-2 py-2 text-[14px] leading-5"
-                          style={{ color: INK, borderTop: i > 0 ? `1px solid ${HAIRLINE}` : undefined }}
-                        >
-                          <span className="mt-0.5 shrink-0"><IconCheck /></span>
-                          <span>{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      onClick={handleActivatePro}
-                      disabled={activatingPro}
-                      className={`${BTN_PRIMARY} mt-3`}
-                      style={{ background: INK, color: CREAM }}
-                    >
-                      {activatingPro ? "Abriendo pago…" : "Activar Pro"}
-                    </button>
-                    <p className="mt-2 text-center text-[13px] leading-4" style={{ color: INK_SOFT }}>
-                      Pago seguro con Mercado Pago · cancela cuando quieras
-                    </p>
-                    <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 block text-center`}>
-                      Ver la comparación completa
-                    </Link>
+                    {plan === "pro" && <Pill bg={INK} color={CREAM}>Tu plan</Pill>}
                   </div>
+                  {planLines(PLAN_PRO_LINES)}
+                  {plan === "pro" ? (
+                    <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                      Plan Pro activo · cancela cuando quieras
+                    </p>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleActivatePro}
+                        disabled={activatingPro}
+                        className={`${BTN_PRIMARY} mt-3`}
+                        style={{ background: INK, color: CREAM }}
+                      >
+                        {activatingPro ? "Abriendo pago…" : "Activar Pro"}
+                      </button>
+                      <p className="mt-2 text-center text-[13px] leading-4" style={{ color: INK_SOFT }}>
+                        Pago seguro con Mercado Pago · cancela cuando quieras
+                      </p>
+                      <Link href="/vendor/plan" className={`${BTN_TERTIARY} mt-2 block text-center`}>
+                        Ver la comparación completa
+                      </Link>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
             </SectionCard>
   );
 
