@@ -118,4 +118,25 @@ const base = (overrides = {}) => ({
   assert.ok(apagado.loyaltyGaps.includes("first_purchase_reward"), "pero sigue reportado como hueco");
 }
 
+// ── 30-sep: el rango sano del premio vive en TRES lados con las mismas
+//    constantes. La app tiene su espejo (lib/loyalty/reward_tier_health.dart);
+//    si alguien cambia 0.10 / 0.15 / 0.20 aquí, truena si no cambia allá.
+{
+  const { readFileSync } = await import("node:fs");
+  const web = readFileSync(new URL("../app/vendor/setup/recompensas/page.tsx", import.meta.url), "utf8");
+  const webConsts = {
+    hard: web.match(/const HARD_FAIL_RATIO = ([0-9.]+);/)?.[1],
+    bump: web.match(/const BUMP_START_RATIO = ([0-9.]+);/)?.[1],
+    min: web.match(/const HEALTHY_MIN_RATIO = ([0-9.]+);/)?.[1],
+  };
+  let app = "";
+  try { app = readFileSync("/Users/ricardoparedes/projects/FOODPASS/lib/loyalty/reward_tier_health.dart", "utf8"); } catch { app = ""; }
+  if (app) {
+    assert.equal(app.match(/kRewardHardFailRatio = ([0-9.]+);/)?.[1], webConsts.hard, "app: HARD_FAIL_RATIO distinto de la web");
+    assert.equal(app.match(/kRewardBumpStartRatio = ([0-9.]+);/)?.[1], webConsts.bump, "app: BUMP_START_RATIO distinto de la web");
+    assert.equal(app.match(/kRewardHealthyMinRatio = ([0-9.]+);/)?.[1], webConsts.min, "app: HEALTHY_MIN_RATIO distinto de la web");
+    assert.ok(app.includes("Bien puesto: regalas el"), "app: mismo copy de 'Bien puesto'");
+  }
+}
+
 console.log("validate-readiness-tiers: OK");
