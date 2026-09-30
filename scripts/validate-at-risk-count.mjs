@@ -50,4 +50,26 @@ assert.ok(!/atRiskCount: \(insMetrics\.atRiskCount as number \| undefined\) \?\?
   }
 }
 
+// 4) 29-sep: Clientes botón por botón (paridad app). "Escríbeles hoy" descansa
+//    7 días por cliente (el del cerebro) y la línea del cliente enseña cuánto
+//    ha gastado, como la app.
+{
+  const clientes = rd("app/vendor/clientes/page.tsx");
+  assert.ok(clientes.includes("WINBACK_COOLDOWN_MS = 7 * 86400000"), "Clientes web: descanso de 7 días en Escríbeles hoy");
+  assert.ok(clientes.includes("c.lastWinbackAt.toMillis() >= WINBACK_COOLDOWN_MS"), "Clientes web: el que ya recibió mensaje esta semana no sale arriba");
+  assert.ok(clientes.includes("totalSpend: (data.totalSpend as number) ?? 0"), "Clientes web: lee totalSpend");
+  assert.ok(clientes.includes("customer.totalSpend"), "Clientes web: la línea del cliente enseña el gasto");
+  const app = readFileSync("/Users/ricardoparedes/projects/FOODPASS/lib/pages/clientes/clientes_screen.dart", "utf8");
+  assert.ok(app.includes("kClienteWinbackCooldownDays = 7"), "App: mismo descanso de 7 días");
+  assert.ok(app.includes("List<Cliente> escribelesHoy("), "App: misma sección Escríbeles hoy");
+  // Dos relojes de la bienvenida (29-sep): con filas manda expiresAt de la fila viva; sin filas, createdAt + 7 d.
+  assert.ok(clientes.includes("function rewardExpiresAtMs(") && clientes.includes("soonestLive(rows, nowMs)"), "Clientes web: la bienvenida vence por la fila viva, no por '7 desde nacer'");
+  assert.ok(!clientes.includes("FIRST_VISIT_CLAIM_DAYS - rewardAgeDays"), "Clientes web: sin la regla vieja pelona");
+  assert.ok(app.includes("DateTime? clienteRewardExpiresAt(") && app.includes("FreeItems.claimByOf(d, now: t)"), "App: mismo reloj de la bienvenida");
+  for (const seg of ['"riesgo"', '"perdido"', '"nuevo"', '"regular"', '"campeon"']) {
+    assert.ok(clientes.includes(seg), `web urgencyOrder trae ${seg}`);
+  }
+  assert.ok(app.includes("ClienteSegment.riesgo,\n  ClienteSegment.perdido,\n  ClienteSegment.nuevo,\n  ClienteSegment.regular,\n  ClienteSegment.campeon,"), "App: mismo orden de urgencia que la web");
+}
+
 console.log("✅ validate-at-risk-count: 'en riesgo' cuenta app + teléfono en Panel, Reportes y el consejo");

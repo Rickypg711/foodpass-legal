@@ -59,10 +59,33 @@ interface Customer {
   winbackCount?: number;
   winbackReturns?: number;
   winbackRecoveredTotal?: number;
+  /** Cuánto ha gastado en total (phoneCustomers.totalSpend) — paridad app (29-sep). */
+  totalSpend?: number;
 }
 
 /** First-visit reward claim window — mirrors the app's _firstVisitClaimDays. */
 import { FIRST_VISIT_CLAIM_DAYS } from "@/lib/loyalty/rewardCatalog";
+import { DAY_MS, parseRows, soonestLive, toMs } from "@/lib/loyalty/freeItems";
+
+/**
+ * Hasta cuándo vive la bienvenida de este doc, o null si no hay ninguna viva.
+ * Dos relojes (29-sep, Ricardo lo cazó): con filas de tacos (`freeItems`)
+ * manda el `expiresAt` de la fila viva que vence primero (7 días desde que
+ * el comensal lo VE, tope 30 desde que nació); sin filas, la regla vieja:
+ * createdAt + 7 d. Espejo de `welcomeRewardLive` (cerebro) y de
+ * `clienteRewardExpiresAt` (app).
+ */
+function rewardExpiresAtMs(data: Record<string, unknown>, nowMs: number): number | null {
+  const rows = parseRows(data.freeItems);
+  if (rows.length > 0) {
+    const row = soonestLive(rows, nowMs);
+    return row ? toMs(row.expiresAt) : null;
+  }
+  if (data.firstVisitRewardUnlocked !== true) return null;
+  const born = toMs(data.createdAt);
+  const exp = (born ?? nowMs) + FIRST_VISIT_CLAIM_DAYS * DAY_MS;
+  return exp < nowMs ? null : exp;
+}
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
 
@@ -292,7 +315,7 @@ function CustomerCard({
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold leading-5" style={{ color: INK }}>{customer.name}</p>
           <p className="mt-0.5 text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
-            {customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""} · {customer.totalPoints} pts · {timeAgo(customer.lastVisit)}
+            {customer.totalVisits} visita{customer.totalVisits !== 1 ? "s" : ""} · {customer.totalPoints} pts{(customer.totalSpend ?? 0) > 0 ? ` · $${Math.round(customer.totalSpend!).toLocaleString("en-US")}` : ""} · {timeAgo(customer.lastVisit)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <SegmentBadge segment={customer.segment} />
@@ -557,18 +580,11 @@ export default function ClientesPage() {
         const name =
           ((data.name as string) ?? "").trim().split(" ")[0] ||
           `··${phone10.slice(-4)}`;
-        // 7-day claim window anchored on the unlock (first credit), same rule
-        // as the app. Expired → no longer a hook, don't promise it.
-        const createdAt = (data.createdAt as Timestamp) ?? null;
-        const rewardAgeDays = createdAt
-          ? Math.floor((now - createdAt.toMillis()) / 86400000)
-          : null;
-        const rewardDaysLeft =
-          rewardAgeDays === null
-            ? FIRST_VISIT_CLAIM_DAYS
-            : FIRST_VISIT_CLAIM_DAYS - rewardAgeDays;
-        const rewardUnlocked =
-          data.firstVisitRewardUnlocked === true && rewardDaysLeft >= 0;
+        // Vencida ya no es gancho y no se promete. Días enteros que quedan
+        // (0 = vence hoy), igual que el cerebro.
+        const rewardExpMs = rewardExpiresAtMs(data as Record<string, unknown>, now);
+        const rewardUnlocked = rewardExpMs != null;
+        const rewardDaysLeft = rewardExpMs == null ? 0 : Math.max(0, Math.floor((rewardExpMs - now) / DAY_MS));
         result.push({
           userId: `tel:${phone10}`,
           name,
@@ -590,6 +606,7 @@ export default function ClientesPage() {
           winbackCount: (data.winbackCount as number) ?? 0,
           winbackReturns: (data.winbackReturns as number) ?? 0,
           winbackRecoveredTotal: (data.winbackRecoveredTotal as number) ?? 0,
+          totalSpend: (data.totalSpend as number) ?? 0,
         });
       });
     } catch {
@@ -655,6 +672,10 @@ export default function ClientesPage() {
   }
 
   // Derived
+  // Descanso de 7 días (el del cerebro, WINBACK_COOLDOWN_DAYS): si ya le
+  // escribió esta semana no vuelve a salir arriba — escribir dos veces la
+  // misma semana es acoso, no servicio. Paridad app (29-sep).
+  const WINBACK_COOLDOWN_MS = 7 * 86400000;
   const actuaHoy = customers.filter(
     (c) =>
       c.phone &&
@@ -662,7 +683,8 @@ export default function ClientesPage() {
         c.segment === "perdido" ||
         // Reward about to expire (≤2 days) = today's most urgent nudge,
         // regardless of segment — the day-5-of-7 reminder moment.
-        (c.rewardUnlocked === true && (c.rewardDaysLeft ?? 9) <= 2))
+        (c.rewardUnlocked === true && (c.rewardDaysLeft ?? 9) <= 2)) &&
+      (!c.lastWinbackAt || Date.now() - c.lastWinbackAt.toMillis() >= WINBACK_COOLDOWN_MS)
   ).slice(0, 5);
 
   // Search by name or phone (digits match anywhere in the number).
@@ -748,7 +770,7 @@ export default function ClientesPage() {
             {/* ── Actúa hoy ── */}
             {actuaHoy.length > 0 && (
               <section>
-                <div className="mb-3 flex items-baseline justify-between gap-3">
+                <div className="mb-3 flex flex-col gap-0.5">
                   <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>Escríbeles hoy</h2>
                   <span className="text-[13px] leading-4" style={{ color: INK_SOFT }}>
                     {actuaHoy.length} cliente{actuaHoy.length !== 1 ? "s" : ""} · toca y te escribimos el mensaje
