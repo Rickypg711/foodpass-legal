@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
-import { expectedDayProgressPercent } from "@/lib/schedule";
+import { expectedDayProgressPercent, isOpenNow } from "@/lib/schedule";
 import { entitlementOf, accessExpiresAtMs } from "@/lib/subscription/entitlement";
 import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
 import { trialClockState } from "@/lib/subscription/trialClock";
@@ -492,6 +492,9 @@ export default function VendorDashboard() {
             const metaPct = (ventasHoy / goal) * 100;
             if (metaPct >= 100) return "Logrado";
             if (metaPct >= 80) return "Muy cerca";
+            // Solo con el local ABIERTO (30-sep, Ricardo): cerrado o antes de
+            // abrir no hay ritmo que juzgar. Espejo app (today_overview_card).
+            if (!isOpenNow(r as Record<string, unknown>)) return null;
             const expected = expectedDayProgressPercent(r as Record<string, unknown>);
             if (expected === null) return null;
             if (metaPct >= expected + 10) return "Adelantado";

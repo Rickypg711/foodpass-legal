@@ -105,6 +105,8 @@ const main = raw.slice(jsxStart, jsxEnd);
   const today = raw.slice(raw.indexOf("function TodayCard("), raw.indexOf("function IdentifiedSalesCard("));
   assert.ok(today.includes("menuUnpaidLine("), "Hoy: pedidos en línea sin cobrar viven aquí");
   assert.ok(raw.includes("const PACE_BEHIND_MIN_EXPECTED = 35;"), "Hoy: 'Atrasado' solo tras un tercio de la jornada");
+  // 30-sep: el ritmo solo con el local abierto (espejo app).
+  assert.ok(raw.includes("if (!isOpenNow(r as Record<string, unknown>)) return null;"), "Hoy: ritmo solo con el local abierto");
   assert.ok(!block.includes("/vendor/scanner") && !block.includes("/vendor/pos") && !block.includes("Cobrar con número"), "Clientes 30d: sin escáner ni 'Cobrar con número'");
   assert.ok(!/escane/i.test(block), "Clientes 30d: copy sin 'escanear'");
 }
