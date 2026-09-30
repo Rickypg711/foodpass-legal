@@ -207,8 +207,15 @@ export default function Home() {
           <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
             <div>
               <Eyebrow>Para restaurantes locales</Eyebrow>
+              {/* Prueba del titular (30-sep-2026 → 14-oct): el H1 vendía el
+                  boleto (foto, 1 min, gratis); ahora también el viaje. En clave
+                  de relación, nunca "sabes quién te compró" (suena a vigilancia,
+                  26-sep). Misma métrica que la base: toques del botón por
+                  visitante orgánico (27 %) y altas (7 / 2 semanas). Sube → se
+                  queda; baja → revert a "Tu menú de papel, digital y gratis en
+                  1 minuto." */}
               <h1 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-[3.4rem]">
-                Tu menú de papel,<br />digital y gratis<br />en 1 minuto.
+                Tu menú de papel,<br />digital y gratis.<br />Y desde el primer pedido,<br />tienes a quién avisarle.
               </h1>
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#1C2526]/65">
                 <span className="font-medium text-[#1C2526]">Que te pidan, que regresen, que lo veas.</span>{" "}
