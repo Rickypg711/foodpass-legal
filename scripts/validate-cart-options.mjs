@@ -213,6 +213,21 @@ check(
 );
 check("el grupo se sigue renderizando con key={g.id}", editorSrc.includes("key={g.id}"), true);
 
+// ── 30-sep: la app tiene su propio editor y guarda con las MISMAS reglas ──
+// Si cleanOptionGroups cambia aquí, cambia allá (lib/menu/option_groups.dart).
+{
+  const appPath = "/Users/ricardoparedes/projects/FOODPASS/lib/menu/option_groups.dart";
+  let app = "";
+  try { app = readFileSync(appPath, "utf8"); } catch { app = ""; }
+  if (app) {
+    check("app: cleanOptionGroups existe (espejo del editor web)", app.includes("List<MenuItemOptionGroup> cleanOptionGroups("), true);
+    check("app: grupos con <2 opciones se tiran, como la web", app.includes("opts.length < 2) continue"), true);
+    check("app: optionGroupToMap escribe available solo cuando es false", app.includes("if (!o.available) 'available': false"), true);
+    const form = readFileSync("/Users/ricardoparedes/projects/FOODPASS/lib/pages/menu/menu_product_form_page.dart", "utf8");
+    check("app: el formulario del platillo edita opciones", form.includes("OptionGroupsEditor("), true);
+  }
+}
+
 // ── El TAMANO es la unica eleccion obligatoria QUE CUESTA ──────────────────
 // Una pizza sin tamano no es un pedido. Sin esto, "Elige tu tamano: Personal,
 // Grande +$90" quedaba opcional. Espejo del test de Dart.
