@@ -10,6 +10,7 @@ import { waitForAuthReady } from "@/lib/auth";
 interface RewardTier {
   pointsRequired: number;
   menuItemName: string;
+  menuItemImageUrl?: string | null;
   menuItemDescription?: string;
   hasMenuItem?: boolean;
 }
@@ -18,6 +19,7 @@ interface FirstPurchaseReward {
   enabled: boolean;
   menuItemName: string;
   menuItemDescription?: string;
+  menuItemImageUrl?: string | null;
   pointsAwarded: number;
 }
 
@@ -29,6 +31,7 @@ interface RawTier {
   menuItemDescription?: string;
   hasMenuItem?: boolean;
   menuItemId?: string;
+  menuItemImageUrl?: string | null;
 }
 
 interface RewardsData {
@@ -119,6 +122,7 @@ export default function RecompensasPage() {
       const rawTiers = ((d.rewardTiers as RawTier[] | undefined) ?? []).map((t) => ({
         pointsRequired: t.pointsRequired ?? t.visitsRequired ?? 0,
         menuItemName: t.menuItemName ?? "",
+        menuItemImageUrl: t.menuItemImageUrl ?? null,
         menuItemDescription: t.menuItemDescription ?? "",
         hasMenuItem: t.hasMenuItem ?? !!t.menuItemId,
       }));
@@ -302,9 +306,14 @@ export default function RecompensasPage() {
               <div className="rounded-xl bg-white px-4 py-1" style={{ border: `1px solid ${BORDER}` }}>
                 {hasFpr && data?.firstPurchaseReward && (
                   <div className="flex items-center gap-3 py-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: TILE, color: INK }}>
-                      <IconGift small />
-                    </div>
+                    {data.firstPurchaseReward.menuItemImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={data.firstPurchaseReward.menuItemImageUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: TILE, color: INK }}>
+                        <IconGift small />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-[15px] font-medium" style={{ color: INK }}>
@@ -326,11 +335,18 @@ export default function RecompensasPage() {
                 {data!.rewardTiers.map((tier, i) => (
                   <div key={i} className="flex items-center gap-3 py-3"
                     style={{ borderTop: hasFpr || i > 0 ? `1px solid ${HAIRLINE}` : undefined }}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums"
-                      style={{ background: TILE, color: INK }}
-                      title={`${tier.pointsRequired} puntos`}>
-                      {formatPoints(tier.pointsRequired)}
-                    </div>
+                    {/* La FOTO del platillo (30-sep): es lo que el dueño reconoce;
+                        los puntos ya van en la leyenda. Sin foto, el círculo con puntos. */}
+                    {tier.menuItemImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={tier.menuItemImageUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" title={`${tier.pointsRequired} puntos`} />
+                    ) : (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums"
+                        style={{ background: TILE, color: INK }}
+                        title={`${tier.pointsRequired} puntos`}>
+                        {formatPoints(tier.pointsRequired)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-medium" style={{ color: INK }}>
                         {tier.menuItemName || <span style={{ color: INK_SOFT }}>Sin nombre</span>}
