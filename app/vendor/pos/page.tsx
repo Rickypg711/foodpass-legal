@@ -125,6 +125,9 @@ function cartLineToOrderItem(c: CartItem): Record<string, unknown> {
 }
 
 type CheckoutMode = "now" | "tab";
+/** La pantalla de éxito también sale al CERRAR una cuenta (29-sep, paridad
+ * con la hoja "Venta cobrada" de la app): "closed" = cuenta pagada. */
+type SuccessMode = CheckoutMode | "closed";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -907,7 +910,7 @@ function CheckoutDialog({
 
 // ─── Success overlay ───────────────────────────────────────────────────────────
 
-function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, onTicket, loyaltyLive = true, referralNotify }: { mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; /** El ticket es Pro (23-sep): la página decide si abre la hoja o la pared. */ onTicket?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
+function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptTapped, onTicket, loyaltyLive = true, referralNotify }: { mode: SuccessMode; total: number; receiptUrl?: string; ticketUrl?: string; onDone: () => void; onReceiptTapped?: () => void; /** El ticket es Pro (23-sep): la página decide si abre la hoja o la pared. */ onTicket?: () => void; loyaltyLive?: boolean; referralNotify?: ReactNode }) {
   useEffect(() => {
     // With a captured phone there's a receipt to send — the cashier decides
     // when to close (no timer racing their tap). Otherwise, auto-dismiss.
@@ -943,11 +946,11 @@ function SuccessOverlay({ mode, total, receiptUrl, ticketUrl, onDone, onReceiptT
         </div>
         <div>
           <p className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
-            {mode === "now" ? "Venta cobrada" : "Cuenta abierta"}
+            {mode === "now" ? "Venta cobrada" : mode === "closed" ? "Cuenta cerrada" : "Cuenta abierta"}
           </p>
           <p className="mt-1 text-[22px] font-bold leading-7 tabular-nums" style={{ color: INK }}>{fmt(total)}</p>
           <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
-            {mode === "now" ? "Pedido enviado a cocina" : "La cuenta está activa"}
+            {mode === "now" ? "Pedido enviado a cocina" : mode === "closed" ? "Cobrada y cerrada" : "La cuenta está activa"}
           </p>
         </div>
         {/* Sin tope de lealtad (8-sep): aquí ya no hay aviso de lealtad llena —
@@ -1054,7 +1057,7 @@ export default function PosPage() {
   // UI state
   const [showCheckout, setShowCheckout] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState<{ mode: CheckoutMode; total: number; receiptUrl?: string; ticketUrl?: string; orderId?: string; customerName?: string } | null>(null);
+  const [success, setSuccess] = useState<{ mode: SuccessMode; total: number; receiptUrl?: string; ticketUrl?: string; orderId?: string; customerName?: string } | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Open tabs state
@@ -1296,12 +1299,43 @@ export default function PosPage() {
         recalc,
       });
 
-      alert(
-        result.rondas > 1
-          ? `¡Cuenta pagada y cerrada! (${result.rondas} rondas de la mesa` +
-            (result.creditedCount > 0 ? `, ${result.creditedCount} con puntos)` : ")")
-          : "¡Cuenta pagada y cerrada!",
-      );
+      // 29-sep (paridad con la app): la cuenta cerrada termina en la misma
+      // pantalla "Cuenta cerrada" con "Enviar recibo por WhatsApp" — no en
+      // un alert del navegador que se llevaba el recibo de paso.
+      let phone10 = customerPhone.replace(/\D/g, "");
+      if (phone10.length > 10) phone10 = phone10.slice(-10);
+      const chargedTotal = recalc && recalc.hasDiscount && recalc.discountApplied ? recalc.net : group.total;
+      const receiptItems = group.orders
+        .flatMap((o: any) => (Array.isArray(o.items) ? o.items : []))
+        .map((i: any) => ({
+          name: String(i.name ?? ""),
+          quantity: Number(i.quantity) || 1,
+          price: Number(i.price) || 0,
+        }));
+      const receiptUrl =
+        phone10.length === 10
+          ? receiptWhatsappUrl({
+              restaurantId,
+              restaurantName,
+              orderId: group.anchor.id,
+              customerPhone: phone10,
+              phoneCountryCode: phoneCountryOf(restaurantData),
+              customerName: group.label || null,
+              items: receiptItems,
+              total: chargedTotal,
+              pointsAwarded: result.points,
+              origin: window.location.origin,
+              promisesPoints: loyaltyLive,
+            })
+          : undefined;
+      setSuccess({
+        mode: "closed",
+        total: chargedTotal,
+        receiptUrl,
+        ticketUrl: `/vendor/ticket/${encodeURIComponent(group.anchor.id)}`,
+        orderId: group.anchor.id,
+        customerName: group.label || undefined,
+      });
       loadOpenTabs(restaurantId);
     } catch (err: any) {
       console.error("Error closing tab", err);

@@ -266,6 +266,11 @@ check("PRO_PRICE_LABEL = $499", PRO_PRICE_LABEL, "$499");
   check("caja: la página pasa onTabsLocked y abre la pared",
     /onTabsLocked=\{\(\) => \{[^}]*setWallOpen\(true\)/.test(cajaSrc), true);
   check("caja: si la reja se abre, pasa sola a 'Cuenta abierta'", cajaSrc.includes('setMode("tab")'), true);
+  // 29-sep (paridad app): cerrar una cuenta termina en la pantalla "Cuenta
+  // cerrada" con el recibo por WhatsApp, nunca en un alert del navegador.
+  check("caja: cerrar cuenta abre 'Cuenta cerrada' con recibo (mode closed)", cajaSrc.includes('mode: "closed"') && cajaSrc.includes('"Cuenta cerrada"'), true);
+  check("caja: cerrar cuenta ya no es un alert", cajaSrc.includes("¡Cuenta pagada y cerrada!"), false);
+  check("caja: el recibo de la cuenta suma los puntos de todas las rondas", cajaSrc.includes("pointsAwarded: result.points"), true);
   check("caja: el botón dice qué falta en vez de quedarse gris callado",
     cajaSrc.includes("Escribe el nombre de la cuenta ↑"), true);
 }

@@ -31,6 +31,9 @@ import { paidOrderFields, type PaymentMethod } from "@/lib/pos/paidOrderFields";
  * `capReached` que reportar — cada ronda con número suma sus puntos. */
 export type CreditSummary = {
   creditedCount: number;
+  /** Puntos ganados en TODAS las rondas acreditadas (29-sep): el recibo de
+   * la cuenta cerrada dice "Hoy ganaste N" con esta suma. */
+  points: number;
 };
 
 async function creditRounds(
@@ -39,15 +42,19 @@ async function creditRounds(
   orderIds: string[],
 ): Promise<CreditSummary> {
   let creditedCount = 0;
+  let points = 0;
   for (const orderId of orderIds) {
     try {
       const res = await creditPhonePointsForOrder({ db, restaurantId, orderId });
-      if (res.credited) creditedCount += 1;
+      if (res.credited) {
+        creditedCount += 1;
+        points += Number(res.points) || 0;
+      }
     } catch (e) {
       console.error("[registerPayment] credit failed", orderId, e);
     }
   }
-  return { creditedCount };
+  return { creditedCount, points };
 }
 
 /**
