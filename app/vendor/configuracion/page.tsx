@@ -386,7 +386,9 @@ export default function ConfiguracionPage() {
       const merged = await fetchWithBilling(db, rid, data);
       const entNow = entitlementOf(merged);
       const legacySub = subData?.status === "active" && subData?.plan === "pro";
-      const isPro = entNow.isPro || legacySub;
+      // 30-sep-2026: el bypass de fundador (Luzz) también pinta la tarjeta
+      // "Tu plan" como Pro, igual que la app (founderBypassEntitlements).
+      const isPro = entNow.isPro || legacySub || isFounderTestRestaurant(rid);
       setPlan(isPro ? "pro" : "free");
       setEnt(entNow);
       // entitlementsOf ya trae el bypass de fundador (Luzz); el doc viejo de

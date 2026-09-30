@@ -40,6 +40,10 @@ must(page.includes("Plan Pro activo"), "título del plan Pro activo");
 must(page.includes("{PRO_PRICE_LABEL}/mes — para cuando tu Caja crece"), "el precio sale de PRO_PRICE_LABEL, no a mano");
 must(/export const PRO_AMOUNT_MXN = 499;/.test(pricing), "PRO_AMOUNT_MXN = 499");
 must(!/\$?299/.test(page), "el 299 viejo no aparece en Configuración");
+// 30-sep: el bypass de fundador (Luzz) pinta "Tu plan" como Pro en la web, igual que la app.
+must(page.includes("|| isFounderTestRestaurant(rid)"), "la tarjeta Tu plan honra el bypass de fundador");
+const planPage = readFileSync(new URL("../app/vendor/plan/page.tsx", import.meta.url), "utf8");
+must(planPage.includes("|| isFounderTestRestaurant(restaurantId)"), "/vendor/plan honra el bypass de fundador");
 
 if (failed) process.exit(1);
 console.log("validate-plan-card: OK");

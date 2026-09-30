@@ -12,6 +12,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseFunctions } from "@/lib/firebase";
 import { entitlementOf, type Entitlement } from "@/lib/subscription/entitlement";
+import { isFounderTestRestaurant } from "@/lib/subscription/founderBypass";
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { waitForAuthReady } from "@/lib/auth";
@@ -63,8 +64,9 @@ export default function PlanPage() {
 
       const rSnap = await getDoc(doc(db, "restaurants", rid));
       const data = rSnap.data() ?? {};
-      // Plan REAL (sin founder-test): delegado a la regla única compartida con
-      // el servidor y la app — lib/subscription/entitlement.ts. El legado
+      // Plan real de facturación: delegado a la regla única compartida con
+      // el servidor y la app — lib/subscription/entitlement.ts. (El bypass de
+      // fundador se suma abajo en `isPro`, 30-sep-2026, como en la app.) El legado
       // `plan: "pro"` sin campos canónicos lo respeta ahí adentro. La verdad
       // canónica vive en private/billing desde la migración del 24-ago.
       setEnt(entitlementOf(await fetchWithBilling(db, rid, data)));
@@ -139,7 +141,9 @@ export default function PlanPage() {
     }
   }
 
-  const isPro = ent?.isPro ?? false;
+  // 30-sep-2026: Luzz (bypass de fundador) se ve Pro aquí también, como en
+  // Configuración y en la app. Para probar compra/prueba se usa otro local.
+  const isPro = (ent?.isPro ?? false) || isFounderTestRestaurant(restaurantId);
   const isTrialing = ent?.isTrialing ?? false;
   const trialDaysLeft = ent?.trialDaysLeft ?? 0;
   const canStartTrial = ent?.canStartTrial ?? false;
