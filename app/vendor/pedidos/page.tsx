@@ -961,7 +961,6 @@ function PedidosPageContent() {
                                   {orderWaitLabel(waitMin)}
                                 </span>
                               )}
-                              {saidOpt ? <Chip>Paga con {saidOpt.label.toLowerCase()}</Chip> : null}
                               {order.isOpenTab && <Chip>Cuenta abierta</Chip>}
                               {!isPaid && !order.isOpenTab && (
                                 <span className="inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold" style={{ background: WARN_SURFACE, color: WARN }}>
@@ -1023,6 +1022,8 @@ function PedidosPageContent() {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex min-w-0 flex-col gap-0.5">
                                   {order.customerName && <span className="truncate text-[14px] font-semibold" style={{ color: INK }}>{order.customerName}</span>}
+                                  {/* Lo que dijo al ordenar, UNA vez y en voz baja (29-sep): la pastilla "Sin cobrar" ya avisa. */}
+                                  {saidOpt && <span className="text-[13px]" style={{ color: INK_SOFT }}>Dijo que paga con {saidOpt.label.toLowerCase()}</span>}
                                   {order.customerPhone && (
                                     <a
                                       href={buildWhatsappChatUrl(order.customerPhone, phoneCountry)}
