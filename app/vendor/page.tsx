@@ -59,6 +59,14 @@ import MenuShareModal from "./_components/MenuShareModal";
 
 type LoadState = "loading" | "ready" | "error";
 
+/** Un consejo listo de la cola (vendorInsights/current.queue). */
+interface NbaQueueItem {
+  actionCode: string;
+  title: string;
+  body: string;
+  stake: string | null;
+}
+
 interface NbaMetrics {
   atRiskCount: number;
   atRiskReachableCount: number | null;
@@ -103,6 +111,13 @@ interface DashboardData {
   nbaTitle: string;
   nbaBody: string;
   nbaMetrics: NbaMetrics;
+  /** Costo del problema en pesos (30-sep): "$1,240 en pedidos que siguen sin
+   *  cobrar en Comeleal". Solo dinero real que el cerebro ya sumó; null = no
+   *  se pinta. */
+  nbaStake: string | null;
+  /** Cola de pendientes (30-sep): hasta 2 consejos más después del principal,
+   *  resueltos con la misma regla y sin repetir. */
+  nbaQueue: NbaQueueItem[];
   /** "Escríbele hoy" (29-sep): hasta 3 clientes en riesgo con nombre, del cerebro. */
   winbackToday: WinbackTodayRow[];
   /** País del teléfono del local: el WhatsApp marca como él. */
@@ -474,6 +489,18 @@ export default function VendorDashboard() {
             menuItemCount: (insMetrics.menuItemCount as number) ?? 0,
             rewardCount: (insMetrics.rewardCount as number) ?? 0,
           },
+          // Costo en pesos y cola (30-sep): si el código principal se corrigió,
+          // el monto y la cola del cerebro hablan de otro día: fuera.
+          nbaStake: nbaOverridden ? null : ((typeof ins?.stake_es === "string" && ins.stake_es.trim()) ? ins.stake_es.trim() : null),
+          nbaQueue: nbaOverridden
+            ? []
+            : parseNbaQueue(ins?.queue, nbaCode, (code) => resolveNbaActionCode(
+                code,
+                (r.isSetupComplete as boolean) ?? true,
+                (r.setupIncompleteReasons as string[]) ?? [],
+                r.loyaltyReady !== false,
+                trialState,
+              ), r.loyaltyReady !== false),
           // Si el código se corrigió a otra acción, la lista hablaría de otra cosa.
           winbackToday: nbaOverridden ? [] : parseWinbackToday(ins?.winbackToday),
           phoneCountry: phoneCountryOf(r as Record<string, unknown>),
@@ -725,6 +752,8 @@ export default function VendorDashboard() {
             actionCode={data.nbaActionCode}
             nbaTitle={data.nbaTitle}
             nbaBody={data.nbaBody}
+            nbaStake={data.nbaStake}
+            nbaQueue={data.nbaQueue}
             metrics={data.nbaMetrics}
             weeklyBriefText={data.weeklyBriefText}
             winbackToday={data.winbackToday}
@@ -919,6 +948,20 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "check_ai_draft": return "Tus premios ya están armados";
     case "trial_ending_soon": return "Tu prueba de Pro está por terminar";
     case "trial_ended": return "Tu prueba de Pro terminó";
+    // 30-sep: la cola de pendientes necesita título por código (espejo del
+    // cerebro y de la app); "Siguiente mejor acción" no dice nada.
+    case "complete_profile": return "Completa tu perfil";
+    case "send_winback": return "Escríbeles a los que no han vuelto";
+    case "add_google_review_link": return "Consigue reseñas de Google";
+    case "lower_reward_threshold": return "Tu premio pide demasiadas visitas";
+    case "share_with_customers": return "Comparte tu link con tus clientes";
+    case "review_rewards": return "Revisa tu premio";
+    case "send_receipts": return "Mándales su recibo";
+    case "referral_tacos_unseen": return "Ganaron un premio y no lo saben";
+    case "invites_without_purchase": return "Mandan su link y nadie llega";
+    case "healthy":
+    case "keep_going":
+    case "stable": return "Tu negocio va avanzando";
     default: return "Siguiente mejor acción";
   }
 }
@@ -959,6 +1002,49 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
   }
 }
 
+/** Cuántos consejos ve el dueño a la vez (espejo de ACTION_QUEUE_MAX). */
+const NBA_QUEUE_MAX = 3;
+/** Un "ahora no" descansa ese consejo estos días (espejo de ACTION_DISMISS_DAYS). */
+const NBA_SKIP_DAYS = 14;
+
+/**
+ * La cola del cerebro (vendorInsights/current.queue, 30-sep): hasta dos
+ * consejos después del principal, cada uno con su copy y su costo en pesos.
+ * Se resuelven con la MISMA regla que el principal; si el readiness o la
+ * prueba los cambian, ya no son ese consejo y se van. Sin repetidos, sin
+ * "stable". Espejo de _parseQueue en la app.
+ */
+function parseNbaQueue(
+  raw: unknown,
+  mainCode: string,
+  resolve: (code: string) => string,
+  loyaltyReady = true,
+): NbaQueueItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: NbaQueueItem[] = [];
+  const seen = new Set<string>([mainCode]);
+  for (const r of raw) {
+    if (!r || typeof r !== "object") continue;
+    const item = r as Record<string, unknown>;
+    const code = typeof item.actionCode === "string" ? item.actionCode.trim() : "";
+    if (!code || code === "stable" || code === "unknown") continue;
+    if (resolve(code) !== code) continue;
+    if (seen.has(code)) continue;
+    seen.add(code);
+    const title = typeof item.title_es === "string" ? item.title_es.trim() : "";
+    const body = typeof item.body_es === "string" ? item.body_es.trim() : "";
+    const stake = typeof item.stake_es === "string" ? item.stake_es.trim() : "";
+    out.push({
+      actionCode: code,
+      title: title || getNbaFallbackTitle(code),
+      body: body || getNbaFallbackBody(code, loyaltyReady),
+      stake: stake || null,
+    });
+    if (out.length >= NBA_QUEUE_MAX - 1) break;
+  }
+  return out;
+}
+
 function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
   switch (actionCode) {
     case "set_business_hours": return "Poner mi horario — 2 min";
@@ -982,6 +1068,11 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "trial_ended": return "Volver a Pro";
     case "healthy":
     case "keep_going": return "Compartir mi menú";
+    // 30-sep: la cola de pendientes pinta cualquier consejo del cerebro,
+    // así que cada código lleva su puerta (espejo de _cta en la app).
+    case "send_receipts": return "Abrir la Caja";
+    case "referral_tacos_unseen": return "Ver clientes";
+    case "invites_without_purchase": return "Revisar mi premio";
     default: return "Ver recompensas";
   }
 }
@@ -1009,6 +1100,9 @@ function getNbaCtaHref(actionCode: string): string {
     case "send_winback": return "/vendor/clientes?segmento=riesgo"; // 29-sep: llega al chip "En riesgo"
     case "trial_ending_soon":
     case "trial_ended": return "/vendor/plan";
+    case "send_receipts": return "/vendor/pos";
+    case "referral_tacos_unseen": return "/vendor/clientes";
+    case "invites_without_purchase": return "/vendor/recompensas";
     default: return "/vendor/recompensas";
   }
 }
@@ -1017,9 +1111,11 @@ function AICoachPreviewCard({
   restaurantId,
   restaurantName,
   phoneCountry,
-  actionCode,
+  actionCode: mainCode,
   nbaTitle,
   nbaBody,
+  nbaStake = null,
+  nbaQueue = [],
   metrics,
   weeklyBriefText,
   winbackToday = [],
@@ -1030,19 +1126,72 @@ function AICoachPreviewCard({
   actionCode: string;
   nbaTitle: string;
   nbaBody: string;
+  nbaStake?: string | null;
+  nbaQueue?: NbaQueueItem[];
   metrics: NbaMetrics;
   weeklyBriefText?: string;
   winbackToday?: WinbackTodayRow[];
 }) {
   const router = useRouter();
 
-  const displayTitle = plainCopy(nbaTitle || "Siguiente mejor acción");
-  const displayBody = plainCopy(nbaBody || getNbaFallbackBody(actionCode));
+  // "Ahora no" (30-sep): de esta sesión más los de los últimos 14 días. El
+  // cerebro ya los saca de su cola cada noche; esto cubre el rato entre el
+  // clic y el refresco de las 4 AM. Espejo de _AdviceSection en la app.
+  const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(getFirebaseDb(), "restaurants", restaurantId, "ownerActions"),
+          where("type", "==", "nba_skip"),
+        ));
+        const since = Date.now() - NBA_SKIP_DAYS * 24 * 60 * 60 * 1000;
+        const codes = new Set<string>();
+        snap.forEach((d) => {
+          const m = d.data() as Record<string, unknown>;
+          const at = m.createdAt instanceof Timestamp ? m.createdAt.toMillis() : 0;
+          if (at >= since && typeof m.actionCode === "string" && m.actionCode) codes.add(m.actionCode);
+        });
+        if (alive && codes.size > 0) setSkipped((prev) => new Set([...prev, ...codes]));
+      } catch {
+        /* sin rastro no pasa nada: la cola se ve como la dejó el cerebro */
+      }
+    })();
+    return () => { alive = false; };
+  }, [restaurantId]);
+
+  function skip(code: string) {
+    logOwnerAction(restaurantId, "nba_skip", { actionCode: code });
+    setSkipped((prev) => new Set([...prev, code]));
+  }
+
+  const main: NbaQueueItem = {
+    actionCode: mainCode,
+    title: nbaTitle || getNbaFallbackTitle(mainCode),
+    body: nbaBody || getNbaFallbackBody(mainCode),
+    stake: nbaStake,
+  };
+  const items = [main, ...nbaQueue].filter((i) => !skipped.has(i.actionCode));
+  // Dijo "ahora no" a todo: se le respeta y se queda el "vas avanzando".
+  const first: NbaQueueItem = items[0] ?? {
+    actionCode: "keep_going",
+    title: getNbaFallbackTitle("keep_going"),
+    body: getNbaFallbackBody("keep_going"),
+    stake: null,
+  };
+  const rest = items.slice(1);
+  const actionCode = first.actionCode;
+
+  const displayTitle = plainCopy(first.title || "Siguiente mejor acción");
+  const displayBody = plainCopy(first.body || getNbaFallbackBody(actionCode));
   const reachableRisk = metrics.atRiskReachableCount;
   const ctaLabel = actionCode === "send_winback" && typeof reachableRisk === "number" && reachableRisk > 0
     ? `Contactar ${reachableRisk} por WhatsApp`
     : getNbaCtaLabel(actionCode, atRiskShown(metrics));
   const ctaHref = getNbaCtaHref(actionCode);
+  // La lista de "escríbele hoy" solo con el principal REAL (no promovido).
+  const showWinback = actionCode === "send_winback" && actionCode === mainCode && winbackToday.length > 0;
 
   // Only surface a weekly insight when the AI actually produced one — never filler.
   const hasInsight = !!(weeklyBriefText && weeklyBriefText.trim());
@@ -1053,15 +1202,23 @@ function AICoachPreviewCard({
   // Opción A: sección sin tarjeta — se fueron la caja negra con degradado,
   // el emoji de cerebro, el eyebrow "⚡ TU SIGUIENTE MOVIMIENTO" y la línea
   // de "📊 Actividad". Título, consejo, cuerpo y UN botón.
+  //
+  // Cola de pendientes (30-sep): debajo del principal, hasta dos consejos
+  // más en una tarjeta blanca; cada uno con su "sí" (el mismo botón del
+  // consejo, como link) y su "Ahora no". El costo del problema en pesos va
+  // como línea bajo el título, solo con dinero real (jamás proyección).
   return (
     <section className="mb-7">
       <SectionTitle>Tu siguiente movimiento</SectionTitle>
       <p className="text-[15px] font-semibold leading-[22px]" style={{ color: INK }}>{displayTitle}</p>
+      {first.stake && (
+        <p className="mt-0.5 text-[15px] font-semibold leading-[22px]" style={{ color: INK_MUTED }}>{first.stake}</p>
+      )}
       <p className="mt-1 text-[15px] leading-[22px]" style={{ color: INK }}>{displayBody}</p>
       {hasInsight && (
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
       )}
-      {actionCode === "send_winback" && winbackToday.length > 0 ? (
+      {showWinback ? (
         <>
           <WinbackTodayList
             restaurantId={restaurantId}
@@ -1080,10 +1237,37 @@ function AICoachPreviewCard({
       ) : (
         <a href={ctaHref}
           onClick={() => logOwnerAction(restaurantId, "nba_tap", { actionCode })}
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90 active:scale-[0.98] md:inline-flex md:w-auto md:px-6"
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold text-[#1C2526] transition hover:opacity-90"
           style={{ background: BRAND }}>
           {ctaLabel}
         </a>
+      )}
+      {items.length > 0 && (
+        <button
+          type="button"
+          onClick={() => skip(actionCode)}
+          className="mt-2 block text-[14px] font-semibold hover:underline"
+          style={{ color: LINK }}>
+          Ahora no
+        </button>
+      )}
+      {rest.length > 0 && (
+        <>
+          <p className="mt-4 text-[13px] leading-4" style={{ color: INK_MUTED }}>Pendientes</p>
+          <div className="mt-2 rounded-xl bg-white" style={{ border: `1px solid ${BORDER}` }}>
+            {rest.map((item, i) => (
+              <PendingAdviceRow
+                key={item.actionCode}
+                item={item}
+                last={i === rest.length - 1}
+                ctaLabel={getNbaCtaLabel(item.actionCode, atRiskShown(metrics))}
+                ctaHref={getNbaCtaHref(item.actionCode)}
+                onYes={() => logOwnerAction(restaurantId, "nba_tap", { actionCode: item.actionCode })}
+                onSkip={() => skip(item.actionCode)}
+              />
+            ))}
+          </div>
+        </>
       )}
       <button
         type="button"
@@ -1093,6 +1277,45 @@ function AICoachPreviewCard({
         Abrir Comeleal AI
       </button>
     </section>
+  );
+}
+
+/** Un pendiente: título, costo (si hay) y dos palabras — el "sí" es el mismo
+ *  botón del consejo, como link; "Ahora no" lo descansa. */
+function PendingAdviceRow({
+  item,
+  last,
+  ctaLabel,
+  ctaHref,
+  onYes,
+  onSkip,
+}: {
+  item: NbaQueueItem;
+  last: boolean;
+  ctaLabel: string;
+  ctaHref: string;
+  onYes: () => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="px-4 pb-2 pt-3" style={last ? undefined : { borderBottom: `1px solid ${HAIRLINE}` }}>
+      <p className="text-[15px] font-semibold leading-[22px]" style={{ color: INK }}>{plainCopy(item.title)}</p>
+      {item.stake && (
+        <p className="mt-0.5 text-[13px] leading-4" style={{ color: INK_MUTED }}>{item.stake}</p>
+      )}
+      <div className="mt-1 flex items-center gap-4">
+        <a href={ctaHref} onClick={onYes}
+          className="truncate py-2 text-[14px] font-semibold hover:underline"
+          style={{ color: LINK }}>
+          {ctaLabel}
+        </a>
+        <button type="button" onClick={onSkip}
+          className="shrink-0 py-2 text-[14px] font-semibold hover:underline"
+          style={{ color: INK_MUTED }}>
+          Ahora no
+        </button>
+      </div>
+    </div>
   );
 }
 

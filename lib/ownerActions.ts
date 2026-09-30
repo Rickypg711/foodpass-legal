@@ -7,6 +7,8 @@
  * que solo pide un sí). Dos toques importan hoy:
  *   - nba_tap       → tocó el botón del consejo ("Tu siguiente movimiento")
  *   - winback_send  → tocó "Enviar" para escribirle a un cliente por WhatsApp
+ *   - nba_skip      → dijo "ahora no" a un consejo (30-sep-2026, cola de
+ *                     pendientes): el cerebro lo lee y lo descansa 14 días
  *
  * Dónde vive: restaurants/{rid}/ownerActions/{autoId}. Solo se CREA (las
  * reglas prohíben editar o borrar). Se lee con
@@ -19,10 +21,10 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getFirebaseAuth } from "@/lib/auth";
 
-export type OwnerActionType = "nba_tap" | "winback_send";
+export type OwnerActionType = "nba_tap" | "winback_send" | "nba_skip";
 
 export interface OwnerActionExtra {
-  /** Código del consejo (send_winback, charge_web_orders…). Solo nba_tap. */
+  /** Código del consejo (send_winback, charge_web_orders…). nba_tap y nba_skip. */
   actionCode?: string;
   /** Últimos 4 del teléfono o id corto del cliente. Solo winback_send. */
   target?: string;

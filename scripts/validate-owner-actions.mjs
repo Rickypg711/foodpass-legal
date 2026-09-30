@@ -22,7 +22,7 @@ const push = readFileSync("lib/webPush.ts", "utf8");
 const card = readFileSync("components/vendor/OwnerPushCard.tsx", "utf8");
 
 // ── 1. El rastro ──────────────────────────────────────────────────────────
-assert.match(lib, /export type OwnerActionType = "nba_tap" \| "winback_send"/, "dos toques, ni uno más sin pasar por aquí");
+assert.match(lib, /export type OwnerActionType = "nba_tap" \| "winback_send" \| "nba_skip"/, "tres toques (30-sep: nba_skip = \"ahora no\"), ni uno más sin pasar por aquí");
 assert.match(lib, /collection\(getFirebaseDb\(\), "restaurants", restaurantId, "ownerActions"\)/, "vive en restaurants/{rid}/ownerActions");
 assert.match(lib, /platform: "web"/, "la web se firma como web (la app como app)");
 assert.match(lib, /\.catch\(\(\) => \{\}\)/, "jamás rompe el clic del dueño");
