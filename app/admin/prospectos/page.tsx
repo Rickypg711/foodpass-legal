@@ -32,6 +32,8 @@ type Prospect = {
   viewed: boolean;
   played: boolean;
   claimStarted: boolean;
+  /** "SMS falló · auth/captcha-check-failed" o null si no hay rastro. */
+  trail: string | null;
   converted: boolean;
   nudgeCount: number;
   status: string;
@@ -44,6 +46,34 @@ function ago(ts: Timestamp | null): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 48) return `hace ${hrs} h`;
   return `hace ${Math.floor(hrs / 24)} días`;
+}
+
+/** Rastro del claim en cristiano (30-sep-2026): el último paso y, si falló, su código. */
+const CLAIM_STEP_LABEL: Record<string, string> = {
+  phoneChosen: "eligió número",
+  googleChosen: "eligió Google",
+  emailChosen: "mandó correo",
+  smsRequested: "pidió el SMS",
+  phoneSocialAccount: "su número ya tenía cuenta Google/correo",
+  smsSent: "SMS enviado, sin código",
+  smsFailed: "SMS falló",
+  codeEntered: "tecleó el código",
+  codeFailed: "código falló",
+  accountCreated: "cuenta creada, sin formulario",
+  accountFailed: "cuenta falló",
+  formOpened: "vio el formulario",
+  createRequested: "tocó crear",
+  createFailed: "crear falló",
+  closed: "cerró el modal",
+};
+export function claimTrailLabel(trail: unknown): string | null {
+  if (!trail || typeof trail !== "object") return null;
+  const t = trail as Record<string, unknown>;
+  const last = typeof t.lastStep === "string" ? t.lastStep : null;
+  if (!last) return null;
+  const label = CLAIM_STEP_LABEL[last] ?? last;
+  const code = t[`${last}Code`];
+  return typeof code === "string" && code ? `${label} · ${code}` : label;
 }
 
 export default function ProspectosPage() {
@@ -73,6 +103,8 @@ export default function ProspectosPage() {
             viewed: !!x.viewedAt,
             played: !!x.playedDemoAt,
             claimStarted: !!x.claimStartedAt,
+            // El rastro del claim (30-sep): en qué paso se quedó y el código.
+            trail: claimTrailLabel(x.claimTrail),
             converted: !!x.convertedToRestaurantId,
             nudgeCount: x.nudgeCount || 0,
             status: x.status || "?",
@@ -144,6 +176,7 @@ export default function ProspectosPage() {
                   <p className="mt-0.5 text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                     {r.itemCount} platillos · {ago(r.createdAt)} ·{" "}
                     {r.claimStarted ? "🟠 empezó a reclamar" : r.played ? "🟡 jugó el demo" : r.viewed ? "👀 vio su menú" : "subió la foto"}
+                    {r.trail && ` · se quedó en: ${r.trail}`}
                     {r.nudgeCount > 0 && ` · 📨 ${r.nudgeCount} nudge${r.nudgeCount > 1 ? "s" : ""}`}
                   </p>
                 </div>

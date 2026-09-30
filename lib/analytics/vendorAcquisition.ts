@@ -11,6 +11,9 @@ export const VENDOR_ACQUISITION_EVENTS = {
   leadSubmitted: "vendor_lead_submitted",
   restaurantCreated: "restaurant_created",
   onboardingCompleted: "vendor_onboarding_completed",
+  // 30-sep-2026: cada paso del claim del demo (el hueco entre "Quédatelo" y
+  // el restaurante creado). Parámetros: step y, si aplica, code (auth/…).
+  demoClaimStep: "demo_claim_step",
 } as const;
 
 export type VendorUtmParams = {
@@ -160,6 +163,20 @@ export function trackVendorOnboardingCompleted(): void {
   try {
     void logEventSafe(VENDOR_ACQUISITION_EVENTS.onboardingCompleted, {
       source: "web_activar",
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/** Un paso del claim del demo (30-sep). Sin PII: paso y código de error. */
+export function trackDemoClaimStep(step: string, code?: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    void logEventSafe(VENDOR_ACQUISITION_EVENTS.demoClaimStep, {
+      source: "demo",
+      step,
+      code: code ? String(code).slice(0, 80) : undefined,
     });
   } catch {
     // no-op

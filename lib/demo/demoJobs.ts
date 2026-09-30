@@ -214,3 +214,41 @@ async function stamp(jobId: string, field: string): Promise<void> {
 export const stampViewed = (jobId: string) => stamp(jobId, "viewedAt");
 export const stampPlayed = (jobId: string) => stamp(jobId, "playedDemoAt");
 export const stampClaimStarted = (jobId: string) => stamp(jobId, "claimStartedAt");
+
+// ── El rastro del claim (30-sep-2026) ───────────────────────────────────
+// Entre "Quédatelo" y el restaurante creado no se veía NADA: 5 de 5 claims de
+// la pauta del 28/29-sep murieron ahí y nadie sabía en qué paso. Cada
+// movimiento dentro del modal deja su hora en `claimTrail.<paso>` y, si
+// falló, el código de Firebase en `claimTrail.<paso>Code`. Se lee por
+// prospecto en /admin/prospectos ("se quedó en: SMS falló ·
+// auth/captcha-check-failed"), no solo como barra en GA4. Jamás datos del
+// dueño aquí: pasos y códigos, nada más.
+export type ClaimStep =
+  | "phoneChosen"      // tocó "Continuar con mi número"
+  | "googleChosen"     // tocó "Continuar con Google"
+  | "emailChosen"      // mandó el formulario de correo
+  | "smsRequested"     // tocó "Mandarme un código"
+  | "phoneSocialAccount" // el número ya era de una cuenta Google/correo
+  | "smsSent"          // Firebase aceptó el envío
+  | "smsFailed"        // Firebase lo rechazó (Code = auth/…)
+  | "codeEntered"      // tecleó los 6 dígitos y los mandó
+  | "codeFailed"       // código malo o vencido (Code = auth/…)
+  | "accountCreated"   // ya hay sesión real (Code = phone | google | email)
+  | "accountFailed"    // Google o correo fallaron (Code = auth/…)
+  | "formOpened"       // vio el formulario del restaurante
+  | "createRequested"  // tocó crear
+  | "createFailed"     // la creación tronó (Code = mensaje corto)
+  | "closed";          // cerró el modal (Code = pantalla en la que estaba)
+
+export async function stampClaimStep(jobId: string, step: ClaimStep, code?: string | null): Promise<void> {
+  try {
+    const db = getFirebaseDb();
+    const patch: Record<string, unknown> = {
+      [`claimTrail.${step}`]: serverTimestamp(),
+      "claimTrail.lastStep": step,
+      updatedAt: serverTimestamp(),
+    };
+    if (code) patch[`claimTrail.${step}Code`] = String(code).slice(0, 80);
+    await updateDoc(doc(db, "menuDemoJobs", jobId), patch);
+  } catch { /* best-effort */ }
+}

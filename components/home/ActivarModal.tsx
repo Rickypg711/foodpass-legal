@@ -33,7 +33,7 @@ import {
   RecaptchaVerifier,
   type ConfirmationResult,
 } from "firebase/auth";
-import type { DemoItem, DemoInfo } from "@/lib/demo/demoJobs";
+import { stampClaimStep, type ClaimStep, type DemoItem, type DemoInfo } from "@/lib/demo/demoJobs";
 import { RESTAURANT_CATEGORIES, inferCategoryFromDemo, rankCategoriesForDemo } from "@/lib/demo/inferCategory";
 import { persistReadiness } from "@/lib/vendorReadiness";
 import type { User } from "firebase/auth";
@@ -42,7 +42,7 @@ import { generateEventId } from "@/lib/meta/eventId";
 import { sendBrowserCapiEvents } from "@/lib/meta/capiBrowser";
 import { isInternalConversion } from "@/lib/meta/internal";
 import { captureAttribution, readAndPersistUtms } from "@/lib/vendorLead/utmStore";
-import { trackRestaurantCreated } from "@/lib/analytics/vendorAcquisition";
+import { trackRestaurantCreated, trackDemoClaimStep } from "@/lib/analytics/vendorAcquisition";
 import {
   DEFAULT_PHONE_COUNTRY,
   countryFromTypedPhone,
@@ -170,6 +170,25 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
   const recaptchaHostRef = useRef<HTMLDivElement | null>(null);
 
+  // El rastro del claim (30-sep-2026): cada puerta del modal deja su hora y,
+  // si falló, el código en el job del demo (claimTrail) y un evento en GA4.
+  // Solo en modo demo; jamás bloquea ni rompe nada.
+  const trail = useCallback((step: ClaimStep, code?: string | null) => {
+    if (!demo?.jobId) return;
+    void stampClaimStep(demo.jobId, step, code);
+    trackDemoClaimStep(step, code);
+  }, [demo?.jobId]);
+  const closeWithTrail = useCallback(() => {
+    if (!onClose) return;
+    const screen = stage === "form" || stage === "creating" ? "form"
+      : phoneMode === "code" ? "code"
+      : phoneMode === "number" ? "number"
+      : stage === "done" ? "done"
+      : "options";
+    trail("closed", screen);
+    onClose();
+  }, [onClose, stage, phoneMode, trail]);
+
   // Ya con sesión: si venía de un link del panel (?next=, p. ej. el pedido del recibo), regresa ahí en
   // vez de "Ya tienes un restaurante". Si no es del local, Pedidos lo manda a Entrar SIN next (sin bucle).
   function afterSignedIn(hasRestaurant: boolean) {
@@ -177,6 +196,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       router.replace(nextPath);
       return;
     }
+    if (!hasRestaurant) trail("formOpened");
     setStage(hasRestaurant ? "existing" : "form");
   }
 
@@ -186,11 +206,11 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   useEffect(() => {
     if (!onClose) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && stage !== "signing" && stage !== "creating") onClose();
+      if (e.key === "Escape" && stage !== "signing" && stage !== "creating") closeWithTrail();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, stage]);
+  }, [onClose, stage, closeWithTrail]);
 
   // En demo casi todo llega leído del papel: el cursor aterriza solo en el
   // PRIMER campo que de verdad falta (una vez, al entrar al formulario) —
@@ -211,6 +231,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
     setError(null);
     setShowReset(false);
     setStage("signing");
+    trail("emailChosen");
     try {
       const auth = getFirebaseAuth();
       const email = emailInput.trim();
@@ -228,11 +249,13 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             : await signInWithEmailAndPassword(auth, email, passwordInput);
       }
       setUser(cred.user);
+      trail("accountCreated", "email");
       const snap = await getDoc(doc(getFirebaseDb(), "users", cred.user.uid));
       afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
     } catch (err: unknown) {
       console.error(err);
       const code = (err as { code?: string })?.code ?? "";
+      trail("accountFailed", code || "email_unknown");
       if (code === "auth/email-already-in-use") {
         setAuthMode("signin");
         setError("Ese correo ya tiene cuenta. Escribe tu contraseña para entrar.");
@@ -299,6 +322,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   async function handleSignIn() {
     setError(null);
     setStage("signing");
+    trail("googleChosen");
     try {
       // Demo: el prospecto YA es un usuario (anónimo, dueño de su job).
       // LINK en vez de sign-in nuevo: mismo uid → su demo sigue siendo suyo
@@ -326,10 +350,12 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         u = await signInWithGoogle();
       }
       setUser(u);
+      trail("accountCreated", "google");
       const snap = await getDoc(doc(getFirebaseDb(), "users", u.uid));
       afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
+      trail("accountFailed", (e as { code?: string })?.code || msg.slice(0, 60) || "google_unknown");
       if (msg.includes("popup-closed") || msg.includes("cancelled")) {
         setStage("idle");
       } else {
@@ -347,11 +373,13 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       return;
     }
     setStage("signing");
+    trail("smsRequested");
     try {
       // Antes del SMS: ¿ese número ya es de una cuenta con Google o correo?
       // Entonces se entra por ahí; jamás dos cuentas para un número.
       const pre = await precheckOwnerPhone(e164);
       if (pre === "social_account") {
+        trail("phoneSocialAccount");
         setAuthMode("signin");
         setPhoneMode(null);
         setError(
@@ -368,11 +396,13 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       }
       if (!verifierRef.current) throw new Error("recaptcha_unavailable");
       confirmRef.current = await sendOwnerPhoneCode(auth, e164, verifierRef.current);
+      trail("smsSent");
       setSmsCode("");
       setPhoneMode("code");
       setStage("idle");
     } catch (err: unknown) {
       console.error("[activar] sms send", err);
+      trail("smsFailed", (err as { code?: string })?.code || (err instanceof Error ? err.message.slice(0, 60) : "send_unknown"));
       setError(phoneAuthErrorText(err, "send"));
       // El reCAPTCHA es de un solo uso cuando falla: se tira para reintentar.
       verifierRef.current?.clear();
@@ -387,9 +417,11 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
     if (!confirmation || smsCode.replace(/\D/g, "").length < 6) return;
     setError(null);
     setStage("signing");
+    trail("codeEntered");
     try {
       const auth = getFirebaseAuth();
       const u = await confirmOwnerPhoneCode(auth, confirmation, smsCode);
+      trail("accountCreated", "phone");
       // Igual que la app y que /puntos: el número verificado se escribe en
       // users/{uid}.linkedPhone, la verdad única del teléfono. Nunca lanza.
       await linkVerifiedPhone(phoneInput);
@@ -400,6 +432,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       afterSignedIn(Boolean(snap.data()?.ownedRestaurantId));
     } catch (err: unknown) {
       console.error("[activar] sms confirm", err);
+      trail("codeFailed", (err as { code?: string })?.code || "confirm_unknown");
       setError(phoneAuthErrorText(err, "confirm"));
       setStage("idle");
     }
@@ -422,6 +455,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       return;
     }
     setStage("creating");
+    trail("createRequested");
     try {
       const db = getFirebaseDb();
       const restaurantRef = await addDoc(collection(db, "restaurants"), {
@@ -673,6 +707,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       setStage("done");
     } catch (e) {
       console.error("[activar] create failed:", e);
+      trail("createFailed", (e as { code?: string })?.code || (e instanceof Error ? e.message.slice(0, 60) : "create_unknown"));
       setError("No pudimos crear tu restaurante. Intenta de nuevo.");
       setStage("form");
     }
@@ -799,7 +834,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
-              onClick={() => { setError(null); setPhoneMode("number"); }}
+              onClick={() => { setError(null); setPhoneMode("number"); trail("phoneChosen"); }}
               disabled={stage === "signing"}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-bold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644] disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -1267,7 +1302,7 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
         {/* Close */}
         {onClose && (
           <button
-            onClick={onClose}
+            onClick={closeWithTrail}
             className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-[#141413]/30 transition-colors hover:bg-[#141413]/6 hover:text-[#141413]/70"
             aria-label="Cerrar"
           >
