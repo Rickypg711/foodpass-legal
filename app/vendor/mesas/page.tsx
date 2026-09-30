@@ -9,6 +9,11 @@
  * el flujo completo lo arrastra hasta la orden (ver lib/order/tableSession.ts).
  *
  * La impresión es CSS puro (@media print) — sin librería de PDF, sin backend.
+ *
+ * Opción A (30-sep-2026, pasada "Mesas botón por botón" con la app): título
+ * en Lora, campos del panel, un solo botón principal, sin degradado ni
+ * emoji en la pantalla del dueño. La TARJETA impresa no cambia: ya está
+ * pegada en mesas reales y el comensal la reconoce.
  */
 
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
@@ -28,8 +33,16 @@ import {
 } from "@/lib/order/tableSession";
 import { SITE_URL } from "@/lib/siteMetadata";
 
+const SERIF = "var(--font-lora), Lora, Georgia, serif";
 const INK = "#1C2526";
-const ORANGE = "#F28C38";
+const INK_MUTED = "#3F4A4D";
+const INK_SOFT = "#5B6366";
+const BORDER = "#D9D2C5";
+const TILE = "#F0EBE1";
+const LINK = "#8A4B12";
+const BRAND = "#F28C38";
+const DANGER = "#B91C1C";
+const ORANGE = BRAND;
 const MAX_MESAS = 60;
 
 export default function MesasPage() {
@@ -112,7 +125,7 @@ export default function MesasPage() {
   }
 
   return (
-    <main className="px-4 pb-16 pt-5 md:px-8 md:pt-7">
+    <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
       {/* Reglas de impresión: se va todo menos la hoja de QRs. */}
       <style>{`
         @media print {
@@ -125,36 +138,39 @@ export default function MesasPage() {
       `}</style>
 
       <div className="no-print mx-auto mb-7 max-w-3xl">
-        <p
-          className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
-          style={{ background: "rgba(242,140,56,0.1)", color: ORANGE }}
-        >
-          Pedido desde la mesa
-        </p>
-        <h1 className="mt-3 text-[28px] font-black leading-tight tracking-tight md:text-[34px]" style={{ color: INK }}>
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h1 className="text-[22px] font-semibold leading-[26px] md:text-[24px] md:leading-7" style={{ color: INK, fontFamily: SERIF }}>
+              Mesas y códigos QR
+            </h1>
+            <p className="truncate text-[13px] leading-4" style={{ color: INK_SOFT }}>{restaurantName}</p>
+          </div>
+          <Link href="/vendor" className="shrink-0 text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+            Panel
+          </Link>
+        </div>
+
+        <h2 className="text-[17px] font-semibold leading-[22px]" style={{ color: INK, fontFamily: SERIF }}>
           Un QR para cada mesa
-        </h1>
-        <p className="mt-2 text-[14px] leading-relaxed" style={{ color: "rgba(28,37,38,0.6)" }}>
+        </h2>
+        <p className="mt-1 text-[14px] leading-5" style={{ color: INK_MUTED }}>
           Imprímelos, pégalos en cada mesa y listo. Tu cliente escanea, ordena
-          desde su teléfono y <b>puede pagar ahí mismo</b>. El pedido cae en
-          Pedidos con el número de mesa, para que sepas exactamente a dónde
-          llevarlo — sin que nadie tenga que ir a tomar la orden.
+          desde su teléfono y puede pagar ahí mismo. El pedido te llega con el
+          número de mesa, para que sepas a dónde llevarlo, sin que nadie vaya a
+          tomar la orden.
         </p>
 
-        <div
-          className="mt-6 rounded-2xl bg-white p-5"
-          style={{ border: "1px solid rgba(28,37,38,0.08)" }}
-        >
+        <div className="mt-5 rounded-xl bg-white p-4" style={{ border: `1px solid ${BORDER}` }}>
           <label className="block">
-            <span className="text-[14px] font-bold" style={{ color: INK }}>
+            <span className="text-[13px] font-semibold leading-4" style={{ color: INK }}>
               ¿Cuántas mesas tienes?
             </span>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setCount((c) => Math.max(1, c - 1))}
-                className="h-10 w-10 rounded-xl text-[18px] font-black transition hover:opacity-70"
-                style={{ background: "rgba(28,37,38,0.06)", color: INK }}
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-[18px] font-semibold"
+                style={{ background: TILE, color: INK }}
                 aria-label="Una mesa menos"
               >
                 −
@@ -168,14 +184,14 @@ export default function MesasPage() {
                   const n = Number.parseInt(e.target.value, 10);
                   setCount(Number.isFinite(n) ? Math.min(MAX_MESAS, Math.max(1, n)) : 1);
                 }}
-                className="w-20 rounded-xl border px-3 py-2 text-center text-[16px] font-bold outline-none"
-                style={{ borderColor: "rgba(28,37,38,0.15)", color: INK }}
+                className="w-20 rounded-xl border bg-white px-3 py-2.5 text-center text-[16px] font-semibold tabular-nums outline-none focus:border-[#1C2526]"
+                style={{ borderColor: BORDER, color: INK }}
               />
               <button
                 type="button"
                 onClick={() => setCount((c) => Math.min(MAX_MESAS, c + 1))}
-                className="h-10 w-10 rounded-xl text-[18px] font-black transition hover:opacity-70"
-                style={{ background: "rgba(28,37,38,0.06)", color: INK }}
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-[18px] font-semibold"
+                style={{ background: TILE, color: INK }}
                 aria-label="Una mesa más"
               >
                 +
@@ -184,10 +200,10 @@ export default function MesasPage() {
           </label>
 
           <label className="mt-5 block">
-            <span className="text-[14px] font-bold" style={{ color: INK }}>
-              ¿O tienen nombre? <span style={{ color: "rgba(28,37,38,0.4)" }}>(opcional)</span>
+            <span className="text-[13px] font-semibold leading-4" style={{ color: INK }}>
+              ¿O tienen nombre? <span style={{ color: INK_SOFT, fontWeight: 400 }}>(opcional)</span>
             </span>
-            <span className="mt-1 block text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
+            <span className="mt-1 block text-[13px] leading-4" style={{ color: INK_SOFT }}>
               Escribe uno por línea: Barra, Terraza 1, T3… Si lo dejas vacío usamos números.
             </span>
             <textarea
@@ -195,11 +211,14 @@ export default function MesasPage() {
               onChange={(e) => setCustomNames(e.target.value)}
               rows={4}
               placeholder={"Barra\nTerraza 1\nTerraza 2\nT3"}
-              className="mt-2 w-full rounded-xl border px-3 py-2 text-[14px] outline-none"
-              style={{ borderColor: "rgba(28,37,38,0.15)", color: INK }}
+              className="mt-2 w-full rounded-xl border bg-white px-3.5 py-3 text-[16px] leading-5 outline-none focus:border-[#1C2526]"
+              style={{ borderColor: BORDER, color: INK }}
             />
             {usingCustomNames && (
-              <span className="mt-1 block text-[12px]" style={{ color: ORANGE }}>
+              <span
+                className="mt-1 block text-[13px] leading-4"
+                style={{ color: mesas.length === 0 ? DANGER : INK_SOFT }}
+              >
                 {mesas.length === 0
                   ? "Escribe al menos un nombre válido."
                   : `${mesas.length} ${mesas.length === 1 ? "mesa" : "mesas"} con nombre. Máx ${TABLE_MAX_LENGTH} caracteres cada una; se ignoran repetidas.`}
@@ -210,36 +229,27 @@ export default function MesasPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="mt-5 w-full rounded-2xl px-4 py-3.5 text-[14px] font-extrabold text-white transition hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #FF9A45 100%)` }}
+            disabled={mesas.length === 0}
+            className="mt-5 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold disabled:opacity-40"
+            style={{ background: BRAND, color: INK }}
           >
-            🖨️ Imprimir los {mesas.length} {mesas.length === 1 ? "QR" : "QRs"} →
+            Imprimir {mesas.length} {mesas.length === 1 ? "código" : "códigos"}
           </button>
-          <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(28,37,38,0.4)" }}>
+          <p className="mt-2 text-center text-[13px] leading-4" style={{ color: INK_SOFT }}>
             Salen 2 por hoja. Recorta por la línea punteada.
           </p>
         </div>
 
-        <div
-          className="mt-4 rounded-2xl p-4"
-          style={{ background: "rgba(242,140,56,0.07)", border: "1px solid rgba(242,140,56,0.25)" }}
-        >
-          <p className="text-[13px] leading-relaxed" style={{ color: "rgba(28,37,38,0.75)" }}>
-            <b>Tip:</b> si tus mesas tienen nombre (Barra, Terraza 1, T3),
-            escríbelos arriba uno por línea y los QR salen con ese nombre. El
-            pedido te llega diciendo exactamente esa mesa.
-          </p>
-          <Link
-            href="/vendor/pedidos"
-            className="mt-2 inline-block text-[13px] font-semibold underline underline-offset-4"
-            style={{ color: ORANGE }}
-          >
-            Ver los pedidos que van llegando →
-          </Link>
-        </div>
+        <p className="mt-4 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+          El pedido cae en{" "}
+          <Link href="/vendor/pedidos" className="font-semibold underline underline-offset-2" style={{ color: LINK }}>
+            Pedidos
+          </Link>{" "}
+          diciendo la mesa exacta.
+        </p>
       </div>
 
-      {/* ── La hoja imprimible ── */}
+      {/* ── La hoja imprimible: NO cambia, ya está pegada en mesas reales ── */}
       <div className="print-sheet mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3">
         {mesas.map((mesa) => (
           <div
