@@ -741,9 +741,13 @@ function PedidosPageContent() {
     focusOrderId !== null && Object.values(staleGroups).some((list) => list.some((o) => o.id === focusOrderId));
   const focusMissing =
     focusOrderId !== null && !focusIsStale && !Object.values(groups).some((list) => list.some((o) => o.id === focusOrderId));
+  // Solo hay viejos en la bandeja: la tira llega abierta, o el dueño no ve nada que cobrar.
+  const onlyStaleInTray =
+    Object.values(staleGroups).some((list) => list.length > 0) &&
+    groups.pending.length + groups.preparing.length + groups.ready.length === 0;
   useEffect(() => {
-    if (focusIsStale) setShowStale(true);
-  }, [focusIsStale]);
+    if (focusIsStale || onlyStaleInTray) setShowStale(true);
+  }, [focusIsStale, onlyStaleInTray]);
 
   /** Columnas del tablero. Opción A (23-sep-2026, lienzo "Sistema Comeleal"):
    *  sin fondos de color por columna; el estado se dice con palabra y punto. */
@@ -1135,7 +1139,9 @@ function PedidosPageContent() {
                       {list.length}
                     </span>
                   </header>
-                  {list.length === 0 ? (
+                  {/* La tira de viejos sale aunque la columna esté vacía (4-oct):
+                      si no, "Cobrarlos en Pedidos" caía en una pantalla en blanco. */}
+                  {list.length === 0 && staleList.length === 0 ? (
                     <div className="flex h-24 items-center justify-center rounded-xl text-[13px]" style={{ border: `1px dashed ${BORDER}`, color: INK_SOFT }}>
                       {col.emptyCopy}
                     </div>

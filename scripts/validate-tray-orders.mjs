@@ -42,6 +42,9 @@ const page = readFileSync(new URL("../app/vendor/pedidos/page.tsx", import.meta.
 check("Pedidos lee la bandeja por estado", page.includes('where("status", "in", IN_TRAY_STATUSES)'), true);
 check("Pedidos une las dos lecturas", page.includes("mergeOrdersById("), true);
 check("Pedidos sigue leyendo 48 h para Entregados hoy", page.includes('where("createdAt", ">=", Timestamp.fromDate(twoDaysAgo))'), true);
+// 4-oct: con la columna vacía la tira de viejos no se pintaba y el pedido sin cobrar quedaba invisible.
+check("la tira de viejos sale aunque la columna esté vacía", page.includes("list.length === 0 && staleList.length === 0 ?"), true);
+check("solo viejos en bandeja: la tira llega abierta", page.includes("if (focusIsStale || onlyStaleInTray) setShowStale(true);"), true);
 
 if (failed) process.exit(1);
 console.log("OK validate-tray-orders");
