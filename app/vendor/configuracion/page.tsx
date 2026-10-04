@@ -224,6 +224,13 @@ export default function ConfiguracionPage() {
   const [savingPin, setSavingPin] = useState(false);
   const [pinSaved, setPinSaved] = useState(false);
   const [phone, setPhone] = useState("");
+  /**
+   * Teléfono y WhatsApp tal como se cargaron (4-oct-2026). Los pedidos y el
+   * botón de WhatsApp leen `whatsapp`, no `phone`; esta pantalla solo edita
+   * el teléfono. Si el WhatsApp era el mismo número (o no había), se mueve
+   * junto con el teléfono; si el dueño tiene otro WhatsApp, no se toca.
+   */
+  const loadedPhoneRef = useRef({ phone: "", whatsapp: "" });
   /** País del teléfono (5-sep): wa.me y SMS del local marcan con este código. */
   const [phoneCountry, setPhoneCountry] = useState(DEFAULT_PHONE_COUNTRY);
   /** Moneda del local; el paso de puntos ("1 extra por cada $X") sale de ella. */
@@ -311,6 +318,10 @@ export default function ConfiguracionPage() {
           (Number(data.lat) === 0 && Number(data.lng) === 0),
       );
       setPhone((data.phone as string) ?? "");
+      loadedPhoneRef.current = {
+        phone: typeof data.phone === "string" ? data.phone : "",
+        whatsapp: typeof data.whatsapp === "string" ? data.whatsapp : "",
+      };
       setPhoneCountry(phoneCountryOf(data));
       {
         const cur = typeof data.currencyCode === "string" && data.currencyCode.trim()
@@ -631,6 +642,18 @@ export default function ConfiguracionPage() {
       if (currency !== loadedCurrency) {
         update.loyaltyEarnPolicy = newVenueEarnPolicy(currency);
       }
+      // WhatsApp de los pedidos: viaja con el teléfono solo si era el mismo
+      // número (o estaba vacío). Mar (Fresh Water, 4-oct) cambió su teléfono
+      // y los pedidos seguían yendo al número viejo.
+      {
+        const digits = (v: string) => v.replace(/\D/g, "");
+        const prev = loadedPhoneRef.current;
+        const next = phone.trim();
+        if (digits(next) && digits(next) !== digits(prev.phone) &&
+            (!digits(prev.whatsapp) || digits(prev.whatsapp) === digits(prev.phone))) {
+          update.whatsapp = next;
+        }
+      }
       if (dailyRevenueGoal !== "" && Number(dailyRevenueGoal) > 0) {
         update.dailyRevenueGoal = Number(dailyRevenueGoal);
       } else {
@@ -713,6 +736,10 @@ export default function ConfiguracionPage() {
 
       await updateDoc(doc(db, "restaurants", restaurantId), update);
       initialAddressRef.current = address.trim();
+      loadedPhoneRef.current = {
+        phone: phone.trim(),
+        whatsapp: typeof update.whatsapp === "string" ? update.whatsapp : loadedPhoneRef.current.whatsapp,
+      };
       if (claimedSlug) setSlug(claimedSlug);
       const readiness = await persistReadiness(restaurantId);
       setSetupReasons(readiness && !readiness.isComplete ? readiness.reasons : []);
