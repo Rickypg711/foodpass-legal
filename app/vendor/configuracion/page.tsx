@@ -44,7 +44,7 @@ import { defaultSpendStepForCurrency, earnRuleLine, newVenueEarnPolicy } from "@
 
 const RESTAURANT_CATEGORIES = [
   "Tacos","Café","Hamburguesas","Pizza","Sushi",
-  "Mariscos","Antojitos","Carnes","Postres","Otro",
+  "Mariscos","Antojitos","Carnes","Pollo","Postres","Otro",
 ] as const;
 
 // ─── Opción A (23-sep-2026, lienzo "Sistema Comeleal") ────────────────────────

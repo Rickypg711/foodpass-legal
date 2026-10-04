@@ -6,7 +6,7 @@
 
 export const RESTAURANT_CATEGORIES = [
   "Tacos", "Café", "Hamburguesas", "Pizza", "Sushi",
-  "Mariscos", "Antojitos", "Carnes", "Postres", "Otro",
+  "Mariscos", "Antojitos", "Carnes", "Pollo", "Postres", "Otro",
 ] as const;
 
 export type RestaurantCategory = (typeof RESTAURANT_CATEGORIES)[number];
@@ -21,6 +21,8 @@ const KEYWORDS: Array<[Exclude<RestaurantCategory, "Otro">, RegExp]> = [
   ["Café", /\bcaf[eé]\b|latte|capuchino|cappuccino|espresso|frapp/i],
   ["Antojitos", /antojit|gordita|quesadilla|\bsopes?\b|tostada|elote|tamal/i],
   ["Carnes", /\bcortes?\b|arrachera|rib\s?eye|asador|parrilla|steak/i],
+  // "torta de pollo" no hace pollería: solo lo que dice cómo se hace el pollo.
+  ["Pollo", /pollos?\s+(asados?|rostizados?|fritos?|a\s+la\s+le[ñn]a|al\s+carb[oó]n|en\s+llamas)|poller[ií]a|\balitas\b|\bwings\b|pierna\s+y\s+muslo/i],
   ["Postres", /postre|pastel|helado|crepa|reposter|nieve/i],
 ];
 
