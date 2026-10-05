@@ -181,6 +181,74 @@ export function parseLocationLink(
   return null;
 }
 
+/* ───────── Link corto de Google Maps (5-oct-2026, Kame House) ─────────
+ * El botón Compartir de Maps da maps.app.goo.gl/…: sin coordenadas en el texto. El navegador no puede seguir la
+ * redirección, así que el panel se lo pide al servidor (app/api/resolve-map-link). Aquí viven las piezas puras. */
+
+/** Hosts de Google por los que puede pasar un link de Maps (y los ÚNICOS que el servidor sigue). */
+export function isGoogleMapsHost(hostname: string): boolean {
+  const h = String(hostname || '').toLowerCase();
+  return (
+    h === 'maps.app.goo.gl' ||
+    h === 'goo.gl' ||
+    h === 'g.co' ||
+    h === 'maps.google.com' ||
+    h === 'google.com' ||
+    h === 'www.google.com' ||
+    /^(www\.|maps\.)?google\.[a-z]{2,3}(\.[a-z]{2})?$/.test(h)
+  );
+}
+
+/**
+ * El primer link de Google Maps dentro de lo que pegó el dueño (a veces pega el mensaje entero de WhatsApp:
+ * "Kame House https://maps.app.goo.gl/xyz"). Solo https y solo hosts de Google; si no hay, null.
+ */
+export function firstMapsUrlIn(text: string): string | null {
+  for (const raw of String(text || '').match(/https?:\/\/[^\s<>"']+/gi) ?? []) {
+    try {
+      const u = new URL(raw.replace(/[),.;]+$/, ''));
+      if (!isGoogleMapsHost(u.hostname)) continue;
+      const short = u.hostname === 'maps.app.goo.gl' || u.hostname === 'goo.gl' || u.hostname === 'g.co';
+      if (!short && !/^\/maps(\/|$)/.test(u.pathname) && u.hostname !== 'maps.google.com') continue;
+      u.protocol = 'https:';
+      return u.toString();
+    } catch {
+      /* no era un link */
+    }
+  }
+  return null;
+}
+
+/**
+ * El texto del lugar en un link largo de Maps: …/maps/place/Cevicheria+Kame+House,+Rey+Ramses+II+714,+31180+Chihuahua/…
+ * → "Cevicheria Kame House, Rey Ramses II 714, 31180 Chihuahua". null si el link no es de un lugar o el texto es
+ * muy corto para ser una dirección.
+ */
+export function placeTextFromMapsUrl(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (!isGoogleMapsHost(u.hostname)) return null;
+  const m = u.pathname.match(/\/maps\/place\/([^/]+)/);
+  if (!m) return null;
+  let text: string;
+  try {
+    text = decodeURIComponent(m[1]!.replace(/\+/g, ' ')).trim();
+  } catch {
+    return null;
+  }
+  return text.length >= MIN_ADDRESS_CHARS ? text : null;
+}
+
+/**
+ * Precisiones que valen cuando el pin sale del TEXTO de un link (nadie revisó una dirección escrita): solo
+ * puerta. GEOMETRIC_CENTER (el centro de una calle o colonia) se queda para la dirección que el dueño escribe.
+ */
+export const PIN_FROM_TEXT_PRECISIONS: ReadonlySet<string> = new Set(['ROOFTOP', 'RANGE_INTERPOLATED']);
+
 /**
  * País esperado, deducido del teléfono.
  *

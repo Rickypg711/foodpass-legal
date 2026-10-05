@@ -24,7 +24,7 @@ import {
 import { fetchWithBilling } from "@/lib/subscription/billingDoc";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { ProWall } from "@/components/vendor/ProWall";
-import { parseLocationLink, cityFieldsFromVerdict } from "@/lib/geocodeRestaurant";
+import { parseLocationLink, cityFieldsFromVerdict, firstMapsUrlIn } from "@/lib/geocodeRestaurant";
 import { waitForAuthReady } from "@/lib/auth";
 import { requestPasswordReset } from "@/lib/passwordReset";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
@@ -554,34 +554,63 @@ export default function ConfiguracionPage() {
   /** El pin desde un link pegado (WhatsApp/Google Maps) — cierra el caso
    * "puesto sin ficha de Google" sin construir un mapa: el GPS del dueño es
    * la mejor verdad de ubicación que existe. parseLocationLink rechaza
-   * Null Island y links sin coordenadas — jamás se adivina un pin. */
+   * Null Island y links sin coordenadas — jamás se adivina un pin.
+   *
+   * El botón Compartir de Google Maps da un link CORTO (maps.app.goo.gl) sin
+   * coordenadas en el texto: ese lo resuelve el servidor
+   * (/api/resolve-map-link). Antes se rechazaba y el dueño se quedaba con el
+   * link correcto en la mano (Kame House, 5-oct). */
   async function handlePinLink() {
     if (!restaurantId || savingPin) return;
-    const coords = parseLocationLink(pinLink);
+    let coords = parseLocationLink(pinLink);
+    setSavingPin(true);
+    let cityFields: Record<string, unknown> = {};
+    if (!coords && firstMapsUrlIn(pinLink)) {
+      try {
+        const res = await fetch("/api/resolve-map-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            link: pinLink,
+            phone: phone.trim(),
+            country: isoCountryOf({ phoneCountryCode: phoneCountry, currencyCode: currency }),
+          }),
+        });
+        const v = await res.json();
+        if (v?.ok && typeof v.lat === "number" && typeof v.lng === "number") {
+          coords = { lat: v.lat, lng: v.lng };
+          if (v.city || v.state || v.countryCode) cityFields = cityFieldsFromVerdict(v, v.lat, v.lng, "geocode");
+        }
+      } catch {
+        /* cae al mensaje de abajo */
+      }
+    }
     if (!coords) {
+      setSavingPin(false);
       setPinLinkError(
-        "No encontré la ubicación en ese link. Comparte la ubicación desde " +
-          "Google Maps o WhatsApp y pega el link completo.",
+        "No encontré la ubicación en ese link. Escribe arriba tu calle y " +
+          "número, colonia y ciudad y guarda; o manda tu ubicación por " +
+          "WhatsApp y pega aquí ese link.",
       );
       return;
     }
-    setSavingPin(true);
     try {
       const db = getFirebaseDb();
       // El pin lo puso el dueño a mano: Google nos dice la ciudad de ese
       // punto (reverse). Si falla, el pin se guarda igual; la ciudad la
       // deriva el servidor después (functions/restaurant_city_from_pin.js).
-      let cityFields: Record<string, unknown> = {};
-      try {
-        const rev = await fetch("/api/geocode", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat: coords.lat, lng: coords.lng }),
-        });
-        const loc = await rev.json();
-        if (loc?.ok) cityFields = cityFieldsFromVerdict(loc, coords.lat, coords.lng, "reverse_geocode");
-      } catch {
-        /* la ciudad la deriva el servidor */
+      if (!cityFields.city) {
+        try {
+          const rev = await fetch("/api/geocode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: coords.lat, lng: coords.lng }),
+          });
+          const loc = await rev.json();
+          if (loc?.ok) cityFields = cityFieldsFromVerdict(loc, coords.lat, coords.lng, "reverse_geocode");
+        } catch {
+          /* la ciudad la deriva el servidor */
+        }
       }
       await updateDoc(doc(db, "restaurants", restaurantId), {
         lat: coords.lat,
@@ -968,7 +997,7 @@ export default function ConfiguracionPage() {
                       type="text"
                       value={pinLink}
                       onChange={(e) => { setPinLink(e.target.value); setPinLinkError(null); }}
-                      placeholder="https://maps.google.com/?q=28.63,-106.08"
+                      placeholder="https://maps.app.goo.gl/…"
                       className={`${INPUT_CLS} min-w-0 flex-1`}
                     />
                     <button
