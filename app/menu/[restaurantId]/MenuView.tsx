@@ -1984,7 +1984,13 @@ function PublicMenuPageWithOrdering({
           {/* COMPACTO a propósito: la variante banner hacía el dock tan alto
               que tapaba el final del menú (el scroll "rebotaba" sin dejar ver
               los últimos platillos). El upsell queda en una línea. */}
-          <p className="pt-1 text-center text-sm font-semibold text-[#1C2526]/75">
+          {/* Kame y Omu tienen la barra oscura: con la tinta de siempre el aviso no se leía (visto en vivo, 5-oct). */}
+          <p
+            className={
+              "pt-1 text-center text-sm font-semibold " +
+              (skin === "kame" ? "text-[#fbf3d0]/90" : skin === "omu" ? "text-[#f9f8f8]/85" : "text-[#1C2526]/75")
+            }
+          >
             😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ordenar cuando abra.
           </p>
           <MenuAppRewardsCta
