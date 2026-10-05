@@ -143,6 +143,21 @@ const LOOK_OMU: DetailLook = {
   add: `${OMU_NAME_D} rounded-full bg-[#f10809] px-6 py-3 text-[14px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8] shadow-[0_10px_22px_-12px_rgba(241,8,9,0.9)] transition-all hover:bg-[#d40607] active:scale-[0.98]`,
 };
 
+/** Kame: hoja verde pizarrón con el nombre en amarillo y el botón dorado (components/menu/skins/kame.tsx). */
+const KAME_NAME_D = "[font-family:var(--kame-display),'League_Spartan',Futura,sans-serif]";
+const LOOK_KAME: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center",
+  panel: "animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-[24px] border-t-4 border-[#f7cf1d] bg-[#263532] text-[#fbf3d0] shadow-xl sm:max-w-md sm:rounded-[20px] sm:border-4",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#f0dc78]/50 bg-[#263532] text-lg text-[#f0dc78] hover:bg-[#f7cf1d] hover:text-[#263532]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[20px] bg-[#1c2826] sm:rounded-t-[16px]",
+  title: `${KAME_NAME_D} text-[30px] font-black uppercase leading-[0.95] text-[#f7cf1d]`,
+  hint: `${KAME_NAME_D} mt-2 inline-flex w-fit items-center rounded-full border-[1.5px] border-[#f0dc78]/45 px-3 pb-[3px] pt-[6px] text-[11px] font-bold uppercase leading-none tracking-[0.1em] text-[#f0dc78]`,
+  description: "mt-2.5 text-[16px] leading-relaxed text-[#d8b25a]",
+  price: `${KAME_NAME_D} text-[26px] font-bold tabular-nums leading-none text-[#edb64a]`,
+  add: `${KAME_NAME_D} rounded-full bg-[#f7cf1d] px-6 pb-2.5 pt-3.5 text-[15px] font-black uppercase tracking-[0.06em] text-[#263532] shadow-[0_10px_24px_-10px_rgba(247,207,29,0.75)] transition-all hover:bg-[#ffe04a] active:scale-[0.97]`,
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -177,6 +192,8 @@ export function MenuItemDetailSheet({
             ? LOOK_IGO
             : skin === "omu"
               ? LOOK_OMU
+              : skin === "kame"
+                ? LOOK_KAME
               : skin === "fresheria"
                 ? LOOK_FRESHERIA
                 : LOOK_DEFAULT;
@@ -217,7 +234,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu" && skin !== "fresheria") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu" && skin !== "fresheria" && skin !== "kame") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

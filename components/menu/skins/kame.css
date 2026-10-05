@@ -1,0 +1,356 @@
+/* Piel "Kame" (kame.tsx): Kame House Cevichería, Chihuahua. Vive junto a la piel (no en globals.css).
+   Todo sale de SU volante (el que subió al darse de alta, 5-oct-2026): hoja verde pizarrón, franja amarilla con su
+   logo redondo y la foto de sus platillos, títulos amarillos gordos, nombres en dorado claro y precios en dorado.
+   Su verde es #263532 y su amarillo #EFD250, sacados del propio volante. */
+.kame-skin {
+  --k-bg: #263532;
+  --k-deep: #1c2826;
+  --k-band: #efd250;
+  --k-title: #f7cf1d;
+  --k-name: #f0dc78;
+  --k-price: #edb64a;
+  --k-desc: #d8b25a;
+  --k-cream: #fbf3d0;
+  --k-red: #cb0b0b;
+  background-color: var(--k-bg);
+  background-image:
+    radial-gradient(ellipse 80% 38% at 50% 0%, rgba(239, 210, 80, 0.1), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 60%, rgba(239, 210, 80, 0.05), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(0, 0, 0, 0.28), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* ───────── La franja amarilla de arriba ───────── */
+.kame-skin .kame-band {
+  position: relative;
+  overflow: hidden;
+  background: var(--k-band);
+  color: var(--k-bg);
+  box-shadow: 0 26px 50px -30px rgba(0, 0, 0, 0.75);
+}
+/* Rayos de sol detrás de los platillos: giran despacio, casi no se ven. */
+.kame-skin .kame-rays {
+  position: absolute;
+  left: 68%;
+  top: 58%;
+  width: 1500px;
+  height: 1500px;
+  margin: -750px 0 0 -750px;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.2) 0deg 7deg, transparent 7deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.55) 30%, transparent 62%);
+  mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.55) 30%, transparent 62%);
+  animation: kame-spin 90s linear infinite;
+  pointer-events: none;
+}
+/* Puntitos de imprenta en la orilla izquierda. */
+.kame-skin .kame-dotsbg {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(38, 53, 50, 0.16) 1.3px, transparent 1.6px);
+  background-size: 13px 13px;
+  -webkit-mask-image: linear-gradient(100deg, #000 0%, transparent 42%);
+  mask-image: linear-gradient(100deg, #000 0%, transparent 42%);
+  pointer-events: none;
+}
+.kame-skin .kame-food {
+  animation: kame-float 7s ease-in-out infinite alternate;
+  transform-origin: 60% 100%;
+  filter: drop-shadow(0 18px 18px rgba(60, 45, 0, 0.28));
+  will-change: transform;
+}
+/* Su logo redondo, con el anillo de letras que le da la vuelta. */
+.kame-skin .kame-logo {
+  position: relative;
+  flex: none;
+  border-radius: 999px;
+  animation: kame-pop 700ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.kame-skin .kame-logo img {
+  position: absolute;
+  inset: 13%;
+  width: 74%;
+  height: 74%;
+  border-radius: 999px;
+  box-shadow: 0 14px 26px -12px rgba(30, 25, 0, 0.6);
+}
+.kame-skin .kame-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: kame-spin 38s linear infinite;
+}
+.kame-skin .kame-ring text {
+  fill: var(--k-bg);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+/* Abierto / cerrado. */
+.kame-skin .kame-status {
+  background: var(--k-bg);
+  color: var(--k-cream);
+}
+.kame-skin .kame-status--closed {
+  background: transparent;
+  color: var(--k-bg);
+  box-shadow: inset 0 0 0 2px rgba(38, 53, 50, 0.55);
+}
+.kame-skin .kame-live {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #5be37d;
+}
+.kame-skin .kame-live::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid #5be37d;
+  animation: kame-ping 1.8s ease-out infinite;
+}
+
+/* ───────── La cinta que corre: sus secciones ───────── */
+.kame-skin .kame-ticker {
+  overflow: hidden;
+  background: var(--k-deep);
+  border-top: 1px solid rgba(239, 210, 80, 0.2);
+  border-bottom: 1px solid rgba(239, 210, 80, 0.2);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.kame-skin .kame-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: kame-marquee 26s linear infinite;
+}
+.kame-skin .kame-ticker__track > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  padding-right: 18px;
+  white-space: nowrap;
+}
+.kame-skin .kame-ticker i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--k-title);
+}
+
+/* ───────── Su hoja ───────── */
+.kame-skin .kame-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+@media (min-width: 1024px) {
+  .kame-skin .kame-sheet {
+    display: block;
+    columns: 2;
+    column-gap: 72px;
+  }
+  .kame-skin .kame-sheet > section {
+    break-inside: avoid;
+    margin-bottom: 52px;
+  }
+}
+.kame-skin .kame-title {
+  color: var(--k-title);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+/* La rayita amarilla que se dibuja bajo el título al llegar a la sección. */
+.kame-skin .kame-rule {
+  height: 4px;
+  width: 54px;
+  border-radius: 4px;
+  background: var(--k-title);
+  transform-origin: left;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms;
+}
+.kame-skin .kame-new {
+  display: inline-block;
+  background: linear-gradient(180deg, #ee1c1c, var(--k-red));
+  color: #fff;
+  border-radius: 5px 9px 9px 5px;
+  transform: skewX(-9deg);
+  box-shadow: 0 8px 16px -8px rgba(203, 11, 11, 0.9);
+  animation: kame-wiggle 3.2s ease-in-out infinite;
+}
+/* La foto de SU platillo, en un sol amarillo que flota junto al título. */
+.kame-skin .kame-medal {
+  flex: none;
+  border-radius: 999px;
+  background: var(--k-band);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 4px rgba(239, 210, 80, 0.22),
+    0 18px 30px -14px rgba(0, 0, 0, 0.8);
+  animation: kame-bob 5.5s ease-in-out infinite alternate;
+}
+.kame-skin .kame-medal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kame-skin section:hover .kame-medal img {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+/* Renglón: NOMBRE ····· precio (+) */
+.kame-skin .kame-row {
+  border-radius: 12px;
+  transition:
+    background-color 200ms,
+    opacity 520ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: 0ms, calc(var(--i, 0) * 70ms + 140ms), calc(var(--i, 0) * 70ms + 140ms);
+}
+@media (hover: hover) {
+  .kame-skin .kame-row:hover {
+    background: rgba(239, 210, 80, 0.07);
+  }
+}
+.kame-skin .kame-row--on {
+  background: rgba(239, 210, 80, 0.1);
+  box-shadow: inset 3px 0 0 var(--k-title);
+}
+.kame-skin .kame-leader {
+  flex: 1;
+  min-width: 14px;
+  border-bottom: 2px dotted rgba(240, 220, 120, 0.3);
+  transform: translateY(-5px);
+}
+.kame-skin .kame-add {
+  background: var(--k-title);
+  color: var(--k-bg);
+  box-shadow: 0 8px 18px -8px rgba(247, 207, 29, 0.75);
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.6, 0.4, 1),
+    background-color 160ms;
+}
+.kame-skin .kame-add:hover {
+  background: #ffe04a;
+  transform: scale(1.1) rotate(90deg);
+}
+.kame-skin .kame-add:active {
+  transform: scale(0.88);
+}
+.kame-skin .kame-stepper {
+  background: var(--k-title);
+  color: var(--k-bg);
+  animation: kame-pop 320ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+/* Tamaños (½ · 1L): cada uno es su botón. */
+.kame-skin .kame-size {
+  border: 1.5px solid rgba(240, 220, 120, 0.28);
+  border-radius: 999px;
+  transition:
+    border-color 160ms,
+    background-color 160ms;
+}
+.kame-skin .kame-size:hover {
+  border-color: var(--k-title);
+}
+.kame-skin .kame-size--on {
+  border-color: var(--k-title);
+  background: rgba(239, 210, 80, 0.12);
+}
+
+/* Tarjeta de premios: crema con cabecera amarilla. */
+.kame-skin .kame-card {
+  background: var(--k-cream);
+  color: var(--k-bg);
+  border-radius: 20px;
+  box-shadow: 0 24px 44px -28px rgba(0, 0, 0, 0.9);
+}
+.kame-skin .kame-card__head {
+  background: var(--k-band);
+  color: var(--k-bg);
+  border-radius: 20px 20px 0 0;
+}
+
+/* ───────── Entrada al hacer scroll ─────────
+   Sin JavaScript todo se ve: la sección solo se esconde cuando el script la "arma" (kame-armed) y se
+   enseña al entrar a la pantalla (kame-in). */
+.kame-skin .kame-armed:not(.kame-in) .kame-row {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.kame-skin .kame-armed:not(.kame-in) .kame-rule {
+  transform: scaleX(0);
+}
+.kame-skin .kame-armed .kame-head {
+  transition:
+    opacity 600ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kame-skin .kame-armed:not(.kame-in) .kame-head {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+@keyframes kame-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes kame-float {
+  from { transform: translateY(5px) rotate(-0.7deg); }
+  to { transform: translateY(-6px) rotate(0.7deg); }
+}
+@keyframes kame-bob {
+  from { transform: translateY(3px) rotate(-3deg); }
+  to { transform: translateY(-5px) rotate(3deg); }
+}
+@keyframes kame-pop {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes kame-ping {
+  from { opacity: 0.9; transform: scale(0.5); }
+  to { opacity: 0; transform: scale(1.5); }
+}
+@keyframes kame-marquee {
+  to { transform: translateX(-50%); }
+}
+@keyframes kame-wiggle {
+  0%, 86%, 100% { transform: skewX(-9deg) rotate(0); }
+  90% { transform: skewX(-9deg) rotate(-5deg) scale(1.06); }
+  94% { transform: skewX(-9deg) rotate(4deg) scale(1.06); }
+}
+@keyframes kame-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.kame-skin .kame-rise { animation: kame-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kame-skin .kame-rays,
+  .kame-skin .kame-food,
+  .kame-skin .kame-logo,
+  .kame-skin .kame-ring,
+  .kame-skin .kame-live::after,
+  .kame-skin .kame-ticker__track,
+  .kame-skin .kame-new,
+  .kame-skin .kame-medal,
+  .kame-skin .kame-stepper,
+  .kame-skin .kame-rise {
+    animation: none;
+  }
+  .kame-skin .kame-row,
+  .kame-skin .kame-rule,
+  .kame-skin .kame-armed .kame-head {
+    transition: none;
+  }
+  .kame-skin .kame-armed:not(.kame-in) .kame-row,
+  .kame-skin .kame-armed:not(.kame-in) .kame-head {
+    opacity: 1;
+    transform: none;
+  }
+  .kame-skin .kame-armed:not(.kame-in) .kame-rule {
+    transform: none;
+  }
+}

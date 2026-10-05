@@ -309,7 +309,68 @@ const FRESHERIA: PielFixture = {
   },
 };
 
-const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA };
+/* ─────────────────────────── Kame House Cevichería (5-oct-2026) ─────────────────────────── */
+/** Espejo de lo que Diego importó de su volante (restaurants/n3EqmiHbuOq5RZFC7S4j): 22 platillos, precios REALES de
+ *  su papel. La descripción viene repetida en cada platillo de la sección (así la dejó el import) y los tamaños
+ *  del ceviche son platillos separados: la piel los junta. */
+const KM_TOSTI = "Pepino, cilantro, aguacate, cebolla apio, tomate, en tostitos verdes o morados.";
+const KM_COCTEL = "Pepino, cilantro, aguacate, cebolla apio, tomate, totopos y galletas.";
+const KM_CEVICHE = "Pepino, cilantro, aguacate, cebolla apio, tomate, totopos y tostadas.";
+const KM_AGUACHILE = "Camarón crudo o cocido, pepino, cilantro, aguacate, cebolla morada totopos y galletas o tostadas.";
+const KM_ROWS: [category: string, name: string, price: number, description: string][] = [
+  ["EXTRAS", "PEPIHUATES", 30, ""],
+  ["TOSTICEVICHE", "MIXTO", 115, KM_TOSTI],
+  ["OSTIONES", "SENCILLO PZ", 22, ""],
+  ["CEVICHE", "CAMARÓN 1/2", 115, KM_CEVICHE],
+  ["CEVICHE", "MIXTO 1L", 230, KM_CEVICHE],
+  ["COCTELES", "MIXTO", 115, KM_COCTEL],
+  ["EXTRAS", "CLAMATO PREPARADO", 70, ""],
+  ["TOSTICEVICHE", "PESCADO", 110, KM_TOSTI],
+  ["TOSTICEVICHE", "CAMARÓN", 115, KM_TOSTI],
+  ["CEVICHE", "MIXTO 1/2", 115, KM_CEVICHE],
+  ["COCTELES", "PESCADO", 110, KM_COCTEL],
+  ["CEVICHE", "CAMARÓN 1L", 230, KM_CEVICHE],
+  ["OSTIONES", "ESPECIAL PZ", 28, "Con camarón, cebolla morada y cilantro."],
+  ["AGUACHILES", "NEGRO", 140, KM_AGUACHILE],
+  ["CEVICHE", "PESCADO 1/2", 110, KM_CEVICHE],
+  ["TOSTICEVICHE", "TOSTIAGUACHILE", 145, KM_TOSTI],
+  ["EXTRAS", "COCA COLA 600", 25, ""],
+  ["RAMEN", "CAMARON 1 LITRO", 145, "Fideos, camarón, aguacate, cilantro zanahoria, apio y cebolla picada fina."],
+  ["COCTELES", "CAMARÓN", 115, KM_COCTEL],
+  ["RAMEN", "MIXTO 1 LITRO", 145, "Fideos, filete de pescado, camarón, aguacate, cilantro, zanahoria, apio y cebolla picada fina."],
+  ["AGUACHILES", "VERDE", 140, KM_AGUACHILE],
+  ["CEVICHE", "PESCADO 1L", 220, KM_CEVICHE],
+];
+const KM_CLOSED = { isClosed: true, openingTime: { hour: 15, minute: 0 }, closingTime: { hour: 22, minute: 30 } };
+const KAME: PielFixture = {
+  id: "preview-kame",
+  initial: {
+    raw: {
+      name: "Tosticeviches Kame House",
+      menuSkin: "kame",
+      address: "Rey Ramsés II 714, Villas del Rey, Chihuahua",
+      phone: "6141710223",
+      whatsapp: "6141710223",
+      categories: ["Mariscos", "Antojitos"],
+      menuCategoryOrder: ["TOSTICEVICHE", "COCTELES", "CEVICHE", "RAMEN", "AGUACHILES", "OSTIONES", "EXTRAS"],
+      businessHours: {
+        monday: KM_CLOSED,
+        tuesday: KM_CLOSED,
+        wednesday: day([15, 0], [22, 30]),
+        thursday: day([15, 0], [22, 30]),
+        friday: day([15, 0], [22, 30]),
+        saturday: day([19, 30], [23, 0]),
+        sunday: day([19, 30], [23, 0]),
+      },
+    },
+    menu: KM_ROWS.map(([category, name, price, description], i) => ({
+      id: `km-${i + 1}`,
+      data: { category, name, price, ...(description ? { description } : {}), isAvailable: true },
+    })),
+  },
+};
+
+const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA, kame: KAME };
 
 export function pielFixture(skin: string): PielFixture | null {
   return FIXTURES[skin] ?? null;

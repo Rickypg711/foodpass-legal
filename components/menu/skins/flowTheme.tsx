@@ -22,6 +22,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT } from "@/components/menu/skins/fresheria";
+import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE } from "@/components/menu/skins/kame";
 
 export type FlowHeaderProps = {
   restaurantId: string;
@@ -450,8 +451,28 @@ const FRESHERIA_TOKENS: FlowTokens = {
  * Piel → fichas. Para vestir el flujo de otra piel: agrega su renglón aquí con sus colores (los del propio papel,
  * como en su `.css`), sus clases de fuente (las que ya exporta su `skins/{piel}.tsx`) y su logo estático.
  */
+/** Kame House: su verde pizarrón de fondo, tarjetas crema y botones amarillos (components/menu/skins/kame.tsx). */
+const KAME_TOKENS: FlowTokens = {
+  bg: "#263532",
+  paper: "#fbf3d0",
+  ink: "#263532",
+  accent: "#f7cf1d",
+  accentInk: "#263532",
+  accentHover: "#ffe04a",
+  border: "#c9a93c",
+  radius: "full",
+  cardRadius: "rounded-[20px]",
+  cardShadow: "shadow-[0_24px_44px_-28px_rgba(0,0,0,0.9)]",
+  fontBody: "[font-family:var(--kame-sans),Jost,system-ui,sans-serif]",
+  fontName: KAME_NAME,
+  fontDisplay: `${KAME_TITLE} text-[30px] leading-none`,
+  rootClass: KAME_ROOT_CLASS,
+  logo: { src: "/skins/kame/logo.png", width: 312, height: 312 },
+};
+
 const FLOW_BY_SKIN: Partial<Record<MenuSkinId, FlowTokens>> = {
   fresheria: FRESHERIA_TOKENS,
+  kame: KAME_TOKENS,
 };
 
 const BUILT = new Map<MenuSkinId, FlowTheme>();

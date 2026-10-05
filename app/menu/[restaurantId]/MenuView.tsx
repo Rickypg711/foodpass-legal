@@ -124,6 +124,18 @@ import {
   omuSortItems,
 } from "@/components/menu/skins/omu";
 import {
+  KAME_ROOT_CLASS,
+  KameCategorySection,
+  KameHeader,
+  KameItemRow,
+  KamePanel,
+  KameSheet,
+  KameSizeRow,
+  kameRowsOf,
+  kameSharedDescription,
+  kameSortItems,
+} from "@/components/menu/skins/kame";
+import {
   FR_ROOT_CLASS,
   FresheriaCategorySection,
   FresheriaHeader,
@@ -281,6 +293,7 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "igo") return IGO_ROOT_CLASS;
   if (skin === "omu") return OMU_ROOT_CLASS;
   if (skin === "fresheria") return FR_ROOT_CLASS;
+  if (skin === "kame") return KAME_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -290,6 +303,8 @@ function mainWidthFor(skin: MenuSkinId | null): string {
   if (skin === "omu") return "max-w-3xl lg:max-w-7xl";
   // Fresheria: sus páginas a dos columnas, como el PDF abierto (15-sep).
   if (skin === "fresheria") return "max-w-3xl lg:max-w-6xl";
+  // Kame: su volante a dos columnas (5-oct).
+  if (skin === "kame") return "max-w-3xl lg:max-w-6xl";
   return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
@@ -362,6 +377,19 @@ function MenuRestaurantHeader({
   if (skin === "fresheria") {
     return (
       <FresheriaHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "kame") {
+    return (
+      <KameHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -589,6 +617,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "omu") return null;
   // Fresheria: su portada rosa ya es el encabezado.
   if (skin === "fresheria") return null;
+  // Kame: su franja amarilla (logo + platillos) ya es la portada.
+  if (skin === "kame") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -789,6 +819,73 @@ function MenuCategoryList({
           );
         })}
       </FresheriaSheet>
+    );
+  }
+  if (skin === "kame") {
+    // Su volante verde pizarrón (components/menu/skins/kame.tsx): la descripción que comparte la sección va una vez
+    // bajo el título y los tamaños ("CAMARÓN 1/2", "CAMARÓN 1L") se juntan en un renglón, como su tabla de CEVICHE.
+    return (
+      <KameSheet categories={groups.map((g) => g.category)}>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const sorted = kameSortItems(group.category, group.items);
+          const shared = kameSharedDescription(sorted);
+          const canOrder = orderingEnabled && !closed;
+          return (
+            <KameCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              description={shared}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && kameRowsOf(sorted).map((row, i) =>
+                row.kind === "sizes" ? (
+                  <KameSizeRow
+                    key={row.sizes[0]!.item.id}
+                    name={row.base}
+                    index={i}
+                    orderingEnabled={canOrder}
+                    sizes={row.sizes.map(({ label, item }) => ({
+                      id: item.id,
+                      label,
+                      fullName: item.name,
+                      price: item.price,
+                      quantity: getItemQuantity?.(item.id) ?? 0,
+                      onAdd: () => onAddItem(item),
+                      onIncrement: () => onIncrementItem?.(item),
+                      onDecrement: () => onDecrementItem?.(item),
+                      onOpen: () => onOpenItem?.(item),
+                    }))}
+                  />
+                ) : (
+                  <KameItemRow
+                    key={row.item.id}
+                    id={row.item.id}
+                    name={row.item.name}
+                    description={row.item.description}
+                    price={row.item.price}
+                    imageUrl={row.item.imageUrl}
+                    orderingEnabled={canOrder}
+                    optionsHint={optionsHintFor(row.item)}
+                    quantity={getItemQuantity?.(row.item.id) ?? 0}
+                    onAdd={() => onAddItem(row.item)}
+                    onIncrement={() => onIncrementItem?.(row.item)}
+                    onDecrement={() => onDecrementItem?.(row.item)}
+                    onOpen={() => onOpenItem?.(row.item)}
+                    index={i}
+                    hideDescription={shared !== null}
+                  />
+                ),
+              )}
+            </KameCategorySection>
+          );
+        })}
+      </KameSheet>
     );
   }
   if (skin === "omu") {
@@ -1245,6 +1342,21 @@ function MenuRewardsLadderSection({
       </FresheriaPanel>
     );
   }
+  if (skin === "kame") {
+    return (
+      <KamePanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#263532] underline decoration-[#263532]/40 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </KamePanel>
+    );
+  }
   if (skin === "omu") {
     return (
       <OmuPanel title="Premios">
@@ -1393,6 +1505,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#0b652a]/20 bg-[#f7f8f8]/95 shadow-[0_-12px_36px_-16px_rgba(11,101,42,0.45)]"
               : skin === "omu"
                 ? "border-[#f10809]/30 bg-[#151311]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
+              : skin === "kame"
+                ? "border-[#efd250]/25 bg-[#1c2826]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
               : skin === "fresheria"
                 ? "border-[#9e6036]/40 bg-[#feeef8]/95 shadow-[0_-12px_36px_-16px_rgba(86,5,45,0.35)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")

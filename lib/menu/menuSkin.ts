@@ -43,12 +43,16 @@
  *    títulos cursivos vino, píldoras blancas de precio, sus fotos de vasos y sus fresas a línea; tamaños, fruta,
  *    coberturas, panes, toppings y extras pintados desde los optionGroups (components/menu/skins/fresheria.tsx).
  *    Décima piel en código por pedido de Ricardo (15-sep).
+ *  - "kame": Kame House Cevichería, Chihuahua — su volante verde pizarrón con la franja amarilla, su logo redondo
+ *    y la foto de sus platillos, títulos amarillos gordos, CEVICHE como tabla 1/2 · 1L y OSTIONES con su "NEW"
+ *    (components/menu/skins/kame.tsx). Undécima piel en código por pedido de Ricardo (5-oct); primera con
+ *    movimiento (platillos que flotan, cinta que corre, renglones que entran al hacer scroll).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria" | "kame";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria", "kame"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

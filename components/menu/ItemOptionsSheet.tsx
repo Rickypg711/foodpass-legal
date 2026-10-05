@@ -236,6 +236,35 @@ const LOOK_OMU: SheetLook = {
   confirm: `${OMU_NAME_S} flex-1 rounded-full bg-[#f10809] py-3 text-[14px] font-extrabold uppercase tracking-[0.06em] text-[#f9f8f8] transition-colors hover:bg-[#d40607] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** Kame: hoja verde pizarrón con títulos amarillos y píldoras doradas (components/menu/skins/kame.tsx). */
+const KAME_NAME_S = "[font-family:var(--kame-display),'League_Spartan',Futura,sans-serif]";
+const LOOK_KAME: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-[24px] border-t-4 border-[#f7cf1d] bg-[#263532] p-5 text-[#fbf3d0] shadow-xl sm:max-w-md sm:rounded-[20px] sm:border-4",
+  title: `${KAME_NAME_S} text-[26px] font-black uppercase leading-none text-[#f7cf1d]`,
+  subtitle: "text-[14px] leading-snug text-[#d8b25a]",
+  groupName: `${KAME_NAME_S} text-[13px] font-bold uppercase tracking-[0.1em] text-[#f0dc78]`,
+  status: (falta) => `${KAME_NAME_S} text-[11px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#ff8f7a]" : "text-[#fbf3d0]/50"}`,
+  hasta: "text-[12px] text-[#fbf3d0]/60",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-[1.5px] px-4 py-2.5 text-left text-[15px] font-semibold transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#fbf3d0]/10 text-[#fbf3d0]/35 line-through"
+        : on
+          ? "border-[#f7cf1d] bg-[#f7cf1d] text-[#263532]"
+          : "border-[#f0dc78]/30 bg-transparent text-[#fbf3d0] hover:border-[#f7cf1d]"
+    }`,
+  delta: (on) => `text-[13px] font-bold ${on ? "text-[#263532]" : "text-[#edb64a]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#efd250]/20 bg-[#263532] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-semibold text-[#fbf3d0]/80",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-[1.5px] border-[#f0dc78]/40 text-lg font-bold text-[#f0dc78] transition-colors hover:bg-[#f0dc78]/10 disabled:opacity-30",
+  qtyNum: `${KAME_NAME_S} w-7 text-center text-[17px] font-bold tabular-nums text-[#fbf3d0]`,
+  cancel:
+    "rounded-full border-[1.5px] border-[#fbf3d0]/30 px-4 py-3 text-sm font-semibold text-[#fbf3d0]/85 transition-colors hover:bg-[#fbf3d0]/10",
+  confirm: `${KAME_NAME_S} flex-1 rounded-full bg-[#f7cf1d] pb-2.5 pt-3.5 text-[15px] font-black uppercase tracking-[0.06em] text-[#263532] transition-colors hover:bg-[#ffe04a] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 /** Fresheria: página rosa con marco dorado, cursiva vino y píldoras magenta (components/menu/skins/fresheria.tsx). */
 const FR_NAME_S = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif]";
 const LOOK_FRESHERIA: SheetLook = {
@@ -272,6 +301,7 @@ function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "tortasperras") return LOOK_TORTAS;
   if (skin === "igo") return LOOK_IGO;
   if (skin === "omu") return LOOK_OMU;
+  if (skin === "kame") return LOOK_KAME;
   return LOOK_DEFAULT;
 }
 

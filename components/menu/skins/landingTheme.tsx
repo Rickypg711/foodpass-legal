@@ -24,6 +24,7 @@ import { LP_ROOT_CLASS, LP_SERIF, LaspicHeader } from "@/components/menu/skins/l
 import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins/tortasperras";
 import { IGO_DISPLAY, IGO_NAME, IGO_ROOT_CLASS, IGOHeader } from "@/components/menu/skins/igo";
 import { OMU_NAME, OMU_ROOT_CLASS, OmuHeader } from "@/components/menu/skins/omu";
+import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE, KameHeader } from "@/components/menu/skins/kame";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT, FresheriaHeader } from "@/components/menu/skins/fresheria";
 
 export type LandingHeaderProps = {
@@ -422,7 +423,39 @@ const FRESHERIA: LandingTheme = {
   photoPrice: "font-semibold text-[#56052d]/70",
 };
 
+/** Kame: su hoja verde pizarrón, tarjetas crema con cabecera amarilla y botones dorados. */
+const KAME: LandingTheme = {
+  root: KAME_ROOT_CLASS,
+  Header: (p) => <KameHeader {...p} />,
+  cta: `${KAME_TITLE} block min-h-12 rounded-full bg-[#f7cf1d] pb-3 pt-4 text-center text-[16px] tracking-[0.06em] text-[#263532] shadow-[0_14px_30px_-14px_rgba(247,207,29,0.7)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp: `${KAME_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#f0dc78] bg-transparent px-3 pb-2 pt-3 text-[12.5px] tracking-[0.1em] text-[#f0dc78] transition-colors hover:bg-[#f7cf1d] hover:text-[#263532]`,
+  btnNeutral: `${KAME_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#f0dc78]/40 bg-transparent px-3 pb-2 pt-3 text-[12.5px] tracking-[0.1em] text-[#f0dc78] transition-colors hover:border-[#f0dc78]`,
+  descriptionCard: "kame-card p-5 text-[15px] leading-relaxed text-[#263532]/85 sm:p-6",
+  card: "kame-card px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${KAME_TITLE} kame-card__head -mx-5 -mt-5 mb-4 block px-5 pb-2.5 pt-3.5 text-[22px] leading-none sm:-mx-7 sm:-mt-6 sm:px-7`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+    </h2>
+  ),
+  link: "font-bold text-[#263532] underline decoration-[#263532]/40 underline-offset-4",
+  text: "text-[#263532]/85",
+  textSoft: "text-[#263532]/65",
+  todayRow: "bg-[#efd250] font-bold text-[#263532]",
+  row: "text-[#263532]/75",
+  closedText: "text-[#263532]/40",
+  faqOpen: "open:bg-[#efd250]/25",
+  faqChevron: "text-[#263532]",
+  faqAnswer: "text-[#263532]/75",
+  seoText: "text-[#fbf3d0]/55",
+  signature: "text-[#fbf3d0]/55",
+  signatureLink: "font-bold text-[#f7cf1d] underline decoration-[#f7cf1d]/40 underline-offset-4",
+  loading: "kame-card px-4 py-6 text-center text-sm text-[#263532]/60",
+  photoName: "text-[#263532]",
+  photoPrice: "font-bold text-[#263532]/70",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "kame") return KAME;
   if (skin === "fresheria") return FRESHERIA;
   if (skin === "omu") return OMU;
   if (skin === "igo") return IGO;
