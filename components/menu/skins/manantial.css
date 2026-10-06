@@ -1,0 +1,190 @@
+/* Piel "Manantial" (manantial.tsx): Paletería y Heladería "El Manantial", La Original, Chihuahua. Vive junto a
+   la piel (no en globals.css). Todo sale de su fachada de Street View (jul-2024): pared morada #7b3fa6, letras
+   blancas de bomba con contorno y sombra azul rey #1d4ed8, la bola de chocolate #5a3222 con su crema #f7ecd4,
+   y la vitrina blanca con marco blanco grueso. */
+.mn-skin {
+  --mn-purple: #7b3fa6;
+  --mn-purple-dark: #5b2a80;
+  --mn-purple-light: #a86fd0;
+  --mn-blue: #1d4ed8;
+  --mn-blue-dark: #163a9e;
+  --mn-cream: #f7ecd4;
+  --mn-choco: #5a3222;
+  --mn-ink: #2a1740;
+  /* La pared morada, con la veta de la pintura apenas. */
+  background-color: var(--mn-purple);
+  background-image:
+    radial-gradient(1200px 500px at 50% -120px, rgba(255, 255, 255, 0.14), transparent 70%),
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 46px, rgba(0, 0, 0, 0.035) 46px, rgba(0, 0, 0, 0.035) 48px);
+  background-attachment: fixed;
+}
+
+/* La parte de arriba de la pared: el morado un poco más oscuro, como la cornisa donde va el letrero. */
+.mn-skin .mn-wall {
+  background: linear-gradient(180deg, #6a3393 0%, var(--mn-purple) 70%);
+}
+
+/* Letras de bomba: blancas con el contorno azul y la sombra azul de abajo, como el letrero. */
+.mn-skin .mn-bubble {
+  -webkit-text-stroke: 1.5px var(--mn-blue);
+  paint-order: stroke fill;
+  text-shadow:
+    0 2px 0 var(--mn-blue),
+    0 4px 0 var(--mn-blue-dark),
+    0 8px 14px rgba(22, 58, 158, 0.45);
+}
+.mn-skin .mn-bubble--big {
+  -webkit-text-stroke: 2.5px var(--mn-blue);
+  text-shadow:
+    0 3px 0 var(--mn-blue),
+    0 6px 0 var(--mn-blue-dark),
+    0 12px 22px rgba(22, 58, 158, 0.5);
+  transform: rotate(-2deg);
+}
+
+/* La bola de helado flota un poquito, como colgada del letrero. */
+.mn-skin .mn-scoop {
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
+  animation: mn-float 3.2s ease-in-out infinite;
+}
+
+/* El puntito de "abierto". */
+.mn-skin .mn-live {
+  position: relative;
+}
+.mn-skin .mn-live::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid var(--mn-blue);
+  animation: mn-ping 1.8s ease-out infinite;
+}
+
+/* Texto suelto de la portada /r (el párrafo de buscadores y la firma): sobre el morado va en una vitrinita. */
+.mn-skin .mn-seo {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 0 0 5px #fff, 0 14px 30px -18px rgba(20, 5, 40, 0.6);
+}
+
+/* La hoja: una vitrina por familia. */
+.mn-skin .mn-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-top: 16px;
+}
+@media (min-width: 1024px) {
+  .mn-skin .mn-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 34px 28px;
+    align-items: start;
+  }
+}
+
+/* La vitrina: marco blanco grueso (como el de la fachada), letrero morado arriba y cristal blanco abajo. */
+.mn-skin .mn-vitrina {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow:
+    0 0 0 6px #fff,
+    0 0 0 7px rgba(42, 23, 64, 0.12),
+    0 22px 40px -24px rgba(20, 5, 40, 0.7);
+}
+.mn-skin .mn-vitrina__head {
+  background: linear-gradient(180deg, #6a3393, var(--mn-purple));
+}
+.mn-skin .mn-vitrina__body {
+  background: #fff;
+}
+
+/* La foto de la cosa: esquinas redondas y un borde fino morado. */
+.mn-skin .mn-photo {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid rgba(123, 63, 166, 0.35);
+  box-shadow: 0 6px 14px -8px rgba(42, 23, 64, 0.5);
+  background: #f4eefa;
+}
+
+/* Renglón: se marca cuando ya está en el pedido. */
+.mn-skin .mn-row {
+  border-radius: 14px;
+  transition: background-color 200ms;
+}
+@media (hover: hover) {
+  .mn-skin .mn-row:hover {
+    background: rgba(123, 63, 166, 0.06);
+  }
+}
+.mn-skin .mn-row--on {
+  background: rgba(29, 78, 216, 0.06);
+  box-shadow: inset 3px 0 0 var(--mn-blue);
+}
+.mn-skin .mn-dots {
+  flex: 1;
+  min-width: 14px;
+  border-bottom: 2px dotted rgba(42, 23, 64, 0.3);
+  transform: translateY(-5px);
+}
+
+/* Pastilla de tamaño: blanca con borde morado; se pinta cuando ya está en el pedido. */
+.mn-skin .mn-size {
+  border-radius: 999px;
+  border: 2px solid rgba(123, 63, 166, 0.4);
+  background: #fff;
+  transition: border-color 160ms, background-color 160ms;
+}
+.mn-skin .mn-size--on {
+  border-color: var(--mn-blue);
+  background: rgba(29, 78, 216, 0.06);
+}
+
+/* Botón "+" morado con letra blanca. */
+.mn-skin .mn-add {
+  background: var(--mn-purple);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(91, 42, 128, 0.9);
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.6, 0.4, 1),
+    background-color 160ms;
+}
+.mn-skin .mn-add:hover {
+  background: var(--mn-purple-dark);
+  transform: scale(1.08);
+}
+.mn-skin .mn-add:active {
+  transform: scale(0.9);
+}
+.mn-skin .mn-stepper {
+  background: var(--mn-purple);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(91, 42, 128, 0.9);
+  animation: mn-pop 320ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes mn-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mn-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mn-ping {
+  from { opacity: 0.9; transform: scale(0.5); }
+  to { opacity: 0; transform: scale(1.6); }
+}
+@keyframes mn-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-5px) rotate(4deg); }
+}
+.mn-skin .mn-rise { animation: mn-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .mn-skin .mn-rise, .mn-skin .mn-scoop, .mn-skin .mn-stepper, .mn-skin .mn-live::after { animation: none; }
+}

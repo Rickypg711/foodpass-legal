@@ -300,6 +300,35 @@ const LOOK_SUADERO: SheetLook = {
   confirm: `${SD_NAME_S} flex-1 rounded-full bg-[#b32e16] py-3 text-[15px] uppercase tracking-[0.06em] text-[#f0e9d3] transition-colors hover:bg-[#a92c16] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** Manantial: vitrina blanca con el morado de su pared y el azul rey del letrero (components/menu/skins/manantial.tsx). */
+const MN_NAME_S = "[font-family:var(--mn-display),'Baloo_2',Nunito,sans-serif] font-bold";
+const LOOK_MANANTIAL: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#2a1740]/60 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-[26px] border-t-4 border-[#7b3fa6] bg-white p-5 text-[#2a1740] shadow-xl sm:max-w-md sm:rounded-[26px] sm:border-4",
+  title: `${MN_NAME_S} text-[24px] leading-tight text-[#2a1740]`,
+  subtitle: "text-[14px] leading-snug text-[#2a1740]/65",
+  groupName: `${MN_NAME_S} text-[13px] uppercase tracking-[0.1em] text-[#5b2a80]`,
+  status: (falta) => `text-[11px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#1d4ed8]" : "text-[#2a1740]/45"}`,
+  hasta: "text-[12px] text-[#2a1740]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-2 px-4 py-2.5 text-left text-[15px] font-bold transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#2a1740]/10 text-[#2a1740]/35 line-through"
+        : on
+          ? "border-[#1d4ed8] bg-[#7b3fa6] text-white"
+          : "border-[#7b3fa6]/35 bg-white text-[#2a1740] hover:border-[#7b3fa6]"
+    }`,
+  delta: (on) => `text-[13px] font-bold ${on ? "text-white" : "text-[#1d4ed8]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#7b3fa6]/15 bg-white px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-bold text-[#2a1740]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-2 border-[#7b3fa6]/40 text-lg font-bold text-[#5b2a80] transition-colors hover:bg-[#7b3fa6]/10 disabled:opacity-30",
+  qtyNum: `${MN_NAME_S} w-7 text-center text-[17px] tabular-nums text-[#2a1740]`,
+  cancel:
+    "rounded-full border-2 border-[#2a1740]/20 px-4 py-3 text-sm font-bold text-[#2a1740]/80 transition-colors hover:bg-[#2a1740]/5",
+  confirm: `${MN_NAME_S} flex-1 rounded-full bg-[#7b3fa6] py-3 text-[15px] uppercase tracking-[0.06em] text-white transition-colors hover:bg-[#5b2a80] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 /** Fresheria: página rosa con marco dorado, cursiva vino y píldoras magenta (components/menu/skins/fresheria.tsx). */
 const FR_NAME_S = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif]";
 const LOOK_FRESHERIA: SheetLook = {
@@ -338,6 +367,7 @@ function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "omu") return LOOK_OMU;
   if (skin === "kame") return LOOK_KAME;
   if (skin === "suadero") return LOOK_SUADERO;
+  if (skin === "manantial") return LOOK_MANANTIAL;
   return LOOK_DEFAULT;
 }
 

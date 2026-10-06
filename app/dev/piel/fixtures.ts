@@ -439,7 +439,98 @@ const SUADERO: PielFixture = {
   },
 };
 
-const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA, kame: KAME, suadero: SUADERO };
+/* ─────────────────────────── Paletería y Heladería "El Manantial", La Original (6-oct-2026) ─────────────────────────── */
+/** Villas del Real (Av. Paseo del Real 1701). NO hay carta de esta sucursal: los PRECIOS SON DE MUESTRA, salen de la
+ *  lista pública del WordPress de la marca (sucursal Zoológico, sin fecha) y los sabores de su DiDi (sucursal
+ *  Proletaria). Se corrigen con la foto de su cartulina. Los nombres llevan el tamaño al final ("Nieve sencilla")
+ *  para que la piel los junte en un renglón con pastillas. Horario: cierra 10:30 PM según Google; abre SUPUESTO. */
+const MN_SABOR_NIEVE = og("sabor", "Sabor", true, 1, [
+  ["nuez", "Nuez"], ["fresas_crema", "Fresas con crema"], ["pica_fresa", "Pica fresa"], ["queso_fresa", "Queso con fresa"],
+  ["mms", "M&M's"], ["yogurt_arandano", "Yogurt con arándano"], ["gansito", "Gansito"], ["coco_horneado", "Coco horneado"],
+  ["algodon", "Algodón de azúcar"], ["chocolate", "Chocolate"], ["vainilla", "Vainilla"], ["limon", "Limón"],
+]);
+const MN_SABOR_FRUTA = og("sabor", "Sabor", true, 1, [
+  ["pina", "Piña"], ["pina_chile", "Piña con chile"], ["mango", "Mango"], ["mango_chile", "Mango con chile"], ["melon", "Melón"],
+  ["pepino_chile", "Pepino con chile"], ["fresa", "Fresa"], ["tamarindo", "Tamarindo"], ["limon_panditas", "Limón con panditas"],
+  ["limon_chamoy", "Limón con chamoy"],
+]);
+const MN_SABOR_CREMA = og("sabor", "Sabor", true, 1, [
+  ["mango", "Mango"], ["fresas_crema", "Fresas con crema"], ["yogurt", "Yogurt natural"], ["yogurt_arandano", "Yogurt, arándano, zanahoria y nuez"],
+  ["cereza", "Cereza"], ["nuez", "Nuez"], ["philadelphia", "Philadelphia con zarzamora"], ["ferrero", "Ferrero"],
+  ["kinder", "Kinder Delice"], ["coco_horneado", "Coco horneado"],
+]);
+const MN_SABOR_AGUA = og("sabor", "Sabor", true, 1, [
+  ["fresa", "Fresa"], ["limon", "Limón"], ["citricos", "Cítricos"], ["horchata", "Horchata"], ["coco_nuez", "Coco con nuez"], ["pina_colada", "Piña colada"],
+]);
+const MN_ROWS: [category: string, name: string, price: number, description: string, groups: OG[]][] = [
+  ["Nieves", "Nieve sencilla", 22, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve doble", 32, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve triple", 37, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve ½ litro", 40, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve 1 litro", 75, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
+  ["Paletas", "Paleta de fruta", 12, "De agua, con la fruta de verdad.", [MN_SABOR_FRUTA]],
+  ["Paletas", "Paleta de crema", 16, "Cremosas, de leche.", [MN_SABOR_CREMA]],
+  ["Paletas", "Paleta de nuez", 20, "", []],
+  ["Paletas", "Paleta de piñón", 30, "", []],
+  ["Paletas", "Trompito", 7, "", []],
+  ["Paletas", "Bolis", 7, "", []],
+  ["Coctel de frutas", "Coctel de frutas chico", 42, "Fruta de la temporada, picada al momento.", []],
+  ["Coctel de frutas", "Coctel de frutas mediano", 47, "Fruta de la temporada, picada al momento.", []],
+  ["Coctel de frutas", "Coctel de frutas grande", 52, "Fruta de la temporada, picada al momento.", []],
+  ["Coctel de frutas", "Coctel de frutas charola", 80, "Fruta de la temporada, picada al momento.", []],
+  ["Fresas con crema", "Fresas con crema chico", 40, "", []],
+  ["Fresas con crema", "Fresas con crema mediano", 60, "", []],
+  ["Fresas con crema", "Troles de fresa", 20, "", []],
+  ["Aguas frescas", "Agua fresca chica", 15, "", [MN_SABOR_AGUA]],
+  ["Aguas frescas", "Agua fresca mediana", 20, "", [MN_SABOR_AGUA]],
+  ["Aguas frescas", "Agua fresca grande", 25, "", [MN_SABOR_AGUA]],
+  ["Nachos", "Nachos sencillos", 35, "Con queso.", []],
+  ["Nachos", "Nachos especiales", 40, "Con queso, jalapeños y todo.", []],
+  ["Nachos", "Dorinachos sencillos", 35, "Con queso.", []],
+  ["Nachos", "Dorinachos especiales", 40, "Con queso, jalapeños y todo.", []],
+  ["Papas locas", "Papas locas chicas", 15, "", []],
+  ["Papas locas", "Papas locas medianas", 25, "", []],
+  ["Papas locas", "Papas locas grandes", 50, "", []],
+  ["Pepihuates", "Pepihuate chico", 10, "Pepino con cacahuate, chamoy y chile.", []],
+  ["Pepihuates", "Pepihuate grande", 50, "Pepino con cacahuate, chamoy y chile.", []],
+];
+const MANANTIAL: PielFixture = {
+  id: "preview-manantial",
+  initial: {
+    raw: {
+      name: "El Manantial",
+      tagline: "La Original",
+      menuSkin: "manantial",
+      address: "Av. Paseo del Real 1701, Villas del Real, Chihuahua",
+      phone: "",
+      whatsapp: "",
+      categories: ["Paletería", "Nevería", "Postres"],
+      menuCategoryOrder: ["Nieves", "Paletas", "Coctel de frutas", "Fresas con crema", "Aguas frescas", "Nachos", "Papas locas", "Pepihuates"],
+      businessHours: {
+        monday: day([11, 0], [22, 30]),
+        tuesday: day([11, 0], [22, 30]),
+        wednesday: day([11, 0], [22, 30]),
+        thursday: day([11, 0], [22, 30]),
+        friday: day([11, 0], [22, 30]),
+        saturday: day([11, 0], [22, 30]),
+        sunday: day([11, 0], [22, 30]),
+      },
+    },
+    menu: MN_ROWS.map(([category, name, price, description, groups], i) => ({
+      id: `mn-${i + 1}`,
+      data: {
+        category,
+        name,
+        price,
+        ...(description ? { description } : {}),
+        isAvailable: true,
+        ...(groups.length ? { optionGroups: groups } : {}),
+      },
+    })),
+  },
+};
+
+const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA, kame: KAME, suadero: SUADERO, manantial: MANANTIAL };
 
 export function pielFixture(skin: string): PielFixture | null {
   return FIXTURES[skin] ?? null;

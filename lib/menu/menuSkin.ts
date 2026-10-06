@@ -51,12 +51,18 @@
  *    western crema, sombrero rojo-naranja) y de su puesto (plato de unicel blanco sobre mantel rosa de cuadritos).
  *    Letreros de madera por familia, un plato blanco por sección y las 14 fotos de David
  *    (components/menu/skins/suadero.tsx). Duodécima piel en código por pedido de Ricardo (6-oct).
+ *  - "manantial": Paletería y Heladería "El Manantial", La Original, Villas del Real, Chihuahua — sin papel:
+ *    sale de su fachada de Street View (pared morada, "El Manantial" en letras de bomba blancas con contorno y
+ *    sombra azul rey, la bola de chocolate con su crema escurriendo, la vitrina blanca). Una vitrina blanca por
+ *    familia con su letrero morado, y los tamaños (sencilla · doble · triple) juntos en un renglón como en la
+ *    cartulina de una nevería (components/menu/skins/manantial.tsx). Decimotercera piel en código por pedido de
+ *    Ricardo (6-oct); precios de muestra hasta tener la foto de su cartulina.
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria" | "kame" | "suadero";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria" | "kame" | "suadero" | "manantial";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria", "kame", "suadero"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria", "kame", "suadero", "manantial"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

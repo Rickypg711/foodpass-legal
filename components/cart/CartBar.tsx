@@ -32,6 +32,7 @@ export function CartBar({
   const om = skin === "omu";
   const km = skin === "kame";
   const sd = skin === "suadero";
+  const mn = skin === "manantial";
   const fr = skin === "fresheria";
   const { itemCount, subtotal, cartReady } = useCart();
   const { webOrderingAvailable, webOrderingReady } = useWebOrdering();
@@ -81,6 +82,8 @@ export function CartBar({
                       ? "border-[#efd250]/25 bg-[#1c2826]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
                     : sd
                       ? "border-[#f0e9d3]/40 bg-[#612f18]/95 shadow-[0_-12px_36px_-16px_rgba(58,35,20,0.7)]"
+                    : mn
+                      ? "border-white/40 bg-[#5b2a80]/95 shadow-[0_-12px_36px_-16px_rgba(20,5,40,0.8)]"
                     : fr
                       ? "border-[#9e6036]/40 bg-[#feeef8]/95 shadow-[0_-12px_36px_-16px_rgba(86,5,45,0.35)]"
             : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
@@ -109,6 +112,8 @@ export function CartBar({
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#f7cf1d] px-5 py-3 text-[#263532] shadow-[0_10px_26px_-10px_rgba(247,207,29,0.75)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
                       : sd
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#b32e16] px-5 py-3 text-[#f0e9d3] shadow-[0_10px_26px_-10px_rgba(179,46,22,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                      : mn
+                        ? "flex min-h-12 w-full items-center justify-between rounded-full bg-white px-5 py-3 text-[#5b2a80] shadow-[0_10px_26px_-10px_rgba(20,5,40,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
                       : fr
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#cb0465] px-5 py-3 text-[#fffbfd] shadow-[0_10px_24px_-12px_rgba(203,4,101,0.9)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                       : tp
@@ -136,6 +141,8 @@ export function CartBar({
                           ? "[font-family:var(--kame-display),'League_Spartan',Futura,sans-serif] translate-y-[1px] text-[13px] font-bold uppercase tracking-[0.1em] text-[#263532]/85"
                         : sd
                           ? "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif] text-[13px] uppercase tracking-[0.08em] text-[#f0e9d3]/90"
+                        : mn
+                          ? "[font-family:var(--mn-display),'Baloo_2',Nunito,sans-serif] text-[13px] font-bold uppercase tracking-[0.06em] text-[#5b2a80]/85"
                         : fr
                           ? "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif] text-[13px] uppercase tracking-[0.12em] text-[#fffbfd]/90"
                         : tp
@@ -165,6 +172,8 @@ export function CartBar({
                           ? "[font-family:var(--kame-display),'League_Spartan',Futura,sans-serif] translate-y-[1px] text-[16px] font-black uppercase tabular-nums"
                         : sd
                           ? "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif] text-[16px] tabular-nums"
+                        : mn
+                          ? "[font-family:var(--mn-display),'Baloo_2',Nunito,sans-serif] text-[16px] font-extrabold tabular-nums text-[#1d4ed8]"
                         : tp
                           ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[15px] tracking-[0.06em] tabular-nums"
                   : "text-sm font-bold tabular-nums"

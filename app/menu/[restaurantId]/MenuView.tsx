@@ -147,6 +147,17 @@ import {
   sdSharedDescription,
 } from "@/components/menu/skins/suadero";
 import {
+  MN_ROOT_CLASS,
+  ManantialCategorySection,
+  ManantialHeader,
+  ManantialItemRow,
+  ManantialPanel,
+  ManantialSheet,
+  ManantialSizeRow,
+  mnRowsOf,
+  mnSharedDescription,
+} from "@/components/menu/skins/manantial";
+import {
   FR_ROOT_CLASS,
   FresheriaCategorySection,
   FresheriaHeader,
@@ -306,6 +317,7 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "fresheria") return FR_ROOT_CLASS;
   if (skin === "kame") return KAME_ROOT_CLASS;
   if (skin === "suadero") return SD_ROOT_CLASS;
+  if (skin === "manantial") return MN_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -319,6 +331,8 @@ function mainWidthFor(skin: MenuSkinId | null): string {
   if (skin === "kame") return "max-w-3xl lg:max-w-6xl";
   // Suadero: sus platos a dos columnas en escritorio (6-oct).
   if (skin === "suadero") return "max-w-3xl lg:max-w-6xl";
+  // Manantial: sus vitrinas a dos columnas en escritorio (6-oct).
+  if (skin === "manantial") return "max-w-3xl lg:max-w-6xl";
   return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
@@ -417,6 +431,19 @@ function MenuRestaurantHeader({
   if (skin === "suadero") {
     return (
       <SuaderoHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "manantial") {
+    return (
+      <ManantialHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -648,6 +675,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "kame") return null;
   // Suadero: su comal como impresión ladeada sobre el mantel.
   if (skin === "suadero") return <SuaderoCover url={url} name={name} />;
+  // Manantial: su letrero morado ya es la portada.
+  if (skin === "manantial") return null;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -898,6 +927,74 @@ function MenuCategoryList({
           );
         })}
       </SuaderoSheet>
+    );
+  }
+  if (skin === "manantial") {
+    // Una vitrina blanca por familia con su letrero morado (components/menu/skins/manantial.tsx). La descripción
+    // que comparte la sección va una vez bajo el letrero; los tamaños ("Nieve sencilla / doble / triple") se
+    // juntan en un renglón con pastillas, como la cartulina de precios de una nevería.
+    return (
+      <ManantialSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const shared = mnSharedDescription(group.items);
+          const canOrder = orderingEnabled && !closed;
+          return (
+            <ManantialCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              description={shared}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && mnRowsOf(group.items).map((row, i) =>
+                row.kind === "sizes" ? (
+                  <ManantialSizeRow
+                    key={row.sizes[0]!.item.id}
+                    name={row.base}
+                    orderingEnabled={canOrder}
+                    optionsHint={optionsHintFor(row.sizes[0]!.item)}
+                    description={shared === null ? (row.sizes[0]!.item.description?.trim() || null) : null}
+                    sizes={row.sizes.map(({ label, item }) => ({
+                      id: item.id,
+                      label,
+                      fullName: item.name,
+                      price: item.price,
+                      quantity: getItemQuantity?.(item.id) ?? 0,
+                      onAdd: () => onAddItem(item),
+                      onIncrement: () => onIncrementItem?.(item),
+                      onDecrement: () => onDecrementItem?.(item),
+                      onOpen: () => onOpenItem?.(item),
+                    }))}
+                  />
+                ) : (
+                  <ManantialItemRow
+                    key={row.item.id}
+                    id={row.item.id}
+                    name={row.item.name}
+                    description={row.item.description}
+                    price={row.item.price}
+                    imageUrl={row.item.imageUrl}
+                    orderingEnabled={canOrder}
+                    optionsHint={optionsHintFor(row.item)}
+                    quantity={getItemQuantity?.(row.item.id) ?? 0}
+                    onAdd={() => onAddItem(row.item)}
+                    onIncrement={() => onIncrementItem?.(row.item)}
+                    onDecrement={() => onDecrementItem?.(row.item)}
+                    onOpen={() => onOpenItem?.(row.item)}
+                    index={i}
+                    hideDescription={shared !== null}
+                  />
+                ),
+              )}
+            </ManantialCategorySection>
+          );
+        })}
+      </ManantialSheet>
     );
   }
   if (skin === "kame") {
@@ -1422,6 +1519,21 @@ function MenuRewardsLadderSection({
       </FresheriaPanel>
     );
   }
+  if (skin === "manantial") {
+    return (
+      <ManantialPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#5b2a80] underline decoration-[#5b2a80]/40 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </ManantialPanel>
+    );
+  }
   if (skin === "suadero") {
     return (
       <SuaderoPanel title="Premios">
@@ -1604,6 +1716,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#efd250]/25 bg-[#1c2826]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
               : skin === "suadero"
                 ? "border-[#f0e9d3]/40 bg-[#612f18]/95 shadow-[0_-12px_36px_-16px_rgba(58,35,20,0.7)]"
+              : skin === "manantial"
+                ? "border-white/40 bg-[#5b2a80]/95 shadow-[0_-12px_36px_-16px_rgba(20,5,40,0.8)]"
               : skin === "fresheria"
                 ? "border-[#9e6036]/40 bg-[#feeef8]/95 shadow-[0_-12px_36px_-16px_rgba(86,5,45,0.35)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
@@ -2095,7 +2209,7 @@ function PublicMenuPageWithOrdering({
           <p
             className={
               "pt-1 text-center text-sm font-semibold " +
-              (skin === "kame" ? "text-[#fbf3d0]/90" : skin === "omu" ? "text-[#f9f8f8]/85" : skin === "suadero" ? "text-[#f0e9d3]/90" : "text-[#1C2526]/75")
+              (skin === "kame" ? "text-[#fbf3d0]/90" : skin === "omu" ? "text-[#f9f8f8]/85" : skin === "suadero" ? "text-[#f0e9d3]/90" : skin === "manantial" ? "text-white/90" : "text-[#1C2526]/75")
             }
           >
             😴 {schedule?.label ?? "Cerrado por ahora"} — puedes ordenar cuando abra.

@@ -27,6 +27,7 @@ import { OMU_NAME, OMU_ROOT_CLASS, OmuHeader } from "@/components/menu/skins/omu
 import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE, KameHeader } from "@/components/menu/skins/kame";
 import { SD_NAME, SD_ROOT_CLASS, SD_TITLE, SuaderoHeader } from "@/components/menu/skins/suadero";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT, FresheriaHeader } from "@/components/menu/skins/fresheria";
+import { MN_NAME, MN_ROOT_CLASS, MN_TITLE, ManantialHeader } from "@/components/menu/skins/manantial";
 
 export type LandingHeaderProps = {
   loading: boolean;
@@ -487,7 +488,40 @@ const SUADERO: LandingTheme = {
   photoPrice: "font-bold text-[#c6361c]",
 };
 
+/** Manantial: la pared morada, vitrinas blancas y letras de bomba con el azul del letrero (manantial.tsx). */
+const MANANTIAL: LandingTheme = {
+  root: MN_ROOT_CLASS,
+  Header: (p) => <ManantialHeader {...p} />,
+  cta: `${MN_TITLE} block min-h-12 rounded-full bg-white px-5 py-3.5 text-center text-[17px] tracking-[0.02em] text-[#5b2a80] shadow-[0_14px_30px_-14px_rgba(20,5,40,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-white bg-transparent px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-white transition-colors hover:bg-white hover:text-[#5b2a80]`,
+  btnNeutral: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-white/60 bg-transparent px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-white transition-colors hover:border-white`,
+  descriptionCard: "mn-vitrina p-5 text-[15px] leading-relaxed text-[#2a1740]/85 sm:p-6",
+  card: "mn-vitrina px-5 pb-5 pt-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${MN_TITLE} mn-bubble mb-4 text-center text-[24px] leading-none text-white [text-shadow:0_2px_0_#1d4ed8,0_4px_0_#163a9e] [-webkit-text-stroke:1.5px_#1d4ed8]`}>
+      <span className="inline-block rounded-full bg-[#7b3fa6] px-5 py-2">{title.replace(/\s*[⭐🔥]\s*$/u, "")}</span>
+    </h2>
+  ),
+  link: "font-bold text-[#5b2a80] underline decoration-[#5b2a80]/40 underline-offset-4",
+  text: "text-[#2a1740]/85",
+  textSoft: "text-[#2a1740]/65",
+  todayRow: "bg-[#7b3fa6]/12 font-bold text-[#2a1740]",
+  row: "text-[#2a1740]/75",
+  closedText: "text-[#2a1740]/40",
+  faqOpen: "open:bg-[#7b3fa6]/8",
+  faqChevron: "text-[#5b2a80]",
+  faqAnswer: "text-[#2a1740]/75",
+  // Sobre el morado el texto suelto no se lee: va en una vitrinita blanca.
+  seoText: "mn-seo block text-[#2a1740]/85",
+  signature: "mn-seo block text-[#2a1740]/80",
+  signatureLink: "font-bold text-[#1d4ed8] underline decoration-[#1d4ed8]/40 underline-offset-4",
+  loading: "mn-vitrina px-4 py-6 text-center text-sm text-[#2a1740]/60",
+  photoName: "text-[#2a1740]",
+  photoPrice: "font-bold text-[#1d4ed8]",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "manantial") return MANANTIAL;
   if (skin === "suadero") return SUADERO;
   if (skin === "kame") return KAME;
   if (skin === "fresheria") return FRESHERIA;

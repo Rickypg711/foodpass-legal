@@ -19,6 +19,7 @@ const SKIN_ICON: Partial<Record<MenuSkinId, string>> = {
   fresheria: "/skins/fresheria/icon.png",
   kame: "/skins/kame/icon.png",
   suadero: "/skins/suadero/icon.png",
+  manantial: "/skins/manantial/icon.png",
   mixteco: "/skins/mixteco/icon.png",
   blooms: "/skins/blooms/icon.png",
   laspic: "/skins/laspic/icon.png",
