@@ -478,8 +478,9 @@ const SUADERO: LandingTheme = {
   faqOpen: "open:bg-[#d5984c]/15",
   faqChevron: "text-[#612f18]",
   faqAnswer: "text-[#3a2314]/75",
-  seoText: "text-[#3a2314]/55",
-  signature: "text-[#3a2314]/55",
+  // Sobre el mantel de cuadritos el texto suelto no se lee (Ricardo, 6-oct): va en un plato blanco, tinta llena.
+  seoText: "sd-seo block text-[#3a2314]/85",
+  signature: "sd-seo block text-[#3a2314]/80",
   signatureLink: "font-bold text-[#c6361c] underline decoration-[#c6361c]/40 underline-offset-4",
   loading: "sd-plate px-4 py-6 text-center text-sm text-[#3a2314]/60",
   photoName: "text-[#3a2314]",
