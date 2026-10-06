@@ -655,7 +655,8 @@ function MenuCategoryList({
   windows?: CategoryWindows;
   /** null = todavía sin hora local (server / antes de montar): todo abierto. */
   now?: Date | null;
-  onAddItem: (item: MenuRow) => void;
+  /** `preselect` = opciones ya elegidas al abrir la hoja (la pastilla de tamaño de la piel omu). */
+  onAddItem: (item: MenuRow, preselect?: Record<string, string[]>) => void;
   getItemQuantity?: (itemId: string) => number;
   onIncrementItem?: (item: MenuRow) => void;
   onDecrementItem?: (item: MenuRow) => void;
@@ -929,6 +930,7 @@ function MenuCategoryList({
                   optionsHint={optionsHintFor(item)}
                   quantity={getItemQuantity?.(item.id) ?? 0}
                   onAdd={() => onAddItem(item)}
+                  onAddWith={(groupId, optionId) => onAddItem(item, { [groupId]: [optionId] })}
                   onIncrement={() => onIncrementItem?.(item)}
                   onDecrement={() => onDecrementItem?.(item)}
                   onOpen={() => onOpenItem?.(item)}
@@ -1533,7 +1535,15 @@ function PublicMenuPageWithOrdering({
 
   // Platillo esperando que el cliente elija sus opciones.
   const [pendingItem, setPendingItem] = useState<
-    { id: string; name: string; price: number; imageUrl: string | null; groups: MenuItemOptionGroup[] } | null
+    {
+      id: string;
+      name: string;
+      price: number;
+      imageUrl: string | null;
+      groups: MenuItemOptionGroup[];
+      /** Opciones ya elegidas al abrir la hoja (la pastilla de tamaño de la piel omu, 6-oct). */
+      preselect?: Record<string, string[]>;
+    } | null
   >(null);
 
   const quantityByItemId = useMemo(() => {
@@ -1755,7 +1765,7 @@ function PublicMenuPageWithOrdering({
 
   /** El "+" de la tarjeta y el "Agregar" de la hoja de detalle: con opciones
    *  abre la hoja de opciones; sin opciones agrega directo. */
-  const handleAddItem = (item: MenuRow) => {
+  const handleAddItem = (item: MenuRow, preselect?: Record<string, string[]>) => {
     if (categoryClosedNow(item.category)) return; // fuera de su hora: se ve, no se pide
     const groups = resolveOptionGroups(item);
     if (groups.length > 0) {
@@ -1765,6 +1775,7 @@ function PublicMenuPageWithOrdering({
         price: item.price,
         imageUrl: item.imageUrl,
         groups,
+        ...(preselect ? { preselect } : {}),
       });
       return;
     }
@@ -1951,6 +1962,7 @@ function PublicMenuPageWithOrdering({
           itemName={pendingItem?.name ?? ""}
           basePrice={pendingItem?.price ?? 0}
           groups={pendingItem?.groups ?? []}
+          initialPicked={pendingItem?.preselect ?? null}
           onCancel={() => setPendingItem(null)}
           onConfirm={(selected: SelectedOptionGroup[], quantity: number) => {
             if (!pendingItem) return;

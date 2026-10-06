@@ -19,6 +19,12 @@ export type ItemOptionsSheetProps = {
   itemName: string;
   basePrice: number;
   groups: MenuItemOptionGroup[];
+  /**
+   * Opciones que ya vienen elegidas al abrir (6-oct-2026, piel omu): tocar la pastilla "Pareja" del boneless
+   * abre la hoja con Pareja marcado y solo falta la salsa. `{ [groupId]: [optionId] }`. Debe ser un objeto
+   * estable (vive en el estado de quien abre la hoja), no uno nuevo en cada render.
+   */
+  initialPicked?: Record<string, string[]> | null;
   onCancel: () => void;
   /**
    * `quantity` = cuántos IGUALES se agregan de un jalón (el "− 1 +" de la hoja).
@@ -310,12 +316,20 @@ export function ItemOptionsSheet({
   itemName,
   basePrice,
   groups,
+  initialPicked = null,
   onCancel,
   onConfirm,
   onToggleAvailability,
   skin = null,
 }: ItemOptionsSheetProps) {
   const [picked, setPicked] = useState<Record<string, string[]>>({});
+  // Al abrir con algo ya elegido (la pastilla de tamaño), se marca. Se ajusta durante el render (no en un
+  // efecto): el objeto de preselección cambia solo cuando quien abre la hoja cambia de platillo o de pastilla.
+  const [seenInitial, setSeenInitial] = useState(initialPicked);
+  if (initialPicked !== seenInitial) {
+    setSeenInitial(initialPicked);
+    if (initialPicked) setPicked(initialPicked);
+  }
   /** Modo "marcar agotados": tocar una opción la apaga o la prende en vez de elegirla. */
   const [marcando, setMarcando] = useState(false);
   /** Cuántos iguales: 3 toritos de campechano en un solo toque. */

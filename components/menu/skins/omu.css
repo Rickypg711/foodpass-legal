@@ -67,12 +67,66 @@
   background: #d40607;
 }
 
-/* Renglón de precio con puntitos hasta la orilla (las tarjetas blancas). */
+/* Renglón de precio con puntitos hasta la orilla: NOMBRE ····· $precio (6-oct, como la hoja de Kame).
+   Oscuros sobre tarjeta blanca; claros (--light) sobre la hoja negra. */
 .omu-skin .omu-dots {
   flex: 1;
-  min-width: 12px;
-  border-bottom: 2px dotted rgba(21, 19, 17, 0.35);
+  min-width: 14px;
+  border-bottom: 2px dotted rgba(21, 19, 17, 0.32);
   transform: translateY(-4px);
+}
+.omu-skin .omu-dots--light {
+  border-bottom-color: rgba(249, 248, 248, 0.26);
+}
+
+/* El renglón: se ilumina al pasar el dedo y se queda marcado cuando ya está en el pedido. */
+.omu-skin .omu-row {
+  border-radius: 8px;
+  transition: background-color 200ms;
+}
+@media (hover: hover) {
+  .omu-skin .omu-row:hover {
+    background: rgba(21, 19, 17, 0.05);
+  }
+  .omu-skin .omu-row--dark:hover {
+    background: rgba(249, 248, 248, 0.05);
+  }
+}
+.omu-skin .omu-row--on {
+  background: rgba(241, 8, 9, 0.07);
+  box-shadow: inset 3px 0 0 #f10809;
+}
+.omu-skin .omu-row--dark.omu-row--on {
+  background: rgba(241, 8, 9, 0.14);
+}
+
+/* Tamaños del boneless como pastillas (Individual · Pareja · Familiar): cada una con su precio y su "+". */
+.omu-skin .omu-size {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 5px 5px 14px;
+  border: 1.5px solid rgba(21, 19, 17, 0.2);
+  border-radius: 999px;
+  background: #fff;
+  text-align: left;
+  transition:
+    border-color 160ms,
+    background-color 160ms,
+    transform 160ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.omu-skin .omu-size--static {
+  padding-right: 12px;
+}
+.omu-skin button.omu-size:hover {
+  border-color: #f10809;
+}
+.omu-skin button.omu-size:active {
+  transform: scale(0.96);
+}
+.omu-skin .omu-size .omu-add {
+  box-shadow: none;
 }
 
 /* Escritorio: la hoja se acomoda como su papel — pasos a la izquierda, premium al centro,

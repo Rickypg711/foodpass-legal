@@ -20,6 +20,10 @@
  * Los pasos, los tamaños y las listas de extras NO están escritos aquí: se pintan desde los `optionGroups` de
  * los platillos (lo que el dueño cambie en su panel se ve igual en la hoja). La lógica (carrito, opciones,
  * detalle) es la de MenuView: aquí solo se pinta.
+ *
+ * 6-oct-2026 (Ricardo, viendo omu junto a kame): el precio ya no va pegado al nombre; cada renglón es
+ * NOMBRE ····· $precio como la hoja de Kame (puntitos hasta la orilla y "$" chiquito), y los tamaños del
+ * boneless son pastillas (Individual · Pareja · Familiar, cada una con su precio) en vez de una lista.
  */
 
 import Image from "next/image";
@@ -71,6 +75,28 @@ function shortAddress(address: string): string {
 
 function money(price: number): string {
   return formatPrice(price);
+}
+
+/** Su papel escribe el precio pelón ("119"); aquí lleva un "$" chiquito para que nadie dude (como en Kame). */
+function Price({ value, className = "" }: { value: number; className?: string }) {
+  const whole = Number.isInteger(value);
+  return (
+    <span className={`shrink-0 font-extrabold tabular-nums leading-none ${className}`}>
+      {whole ? (
+        <>
+          <span className="mr-[1px] text-[0.72em] font-bold opacity-60">$</span>
+          {value}
+        </>
+      ) : (
+        money(value)
+      )}
+    </span>
+  );
+}
+
+/** Los puntitos entre el nombre y el precio. Sobre la hoja negra van claros; sobre tarjeta blanca, oscuros. */
+function Dots({ dark }: { dark: boolean }) {
+  return <span className={"omu-dots " + (dark ? "omu-dots--light" : "")} aria-hidden />;
 }
 
 /* ─────────────────────────── Portada (arriba de su hoja) ─────────────────────────── */
@@ -581,7 +607,13 @@ export function OmuItemRow({
   onOpen,
   category = "",
   groups = [],
-}: MenuItemCardProps & { category?: string; groups?: MenuItemOptionGroup[] }) {
+  onAddWith,
+}: MenuItemCardProps & {
+  category?: string;
+  groups?: MenuItemOptionGroup[];
+  /** Pedir con una opción ya elegida: la pastilla "Pareja" abre la hoja con Pareja marcado. */
+  onAddWith?: (groupId: string, optionId: string) => void;
+}) {
   const block = omuBlockOf(category);
   const dark = block === "armalas" || block === "premium" || block === "extras";
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -594,44 +626,73 @@ export function OmuItemRow({
   const tamano = groups.find((g) => /tama/.test(omuKeyOf(g.name)));
   const salsa = groups.find((g) => /salsa/.test(omuKeyOf(g.name)));
 
+  const rowClass = "omu-row " + (dark ? "omu-row--dark " : "") + (quantity > 0 ? "omu-row--on " : "");
+
   /* Refrescos y postres: renglón chico con puntitos, como su lista de "¡Complementa!". */
   if (block === "refrescos" || block === "postres") {
     return (
-      <li className="flex items-center gap-2">
+      <li className={`${rowClass} -mx-2 flex items-center gap-2 px-2 py-[3px]`}>
         <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="flex min-w-0 flex-1 cursor-pointer items-end gap-2 text-left">
           <span className={`${ink} min-w-0 text-[12px] font-bold uppercase leading-tight`}>{name}</span>
-          <span className="omu-dots" aria-hidden />
-          <span className={`${ink} shrink-0 text-[13px] font-extrabold tabular-nums`}>{money(price)}</span>
+          <Dots dark={dark} />
+          <Price value={price} className={`${ink} text-[13.5px]`} />
         </button>
         {control}
       </li>
     );
   }
 
-  /* Boneless: los tamaños con su precio (del grupo Tamaño) y "escoge tu salsa" (del grupo Salsa). */
+  /* Boneless: los tamaños del grupo Tamaño como pastillas (Individual · Pareja · Familiar, cada una con su precio),
+     y "escoge tu salsa" del grupo Salsa. Tocar una pastilla abre la hoja de opciones, donde se escoge tamaño y salsa. */
   if (block === "boneless" && tamano) {
+    const pills = [...tamano.options].sort((a, b) => a.priceDelta - b.priceDelta);
     return (
-      <li className="[break-inside:avoid]">
-        <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="block w-full cursor-pointer text-left">
-          <ul className="space-y-1">
-            {tamano.options.map((o) => (
-              <li key={o.id} className="flex items-end gap-2">
-                <span className="text-[13px] font-semibold uppercase leading-tight text-[#151311]">{o.name}</span>
-                <span className="omu-dots" aria-hidden />
-                <span className="text-[16px] font-extrabold tabular-nums leading-none text-[#151311]">{Math.trunc(price + o.priceDelta)}</span>
-              </li>
-            ))}
-          </ul>
-          {salsa ? (
-            <p className="mt-3 text-[10px] font-extrabold uppercase leading-snug tracking-[0.04em] text-[#151311]">
+      <li className={`${rowClass} -mx-2 px-2 py-1 [break-inside:avoid]`}>
+        <div className="flex flex-col gap-2">
+          {pills.map((o) => {
+            const [first, ...rest] = o.name.trim().split(/\s+/);
+            const inner = (
+              <>
+                <span className="flex min-w-0 flex-1 items-baseline gap-2 leading-none">
+                  <span className="text-[12.5px] font-extrabold uppercase tracking-[0.04em] text-[#151311]">{first}</span>
+                  {rest.length ? <span className="text-[10px] font-semibold uppercase tracking-[0.04em] text-[#151311]/55">{rest.join(" ")}</span> : null}
+                </span>
+                <Price value={price + o.priceDelta} className="text-[15.5px] text-[#151311]" />
+              </>
+            );
+            return orderingEnabled ? (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => (onAddWith ? onAddWith(tamano.id, o.id) : onAdd())}
+                aria-label={`Pedir ${name} ${o.name}`}
+                className="omu-size"
+              >
+                {inner}
+                <span className="omu-add flex h-6 w-6 items-center justify-center rounded-full text-[15px] font-bold leading-none" aria-hidden>
+                  +
+                </span>
+              </button>
+            ) : (
+              <span key={o.id} className="omu-size omu-size--static">
+                {inner}
+              </span>
+            );
+          })}
+        </div>
+        {salsa ? (
+          <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="mt-3 block w-full cursor-pointer text-left">
+            <p className="text-[10px] font-extrabold uppercase leading-snug tracking-[0.04em] text-[#151311]">
               Escoge tu salsa: {salsa.options.map((o) => o.name).join(", ")}.
             </p>
-          ) : null}
-        </button>
-        <div className="mt-3 flex items-center justify-end gap-2">
-          {quantity > 0 ? null : <span className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#151311]/60">Pedir</span>}
-          {control}
-        </div>
+          </button>
+        ) : null}
+        {quantity > 0 ? (
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#151311]/60">En tu pedido</span>
+            {control}
+          </div>
+        ) : null}
       </li>
     );
   }
@@ -642,11 +703,12 @@ export function OmuItemRow({
   const bolaOSushi =
     block === "premium" && groups.some((g) => /presentacion/.test(omuKeyOf(g.name)) && g.options.some((o) => /sushi/i.test(o.name)));
   return (
-    <li className={"flex items-start gap-3 [break-inside:avoid] " + (dark ? "pb-4" : "")}>
+    <li className={`${rowClass} -mx-2 flex items-start gap-3 px-2 [break-inside:avoid] ` + (dark ? "py-2" : "py-1")}>
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
-        <span className="flex items-baseline justify-between gap-3">
-          <span className={`${OMU_NAME} ${ink} text-[15px] leading-tight tracking-[0.01em] sm:text-[16px]`}>{name}</span>
-          <span className={`${ink} shrink-0 text-[16px] font-extrabold tabular-nums leading-none sm:text-[17px]`}>{Math.trunc(price)}</span>
+        <span className="flex items-end gap-2">
+          <span className={`${OMU_NAME} ${ink} min-w-0 text-[15px] leading-tight tracking-[0.01em] sm:text-[16px]`}>{name}</span>
+          <Dots dark={dark} />
+          <Price value={price} className={`${ink} text-[16px] sm:text-[17px]`} />
         </span>
         {description ? (
           <span className={`${soft} mt-1 block text-[10.5px] font-medium uppercase leading-snug tracking-[0.03em] sm:text-[11px]`}>
