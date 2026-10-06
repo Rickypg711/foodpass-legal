@@ -13,6 +13,12 @@
  * iconos y el logo son recortes de SU papel y SU logo (public/skins/pecado),
  * nada inventado. La lógica (carrito, opciones, detalle) es la de MenuView:
  * aquí solo se pinta.
+ *
+ * 6-oct-2026 (Ricardo, viendo pecado junto a kame): en el teléfono las tres
+ * polaroids de su Instagram ya no se esconden, van chicas bajo la hoja del logo
+ * (sin pie) para que el cliente vea comida antes de leer; y cuando todos los
+ * platillos de una sección dicen lo mismo (los 4 ceviches, las 4 tostadas), la
+ * descripción va UNA vez bajo la píldora, como en su papel, no en cada renglón.
  */
 
 import Image from "next/image";
@@ -117,6 +123,14 @@ export function pecadoIsDrink(category: string): boolean {
   );
 }
 
+/** Si todos los platillos de la sección dicen lo mismo, su papel lo pone UNA vez bajo la píldora. */
+export function pecadoSharedDescription(items: { description: string | null }[]): string | null {
+  if (items.length < 2) return null;
+  const first = items[0]?.description?.trim();
+  if (!first) return null;
+  return items.every((i) => i.description?.trim() === first) ? first : null;
+}
+
 /** Corta la lista en hojas: corridas seguidas de platillos / bebidas. */
 export function pecadoSheets<T extends { category: string }>(
   groups: T[],
@@ -150,8 +164,8 @@ export function PecadoHeader({
   schedule?: ScheduleStatus | null;
   address?: string | null;
   secondarySubtitle?: string | null;
-  /** Solo el menú (11-sep): en teléfono las polaroids se esconden para que el primer platillo caiga en la primera
-   *  pantalla (antes a 907 px de 812). En la portada /r y de tableta para arriba siguen igual. */
+  /** Solo el menú: en teléfono las polaroids van chicas y sin pie (6-oct; del 11-sep al 6-oct se escondían para que
+   *  el primer platillo cayera en la primera pantalla). En la portada /r y de tableta para arriba van completas. */
   phoneCompact?: boolean;
 }) {
   return (
@@ -201,9 +215,14 @@ export function PecadoHeader({
           ) : null}
         </div>
         {phoneCompact ? (
-          <div className="hidden sm:block">
-            <PecadoPolaroids />
-          </div>
+          <>
+            <div className="sm:hidden">
+              <PecadoPolaroids compact />
+            </div>
+            <div className="hidden sm:block">
+              <PecadoPolaroids />
+            </div>
+          </>
         ) : (
           <PecadoPolaroids />
         )}
@@ -223,25 +242,35 @@ const POLAROIDS: { src: string; caption: string; tilt: string; delay: string }[]
   { src: "ig_banda", caption: "La banda", tilt: "-rotate-[2deg]", delay: "420ms" },
 ];
 
-export function PecadoPolaroids() {
+/** `compact` (teléfono, 6-oct): más chicas, sin pie y pegadas a la hoja del logo, para que la comida se vea sin
+ *  comerse la primera pantalla. */
+export function PecadoPolaroids({ compact = false }: { compact?: boolean }) {
   return (
     <a
       href="https://www.instagram.com/pecadoescondido/"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Ver a Pecado Escondido en Instagram"
-      className="group mx-auto mt-5 flex max-w-md items-end justify-center gap-2 px-1 sm:mt-6 sm:gap-4"
+      className={
+        "group mx-auto flex items-end justify-center px-1 " +
+        (compact ? "mt-3 max-w-[340px] gap-2" : "mt-5 max-w-md gap-2 sm:mt-6 sm:gap-4")
+      }
     >
       {POLAROIDS.map((p) => (
         <figure
           key={p.src}
-          className={`pecado-rise w-[31%] rotate-0 bg-[#ffeecf] p-1.5 pb-5 shadow-[0_10px_24px_rgba(60,10,5,0.35)] transition-transform duration-300 group-hover:rotate-0 sm:p-2 sm:pb-6 ${p.tilt}`}
+          className={
+            `pecado-rise rotate-0 bg-[#ffeecf] shadow-[0_10px_24px_rgba(60,10,5,0.35)] transition-transform duration-300 group-hover:rotate-0 ${p.tilt} ` +
+            (compact ? "w-[29%] p-1 pb-1" : "w-[31%] p-1.5 pb-5 sm:p-2 sm:pb-6")
+          }
           style={{ animationDelay: p.delay }}
         >
           <Image src={`/skins/pecado/${p.src}.jpg`} alt={p.caption} width={480} height={480} unoptimized className="aspect-square w-full object-cover" />
-          <figcaption className={`${F.name} mt-1.5 truncate text-center text-[11px] font-bold uppercase leading-none tracking-wide text-[#a61c21] sm:text-[12px]`}>
-            {p.caption}
-          </figcaption>
+          {compact ? null : (
+            <figcaption className={`${F.name} mt-1.5 truncate text-center text-[11px] font-bold uppercase leading-none tracking-wide text-[#a61c21] sm:text-[12px]`}>
+              {p.caption}
+            </figcaption>
+          )}
         </figure>
       ))}
     </a>
@@ -335,6 +364,7 @@ export function PecadoCategorySection({
   category,
   index,
   children,
+  description = null,
   note = null,
   closed = false,
   collapsed = false,
@@ -344,6 +374,8 @@ export function PecadoCategorySection({
   category: string;
   index: number;
   children: ReactNode;
+  /** La descripción que comparten todos los platillos de la sección (va una vez, bajo la píldora). */
+  description?: string | null;
   /** "Solo de 9:00 am a 12:00 pm · mañana desde las 9:00 am" (ventanas por categoría). */
   note?: string | null;
   /** Fuera de su hora: la sección se apaga, se lee, no se pide. */
@@ -381,6 +413,7 @@ export function PecadoCategorySection({
             <h3 id={id} className={`${F.block} text-[30px] uppercase leading-none tracking-wide text-[#a61c21] sm:text-[36px]`}>
               {pecadoCategoryLabel(category)}
             </h3>
+            {description ? <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-[#a61c21]/90">{description}</p> : null}
             {note ? <p className="mt-1 text-[13px] font-semibold text-[#a61c21]/85">{note}</p> : null}
             {toggle}
           </div>
@@ -403,6 +436,9 @@ export function PecadoCategorySection({
   return (
     <section aria-labelledby={id} className={"mt-7 " + (closed ? "opacity-60" : "")}>
       <Pill category={category} id={id} />
+      {description ? (
+        <p className="mx-auto mt-2.5 max-w-md text-center text-[13.5px] font-medium leading-snug text-[#a61c21]/90 [text-wrap:balance]">{description}</p>
+      ) : null}
       {note ? <p className="mt-2 text-center text-[13px] font-semibold text-[#a61c21]/80">{note}</p> : null}
       {toggle ? <div className="text-center">{toggle}</div> : null}
       {collapsed ? null : <ul className="mt-3">{children}</ul>}
@@ -462,12 +498,14 @@ export function PecadoItemRow({
   orderingEnabled = true,
   optionsHint = null,
   onOpen,
-}: MenuItemCardProps) {
+  hideDescription = false,
+}: MenuItemCardProps & { hideDescription?: boolean }) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
   ) : (
     <AddButton name={name} onAdd={onAdd} />
   );
+  const desc = hideDescription ? null : description;
   return (
     <li className="flex items-center gap-3 py-2.5">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
@@ -487,8 +525,8 @@ export function PecadoItemRow({
             {optionsHint.replace(/^🌶️\s*/, "")}
           </span>
         ) : null}
-        {description ? (
-          <p className="mt-0.5 line-clamp-3 text-[13.5px] font-medium leading-snug text-[#a61c21]/90">{description}</p>
+        {desc ? (
+          <p className="mt-0.5 line-clamp-3 text-[13.5px] font-medium leading-snug text-[#a61c21]/90">{desc}</p>
         ) : null}
       </button>
       {imageUrl ? (

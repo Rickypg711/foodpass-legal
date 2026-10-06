@@ -58,6 +58,7 @@ import {
   PecadoItemRow,
   PecadoPanel,
   PecadoSheet,
+  pecadoSharedDescription,
   pecadoSheets,
 } from "@/components/menu/skins/pecado";
 import {
@@ -685,11 +686,14 @@ function MenuCategoryList({
             {sheet.groups.map((group) => {
               const index = group.index;
               const { closed, note } = availabilityOf(group.category);
+              // Si los 4 ceviches dicen lo mismo, va una vez bajo la píldora (6-oct).
+              const shared = pecadoSharedDescription(group.items);
               return (
                 <PecadoCategorySection
                   key={`${group.category}-${index}`}
                   category={group.category}
                   index={index}
+                  description={shared}
                   note={note}
                   closed={closed}
                   collapsed={closed && !opened[group.category]}
@@ -711,6 +715,7 @@ function MenuCategoryList({
                       onIncrement={() => onIncrementItem?.(item)}
                       onDecrement={() => onDecrementItem?.(item)}
                       onOpen={() => onOpenItem?.(item)}
+                      hideDescription={shared !== null}
                     />
                   ))}
                 </PecadoCategorySection>
