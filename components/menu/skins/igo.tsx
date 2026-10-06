@@ -14,6 +14,10 @@
  *  - el higo gigante y tenue de marca de agua al fondo (higo_marca.png, al 10 %) y su monito "¡Tomen agüita!" (mascota.png).
  * Su verde es #0b652a, sacado del propio PDF. En escritorio la hoja se parte en dos columnas.
  * La lógica (carrito, opciones, detalle) es la de MenuView: aquí solo se pinta.
+ *
+ * 6-oct-2026 (Ricardo, viendo igo junto a kame): la portada enseña SU comida antes de leer nada. Tres fotos suyas
+ * (las de su ficha de Google: pizza de camarón, pizza de pepperoni y boneless) en marcos verdes, entre la dirección
+ * y la franja verde. Su Instagram es puro video con texto encima; estas son las fotos limpias que hay de ellos.
  */
 
 import Image from "next/image";
@@ -39,6 +43,13 @@ const INSTAGRAM_URL = "https://www.instagram.com/igopizza.local/";
 const CEL = "33-21-54-99-26";
 /** Su video de FB: "de lunes a viernes de 6 pm a 11 pm, sábado de 2 pm a 11 pm" (domingo, de Rappi). */
 const PAPER_HOURS = "Lun a vie 6–11 pm · Sáb 2–11 pm · Dom 2–9 pm";
+
+/** Sus tres fotos de la portada (de su ficha de Google, public/skins/igo/foto_*.jpg). */
+const HERO_PHOTOS: { src: string; alt: string }[] = [
+  { src: "/skins/igo/foto_camarones.jpg", alt: "Pizza de camarón de IGO Pizzeria" },
+  { src: "/skins/igo/foto_pepperoni.jpg", alt: "Pizza de pepperoni a la leña de IGO Pizzeria" },
+  { src: "/skins/igo/foto_boneless.jpg", alt: "Boneless de IGO Pizzeria" },
+];
 
 function keyOf(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9ñ]+/g, " ").trim();
@@ -161,6 +172,14 @@ export function IGOHeader({
               ) : null}
             </div>
           ) : null}
+          {/* Su comida antes que nada: tres fotos suyas en marcos verdes, la de en medio un poco más alta. */}
+          <ul className="igo-hero mx-auto mt-5 flex max-w-[560px] items-end justify-center gap-2.5 sm:mt-6 sm:gap-4" aria-label="Pizzas y snacks de IGO">
+            {HERO_PHOTOS.map((p, i) => (
+              <li key={p.src} className={"igo-hero__tile " + (i === 1 ? "igo-hero__tile--mid" : "")}>
+                <Image src={p.src} alt={p.alt} width={640} height={640} priority unoptimized className="aspect-square w-full object-cover" />
+              </li>
+            ))}
+          </ul>
         </div>
         <GreenStrip />
       </div>
