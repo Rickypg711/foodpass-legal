@@ -11,7 +11,7 @@
 // El carrito, el chip abierto/cerrado (hora LOCAL del visitante) y la captura
 // de ?mesa= siguen siendo 100% client, igual que siempre.
 
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   fetchRestaurantMenuRawDocs,
   findRestaurantIdCaseInsensitive,
@@ -34,8 +34,11 @@ export default async function PublicMenuPage({
     if (realId && realId !== handle) {
       redirect(`/menu/${realId}`);
     }
-    // De plano no existe → la vista client muestra "No encontramos este menú".
-    return <MenuView restaurantId={handle} initial={null} />;
+    // De plano no existe → 404 de verdad. Antes contestaba 200 con la vista
+    // client ("No encontramos…") y Google lo leía como página vacía (soft
+    // 404, Search Console 17-sep). Solo llega aquí cuando el doc NO existe;
+    // una falla de red cae en "error" y conserva el respaldo client.
+    notFound();
   }
 
   if (resolved === "error") {

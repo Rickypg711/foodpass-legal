@@ -67,7 +67,8 @@
     "test:winback-signals": "node --experimental-strip-types scripts/validate-winback-signals.mjs",
     "test:at-risk-count": "node --experimental-strip-types scripts/validate-at-risk-count.mjs",
     "test:owner-actions": "node --experimental-strip-types scripts/validate-owner-actions.mjs",
-    "test:owner-email-card": "node scripts/validate-owner-email-card.mjs"
+    "test:owner-email-card": "node scripts/validate-owner-email-card.mjs",
+    "test:sitemap-excluded": "node --experimental-strip-types scripts/validate-sitemap-excluded.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",

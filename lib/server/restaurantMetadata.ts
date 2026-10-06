@@ -8,6 +8,7 @@
 
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { restaurantFaviconUrl } from "@/lib/menu/menuFavicon";
+import { isSitemapExcluded } from "@/lib/server/sitemapExclusions";
 
 const PROJECT_ID = "foodpass-18b33";
 const API_KEY = "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk"; // public web config (same as lib/firebase.ts)
@@ -139,6 +140,8 @@ export async function fetchActiveRestaurantHandles(
       const rawSlug = r.document?.fields?.slug?.stringValue?.trim().toLowerCase();
       const slug =
         rawSlug && /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(rawSlug) ? rawSlug : null;
+      const name = r.document?.fields?.name?.stringValue ?? "";
+      if (isSitemapExcluded(id, slug, name)) continue;
       out.push({ id, slug });
     }
     return out;

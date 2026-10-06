@@ -7,7 +7,7 @@
 // Si el fetch server-side falla (red), LandingView recibe initial=null y
 // hace el fetch client-side de respaldo — la página nunca muere por esto.
 
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   fetchRestaurantMenuFull,
   findRestaurantIdCaseInsensitive,
@@ -32,8 +32,11 @@ export default async function RestaurantLandingPage({
     if (realId && realId !== handle) {
       redirect(`/r/${realId}`);
     }
-    // De plano no existe → la vista client muestra "No encontramos…".
-    return <LandingView restaurantId={handle} initial={null} />;
+    // De plano no existe → 404 de verdad. Antes contestaba 200 con la vista
+    // client ("No encontramos…") y Google lo leía como página vacía (soft
+    // 404, Search Console 17-sep). Solo llega aquí cuando el doc NO existe;
+    // una falla de red cae en "error" y conserva el respaldo client.
+    notFound();
   }
 
   if (resolved === "error") {
