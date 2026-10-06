@@ -69,6 +69,35 @@
   background: #fffbfd;
 }
 
+/* Los puntitos entre el nombre y el precio en las listas largas (Frappes, Extras), en su dorado. */
+.fr-skin .fr-dots {
+  flex: 1;
+  min-width: 14px;
+  border-bottom: 2px dotted rgba(158, 96, 54, 0.45);
+  transform: translateY(-6px);
+}
+
+/* La portada: sus tres fotos en marcos dorados bajo el logo; la de en medio sube un poco y las tres flotan despacio.
+   Las fotos traen el marco rosa de su PDF en la orilla: se amplían un pelo para que no se vea. */
+.fr-skin .fr-hero__tile {
+  width: 30%;
+  max-width: 150px;
+  animation: fr-bob 5.5s ease-in-out infinite alternate;
+  box-shadow: 0 16px 30px -18px rgba(86, 5, 45, 0.55);
+}
+.fr-skin .fr-hero__tile img {
+  transform: scale(1.12);
+}
+.fr-skin .fr-hero__tile--mid {
+  width: 34%;
+  max-width: 170px;
+  margin-bottom: 10px;
+}
+@keyframes fr-bob {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-4px); }
+}
+
 /* Botón "+" magenta. */
 .fr-skin .fr-add {
   background: #cb0465;
@@ -118,5 +147,5 @@
 }
 .fr-skin .fr-twinkle { animation: fr-twinkle 2.8s ease-in-out infinite; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) {
-  .fr-skin .fr-rise, .fr-skin .fr-twinkle { animation: none; }
+  .fr-skin .fr-rise, .fr-skin .fr-twinkle, .fr-skin .fr-hero__tile { animation: none; }
 }

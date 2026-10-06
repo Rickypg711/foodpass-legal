@@ -19,6 +19,10 @@
  * sabores y extras NO están escritos aquí: se pintan desde los `optionGroups` de los platillos (lo que el dueño
  * cambie en su panel se ve igual en la hoja). La lógica (carrito, opciones, detalle) es la de MenuView: aquí solo
  * se pinta.
+ *
+ * 6-oct-2026 (Ricardo, viendo fresheria junto a kame): la portada enseña SU comida antes de leer nada (tres de sus
+ * fotos del PDF en marcos dorados bajo el logo), y las listas largas (Frappes, Extras) llevan puntitos entre el
+ * nombre y el precio para que el ojo no salte el hueco.
  */
 
 import Image from "next/image";
@@ -44,6 +48,13 @@ export const FR_SCRIPT = "[font-family:var(--fr-script),'Snell_Roundhand',cursiv
 export const FR_NAME = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif] font-normal";
 
 const INSTAGRAM_URL = "https://www.instagram.com/la.fresheriaa.postres/";
+
+/** Las tres fotos de SU PDF que abren la portada: fresas enchiladas, fresas con crema y Lotus. */
+const HERO_PHOTOS: { src: string; alt: string }[] = [
+  { src: "/skins/fresheria/fresas_enchiladas.jpg", alt: "Fresas enchiladas de La Fresheria" },
+  { src: "/skins/fresheria/sencillas.jpg", alt: "Fresas con crema de La Fresheria" },
+  { src: "/skins/fresheria/lotus.jpg", alt: "Vaso Lotus de La Fresheria" },
+];
 const WINE = "#56052d";
 const MAGENTA = "#cb0465";
 const GOLD = "#9e6036";
@@ -317,6 +328,14 @@ export function FresheriaHeader({
         </p>
         <div className="mx-auto mt-1 h-[2px] w-20 bg-[#cb0465] sm:w-28" aria-hidden />
         <p className="mt-0.5 text-[12px] leading-none text-[#9e6036]" aria-hidden>♥</p>
+        {/* Su comida antes que nada: tres fotos de su PDF en marcos dorados, la de en medio un poco más alta. */}
+        <ul className="fr-hero mx-auto mt-3 flex max-w-[520px] items-end justify-center gap-2.5 px-1 sm:mt-5 sm:gap-4" aria-label="Postres de La Fresheria">
+          {HERO_PHOTOS.map((p, i) => (
+            <li key={p.src} className={"fr-hero__tile fr-photo " + (i === 1 ? "fr-hero__tile--mid" : "")} style={{ animationDelay: `${i * 0.6}s` }}>
+              <Image src={p.src} alt={p.alt} width={570} height={690} priority unoptimized className="aspect-[5/6] w-full object-cover" />
+            </li>
+          ))}
+        </ul>
         {!loading ? (
           <div className="mt-2.5 flex flex-col items-center gap-1.5 sm:mt-4 sm:gap-2">
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -417,15 +436,17 @@ function ExtrasPage({ group, toppingExtra = null }: { group: MenuItemOptionGroup
         <ScriptTitle className="text-center">Extras</ScriptTitle>
         <ul className={`${FR_NAME} mx-auto mt-2 max-w-md columns-1 text-[19px] leading-[1.75] text-[#56052d] sm:columns-2 sm:gap-x-10`}>
           {group.options.map((o) => (
-            <li key={o.id} className="flex items-baseline justify-between gap-3 [break-inside:avoid]">
-              <span>{o.name}</span>
-              <span className="tabular-nums">{money(o.priceDelta)}</span>
+            <li key={o.id} className="flex items-end gap-2 [break-inside:avoid]">
+              <span className="min-w-0">{o.name}</span>
+              <span className="fr-dots" aria-hidden />
+              <span className="shrink-0 tabular-nums">{money(o.priceDelta)}</span>
             </li>
           ))}
           {toppingPrice != null ? (
-            <li className="flex items-baseline justify-between gap-3 [break-inside:avoid]">
-              <span>Topping extra</span>
-              <span className="tabular-nums">{money(toppingPrice)}</span>
+            <li className="flex items-end gap-2 [break-inside:avoid]">
+              <span className="min-w-0">Topping extra</span>
+              <span className="fr-dots" aria-hidden />
+              <span className="shrink-0 tabular-nums">{money(toppingPrice)}</span>
             </li>
           ) : null}
         </ul>
@@ -698,16 +719,17 @@ export function FresheriaItemRow({
   const tamano = findGroup(groups, /tama/);
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
 
-  /* Frappes: "nombre … precio" en serif, sin dibujos. */
+  /* Frappes: "nombre ····· precio" en serif, con los puntitos hasta el precio (6-oct). */
   if (block === "frappes") {
     return (
       <li className="flex items-center gap-2 py-[3px]">
-        <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="flex min-w-0 flex-1 cursor-pointer items-baseline justify-between gap-3 text-left">
+        <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="flex min-w-0 flex-1 cursor-pointer items-end gap-2 text-left">
           <span className={`${FR_NAME} min-w-0 text-[22px] leading-tight text-[#56052d] sm:text-[24px]`}>
             {label}
             {description ? <span className="ml-1.5 text-[15px] text-[#56052d]/70">{description}</span> : null}
           </span>
-          <span className={`${FR_NAME} shrink-0 text-[22px] tabular-nums text-[#56052d] sm:text-[24px]`}>{money(price)}</span>
+          <span className="fr-dots" aria-hidden />
+          <span className={`${FR_NAME} shrink-0 text-[22px] tabular-nums leading-tight text-[#56052d] sm:text-[24px]`}>{money(price)}</span>
         </button>
         {control}
       </li>
