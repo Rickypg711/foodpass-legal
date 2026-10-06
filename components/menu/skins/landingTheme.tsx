@@ -459,7 +459,7 @@ const KAME: LandingTheme = {
 const SUADERO: LandingTheme = {
   root: SD_ROOT_CLASS,
   Header: (p) => <SuaderoHeader {...p} />,
-  cta: `${SD_TITLE} block min-h-12 rounded-full bg-[#c6361c] px-5 py-3.5 text-center text-[16px] tracking-[0.06em] text-[#f0e9d3] shadow-[0_14px_30px_-14px_rgba(198,54,28,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  cta: `${SD_TITLE} block min-h-12 rounded-full bg-[#b32e16] px-5 py-3.5 text-center text-[16px] tracking-[0.06em] text-[#f0e9d3] shadow-[0_14px_30px_-14px_rgba(179,46,22,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
   btnWhatsapp: `${SD_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#612f18] bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#612f18] transition-colors hover:bg-[#612f18] hover:text-[#f0e9d3]`,
   btnNeutral: `${SD_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#9f4c24]/40 bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#612f18] transition-colors hover:border-[#612f18]`,
   descriptionCard: "sd-plate p-5 text-[15px] leading-relaxed text-[#3a2314]/85 sm:p-6",

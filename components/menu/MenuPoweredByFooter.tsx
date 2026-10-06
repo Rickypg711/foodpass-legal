@@ -69,7 +69,7 @@ export function MenuPoweredByFooter({
                       : km
                         ? "border-[#efd250]/20 text-[#fbf3d0]/60"
                       : sd
-                        ? "border-[#612f18]/20 text-[#3a2314]/65"
+                        ? "sd-seo border-0 text-[#3a2314]/80"
                       : fr
                         ? "border-[#9e6036]/40 text-[#56052d]/65"
               : "border-[#1C2526]/10 text-[#1C2526]/55")

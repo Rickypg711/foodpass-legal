@@ -108,7 +108,7 @@ export function CartBar({
                       : km
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#f7cf1d] px-5 py-3 text-[#263532] shadow-[0_10px_26px_-10px_rgba(247,207,29,0.75)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
                       : sd
-                        ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#c6361c] px-5 py-3 text-[#f0e9d3] shadow-[0_10px_26px_-10px_rgba(198,54,28,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                        ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#b32e16] px-5 py-3 text-[#f0e9d3] shadow-[0_10px_26px_-10px_rgba(179,46,22,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
                       : fr
                         ? "flex min-h-12 w-full items-center justify-between rounded-full bg-[#cb0465] px-5 py-3 text-[#fffbfd] shadow-[0_10px_24px_-12px_rgba(203,4,101,0.9)] transition-transform hover:scale-[1.005] active:scale-[0.995]"
                       : tp

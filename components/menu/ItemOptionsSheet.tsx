@@ -286,7 +286,7 @@ const LOOK_SUADERO: SheetLook = {
       !disponible
         ? "cursor-not-allowed border-[#3a2314]/10 text-[#3a2314]/35 line-through"
         : on
-          ? "border-[#c6361c] bg-[#c6361c] text-[#f0e9d3]"
+          ? "border-[#c6361c] bg-[#b32e16] text-[#f0e9d3]"
           : "border-[#9f4c24]/35 bg-white text-[#3a2314] hover:border-[#c6361c]"
     }`,
   delta: (on) => `text-[13px] font-bold ${on ? "text-[#f0e9d3]" : "text-[#c6361c]"}`,
@@ -297,7 +297,7 @@ const LOOK_SUADERO: SheetLook = {
   qtyNum: `${SD_NAME_S} w-7 text-center text-[17px] tabular-nums text-[#3a2314]`,
   cancel:
     "rounded-full border-2 border-[#3a2314]/20 px-4 py-3 text-sm font-bold text-[#3a2314]/80 transition-colors hover:bg-[#3a2314]/5",
-  confirm: `${SD_NAME_S} flex-1 rounded-full bg-[#c6361c] py-3 text-[15px] uppercase tracking-[0.06em] text-[#f0e9d3] transition-colors hover:bg-[#a92c16] disabled:cursor-not-allowed disabled:opacity-45`,
+  confirm: `${SD_NAME_S} flex-1 rounded-full bg-[#b32e16] py-3 text-[15px] uppercase tracking-[0.06em] text-[#f0e9d3] transition-colors hover:bg-[#a92c16] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
 /** Fresheria: página rosa con marco dorado, cursiva vino y píldoras magenta (components/menu/skins/fresheria.tsx). */

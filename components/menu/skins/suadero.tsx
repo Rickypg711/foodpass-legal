@@ -132,7 +132,7 @@ export function SuaderoHeader({
               <span
                 className={
                   `${SD_NAME} inline-flex items-center gap-2 rounded-full border-2 px-3.5 py-[6px] text-[12px] uppercase tracking-[0.06em] ` +
-                  (schedule.open ? "border-[#f0e9d3] bg-[#c6361c] text-[#f0e9d3]" : "border-[#f0e9d3]/60 bg-transparent text-[#f0e9d3]")
+                  (schedule.open ? "border-[#f0e9d3] bg-[#b32e16] text-[#f0e9d3]" : "border-[#f0e9d3]/60 bg-transparent text-[#f0e9d3]")
                 }
               >
                 <span className={"h-2 w-2 rounded-full " + (schedule.open ? "sd-live bg-[#f0e9d3]" : "bg-[#f0e9d3]/70")} aria-hidden />
