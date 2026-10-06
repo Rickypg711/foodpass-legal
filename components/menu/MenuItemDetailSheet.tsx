@@ -158,6 +158,21 @@ const LOOK_KAME: DetailLook = {
   add: `${KAME_NAME_D} rounded-full bg-[#f7cf1d] px-6 pb-2.5 pt-3.5 text-[15px] font-black uppercase tracking-[0.06em] text-[#263532] shadow-[0_10px_24px_-10px_rgba(247,207,29,0.75)] transition-all hover:bg-[#ffe04a] active:scale-[0.97]`,
 };
 
+/** Suadero: plato blanco, nombre en slab, precio y botón rojo sombrero (components/menu/skins/suadero.tsx). */
+const SD_NAME_D = "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif]";
+const LOOK_SUADERO: DetailLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#3a2314]/60 sm:items-center",
+  panel: "animate-sheet-up relative max-h-[90vh] w-full overflow-y-auto rounded-t-[26px] border-t-4 border-[#612f18] bg-[#fdfdfb] text-[#3a2314] shadow-xl sm:max-w-md sm:rounded-[26px] sm:border-4",
+  close:
+    "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#f0e9d3] bg-[#612f18] text-lg text-[#f0e9d3] hover:bg-[#c6361c]",
+  imageWrap: "relative aspect-[4/3] w-full overflow-hidden rounded-t-[22px] bg-[#f3efe6] sm:rounded-t-[22px]",
+  title: `${SD_NAME_D} text-[28px] leading-[1.05] text-[#3a2314]`,
+  hint: `${SD_NAME_D} mt-2 inline-flex w-fit items-center rounded-full border-[1.5px] border-[#d5984c] bg-[#d5984c]/12 px-3 py-[4px] text-[11px] uppercase tracking-[0.08em] text-[#8a4b12]`,
+  description: "mt-2.5 text-[15.5px] leading-relaxed text-[#3a2314]/75",
+  price: `${SD_NAME_D} text-[26px] tabular-nums leading-none text-[#c6361c]`,
+  add: `${SD_NAME_D} rounded-full bg-[#c6361c] px-6 py-3 text-[15px] uppercase tracking-[0.06em] text-[#f0e9d3] shadow-[0_10px_24px_-10px_rgba(198,54,28,0.9)] transition-all hover:bg-[#a92c16] active:scale-[0.97]`,
+};
+
 export function MenuItemDetailSheet({
   open,
   name,
@@ -194,6 +209,8 @@ export function MenuItemDetailSheet({
               ? LOOK_OMU
               : skin === "kame"
                 ? LOOK_KAME
+              : skin === "suadero"
+                ? LOOK_SUADERO
               : skin === "fresheria"
                 ? LOOK_FRESHERIA
                 : LOOK_DEFAULT;
@@ -234,7 +251,7 @@ export function MenuItemDetailSheet({
           </div>
         ) : null}
 
-        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu" && skin !== "fresheria" && skin !== "kame") ? "p-5" : "p-5 pt-6 pr-14"}>
+        <div className={imageUrl || (skin !== "mixteco" && skin !== "laspic" && skin !== "tortasperras" && skin !== "igo" && skin !== "omu" && skin !== "fresheria" && skin !== "kame" && skin !== "suadero") ? "p-5" : "p-5 pt-6 pr-14"}>
           <h2 className={look.title}>
             {name}
           </h2>

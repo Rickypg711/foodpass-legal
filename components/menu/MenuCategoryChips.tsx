@@ -109,6 +109,7 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
   const ig = skin === "igo";
   const om = skin === "omu";
   const km = skin === "kame";
+  const sd = skin === "suadero";
   const fr = skin === "fresheria";
 
   const jump = (index: number) => {
@@ -145,6 +146,8 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                         ? "bg-[#151311]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       : km
                         ? "bg-[#263532]/92 py-2.5 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                      : sd
+                        ? "bg-[#fff7f8]/94 py-2.5 shadow-[0_10px_20px_-18px_rgba(58,35,20,0.5)] backdrop-blur-md"
                       : fr
                         ? "bg-[#feeef8]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(86,5,45,0.35)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
@@ -181,6 +184,11 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
                 (on
                   ? "border-[#f7cf1d] bg-[#f7cf1d] text-[#263532] shadow-[0_8px_18px_-8px_rgba(247,207,29,0.7)]"
                   : "border-[#f0dc78]/30 bg-transparent text-[#f0dc78] hover:border-[#f7cf1d]")
+            : sd
+              ? "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif] text-[12px] uppercase tracking-[0.06em] border-2 " +
+                (on
+                  ? "border-[#612f18] bg-[#612f18] text-[#f0e9d3] shadow-[0_8px_18px_-10px_rgba(58,35,20,0.8)]"
+                  : "border-[#9f4c24]/40 bg-white text-[#612f18] hover:border-[#612f18]")
             : om
               ? "text-[11px] font-extrabold uppercase tracking-[0.06em] border-2 " +
                 (on
@@ -217,10 +225,10 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
               data-chip={c.index}
               onClick={() => jump(c.index)}
               aria-current={on ? "true" : undefined}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp || tp || ig || om || fr || km ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors ${nb || bl || mx || lp || tp || ig || om || fr || km || sd ? "" : "capitalize"} ${base} ${c.closed ? "opacity-55" : ""}`}
             >
               {c.closed ? "🕒 " : ""}
-              {tercera || mx || lp || tp || ig || om || fr || km ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
+              {tercera || mx || lp || tp || ig || om || fr || km || sd ? c.category : pecado ? pecadoCategoryLabel(c.category) : c.category.toLowerCase()}
             </button>
           );
         })}

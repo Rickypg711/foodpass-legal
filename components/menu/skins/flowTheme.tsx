@@ -23,6 +23,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT } from "@/components/menu/skins/fresheria";
 import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE } from "@/components/menu/skins/kame";
+import { SD_NAME, SD_ROOT_CLASS, SD_TITLE } from "@/components/menu/skins/suadero";
 
 export type FlowHeaderProps = {
   restaurantId: string;
@@ -470,9 +471,29 @@ const KAME_TOKENS: FlowTokens = {
   logo: { src: "/skins/kame/logo.png", width: 312, height: 312 },
 };
 
+/** Suadero La Familia: el mantel de fondo, platos blancos y botones rojo sombrero (components/menu/skins/suadero.tsx). */
+const SUADERO_TOKENS: FlowTokens = {
+  bg: "#fff7f8",
+  paper: "#fdfdfb",
+  ink: "#3a2314",
+  accent: "#c6361c",
+  accentInk: "#f0e9d3",
+  accentHover: "#a92c16",
+  border: "#9f4c24",
+  radius: "full",
+  cardRadius: "rounded-[26px]",
+  cardShadow: "shadow-[0_16px_34px_-24px_rgba(58,35,20,0.55)]",
+  fontBody: "[font-family:var(--sd-sans),Nunito,system-ui,sans-serif]",
+  fontName: SD_NAME,
+  fontDisplay: `${SD_TITLE} text-[26px] leading-none`,
+  rootClass: SD_ROOT_CLASS,
+  logo: { src: "/skins/suadero/logo.jpg", width: 900, height: 900 },
+};
+
 const FLOW_BY_SKIN: Partial<Record<MenuSkinId, FlowTokens>> = {
   fresheria: FRESHERIA_TOKENS,
   kame: KAME_TOKENS,
+  suadero: SUADERO_TOKENS,
 };
 
 const BUILT = new Map<MenuSkinId, FlowTheme>();

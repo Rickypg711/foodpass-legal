@@ -271,6 +271,35 @@ const LOOK_KAME: SheetLook = {
   confirm: `${KAME_NAME_S} flex-1 rounded-full bg-[#f7cf1d] pb-2.5 pt-3.5 text-[15px] font-black uppercase tracking-[0.06em] text-[#263532] transition-colors hover:bg-[#ffe04a] disabled:cursor-not-allowed disabled:opacity-45`,
 };
 
+/** Suadero: plato blanco con letras de madera y botones rojo sombrero (components/menu/skins/suadero.tsx). */
+const SD_NAME_S = "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif]";
+const LOOK_SUADERO: SheetLook = {
+  backdrop: "animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-[#3a2314]/60 sm:items-center",
+  panel: "animate-sheet-up max-h-[85vh] w-full overflow-y-auto rounded-t-[26px] border-t-4 border-[#612f18] bg-[#fdfdfb] p-5 text-[#3a2314] shadow-xl sm:max-w-md sm:rounded-[26px] sm:border-4",
+  title: `${SD_NAME_S} text-[24px] leading-tight text-[#3a2314]`,
+  subtitle: "text-[14px] leading-snug text-[#3a2314]/65",
+  groupName: `${SD_NAME_S} text-[13px] uppercase tracking-[0.1em] text-[#612f18]`,
+  status: (falta) => `text-[11px] font-bold uppercase tracking-[0.1em] ${falta ? "text-[#c6361c]" : "text-[#3a2314]/45"}`,
+  hasta: "text-[12px] text-[#3a2314]/55",
+  option: (disponible, on) =>
+    `flex items-center justify-between rounded-full border-2 px-4 py-2.5 text-left text-[15px] font-bold transition-colors ${
+      !disponible
+        ? "cursor-not-allowed border-[#3a2314]/10 text-[#3a2314]/35 line-through"
+        : on
+          ? "border-[#c6361c] bg-[#c6361c] text-[#f0e9d3]"
+          : "border-[#9f4c24]/35 bg-white text-[#3a2314] hover:border-[#c6361c]"
+    }`,
+  delta: (on) => `text-[13px] font-bold ${on ? "text-[#f0e9d3]" : "text-[#c6361c]"}`,
+  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#612f18]/15 bg-[#fdfdfb] px-5 pb-1 pt-3",
+  qtyLabel: "text-[14px] font-bold text-[#3a2314]/75",
+  qtyBtn:
+    "h-10 w-10 rounded-full border-2 border-[#9f4c24]/40 text-lg font-bold text-[#612f18] transition-colors hover:bg-[#9f4c24]/10 disabled:opacity-30",
+  qtyNum: `${SD_NAME_S} w-7 text-center text-[17px] tabular-nums text-[#3a2314]`,
+  cancel:
+    "rounded-full border-2 border-[#3a2314]/20 px-4 py-3 text-sm font-bold text-[#3a2314]/80 transition-colors hover:bg-[#3a2314]/5",
+  confirm: `${SD_NAME_S} flex-1 rounded-full bg-[#c6361c] py-3 text-[15px] uppercase tracking-[0.06em] text-[#f0e9d3] transition-colors hover:bg-[#a92c16] disabled:cursor-not-allowed disabled:opacity-45`,
+};
+
 /** Fresheria: página rosa con marco dorado, cursiva vino y píldoras magenta (components/menu/skins/fresheria.tsx). */
 const FR_NAME_S = "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif]";
 const LOOK_FRESHERIA: SheetLook = {
@@ -308,6 +337,7 @@ function lookFor(skin: MenuSkinId | null | undefined): SheetLook {
   if (skin === "igo") return LOOK_IGO;
   if (skin === "omu") return LOOK_OMU;
   if (skin === "kame") return LOOK_KAME;
+  if (skin === "suadero") return LOOK_SUADERO;
   return LOOK_DEFAULT;
 }
 

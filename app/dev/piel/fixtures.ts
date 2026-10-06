@@ -370,7 +370,76 @@ const KAME: PielFixture = {
   },
 };
 
-const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA, kame: KAME };
+/* ─────────────────────────── Tacos de Suadero La Familia (6-oct-2026) ─────────────────────────── */
+/** Espejo de lo que David tiene en restaurants/gn3bKaysYnHIU3r8tun1 (14 platillos, precios REALES de su app;
+ *  los de la lona están en duda). Tres platillos llevan su foto real (las mismas URLs públicas de su menú) para
+ *  ver el renglón con foto; el resto sin foto, para ver el otro camino. */
+const SD_PHOTO = (f: string, token: string) =>
+  `https://firebasestorage.googleapis.com/v0/b/foodpass-18b33.firebasestorage.app/o/restaurant_pictures%2Fgn3bKaysYnHIU3r8tun1%2Fmenu%2F2026-09-09%2F${f}.jpg?alt=media&token=${token}`;
+const SD_PHOTOS: Record<string, string> = {
+  "Orden de 4 tacos": SD_PHOTO("orden-4-tacos", "3db5f2e1-6148-4ff2-8a47-ab0bddd0ab63"),
+  Mulitas: SD_PHOTO("mulitas", "6ddfc0ad-d5c8-4254-826b-a2247e127174"),
+  Torta: SD_PHOTO("torta", "14bf55f6-e4b1-41fd-ab9f-ef5651d5ee94"),
+};
+const SD_CARNE = og("carne", "Carne", true, 1, [["suadero", "Suadero"], ["campechano", "Campechano"], ["longaniza", "Longaniza"], ["bistec", "Bistec"]]);
+const SD_CARNE_MIX = og("carne", "Carne", true, 1, [["suadero", "Suadero"], ["campechano", "Campechano"], ["longaniza", "Longaniza"], ["bistec", "Bistec"], ["mixtos", "Mixtos"]]);
+const SD_ROWS: [category: string, name: string, price: number, description: string, groups: OG[]][] = [
+  ["Tacos", "Orden de 4 tacos", 90, "4 tacos de tortilla doble con cebolla y cilantro. Se acompaña con salsa, limón y cebollita.", [SD_CARNE_MIX]],
+  ["Tacos", "Taco suelto", 22.5, "Tortilla doble con cebolla y cilantro.", [SD_CARNE_MIX]],
+  ["Mulitas", "Mulitas", 60, "Dos tortillas con queso fundido y tu carne, doradas en el comal.", [SD_CARNE]],
+  ["Tortas", "Torta", 95, "Telera del comal con frijoles, tu carne, aguacate y cebolla.", [SD_CARNE]],
+  ["Toritos", "Torito", 75, "Chile relleno de queso y tu carne, envuelto en tortilla.", [SD_CARNE]],
+  ["Nachos", "Nachos", 160, "Charola de totopos con queso amarillo, frijoles de la olla, crema y tu carne.", [SD_CARNE_MIX]],
+  ["Roscas", "Rosca (26 tacos)", 500, "26 tacos de tortilla doble con las 4 carnes surtidas, cebolla y cilantro.", []],
+  ["Bebidas", "Horchata", 50, "Un litro.", []],
+  ["Bebidas", "Coca-Cola", 25, "", []],
+  ["Bebidas", "Agua Natural", 10, "", []],
+  ["Extras", "Toreados", 10, "", []],
+  ["Extras", "Nopales", 15, "", []],
+  ["Extras", "Cebolla Cambray", 20, "", []],
+  ["Extras", "Mixta", 20, "", []],
+];
+const SUADERO: PielFixture = {
+  id: "preview-suadero",
+  initial: {
+    raw: {
+      name: "Tacos De Suadero La Familia",
+      menuSkin: "suadero",
+      address: "Mineral Pinos Altos 1529, Chihuahua",
+      phone: "6146066023",
+      whatsapp: "6146066023",
+      categories: ["Mexicana", "Comida Callejera", "Tacos"],
+      menuCategoryOrder: ["Tacos", "Mulitas", "Tortas", "Toritos", "Nachos", "Roscas", "Bebidas", "Extras"],
+      coverImageUrl: "/skins/suadero/cover.jpg",
+      businessHours: {
+        monday: { isClosed: true, openingTime: { hour: 19, minute: 0 }, closingTime: { hour: 22, minute: 30 } },
+        tuesday: day([19, 0], [22, 30]),
+        wednesday: day([19, 0], [22, 30]),
+        thursday: day([19, 0], [22, 30]),
+        friday: day([19, 0], [22, 30]),
+        saturday: day([19, 0], [22, 30]),
+        sunday: day([19, 0], [22, 30]),
+      },
+    },
+    menu: SD_ROWS.map(([category, name, price, description, groups], i) => {
+      const photo = SD_PHOTOS[name] ?? null;
+      return {
+        id: `sd-${i + 1}`,
+        data: {
+          category,
+          name,
+          price,
+          ...(description ? { description } : {}),
+          isAvailable: true,
+          ...(groups.length ? { optionGroups: groups } : {}),
+          ...(photo ? { imageUrl: photo } : {}),
+        },
+      };
+    }),
+  },
+};
+
+const FIXTURES: Record<string, PielFixture> = { negroblanco: NEGRO_BLANCO, omu: OMU, fresheria: FRESHERIA, kame: KAME, suadero: SUADERO };
 
 export function pielFixture(skin: string): PielFixture | null {
   return FIXTURES[skin] ?? null;

@@ -41,6 +41,7 @@ export function MenuPoweredByFooter({
   const ig = skin === "igo";
   const om = skin === "omu";
   const km = skin === "kame";
+  const sd = skin === "suadero";
   const fr = skin === "fresheria";
   const href = poweredByHref(restaurantId);
   return (
@@ -67,6 +68,8 @@ export function MenuPoweredByFooter({
                         ? "border-[#f9f8f8]/15 text-[#f9f8f8]/60"
                       : km
                         ? "border-[#efd250]/20 text-[#fbf3d0]/60"
+                      : sd
+                        ? "border-[#612f18]/20 text-[#3a2314]/65"
                       : fr
                         ? "border-[#9e6036]/40 text-[#56052d]/65"
               : "border-[#1C2526]/10 text-[#1C2526]/55")
@@ -96,6 +99,8 @@ export function MenuPoweredByFooter({
                             ? "font-extrabold text-[#f9f8f8]"
                           : km
                             ? "font-bold text-[#fbf3d0]"
+                          : sd
+                            ? "font-extrabold text-[#612f18]"
                           : fr
                             ? "font-semibold text-[#56052d]"
                   : "font-semibold text-[#1C2526]/75"
@@ -130,6 +135,8 @@ export function MenuPoweredByFooter({
                             ? "text-[#f9f8f8] decoration-[#f10809]/60 hover:decoration-[#f10809]"
                           : km
                             ? "text-[#f7cf1d] decoration-[#f7cf1d]/40 hover:decoration-[#f7cf1d]"
+                          : sd
+                            ? "text-[#c6361c] decoration-[#c6361c]/40 hover:decoration-[#c6361c]"
                   : "text-[#F28C38] decoration-[#F28C38]/40 hover:decoration-[#F28C38]")
           }
         >

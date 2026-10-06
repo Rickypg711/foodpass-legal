@@ -47,12 +47,16 @@
  *    y la foto de sus platillos, títulos amarillos gordos, CEVICHE como tabla 1/2 · 1L y OSTIONES con su "NEW"
  *    (components/menu/skins/kame.tsx). Undécima piel en código por pedido de Ricardo (5-oct); primera con
  *    movimiento (platillos que flotan, cinta que corre, renglones que entran al hacer scroll).
+ *  - "suadero": Tacos de Suadero La Familia, Chihuahua — sin papel: sale de su logo (tablones de madera, letras
+ *    western crema, sombrero rojo-naranja) y de su puesto (plato de unicel blanco sobre mantel rosa de cuadritos).
+ *    Letreros de madera por familia, un plato blanco por sección y las 14 fotos de David
+ *    (components/menu/skins/suadero.tsx). Duodécima piel en código por pedido de Ricardo (6-oct).
  */
-export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria" | "kame";
+export type MenuSkinId = "tercera" | "pecado" | "negroblanco" | "blooms" | "mixteco" | "laspic" | "tortasperras" | "igo" | "omu" | "fresheria" | "kame" | "suadero";
 
 export const MENU_SKIN_FIELD = "menuSkin";
 
-const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria", "kame"];
+const KNOWN: readonly string[] = ["tercera", "pecado", "negroblanco", "blooms", "mixteco", "laspic", "tortasperras", "igo", "omu", "fresheria", "kame", "suadero"];
 
 export function menuSkinFromRestaurant(
   raw: Record<string, unknown> | null | undefined,

@@ -25,6 +25,7 @@ import { TP_DISPLAY, TP_ROOT_CLASS, TortasHeader } from "@/components/menu/skins
 import { IGO_DISPLAY, IGO_NAME, IGO_ROOT_CLASS, IGOHeader } from "@/components/menu/skins/igo";
 import { OMU_NAME, OMU_ROOT_CLASS, OmuHeader } from "@/components/menu/skins/omu";
 import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE, KameHeader } from "@/components/menu/skins/kame";
+import { SD_NAME, SD_ROOT_CLASS, SD_TITLE, SuaderoHeader } from "@/components/menu/skins/suadero";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT, FresheriaHeader } from "@/components/menu/skins/fresheria";
 
 export type LandingHeaderProps = {
@@ -454,7 +455,39 @@ const KAME: LandingTheme = {
   photoPrice: "font-bold text-[#263532]/70",
 };
 
+/** Suadero: el mantel de cuadritos, platos blancos con letrero de madera y botones rojo sombrero. */
+const SUADERO: LandingTheme = {
+  root: SD_ROOT_CLASS,
+  Header: (p) => <SuaderoHeader {...p} />,
+  cta: `${SD_TITLE} block min-h-12 rounded-full bg-[#c6361c] px-5 py-3.5 text-center text-[16px] tracking-[0.06em] text-[#f0e9d3] shadow-[0_14px_30px_-14px_rgba(198,54,28,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp: `${SD_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#612f18] bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#612f18] transition-colors hover:bg-[#612f18] hover:text-[#f0e9d3]`,
+  btnNeutral: `${SD_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#9f4c24]/40 bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#612f18] transition-colors hover:border-[#612f18]`,
+  descriptionCard: "sd-plate p-5 text-[15px] leading-relaxed text-[#3a2314]/85 sm:p-6",
+  card: "sd-plate px-5 pt-5 pb-5 sm:px-7 sm:pt-6",
+  cardTitle: (title) => (
+    <h2 className={`${SD_TITLE} sd-sign mx-auto -mt-9 mb-4 block w-fit px-6 pb-[8px] pt-[10px] text-center text-[18px] leading-none tracking-[0.04em] text-[#f0e9d3]`}>
+      {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+    </h2>
+  ),
+  link: "font-bold text-[#612f18] underline decoration-[#612f18]/40 underline-offset-4",
+  text: "text-[#3a2314]/85",
+  textSoft: "text-[#3a2314]/65",
+  todayRow: "bg-[#d5984c]/25 font-bold text-[#3a2314]",
+  row: "text-[#3a2314]/75",
+  closedText: "text-[#3a2314]/40",
+  faqOpen: "open:bg-[#d5984c]/15",
+  faqChevron: "text-[#612f18]",
+  faqAnswer: "text-[#3a2314]/75",
+  seoText: "text-[#3a2314]/55",
+  signature: "text-[#3a2314]/55",
+  signatureLink: "font-bold text-[#c6361c] underline decoration-[#c6361c]/40 underline-offset-4",
+  loading: "sd-plate px-4 py-6 text-center text-sm text-[#3a2314]/60",
+  photoName: "text-[#3a2314]",
+  photoPrice: "font-bold text-[#c6361c]",
+};
+
 export function landingThemeFor(skin: MenuSkinId | null): LandingTheme {
+  if (skin === "suadero") return SUADERO;
   if (skin === "kame") return KAME;
   if (skin === "fresheria") return FRESHERIA;
   if (skin === "omu") return OMU;

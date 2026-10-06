@@ -137,6 +137,16 @@ import {
   kameSortItems,
 } from "@/components/menu/skins/kame";
 import {
+  SD_ROOT_CLASS,
+  SuaderoCategorySection,
+  SuaderoCover,
+  SuaderoHeader,
+  SuaderoItemRow,
+  SuaderoPanel,
+  SuaderoSheet,
+  sdSharedDescription,
+} from "@/components/menu/skins/suadero";
+import {
   FR_ROOT_CLASS,
   FresheriaCategorySection,
   FresheriaHeader,
@@ -295,6 +305,7 @@ function pageClassFor(skin: MenuSkinId | null): string {
   if (skin === "omu") return OMU_ROOT_CLASS;
   if (skin === "fresheria") return FR_ROOT_CLASS;
   if (skin === "kame") return KAME_ROOT_CLASS;
+  if (skin === "suadero") return SD_ROOT_CLASS;
   return MENU_PAGE_BG;
 }
 
@@ -306,6 +317,8 @@ function mainWidthFor(skin: MenuSkinId | null): string {
   if (skin === "fresheria") return "max-w-3xl lg:max-w-6xl";
   // Kame: su volante a dos columnas (5-oct).
   if (skin === "kame") return "max-w-3xl lg:max-w-6xl";
+  // Suadero: sus platos a dos columnas en escritorio (6-oct).
+  if (skin === "suadero") return "max-w-3xl lg:max-w-6xl";
   return skin === "mixteco" || skin === "laspic" || skin === "tortasperras" || skin === "igo"
     ? "max-w-3xl lg:max-w-6xl"
     : "max-w-3xl lg:max-w-4xl";
@@ -391,6 +404,19 @@ function MenuRestaurantHeader({
   if (skin === "kame") {
     return (
       <KameHeader
+        loading={loading}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        tagline={tagline}
+        schedule={schedule}
+        address={address}
+        secondarySubtitle={secondarySubtitle}
+      />
+    );
+  }
+  if (skin === "suadero") {
+    return (
+      <SuaderoHeader
         loading={loading}
         restaurantName={restaurantName}
         logoUrl={logoUrl}
@@ -620,6 +646,8 @@ function MenuCoverBanner({ url, name, skin = null }: { url: string; name: string
   if (skin === "fresheria") return null;
   // Kame: su franja amarilla (logo + platillos) ya es la portada.
   if (skin === "kame") return null;
+  // Suadero: su comal como impresión ladeada sobre el mantel.
+  if (skin === "suadero") return <SuaderoCover url={url} name={name} />;
   return (
     <div className="mb-5 overflow-hidden rounded-2xl bg-[#1C2526]/5 shadow-sm">
       <Image
@@ -825,6 +853,51 @@ function MenuCategoryList({
           );
         })}
       </FresheriaSheet>
+    );
+  }
+  if (skin === "suadero") {
+    // Un plato blanco por familia con su letrero de madera (components/menu/skins/suadero.tsx); el orden es el de
+    // David. La descripción que comparte la sección va una vez bajo el letrero.
+    return (
+      <SuaderoSheet>
+        {groups.map((group, index) => {
+          const { closed, note } = availabilityOf(group.category);
+          const shared = sdSharedDescription(group.items);
+          return (
+            <SuaderoCategorySection
+              key={`${group.category}-${index}`}
+              category={group.category}
+              index={index}
+              description={shared}
+              note={note}
+              closed={closed}
+              collapsed={closed && !opened[group.category]}
+              itemCount={group.items.length}
+              onToggle={() => toggle(group.category)}
+            >
+              {(!closed || opened[group.category]) && group.items.map((item, i) => (
+                <SuaderoItemRow
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  orderingEnabled={orderingEnabled && !closed}
+                  optionsHint={optionsHintFor(item)}
+                  quantity={getItemQuantity?.(item.id) ?? 0}
+                  onAdd={() => onAddItem(item)}
+                  onIncrement={() => onIncrementItem?.(item)}
+                  onDecrement={() => onDecrementItem?.(item)}
+                  onOpen={() => onOpenItem?.(item)}
+                  index={i}
+                  hideDescription={shared !== null}
+                />
+              ))}
+            </SuaderoCategorySection>
+          );
+        })}
+      </SuaderoSheet>
     );
   }
   if (skin === "kame") {
@@ -1349,6 +1422,21 @@ function MenuRewardsLadderSection({
       </FresheriaPanel>
     );
   }
+  if (skin === "suadero") {
+    return (
+      <SuaderoPanel title="Premios">
+        <RewardLadder
+          restaurantData={rdata}
+          menuItems={items.map((i) => ({ name: i.name, imageUrl: i.imageUrl }))}
+        />
+        {restaurantPromisesPoints(rdata) ? (
+          <a href={`/menu/${encodeURIComponent(restaurantId)}/puntos`} className="mt-3 inline-block text-sm font-bold text-[#612f18] underline decoration-[#612f18]/40 underline-offset-4">
+            ¿Ya has comprado aquí? Ver mis puntos →
+          </a>
+        ) : null}
+      </SuaderoPanel>
+    );
+  }
   if (skin === "kame") {
     return (
       <KamePanel title="Premios">
@@ -1514,6 +1602,8 @@ function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?:
                 ? "border-[#f10809]/30 bg-[#151311]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
               : skin === "kame"
                 ? "border-[#efd250]/25 bg-[#1c2826]/95 shadow-[0_-12px_36px_-16px_rgba(0,0,0,0.9)]"
+              : skin === "suadero"
+                ? "border-[#f0e9d3]/40 bg-[#612f18]/95 shadow-[0_-12px_36px_-16px_rgba(58,35,20,0.7)]"
               : skin === "fresheria"
                 ? "border-[#9e6036]/40 bg-[#feeef8]/95 shadow-[0_-12px_36px_-16px_rgba(86,5,45,0.35)]"
               : "border-[#1C2526]/10 bg-[#FAF7F2]/95 shadow-[0_-8px_32px_rgba(28,37,38,0.08)]")
