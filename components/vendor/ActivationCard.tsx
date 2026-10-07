@@ -21,7 +21,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc,
+  collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where,
 } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { buildWhatsappShareUrl } from "@/lib/order/formatWhatsappMessage";
@@ -90,8 +90,28 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
     return () => { alive = false; };
   }, [restaurantId, variant]);
 
-  // Pedidos recientes: marca el paso 3 y, si llega uno nuevo mientras
-  // esperamos, suena el ding (la misma campana de Pedidos).
+  // ¿Ya existe un pedido por el menú? Se busca por fuente, no por fecha: en
+  // un local que cobra mucho en Caja (Suadero, 150 ventas) los últimos
+  // pedidos son todos de Caja y el pedido web de hace días no aparecía
+  // (cazado el 6-oct con datos reales).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(getFirebaseDb(), "restaurants", restaurantId, "orders"),
+          where("orderSource", "in", ["customer_web", "customer_app"]),
+          limit(20),
+        ));
+        const has = snap.docs.some((d) => isActivationMenuOrder(d.data() as Record<string, unknown>));
+        if (alive && has) setSignals((prev) => (prev.hasMenuOrder ? prev : { ...prev, hasMenuOrder: true }));
+      } catch { /* sin permiso o sin red: se queda como esté */ }
+    })();
+    return () => { alive = false; };
+  }, [restaurantId]);
+
+  // Pedidos recientes: si llega uno nuevo mientras esperamos, marca el paso 3
+  // y suena el ding (la misma campana de Pedidos).
   useEffect(() => {
     const q = query(
       collection(getFirebaseDb(), "restaurants", restaurantId, "orders"),
@@ -105,9 +125,8 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
         return { id: d.id, orderSource: o.orderSource, status: o.status, createdAtMs: c?.toMillis?.() ?? 0 };
       });
       const menuOrders = orders.filter(isActivationMenuOrder);
-      const has = menuOrders.length > 0;
       const fresh = menuOrders.some((o) => o.createdAtMs >= mountedAt.current - 60_000);
-      setSignals((prev) => (prev.hasMenuOrder === has ? prev : { ...prev, hasMenuOrder: has }));
+      if (menuOrders.length > 0) setSignals((prev) => (prev.hasMenuOrder ? prev : { ...prev, hasMenuOrder: true }));
       if (sawFirstSnapshot.current && fresh) {
         setArrived(true);
         playNewOrderChime();

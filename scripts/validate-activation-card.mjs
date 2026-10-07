@@ -56,6 +56,7 @@ const card = rd("components/vendor/ActivationCard.tsx");
   assert.ok(card.includes('"https://www.instagram.com/accounts/edit/"') && card.includes('"https://business.google.com/"'), "paso 2 abre Instagram y Google");
   assert.ok(card.includes("playNewOrderChime()") && card.includes("flashTabTitle()"), "paso 3 suena con la campana de Pedidos");
   assert.ok(card.includes('onSnapshot(') && card.includes('"orders"'), "paso 3 se marca con un pedido real");
+  assert.ok(card.includes('where("orderSource", "in", ["customer_web", "customer_app"])'), "el pedido existente se busca por fuente, no por fecha (Suadero: la Caja tapaba el pedido web)");
   assert.ok(card.includes("`activation.${field}`"), "los toques se guardan en restaurants.activation.*");
   assert.ok(card.includes("Lo hago después"), "'Lo hago después' existe");
   {
