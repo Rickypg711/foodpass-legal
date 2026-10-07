@@ -411,6 +411,15 @@ export default function ConfiguracionPage() {
     init().catch(() => setLoading(false));
   }, [router]);
 
+  // Anclas (#descuentos desde Reportes, #equipo desde el Panel): las secciones
+  // se pintan después de cargar, así que el navegador no alcanza a bajar solo.
+  useEffect(() => {
+    if (loading) return;
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+  }, [loading]);
+
   /** Pro checkout: create MP preapproval (PRO_AMOUNT_MXN/mes) and redirect to its init_point.
    * The subscription webhook grants Pro on restaurants/{id}; app + web read the same fields. */
   async function handleActivatePro() {
@@ -1919,7 +1928,7 @@ function DiscountProfilesSection({
 
   if (!isPro) {
     return (
-      <SectionCard label="Descuentos especiales" caption={<Pill bg={TILE} color={INK_MUTED}>Incluido en Pro</Pill>} plain>
+      <SectionCard label="Descuentos especiales" id="descuentos" caption={<Pill bg={TILE} color={INK_MUTED}>Incluido en Pro</Pill>} plain>
         <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
           Crea descuentos para tu staff o familia (ej. 50% en bebidas) y asígnalos
           por cliente. La Caja los aplica sola al cobrar.
@@ -1932,7 +1941,7 @@ function DiscountProfilesSection({
   }
 
   return (
-    <SectionCard label="Descuentos especiales">
+    <SectionCard label="Descuentos especiales" id="descuentos">
       <p className="text-[14px] leading-5" style={{ color: INK_MUTED }}>
         Crea perfiles (Staff, Familia…) y asígnalos por cliente en{" "}
         <Link href="/vendor/clientes" className="font-semibold underline underline-offset-2" style={{ color: LINK }}>

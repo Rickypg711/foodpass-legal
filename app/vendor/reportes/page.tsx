@@ -30,6 +30,25 @@ import {
   type Entitlements,
 } from "@/lib/subscription/entitlement";
 import { ProWall } from "@/components/vendor/ProWall";
+import {
+  salesPatterns,
+  patternsCopy,
+  money0,
+  signedPct,
+  hourShort,
+  payLabel,
+  weekdayShort,
+  COMBOS_CAPTION,
+  COMBOS_LINK,
+  REGULARS_LINK,
+  COMPARE_EMPTY,
+  PRO_CTA,
+  HINT_BULK,
+  HINT_DISCOUNT_LINK,
+  HINT_TABLES_LINK,
+  type PatternOrder,
+  type SalesPatterns,
+} from "@/lib/reports/salesPatterns";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -86,6 +105,8 @@ interface ReportsData {
     card: number;
     byStaff: Record<string, { total: number; cash: number; card: number }>;
   } | null;
+  /** Patrones de 30 días (+ el mes anterior para lo Pro). lib/reports/salesPatterns.ts */
+  patterns: SalesPatterns | null;
 }
 
 /** Historial de ventas por rango (pared 1 de la Caja, 8-sep). */
@@ -218,10 +239,16 @@ function BarChart({
   points,
   color,
   highlightToday = false,
+  markLast = true,
+  highlightIndex = -1,
 }: {
   points: { label: string; dateStr: string; value: number; text: string }[];
   color: string;
   highlightToday?: boolean;
+  /** La última barra es "hoy" (etiqueta en 600). Las noches y las horas no. */
+  markLast?: boolean;
+  /** Barra en naranja que no es hoy (la mejor noche, la hora pico). */
+  highlightIndex?: number;
 }) {
   const max = Math.max(...points.map((p) => p.value), 1);
   const last = points.length - 1;
@@ -229,18 +256,26 @@ function BarChart({
     <div className="flex h-44 items-end gap-1.5 md:gap-2">
       {points.map((p, i) => {
         const heightPct = (p.value / max) * 100;
-        const today = i === last;
+        const today = markLast && i === last;
+        const orange = (today && highlightToday) || i === highlightIndex;
         return (
           <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={p.dateStr}>
             <span className="text-[12px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
               {p.value > 0 ? p.text : ""}
             </span>
-            <div
-              className="w-full rounded-t"
-              style={{ height: `${Math.max(heightPct, 2)}%`, background: today && highlightToday ? BRAND : color }}
-            />
+            {/* El % se mide contra el área de barras, no contra la columna
+                entera: con las etiquetas abajo, las barras altas se
+                aplastaban todas a la misma altura (7-oct). */}
+            <div className="flex min-h-0 w-full flex-1 items-end">
+              <div
+                className="w-full rounded-t"
+                style={{ height: `${Math.max(heightPct, 2)}%`, background: p.value > 0 ? (orange ? BRAND : color) : HAIRLINE }}
+              />
+            </div>
             <p className="text-[12px] leading-4" style={{ color: today ? INK : INK_MUTED, fontWeight: today ? 600 : 400 }}>{p.label}</p>
-            <p className="hidden whitespace-nowrap text-[12px] leading-4 sm:block" style={{ color: INK_SOFT }}>{p.dateStr}</p>
+            {p.dateStr ? (
+              <p className="hidden whitespace-nowrap text-[12px] leading-4 sm:block" style={{ color: INK_SOFT }}>{p.dateStr}</p>
+            ) : null}
           </div>
         );
       })}
@@ -263,6 +298,39 @@ function EmptyLine({ children }: { children: ReactNode }) {
 }
 
 const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+function ProPill() {
+  return (
+    <span className="inline-flex h-5 items-center rounded-full px-2 text-[12px] font-semibold" style={{ background: TILE, color: INK_MUTED }}>
+      Pro
+    </span>
+  );
+}
+
+function ArrowLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="mt-3 inline-block text-[14px] font-semibold hover:underline" style={{ color: LINK }}>
+      {children} ›
+    </Link>
+  );
+}
+
+/** Lo Pro sin Pro: el título, una línea cierta de lo que hay y la puerta. */
+function ProTeaser({ text, onOpen }: { text: string; onOpen: () => void }) {
+  return (
+    <div className="rounded-xl bg-white px-3.5 py-4" style={{ border: `1px solid ${BORDER}` }}>
+      <p className="text-[15px] leading-5" style={{ color: INK }}>{text}</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-3 flex h-11 items-center rounded-xl px-4 text-[15px] font-semibold"
+        style={{ background: BRAND, color: INK }}
+      >
+        {PRO_CTA}
+      </button>
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -373,8 +441,10 @@ export default function ReportesPage() {
         const todayStart = businessDayStart();
         const sevenDaysAgo = businessDayStartDaysAgo(6);
         const thirtyDaysAgo = businessDayStartDaysAgo(30);
+        // Patrones (7-oct): el mes anterior para "este mes contra el anterior".
+        const sixtyDaysAgo = businessDayStartDaysAgo(60);
 
-        const [restaurantSnap, insightsSnap, todayOrdersSnap, todayVisitsSnap, weeklyOrdersSnap, weeklyVisitsSnap, monthOrdersSnap] =
+        const [restaurantSnap, insightsSnap, todayOrdersSnap, todayVisitsSnap, weeklyOrdersSnap, weeklyVisitsSnap, monthOrdersSnap, menuSnap] =
           await Promise.all([
             getDoc(doc(db, "restaurants", rid)),
             getDoc(doc(db, "restaurants", rid, "vendorInsights", "current")),
@@ -401,12 +471,15 @@ export default function ReportesPage() {
               where("timestamp", ">=", Timestamp.fromDate(sevenDaysAgo)),
               orderBy("timestamp", "asc")
             )),
-            // 30d orders → phone-sale loyalty metrics (phone customers have no
-            // app, so they never appear in visitHistory / the brain's numbers).
+            // 60d orders: los últimos 30 → lealtad por teléfono, descuentos,
+            // empleados, propinas (phone customers have no app, so they never
+            // appear in visitHistory); los 60 → patrones y el mes anterior.
             getDocs(query(
               collection(db, "restaurants", rid, "orders"),
-              where("createdAt", ">=", Timestamp.fromDate(thirtyDaysAgo))
+              where("createdAt", ">=", Timestamp.fromDate(sixtyDaysAgo))
             )).catch(() => null),
+            // Menú: qué platillos disponibles nadie pidió.
+            getDocs(collection(db, "restaurants", rid, "menu")).catch(() => null),
           ]);
 
         const restData = restaurantSnap.data() ?? {};
@@ -449,8 +522,35 @@ export default function ReportesPage() {
         let tipsCash30d = 0;
         let tipsCard30d = 0;
         const tipsByStaff: Record<string, { total: number; cash: number; card: number }> = {};
+        const patternOrders: PatternOrder[] = [];
         monthOrdersSnap?.forEach((d) => {
           const o = d.data();
+          const created = o.createdAt as Timestamp | undefined;
+          if (o.paymentStatus === "paid" && created?.toDate) {
+            const dt = created.toDate();
+            const day = businessDayStart(dt);
+            const items = Array.isArray(o.items) ? (o.items as Record<string, unknown>[]) : [];
+            patternOrders.push({
+              ms: dt.getTime(),
+              dayKey: businessDayKey(dt),
+              weekday: day.getDay(),
+              hour: dt.getHours(),
+              total: Number(o.total) || 0,
+              method: String(o.paymentMethod ?? ""),
+              phone: String(o.customerPhone ?? ""),
+              name: String(o.customerName ?? ""),
+              tab: String(o.tabName ?? ""),
+              openTab: o.isOpenTab === true,
+              hasDiscount: (Number((o.discountApplied as { amount?: unknown } | undefined)?.amount) || 0) > 0,
+              items: items.map((it) => {
+                const qty = Number(it.quantity) > 0 ? Number(it.quantity) : 1;
+                const sub = Number(it.subtotal ?? (Number(it.price) || 0) * qty);
+                return { name: String(it.name ?? "").trim(), qty, revenue: Number.isFinite(sub) ? sub : 0 };
+              }),
+            });
+          }
+          // Lo de abajo es de 30 días: el mes anterior solo alimenta patrones.
+          if (!created?.toMillis || created.toMillis() < thirtyDaysAgo.getTime()) return;
           const disc = o.discountApplied as
             | { amount?: unknown; profileName?: unknown }
             | undefined;
@@ -623,6 +723,22 @@ export default function ReportesPage() {
               .sort((a, b) => b.revenue - a.revenue);
             return rows.length > 0 ? rows : null;
           })(),
+          patterns: monthOrdersSnap
+            ? salesPatterns({
+                orders: patternOrders,
+                last30StartMs: thirtyDaysAgo.getTime(),
+                prev30StartMs: sixtyDaysAgo.getTime(),
+                // El número del local y su WhatsApp son de la casa, no clientes.
+                housePhones: [restData.phone, restData.whatsapp]
+                  .filter((v) => typeof v === "string" && v)
+                  .map(String),
+                menuNames: menuSnap
+                  ? menuSnap.docs
+                      .filter((m) => m.data().isAvailable !== false)
+                      .map((m) => String(m.data().name ?? ""))
+                  : null,
+              })
+            : null,
           tips30d:
             tipsTotal30d > 0
               ? {
@@ -635,6 +751,22 @@ export default function ReportesPage() {
         });
 
         setLoadState("ready");
+
+        // QA sin datos de clientes (AGENTS.md §2): SOLO en desarrollo,
+        // ?muestra=taqueria_en_vivo | bar_al_cierre pinta los patrones con el
+        // caso sintético compartido; &pro=0 enseña la vista gratis.
+        if (process.env.NODE_ENV === "development") {
+          const qs = new URLSearchParams(window.location.search);
+          const muestra = qs.get("muestra");
+          if (muestra) {
+            const fx = (await import("@/scripts/fixtures/sales-patterns.json")).default as {
+              cases: { name: string; input: Parameters<typeof salesPatterns>[0] }[];
+            };
+            const c = fx.cases.find((x) => x.name === muestra);
+            if (c) setData((prev) => (prev ? { ...prev, patterns: salesPatterns(c.input) } : prev));
+            if (qs.get("pro") === "0") setEnts(FREE_ENTITLEMENTS);
+          }
+        }
       } catch (err) {
         console.error("Error loading analytics data", err);
         setLoadState("error");
@@ -680,6 +812,16 @@ export default function ReportesPage() {
   const hasGoal = !!data.dailyGoal && data.dailyGoal > 0;
   const todayLabel = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+  // Patrones (7-oct): lo gratis es lo de esta noche; lo Pro (comparar meses,
+  // mesas) va con el historial completo y abre la misma pared.
+  const P = data.patterns;
+  const C = P ? patternsCopy(P) : null;
+  const patternsPro = ents.historyDays == null;
+  function openPatternsWall() {
+    setPendingRange(rangeDays);
+    setWallOpen(true);
+  }
 
   return (
     <main className="px-5 pb-24 pt-5 md:px-8 md:pt-7">
@@ -749,6 +891,59 @@ export default function ReportesPage() {
             </div>
           </div>
         </section>
+
+        {/* ── Tus noches: promedio por noche abierta, 30 días ── */}
+        {P?.weekNights && C?.nightsHeadline && (
+          <section>
+            <SectionTitle right="promedio por noche, 30 días">Tus noches</SectionTitle>
+            <p className="mb-4 text-[15px] leading-5" style={{ color: INK }}>{C.nightsHeadline}</p>
+            <BarChart
+              color={INK}
+              markLast={false}
+              highlightIndex={P.weekNights.days.findIndex((d) => d.weekday === P.weekNights!.best.weekday)}
+              points={P.weekNights.days.map((d) => ({
+                label: weekdayShort(d.weekday),
+                dateStr: d.nights > 0 ? plural(d.nights, "noche", "noches") : "cerrado",
+                value: d.perNight,
+                text: money0(d.perNight),
+              }))}
+            />
+            {C.nightsGap && (
+              <p className="mt-3 text-[13px] leading-4" style={{ color: INK_MUTED }}>{C.nightsGap}</p>
+            )}
+          </section>
+        )}
+
+        {/* ── Tu hora pico: solo si cobra cada venta en el momento ── */}
+        {P?.peakHour && C?.peakHeadline && (
+          <section>
+            <SectionTitle right="ventas por hora, 30 días">Tu hora pico</SectionTitle>
+            <p className="mb-4 text-[15px] leading-5" style={{ color: INK }}>{C.peakHeadline}</p>
+            <BarChart
+              color={INK}
+              markLast={false}
+              highlightIndex={P.peakHour.hours.findIndex((h) => h.hour === P.peakHour!.peak.hour)}
+              points={P.peakHour.hours.map((h) => ({
+                label: hourShort(h.hour),
+                dateStr: "",
+                value: h.count,
+                text: String(h.count),
+              }))}
+            />
+          </section>
+        )}
+
+        {/* ── Clientes que regresan: lo que deja uno que vuelve ── */}
+        {P?.regulars && C?.regularsLine && (
+          <section>
+            <SectionTitle right="30 días">Clientes que regresan</SectionTitle>
+            {C.regularsHeadline && (
+              <p className="mb-3 text-[15px] leading-5" style={{ color: INK }}>{C.regularsHeadline}</p>
+            )}
+            <p className="text-[13px] leading-4" style={{ color: INK_MUTED }}>{C.regularsLine}</p>
+            <ArrowLink href="/vendor/clientes">{REGULARS_LINK}</ArrowLink>
+          </section>
+        )}
 
         {/* ── Historial de ventas por rango — pared 1 de la Caja (8-sep) ──
             30 días gratis (la ventana de siempre); 90 días y Todo son Pro. */}
@@ -938,6 +1133,66 @@ export default function ReportesPage() {
             )}
           </section>
 
+          {/* Se piden juntos (30 días) */}
+          {P && P.combos.length > 0 && (
+            <section>
+              <SectionTitle right="30 días">Se piden juntos</SectionTitle>
+              <p className="mb-3 text-[13px] leading-4" style={{ color: INK_MUTED }}>{COMBOS_CAPTION}</p>
+              <ListCard>
+                {P.combos.map((c) => (
+                  <div key={`${c.a}+${c.b}`} className="flex items-center justify-between gap-3 py-3">
+                    <span className="min-w-0 text-[15px]" style={{ color: INK }}>{c.a} + {c.b}</span>
+                    <span className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: INK }}>{plural(c.count, "vez", "veces")}</span>
+                  </div>
+                ))}
+              </ListCard>
+              <ArrowLink href="/vendor/menu">{COMBOS_LINK}</ArrowLink>
+            </section>
+          )}
+
+          {/* Lo que deja el dinero (30 días) */}
+          {P?.menuMix && C?.mixHeadline && (
+            <section>
+              <SectionTitle right="30 días">Lo que deja el dinero</SectionTitle>
+              <p className="mb-3 text-[15px] leading-5" style={{ color: INK }}>{C.mixHeadline}</p>
+              <ListCard>
+                {P.menuMix.top80.map((d, idx) => (
+                  <div key={d.name} className="flex items-center gap-3 py-3">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold tabular-nums"
+                      style={{ background: TILE, color: INK }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[15px]" style={{ color: INK }}>{d.name}</span>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{d.pct} %</p>
+                      <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{money0(d.revenue)}</p>
+                    </div>
+                  </div>
+                ))}
+              </ListCard>
+              {C.idleLine && (
+                <p className="mt-3 text-[13px] leading-5" style={{ color: INK_MUTED }}>{C.idleLine}</p>
+              )}
+            </section>
+          )}
+
+          {/* Cómo te pagan (30 días, por dinero) */}
+          {P?.payMix && (
+            <section>
+              <SectionTitle right="30 días">Cómo te pagan</SectionTitle>
+              <StatGrid
+                layout={P.payMix.rows.length === 3 ? "2/3" : P.payMix.rows.length >= 4 ? "2/4" : "2/2"}
+                items={P.payMix.rows.map((r) => ({
+                  label: payLabel(r.key),
+                  value: `${r.pct} %`,
+                  sub: `${money0(r.revenue)} · ${plural(r.count, "venta", "ventas")}`,
+                }))}
+              />
+            </section>
+          )}
+
           {/* Lealtad (30 días) */}
           <section>
             <SectionTitle right="últimos 30 días">Lealtad</SectionTitle>
@@ -957,6 +1212,127 @@ export default function ReportesPage() {
           </section>
 
         </div>
+
+        {/* ── PRO: este mes contra el anterior ── */}
+        {P && (P.monthCompare || patternsPro) && (
+          <section>
+            <SectionTitle right={patternsPro ? "30 días" : <ProPill />}>Este mes contra el anterior</SectionTitle>
+            {!patternsPro ? (
+              C?.compareTeaser ? <ProTeaser text={C.compareTeaser} onOpen={openPatternsWall} /> : null
+            ) : !P.monthCompare ? (
+              <EmptyLine>{COMPARE_EMPTY}</EmptyLine>
+            ) : (
+              <>
+                <StatGrid
+                  layout={P.monthCompare.now.repeatPct != null && P.monthCompare.prev.repeatPct != null ? "2/3" : "2/2"}
+                  items={[
+                    {
+                      label: "ingresos",
+                      value: money0(P.monthCompare.now.revenue),
+                      sub: `${signedPct(P.monthCompare.revenuePct)} · antes ${money0(P.monthCompare.prev.revenue)}`,
+                    },
+                    {
+                      label: "ticket promedio",
+                      value: money0(P.monthCompare.now.ticket),
+                      sub: `antes ${money0(P.monthCompare.prev.ticket)}`,
+                    },
+                    ...(P.monthCompare.now.repeatPct != null && P.monthCompare.prev.repeatPct != null
+                      ? [
+                          {
+                            label: "regresaron",
+                            value: `${P.monthCompare.now.repeatPct} %`,
+                            sub: `antes ${P.monthCompare.prev.repeatPct} %`,
+                            className: "col-span-2 md:col-span-1",
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {(
+                    [
+                      ["Suben", P.monthCompare.up],
+                      ["Bajan", P.monthCompare.down],
+                    ] as const
+                  ).map(([title, rows]) =>
+                    rows.length > 0 ? (
+                      <div key={title}>
+                        <p className="mb-2 text-[15px] font-semibold" style={{ color: INK }}>{title}</p>
+                        <ListCard>
+                          {rows.map((t) => (
+                            <div key={t.name} className="flex items-center justify-between gap-3 py-3">
+                              <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{t.name}</span>
+                              <div className="shrink-0 text-right">
+                                <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{signedPct(t.pct)}</p>
+                                <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{t.now} · antes {t.prev}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </ListCard>
+                      </div>
+                    ) : null,
+                  )}
+                  {P.monthCompare.stopped.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-[15px] font-semibold" style={{ color: INK }}>Dejaron de venderse</p>
+                      <ListCard>
+                        {P.monthCompare.stopped.map((t) => (
+                          <div key={t.name} className="flex items-center justify-between gap-3 py-3">
+                            <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{t.name}</span>
+                            <p className="shrink-0 text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>antes {t.prev}</p>
+                          </div>
+                        ))}
+                      </ListCard>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ── PRO: ventas por mesa ── */}
+        {P?.tables && (
+          <section>
+            <SectionTitle right={patternsPro ? "30 días" : <ProPill />}>Ventas por mesa</SectionTitle>
+            {!patternsPro ? (
+              C?.tablesTeaser ? <ProTeaser text={C.tablesTeaser} onOpen={openPatternsWall} /> : null
+            ) : (
+              <ListCard>
+                {P.tables.rows.map((r) => (
+                  <div key={r.name} className="flex items-center justify-between gap-3 py-3">
+                    <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{r.name}</span>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{money0(r.revenue)}</p>
+                      <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>
+                        {plural(r.count, "venta", "ventas")} · ticket {money0(r.ticket)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </ListCard>
+            )}
+          </section>
+        )}
+
+        {/* ── Avisos: números que salen mal por cómo se captura ── */}
+        {C && C.hints.length > 0 && (
+          <section>
+            <SectionTitle>Para que tus números salgan bien</SectionTitle>
+            <ListCard>
+              {C.hints.map((h) => (
+                <div key={h} className="py-3">
+                  <p className="text-[15px] leading-5" style={{ color: INK }}>{h}</p>
+                  {h === HINT_BULK ? null : h.startsWith("Escribiste") ? (
+                    <ArrowLink href="/vendor/configuracion#descuentos">{HINT_DISCOUNT_LINK}</ArrowLink>
+                  ) : (
+                    <ArrowLink href="/vendor/pos">{HINT_TABLES_LINK}</ArrowLink>
+                  )}
+                </div>
+              ))}
+            </ListCard>
+          </section>
+        )}
 
       </div>
 
