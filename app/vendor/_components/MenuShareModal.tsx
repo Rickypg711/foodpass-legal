@@ -25,6 +25,7 @@ import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import { ManantialShareCard } from "@/components/menu/skins/manantial";
+import { SKIN_QR_INK, SkinShareCard } from "@/components/menu/skins/SkinShareCard";
 
 
 const ORANGE = "#F28C38"; // solo el botón Compartir (acción principal)
@@ -59,9 +60,11 @@ export default function MenuShareModal({
   // escritores de readiness; si el doc es viejo y no lo trae, se mira si hay
   // niveles o bienvenida.
   const [hasRewards, setHasRewards] = useState(true);
-  // 7-oct-2026 (Ricardo, El Manantial): si el local trae piel con tarjeta propia, la tarjeta que se comparte e
-  // imprime va con SU ropa (su morado, su letrero), no con la crema de Comeleal. Hoy: "manantial".
+  // 7-oct-2026 (Ricardo, El Manantial): si el local trae piel, la tarjeta que se comparte e imprime va con SU
+  // ropa, no con la crema de Comeleal. Manantial tiene la suya a mano; las demás pieles arman la suya con su
+  // portada (components/menu/skins/SkinShareCard.tsx).
   const [skin, setSkin] = useState<MenuSkinId | null>(null);
+  const [tagline, setTagline] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -77,6 +80,7 @@ export default function MenuShareModal({
         setName(typeof d.name === "string" ? d.name : "");
         setLogoUrl(getRestaurantImageUrl(d));
         setSkin(menuSkinFromRestaurant(d));
+        setTagline(typeof d.tagline === "string" && d.tagline.trim() ? d.tagline.trim() : null);
         const fpr = d.firstPurchaseReward as { enabled?: unknown } | undefined;
         setHasRewards(
           d.loyaltyReady === true ||
@@ -240,6 +244,18 @@ export default function MenuShareModal({
               hasRewards={hasRewards}
               linkText={cardText}
               qr={<QRCodeSVG value={qrUrl} size={176} fgColor="#3d2a6e" bgColor="#FFFFFF" />}
+            />
+          </div>
+        ) : skin ? (
+          <div ref={cardRef}>
+            <SkinShareCard
+              skin={skin}
+              name={name}
+              logoUrl={logoUrl}
+              tagline={tagline}
+              hasRewards={hasRewards}
+              linkText={cardText}
+              qr={<QRCodeSVG value={qrUrl} size={176} fgColor={SKIN_QR_INK[skin] ?? INK} bgColor="#FFFFFF" />}
             />
           </div>
         ) : (

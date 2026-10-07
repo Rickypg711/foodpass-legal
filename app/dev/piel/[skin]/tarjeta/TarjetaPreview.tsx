@@ -6,21 +6,30 @@ import { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { ManantialShareCard } from "@/components/menu/skins/manantial";
+import { SKIN_QR_INK, SkinShareCard } from "@/components/menu/skins/SkinShareCard";
+import { menuSkinFromRestaurant } from "@/lib/menu/menuSkin";
+
+const NAMES: Record<string, string> = {
+  tercera: "Café de la Tercera", pecado: "Pecado Escondido", negroblanco: "Negro Blanco Café", blooms: "Blooms",
+  mixteco: "Mixteco", laspic: "LasPic", tortasperras: "Pinches Tortas Perras", igo: "IGO Pizzeria", omu: "Omu Balls & Sushi",
+  fresheria: "La Fresheria", kame: "Kame House", suadero: "Tacos de Suadero La Familia",
+};
 
 export default function TarjetaPreview({ skin }: { skin: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [png, setPng] = useState<string | null>(null);
-  if (skin !== "manantial") return <p className="p-8 text-sm">Esta piel no trae tarjeta propia.</p>;
+  const id = menuSkinFromRestaurant({ menuSkin: skin });
+  if (!id) return <p className="p-8 text-sm">No existe la piel &quot;{skin}&quot;.</p>;
+  const qr = <QRCodeSVG value="https://comeleal.com/menu/preview" size={176} fgColor={SKIN_QR_INK[id] ?? "#1C2526"} bgColor="#FFFFFF" />;
   return (
     <div className="flex min-h-screen flex-wrap items-start justify-center gap-8 bg-neutral-100 p-6">
       <div className="w-[340px]">
         <div ref={ref}>
-          <ManantialShareCard
-            name="El Manantial"
-            hasRewards={false}
-            linkText="comeleal.com/menu/el-manantial"
-            qr={<QRCodeSVG value="https://comeleal.com/menu/EAaj6MyzncMUNTNQVDQy" size={176} fgColor="#3d2a6e" bgColor="#FFFFFF" />}
-          />
+          {id === "manantial" ? (
+            <ManantialShareCard name="El Manantial" hasRewards={false} linkText="comeleal.com/menu/el-manantial" qr={qr} />
+          ) : (
+            <SkinShareCard skin={id} name={NAMES[id] ?? "Mi local"} logoUrl={null} hasRewards={false} linkText={`comeleal.com/menu/${id}`} qr={qr} />
+          )}
         </div>
         <button
           type="button"

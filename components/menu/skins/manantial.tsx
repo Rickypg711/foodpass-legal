@@ -736,9 +736,11 @@ export function ManantialShareCard({
         </div>
       </div>
       <div className="px-5 pb-5 pt-2">
-        <p className="flex items-baseline justify-center gap-2 leading-none">
-          <span className="[font-family:var(--mn-script),cursive] text-[22px] font-bold text-[#7b3fa6]">Escanea</span>
-          <span className="[font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[28px] font-bold uppercase text-[#3d2a6e]">y pide</span>
+        {/* Como los títulos de su menú (su pantalla): pizarra morada, "Escanea" en cursiva verde agua y "Y PIDE" en
+            blanco. Sobre la pared con dibujos, un título suelto en morado no se leía (Ricardo, 7-oct). */}
+        <p className="mx-auto flex w-fit items-baseline justify-center gap-2 rounded-full bg-gradient-to-b from-[#4a3480] to-[#3d2a6e] px-5 pb-2 pt-1.5 leading-none shadow-[0_10px_22px_-14px_rgba(20,5,40,0.8)]">
+          <span className="[font-family:var(--mn-script),cursive] text-[22px] font-bold text-[#8fe3dc]">Escanea</span>
+          <span className="[font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[26px] font-bold uppercase text-white">y pide</span>
         </p>
         <div className="mx-auto mt-3 w-fit rounded-[20px] bg-white p-3 shadow-[0_0_0_5px_#fff,0_0_0_7px_#b99ad3,0_16px_30px_-18px_rgba(20,5,40,0.6)]">{qr}</div>
         {/* Sobre la pared con dibujos el texto suelto no se lee: va en pastillas blancas. */}
