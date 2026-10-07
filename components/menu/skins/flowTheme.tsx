@@ -24,6 +24,7 @@ import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import { FR_NAME, FR_ROOT_CLASS, FR_SCRIPT } from "@/components/menu/skins/fresheria";
 import { KAME_NAME, KAME_ROOT_CLASS, KAME_TITLE } from "@/components/menu/skins/kame";
 import { SD_NAME, SD_ROOT_CLASS, SD_TITLE } from "@/components/menu/skins/suadero";
+import { MN_NAME, MN_ROOT_CLASS, MN_TITLE, ManantialFlowHeader } from "@/components/menu/skins/manantial";
 
 export type FlowHeaderProps = {
   restaurantId: string;
@@ -490,10 +491,30 @@ const SUADERO_TOKENS: FlowTokens = {
   logo: { src: "/skins/suadero/logo.jpg", width: 900, height: 900 },
 };
 
+/** El Manantial: su pared lila con los dibujos, tarjetas blancas de vitrina y botones morados (skins/manantial.tsx). */
+const MANANTIAL_TOKENS: FlowTokens = {
+  bg: "#efe6f6",
+  paper: "#ffffff",
+  ink: "#2a1740",
+  accent: "#7b3fa6",
+  accentInk: "#ffffff",
+  accentHover: "#5b2a80",
+  border: "#b99ad3",
+  radius: "full",
+  cardRadius: "rounded-[24px]",
+  cardShadow: "shadow-[0_22px_40px_-24px_rgba(20,5,40,0.6)]",
+  fontBody: "[font-family:var(--mn-sans),Nunito,system-ui,sans-serif]",
+  fontName: MN_NAME,
+  fontDisplay: `${MN_TITLE} text-[28px] leading-none`,
+  rootClass: MN_ROOT_CLASS,
+  Header: (p) => <ManantialFlowHeader restaurantId={p.restaurantId} restaurantName={p.restaurantName} title={p.title} subtitle={p.subtitle} back={p.back} />,
+};
+
 const FLOW_BY_SKIN: Partial<Record<MenuSkinId, FlowTokens>> = {
   fresheria: FRESHERIA_TOKENS,
   kame: KAME_TOKENS,
   suadero: SUADERO_TOKENS,
+  manantial: MANANTIAL_TOKENS,
 };
 
 const BUILT = new Map<MenuSkinId, FlowTheme>();

@@ -27,6 +27,7 @@
  */
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Baloo_2, Nunito, Oswald, Dancing_Script } from "next/font/google";
 import { formatPrice } from "@/lib/priceFormat";
@@ -600,5 +601,53 @@ export function ManantialPanel({ title, children }: { title: string; children: R
       <Drip className="block h-5 w-full" fill="#3d2a6e" />
       <div className="mn-vitrina__body px-4 pb-5 pt-2 text-[#2a1740] sm:px-6">{children}</div>
     </section>
+  );
+}
+
+/* ─────────────────────────── Flujo de pago (checkout, pedido, puntos) ─────────────────────────── */
+
+/** Encabezado del flujo: su pared morada con el letrero chico, las lamparitas y la franja magenta que escurre. */
+export function ManantialFlowHeader({
+  restaurantId,
+  restaurantName,
+  title,
+  subtitle = null,
+  back = true,
+}: {
+  restaurantId: string;
+  restaurantName: string;
+  title: string;
+  subtitle?: string | null;
+  back?: boolean;
+}) {
+  const name = restaurantName || "El Manantial";
+  // La página del pedido manda el nombre del local como título; con el letrero arriba se repetiría.
+  const shownTitle = title === restaurantName && subtitle ? subtitle : title;
+  const shownSub = shownTitle === subtitle ? null : subtitle;
+  return (
+    <header className="mn-wall relative overflow-hidden px-4 pt-14 text-center">
+      <Lamps />
+      {back ? (
+        <Link
+          href={`/menu/${encodeURIComponent(restaurantId)}`}
+          aria-label="Regresar al menú"
+          className="absolute left-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white/80 bg-white/15 text-lg font-bold text-white backdrop-blur-sm hover:bg-white/25"
+        >
+          ←
+        </Link>
+      ) : null}
+      <div className="relative mx-auto max-w-md pb-5 pt-1">
+        <div className="relative inline-block">
+          <MnScoop className="absolute -top-4 right-[2%] h-8 w-8" />
+          <p className={`${MN_TITLE} mn-bubble text-[30px] leading-none text-white`}>{name}</p>
+        </div>
+        <h1 className="mt-3 [font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[24px] font-bold uppercase leading-none text-white">{shownTitle}</h1>
+        {shownSub ? <p className="mt-1.5 text-[13px] font-semibold text-white/85">{shownSub}</p> : null}
+      </div>
+      <div className="mn-band relative -mx-4 h-5" aria-hidden />
+      <div className="relative -mx-4 -mb-px h-5 bg-[#efe6f6]" aria-hidden>
+        <Drip className="absolute inset-0 block h-5 w-full" fill="#a12a8c" />
+      </div>
+    </header>
   );
 }

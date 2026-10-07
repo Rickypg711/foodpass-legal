@@ -319,7 +319,8 @@ const LOOK_MANANTIAL: SheetLook = {
           : "border-[#7b3fa6]/35 bg-white text-[#2a1740] hover:border-[#7b3fa6]"
     }`,
   delta: (on) => `text-[13px] font-bold ${on ? "text-white" : "text-[#1d4ed8]"}`,
-  footer: "sticky bottom-0 -mx-5 mt-2 border-t border-[#7b3fa6]/15 bg-white px-5 pb-1 pt-3",
+  // -bottom-5 + pb-5: la barra tapa también el relleno de abajo (si no, el último sabor se asoma debajo de los botones).
+  footer: "sticky -bottom-5 -mx-5 mt-2 border-t border-[#7b3fa6]/15 bg-white px-5 pb-5 pt-3",
   qtyLabel: "text-[14px] font-bold text-[#2a1740]/75",
   qtyBtn:
     "h-10 w-10 rounded-full border-2 border-[#7b3fa6]/40 text-lg font-bold text-[#5b2a80] transition-colors hover:bg-[#7b3fa6]/10 disabled:opacity-30",
