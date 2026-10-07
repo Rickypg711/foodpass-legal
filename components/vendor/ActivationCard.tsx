@@ -337,7 +337,7 @@ function StepBody(p: {
     return (
       <div className="mt-2">
         <p className="text-[14px] leading-5" style={{ color: INK_SOFT }}>
-          Tu link va en tu Facebook, tu Instagram, tu WhatsApp y tu ficha de Google. Cópialo y pégalo en los cuatro.
+          Pégalo en tu Facebook, tu Instagram, tu WhatsApp y tu ficha de Google. Quien lo abra ve tu menú y te pide desde su cel.
         </p>
         <p className="mt-2 truncate rounded-lg px-3 py-2 text-[13px]" style={{ background: "#FAF9F5", color: INK, border: `1px solid ${HAIRLINE}` }}>
           {p.linkShown}

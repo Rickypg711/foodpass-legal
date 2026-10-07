@@ -40,7 +40,7 @@ export type ActivationStep = {
 export const ACTIVATION_STEP_TITLES: Record<ActivationStepKey, string> = {
   menu: "Tu menú ya está listo",
   share: "Mándaselo a 5 clientes",
-  place: "Ponlo donde te buscan",
+  place: "Ponlo donde te buscan, para que te pidan",
   test: "Haz un pedido de prueba",
 };
 
