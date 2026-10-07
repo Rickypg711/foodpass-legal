@@ -15,6 +15,8 @@
 export const RESERVED_SLUGS = new Set([
   // rutas actuales
   "menu", "vendor", "activar", "descargar", "precios", "puntos", "api", "r",
+  "demo", "dev", "admin", "contrasena", "hardware", "software-para-restaurantes",
+  "mejores-apps-menu-digital-restaurantes", "llms.txt",
   "para-restaurantes", "clientes-que-regresan", "como-vender-mas-en-mi-restaurante",
   "inteligencia-artificial-para-restaurantes", "lealtad-restaurantes-chihuahua",
   "menu-qr-gratis-restaurantes", "pedidos-en-linea-restaurantes",

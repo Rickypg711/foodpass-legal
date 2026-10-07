@@ -111,3 +111,23 @@ const card = rd("components/vendor/ActivationCard.tsx");
 }
 
 console.log("validate-activation-card: OK — tres toques, señales reales, copy limpio, utm vivo");
+
+// ── 6-oct-2026: el claim ya nace con slug y salta el horario cuando ya quedó ──
+{
+  const modal = rd("components/home/ActivarModal.tsx");
+  assert.ok(modal.includes("const claimedSlug = await claimSlugForName(db, name);"), "claim: reclama slug antes del addDoc");
+  assert.ok(modal.includes("...(claimedSlug ? { slug: claimedSlug } : {}),"), "claim: el slug va en el doc nuevo");
+  assert.ok(/where\("slug", "==", candidate\), limit\(1\)/.test(modal), "claim: unicidad por consulta");
+  assert.ok(modal.includes("if (taken.empty) return candidate;"), "claim: solo si nadie lo tiene");
+  assert.ok(modal.includes("if (readiness?.isComplete) setReadyAtClaim(true);"), "claim: guarda si la brújula dice completo");
+  assert.ok(modal.includes('? "/vendor/setup/done"'), "claim: completo → listo, sin volver a pedir horario");
+  assert.ok(modal.includes('"/vendor/setup/horario?wizard=1&born=demo"'), "claim: incompleto → horario (se conserva)");
+  assert.ok(modal.includes("hoursOk && demo.info?.businessHours && demo.info.hoursText"), "claim: solo confirma horario que el dueño vio");
+  const doneBlock = modal.slice(modal.indexOf("{/* ── done ── */}"), modal.indexOf("{/* ── existing ── */}"));
+  assert.ok(!doneBlock.includes("🎉") && !doneBlock.includes("¡"), "claim done: sin confeti ni '¡'");
+  const slug = rd("lib/slug.ts");
+  for (const r of ["demo", "dev", "contrasena", "hardware", "software-para-restaurantes", "mejores-apps-menu-digital-restaurantes"]) {
+    assert.ok(slug.includes(`"${r}"`), `slug reservado: ${r}`);
+  }
+}
+console.log("validate-activation-card: claim con slug + salto a listo OK");

@@ -10,9 +10,13 @@ import {
   doc,
   addDoc,
   getDoc,
+  getDocs,
+  limit,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -36,6 +40,27 @@ import {
 import { stampClaimStep, type ClaimStep, type DemoItem, type DemoInfo } from "@/lib/demo/demoJobs";
 import { RESTAURANT_CATEGORIES, inferCategoryFromDemo, rankCategoriesForDemo } from "@/lib/demo/inferCategory";
 import { persistReadiness } from "@/lib/vendorReadiness";
+import { isUsableSlug, slugify } from "@/lib/slug";
+
+/**
+ * Slug bonito AL RECLAMAR (6-oct-2026): comeleal.com/r/tacos-el-sol en vez de
+ * /r/kdjJ… desde el primer "Mandar por WhatsApp". Misma regla que el
+ * auto-reclamo de Configuración (8 intentos, nombre-2, nombre-3…), pero aquí
+ * el doc aún no existe, así que basta con que la consulta venga vacía.
+ * Best-effort: si falla, el alta sigue y Configuración lo reclama después.
+ */
+async function claimSlugForName(db: ReturnType<typeof getFirebaseDb>, name: string): Promise<string | null> {
+  try {
+    const base = slugify(name.trim());
+    if (!isUsableSlug(base)) return null;
+    for (let i = 0; i < 8; i++) {
+      const candidate = i === 0 ? base : `${base.slice(0, 37)}-${i + 1}`;
+      const taken = await getDocs(query(collection(db, "restaurants"), where("slug", "==", candidate), limit(1)));
+      if (taken.empty) return candidate;
+    }
+  } catch { /* sin slug esta vez */ }
+  return null;
+}
 import type { User } from "firebase/auth";
 import { pixelLead } from "@/lib/meta/pixel";
 import { generateEventId } from "@/lib/meta/eventId";
@@ -148,6 +173,10 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
   const [categoryExpanded, setCategoryExpanded] = useState(!inferredCategory);
   /** "📆 Leí de tu menú: Mar-Dom 1-11pm — ¿está bien?" (default sí). */
   const [hoursOk, setHoursOk] = useState(true);
+  // 6-oct-2026: si al reclamar ya quedó TODO (menú copiado + horario impreso
+  // confirmado + datos), el botón final va directo a "listo" y no vuelve a
+  // pedir el horario. Lo decide la misma brújula que usa el wizard.
+  const [readyAtClaim, setReadyAtClaim] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "signin">(initialMode);
@@ -458,8 +487,10 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
     trail("createRequested");
     try {
       const db = getFirebaseDb();
+      const claimedSlug = await claimSlugForName(db, name);
       const restaurantRef = await addDoc(collection(db, "restaurants"), {
         name: name.trim(),
+        ...(claimedSlug ? { slug: claimedSlug } : {}),
         address: address.trim(),
         phone: phone10,
         whatsapp: phone10,
@@ -682,7 +713,9 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             const fns = getFunctions(getFirebaseApp(), "us-central1");
             httpsCallable(fns, "generateRewardDraft")({ restaurantId: restaurantRef.id }).catch(() => {});
           } catch { /* la página de recompensas tiene botón manual */ }
-          if (hoursOk && demo.info?.businessHours) {
+          // Solo se confirma lo que el dueño VIO: la casilla existe cuando hay
+          // businessHours Y hoursText; sin texto no hubo pregunta (6-oct).
+          if (hoursOk && demo.info?.businessHours && demo.info.hoursText) {
             await updateDoc(restaurantRef, {
               businessHours: demo.info.businessHours,
               hoursConfirmed: true,
@@ -691,7 +724,8 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
           // La brújula dice la verdad desde el día CERO: sin esto, el panel
           // leía reasons=undefined como "nada pendiente" y presumía
           // "3 de 3 · 100% listo" a un dueño sin horario ni premios.
-          await persistReadiness(restaurantRef.id).catch(() => {});
+          const readiness = await persistReadiness(restaurantRef.id).catch(() => null);
+          if (readiness?.isComplete) setReadyAtClaim(true);
           await updateDoc(doc(dbb, "menuDemoJobs", demo.jobId), {
             convertedToRestaurantId: restaurantRef.id,
             convertedAt: serverTimestamp(),
@@ -1230,13 +1264,17 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
       {/* ── done ── */}
       {stage === "done" && (
         <div className="text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#F28C38]/10 text-3xl">🎉</div>
+          {/* Opción A (6-oct-2026): sin confeti ni exclamaciones. Si la brújula
+              dice que ya quedó todo, el botón va directo a "listo" (la tarjeta
+              de los tres toques) y no vuelve a pedir el horario. */}
           <h2 className="text-xl font-bold text-[#141413]">
-            {demo ? "¡Es tuyo! Tu menú ya está adentro." : "¡Restaurante creado!"}
+            {demo ? "Es tuyo. Tu menú ya está adentro." : "Restaurante creado."}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#141413]/55">
             {demo
-              ? "Tus platillos, precios y tamaños ya viven en tu cuenta. Solo falta confirmar tu horario."
+              ? readyAtClaim
+                ? "Tus platillos, precios y horario ya viven en tu cuenta. Ya te pueden pedir."
+                : "Tus platillos, precios y tamaños ya viven en tu cuenta. Solo falta confirmar tu horario."
               : "Solo faltan 2 pasos rápidos: horario y menú. Tardas menos de 5 minutos."}
           </p>
           <button
@@ -1245,10 +1283,18 @@ export function ActivarModal({ asModal = true, onClose, demo, initialMode = "sig
             // propuesta de premios de la IA lo espera en el panel (NBA) y en
             // /vendor/setup/recompensas, sin bloquear nada. Se conserva
             // born=demo por si la página de horario quiere saberlo.
-            onClick={() => router.push(demo ? "/vendor/setup/horario?wizard=1&born=demo" : "/vendor/setup/horario?wizard=1")}
+            onClick={() =>
+              router.push(
+                demo
+                  ? readyAtClaim
+                    ? "/vendor/setup/done"
+                    : "/vendor/setup/horario?wizard=1&born=demo"
+                  : "/vendor/setup/horario?wizard=1",
+              )
+            }
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F28C38] px-6 py-3.5 text-sm font-semibold text-[#1C2526] shadow-sm transition-all hover:bg-[#c46644]"
           >
-            {demo ? "Confirmar mi horario →" : "Configurar mi restaurante →"}
+            {demo ? (readyAtClaim ? "Ver qué sigue →" : "Confirmar mi horario →") : "Configurar mi restaurante →"}
           </button>
         </div>
       )}
