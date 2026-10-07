@@ -12,7 +12,7 @@ export default async function ActivacionPreviewPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
-  const sp = await (searchParams ?? Promise.resolve({}));
+  const sp: Record<string, string | string[] | undefined> = await (searchParams ?? Promise.resolve({}));
   const rid = typeof sp.rid === "string" && sp.rid ? sp.rid : DEFAULT_RID;
   const variant = sp.v === "done" ? "done" : "panel";
   return (
