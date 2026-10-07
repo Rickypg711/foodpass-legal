@@ -28,7 +28,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "react";
 import { Baloo_2, Nunito, Oswald, Dancing_Script } from "next/font/google";
 import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
@@ -39,6 +39,9 @@ const baloo = Baloo_2({ weight: ["700", "800"], subsets: ["latin"], variable: "-
 const nunito = Nunito({ weight: ["400", "600", "700", "800"], subsets: ["latin"], variable: "--mn-sans" });
 const oswald = Oswald({ weight: ["600", "700"], subsets: ["latin"], variable: "--mn-board" });
 const script = Dancing_Script({ weight: ["600", "700"], subsets: ["latin"], variable: "--mn-script" });
+
+/** Solo las fuentes (sin fondo ni alto de pantalla): para la tarjeta de compartir del panel. */
+export const MN_FONT_VARS = `${baloo.variable} ${nunito.variable} ${oswald.variable} ${script.variable}`;
 
 export const MN_ROOT_CLASS =
   `${baloo.variable} ${nunito.variable} ${oswald.variable} ${script.variable} ` +
@@ -271,6 +274,26 @@ function Lamps() {
   );
 }
 
+/** El listón blanco en arco de su letrero, con "Paletería y Heladería" en azul. */
+function Ribbon({ className = "" }: { className?: string }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg viewBox="0 0 320 76" className={className} aria-hidden>
+      <defs>
+        <path id={id} d="M28 64 Q160 -6 292 64" />
+      </defs>
+      {/* El listón: una banda blanca con filo azul, en arco, y el texto azul montado en ella. */}
+      <path d="M28 64 Q160 -6 292 64" fill="none" stroke="#1d4ed8" strokeWidth="32" strokeLinecap="round" />
+      <path d="M28 64 Q160 -6 292 64" fill="none" stroke="#fff" strokeWidth="27" strokeLinecap="round" />
+      <text fontSize="16.5" fontWeight="800" fill="#1d4ed8" textAnchor="middle" dominantBaseline="middle" fontFamily="var(--mn-display), 'Baloo 2', Nunito, sans-serif" letterSpacing="0.3">
+        <textPath href={`#${id}`} startOffset="50%">
+          Paletería y Heladería
+        </textPath>
+      </text>
+          </svg>
+  );
+}
+
 /* ─────────────────────────── Portada ─────────────────────────── */
 
 export function ManantialHeader({
@@ -295,19 +318,7 @@ export function ManantialHeader({
       <Lamps />
       <div className="relative mx-auto max-w-3xl text-center">
         {/* El listón blanco en arco: "Paletería y Heladería" en azul. */}
-        <svg viewBox="0 0 320 76" className="mx-auto block h-[72px] w-[300px] sm:h-[84px] sm:w-[352px]" aria-hidden>
-          <defs>
-            <path id="mn-arc" d="M28 64 Q160 -6 292 64" />
-          </defs>
-          {/* El listón: una banda blanca con filo azul, en arco, y el texto azul montado en ella. */}
-          <path d="M28 64 Q160 -6 292 64" fill="none" stroke="#1d4ed8" strokeWidth="32" strokeLinecap="round" />
-          <path d="M28 64 Q160 -6 292 64" fill="none" stroke="#fff" strokeWidth="27" strokeLinecap="round" />
-          <text fontSize="16.5" fontWeight="800" fill="#1d4ed8" textAnchor="middle" dominantBaseline="middle" fontFamily="var(--mn-display), 'Baloo 2', Nunito, sans-serif" letterSpacing="0.3">
-            <textPath href="#mn-arc" startOffset="50%">
-              Paletería y Heladería
-            </textPath>
-          </text>
-        </svg>
+        <Ribbon className="mx-auto block h-[72px] w-[300px] sm:h-[84px] sm:w-[352px]" />
         <div className="relative -mt-1 inline-block">
           <MnScoop className="mn-scoop absolute -top-12 right-[3%] h-[74px] w-[54px] sm:-top-14 sm:h-[88px] sm:w-[64px]" />
           <h1 className={`${MN_TITLE} mn-bubble mn-bubble--big px-1 text-[clamp(46px,14.5vw,84px)] leading-[0.95] text-white`}>{name}</h1>
@@ -347,7 +358,7 @@ export function ManantialHeader({
       {/* La franja magenta de su pared, con sus puntitos blancos, que escurre sobre el lila (la ola va fuera del
           morado: abajo se ve la pared). */}
       <div className="mn-band relative -mx-4 h-9 sm:-mx-6" aria-hidden />
-      <div className="relative -mx-4 -mb-px h-6 bg-[#efe6f6] sm:-mx-6" aria-hidden>
+      <div className="relative -mx-4 -mb-px -mt-[3px] h-6 bg-[#efe6f6] sm:-mx-6" aria-hidden>
         <Drip className="absolute inset-0 block h-6 w-full" fill="#a12a8c" />
       </div>
     </header>
@@ -685,5 +696,61 @@ export function ManantialFlowHeader({
         <Drip className="absolute inset-0 block h-5 w-full" fill="#a12a8c" />
       </div>
     </header>
+  );
+}
+
+/* ─────────────────────────── Tarjeta de compartir (panel) ─────────────────────────── */
+
+/**
+ * La tarjeta de "Compartir menú" del panel con su morado (7-oct, Ricardo: "el QR con su morado, el que ellos
+ * comparten"). Es un objeto impreso y también la imagen que se manda por WhatsApp: arriba su letrero con el cono y
+ * las chispas, la franja magenta que escurre, y su pared lila con el QR en tinta morada. El QR lo pasa el panel
+ * (siempre la URL de ID, que no se rompe).
+ */
+export function ManantialShareCard({
+  name,
+  qr,
+  linkText,
+  hasRewards,
+}: {
+  name: string;
+  qr: ReactNode;
+  linkText: string;
+  hasRewards: boolean;
+}) {
+  return (
+    <div className={`${MN_FONT_VARS} mn-skin overflow-hidden rounded-[20px] text-center`} style={{ minHeight: 0, backgroundAttachment: "scroll", backgroundSize: "300px 300px" }}>
+      <div className="mn-wall relative overflow-hidden px-3 pt-9">
+        <Sprinkles />
+        <div className="relative">
+          <Ribbon className="mx-auto block h-[52px] w-[216px]" />
+          <div className="relative -mt-1 inline-block">
+            <MnScoop className="absolute -top-9 right-[-2px] h-[52px] w-[38px]" />
+            <p className={`${MN_TITLE} mn-bubble mn-bubble--big px-1 text-[40px] leading-[0.95] text-white`}>{name || "El Manantial"}</p>
+          </div>
+          <p className={`${MN_NAME} mn-bubble mt-1 pb-4 text-[15px] leading-none text-white`}>La Original</p>
+        </div>
+        <div className="mn-band relative -mx-3 h-6" aria-hidden />
+        <div className="relative -mx-3 -mb-px -mt-[3px] h-5 bg-[#efe6f6]" aria-hidden>
+          <Drip className="absolute inset-0 block h-5 w-full" fill="#a12a8c" />
+        </div>
+      </div>
+      <div className="px-5 pb-5 pt-2">
+        <p className="flex items-baseline justify-center gap-2 leading-none">
+          <span className="[font-family:var(--mn-script),cursive] text-[22px] font-bold text-[#7b3fa6]">Escanea</span>
+          <span className="[font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[28px] font-bold uppercase text-[#3d2a6e]">y pide</span>
+        </p>
+        <div className="mx-auto mt-3 w-fit rounded-[20px] bg-white p-3 shadow-[0_0_0_5px_#fff,0_0_0_7px_#b99ad3,0_16px_30px_-18px_rgba(20,5,40,0.6)]">{qr}</div>
+        {/* Sobre la pared con dibujos el texto suelto no se lee: va en pastillas blancas. */}
+        <p className="mx-auto mt-3 w-fit rounded-full bg-white px-3.5 py-1 text-[13.5px] font-bold tabular-nums text-[#3d2a6e] shadow-[0_6px_14px_-10px_rgba(20,5,40,0.6)]">
+          {linkText}
+        </p>
+        {hasRewards ? (
+          <p className="mx-auto mt-2 w-fit rounded-xl bg-white/95 px-3 py-1.5 text-[12px] font-semibold leading-4 text-[#5b2a80]">
+            Con cada compra juntas puntos. Da tu número al pagar.
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }

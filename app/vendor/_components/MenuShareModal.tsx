@@ -23,6 +23,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { getFirebaseDb } from "@/lib/firebase";
 import { getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
+import { ManantialShareCard } from "@/components/menu/skins/manantial";
 
 
 const ORANGE = "#F28C38"; // solo el botón Compartir (acción principal)
@@ -57,6 +59,9 @@ export default function MenuShareModal({
   // escritores de readiness; si el doc es viejo y no lo trae, se mira si hay
   // niveles o bienvenida.
   const [hasRewards, setHasRewards] = useState(true);
+  // 7-oct-2026 (Ricardo, El Manantial): si el local trae piel con tarjeta propia, la tarjeta que se comparte e
+  // imprime va con SU ropa (su morado, su letrero), no con la crema de Comeleal. Hoy: "manantial".
+  const [skin, setSkin] = useState<MenuSkinId | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -71,6 +76,7 @@ export default function MenuShareModal({
         if (cancelled) return;
         setName(typeof d.name === "string" ? d.name : "");
         setLogoUrl(getRestaurantImageUrl(d));
+        setSkin(menuSkinFromRestaurant(d));
         const fpr = d.firstPurchaseReward as { enabled?: unknown } | undefined;
         setHasRewards(
           d.loyaltyReady === true ||
@@ -227,6 +233,16 @@ export default function MenuShareModal({
             crema, una sola instrucción arriba del QR, link legible, y el pie de
             puntos solo si el local tiene premios. El color de marca ya no se
             pinta aquí (misma regla que el panel). */}
+        {skin === "manantial" ? (
+          <div ref={cardRef}>
+            <ManantialShareCard
+              name={name}
+              hasRewards={hasRewards}
+              linkText={cardText}
+              qr={<QRCodeSVG value={qrUrl} size={176} fgColor="#3d2a6e" bgColor="#FFFFFF" />}
+            />
+          </div>
+        ) : (
         <div
           ref={cardRef}
           className="flex flex-col items-center text-center"
@@ -282,6 +298,7 @@ export default function MenuShareModal({
             </div>
           )}
         </div>
+        )}
 
         {/* El link que se manda NO es el que imprime la tarjeta (la tarjeta va
             a la carta; el link va a la portada con teléfono y ubicación). Se
