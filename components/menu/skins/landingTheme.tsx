@@ -492,14 +492,16 @@ const SUADERO: LandingTheme = {
 const MANANTIAL: LandingTheme = {
   root: MN_ROOT_CLASS,
   Header: (p) => <ManantialHeader {...p} />,
-  cta: `${MN_TITLE} block min-h-12 rounded-full bg-white px-5 py-3.5 text-center text-[17px] tracking-[0.02em] text-[#5b2a80] shadow-[0_14px_30px_-14px_rgba(20,5,40,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
-  btnWhatsapp: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-white bg-transparent px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-white transition-colors hover:bg-white hover:text-[#5b2a80]`,
-  btnNeutral: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-white/60 bg-transparent px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-white transition-colors hover:border-white`,
+  cta: `${MN_TITLE} block min-h-12 rounded-full bg-[#7b3fa6] px-5 py-3.5 text-center text-[17px] tracking-[0.02em] text-white shadow-[0_14px_30px_-14px_rgba(20,5,40,0.9)] transition-transform hover:scale-[1.01] active:scale-[0.99]`,
+  btnWhatsapp: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#7b3fa6] bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#5b2a80] transition-colors hover:bg-[#7b3fa6] hover:text-white`,
+  btnNeutral: `${MN_NAME} inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#7b3fa6]/40 bg-white px-3 py-2 text-[12.5px] uppercase tracking-[0.06em] text-[#5b2a80] transition-colors hover:border-[#7b3fa6]`,
   descriptionCard: "mn-vitrina p-5 text-[15px] leading-relaxed text-[#2a1740]/85 sm:p-6",
   card: "mn-vitrina px-5 pb-5 pt-5 sm:px-7 sm:pt-6",
   cardTitle: (title) => (
-    <h2 className={`${MN_TITLE} mn-bubble mb-4 text-center text-[24px] leading-none text-white [text-shadow:0_2px_0_#1d4ed8,0_4px_0_#163a9e] [-webkit-text-stroke:1.5px_#1d4ed8]`}>
-      <span className="inline-block rounded-full bg-[#7b3fa6] px-5 py-2">{title.replace(/\s*[⭐🔥]\s*$/u, "")}</span>
+    <h2 className="mb-4 text-center">
+      <span className="inline-block rounded-full bg-[#3d2a6e] px-5 py-2 [font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[22px] font-bold uppercase leading-none text-white">
+        {title.replace(/\s*[⭐🔥]\s*$/u, "")}
+      </span>
     </h2>
   ),
   link: "font-bold text-[#5b2a80] underline decoration-[#5b2a80]/40 underline-offset-4",

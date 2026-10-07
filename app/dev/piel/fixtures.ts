@@ -439,60 +439,66 @@ const SUADERO: PielFixture = {
   },
 };
 
-/* ─────────────────────────── Paletería y Heladería "El Manantial", La Original (6-oct-2026) ─────────────────────────── */
-/** Villas del Real (Av. Paseo del Real 1701). NO hay carta de esta sucursal: los PRECIOS SON DE MUESTRA, salen de la
- *  lista pública del WordPress de la marca (sucursal Zoológico, sin fecha) y los sabores de su DiDi (sucursal
- *  Proletaria). Se corrigen con la foto de su cartulina. Los nombres llevan el tamaño al final ("Nieve sencilla")
- *  para que la piel los junte en un renglón con pastillas. Horario: cierra 10:30 PM según Google; abre SUPUESTO. */
+/* ─────────────────────────── Paletería y Heladería "El Manantial", La Original (6/7-oct-2026) ─────────────────────────── */
+/** Villas del Real (Av. Paseo del Real 1701). PRECIOS REALES de su pantalla del mostrador (foto de Saira, 7-oct).
+ *  Donde la pantalla da un rango ("Fresas naturales $80–$100", "Elotes $40–$60"), van como Chico / Grande con los
+ *  dos extremos: SUPUESTO hasta preguntarle a Álvaro qué tamaños son. Dorinachos y nachos $60–$70 = sencillos /
+ *  especiales (SUPUESTO). Los sabores salen de su DiDi (otra sucursal): confirmar. Horario: cierra 10:30 PM según
+ *  Google; la hora de abrir es SUPUESTA. Los nombres llevan el tamaño al final para que la piel los junte. */
 const MN_SABOR_NIEVE = og("sabor", "Sabor", true, 1, [
   ["nuez", "Nuez"], ["fresas_crema", "Fresas con crema"], ["pica_fresa", "Pica fresa"], ["queso_fresa", "Queso con fresa"],
   ["mms", "M&M's"], ["yogurt_arandano", "Yogurt con arándano"], ["gansito", "Gansito"], ["coco_horneado", "Coco horneado"],
   ["algodon", "Algodón de azúcar"], ["chocolate", "Chocolate"], ["vainilla", "Vainilla"], ["limon", "Limón"],
 ]);
-const MN_SABOR_FRUTA = og("sabor", "Sabor", true, 1, [
+const MN_SABOR_AGUA_PALETA = og("sabor", "Sabor", true, 1, [
   ["pina", "Piña"], ["pina_chile", "Piña con chile"], ["mango", "Mango"], ["mango_chile", "Mango con chile"], ["melon", "Melón"],
   ["pepino_chile", "Pepino con chile"], ["fresa", "Fresa"], ["tamarindo", "Tamarindo"], ["limon_panditas", "Limón con panditas"],
   ["limon_chamoy", "Limón con chamoy"],
 ]);
 const MN_SABOR_CREMA = og("sabor", "Sabor", true, 1, [
-  ["mango", "Mango"], ["fresas_crema", "Fresas con crema"], ["yogurt", "Yogurt natural"], ["yogurt_arandano", "Yogurt, arándano, zanahoria y nuez"],
-  ["cereza", "Cereza"], ["nuez", "Nuez"], ["philadelphia", "Philadelphia con zarzamora"], ["ferrero", "Ferrero"],
-  ["kinder", "Kinder Delice"], ["coco_horneado", "Coco horneado"],
+  ["mango", "Mango"], ["fresas_crema", "Fresas con crema"], ["yogurt", "Yogurt natural"], ["cereza", "Cereza"], ["nuez", "Nuez"],
+  ["philadelphia", "Philadelphia con zarzamora"], ["ferrero", "Ferrero"], ["kinder", "Kinder Delice"], ["coco_horneado", "Coco horneado"],
 ]);
 const MN_SABOR_AGUA = og("sabor", "Sabor", true, 1, [
   ["fresa", "Fresa"], ["limon", "Limón"], ["citricos", "Cítricos"], ["horchata", "Horchata"], ["coco_nuez", "Coco con nuez"], ["pina_colada", "Piña colada"],
 ]);
 const MN_ROWS: [category: string, name: string, price: number, description: string, groups: OG[]][] = [
-  ["Nieves", "Nieve sencilla", 22, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
-  ["Nieves", "Nieve doble", 32, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
-  ["Nieves", "Nieve triple", 37, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
-  ["Nieves", "Nieve ½ litro", 40, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
-  ["Nieves", "Nieve 1 litro", 75, "Más de 50 sabores. Pregunta por el de hoy.", [MN_SABOR_NIEVE]],
-  ["Paletas", "Paleta de fruta", 12, "De agua, con la fruta de verdad.", [MN_SABOR_FRUTA]],
-  ["Paletas", "Paleta de crema", 16, "Cremosas, de leche.", [MN_SABOR_CREMA]],
-  ["Paletas", "Paleta de nuez", 20, "", []],
-  ["Paletas", "Paleta de piñón", 30, "", []],
-  ["Paletas", "Trompito", 7, "", []],
-  ["Paletas", "Bolis", 7, "", []],
-  ["Coctel de frutas", "Coctel de frutas chico", 42, "Fruta de la temporada, picada al momento.", []],
-  ["Coctel de frutas", "Coctel de frutas mediano", 47, "Fruta de la temporada, picada al momento.", []],
-  ["Coctel de frutas", "Coctel de frutas grande", 52, "Fruta de la temporada, picada al momento.", []],
-  ["Coctel de frutas", "Coctel de frutas charola", 80, "Fruta de la temporada, picada al momento.", []],
-  ["Fresas con crema", "Fresas con crema chico", 40, "", []],
-  ["Fresas con crema", "Fresas con crema mediano", 60, "", []],
-  ["Fresas con crema", "Troles de fresa", 20, "", []],
-  ["Aguas frescas", "Agua fresca chica", 15, "", [MN_SABOR_AGUA]],
-  ["Aguas frescas", "Agua fresca mediana", 20, "", [MN_SABOR_AGUA]],
-  ["Aguas frescas", "Agua fresca grande", 25, "", [MN_SABOR_AGUA]],
-  ["Nachos", "Nachos sencillos", 35, "Con queso.", []],
-  ["Nachos", "Nachos especiales", 40, "Con queso, jalapeños y todo.", []],
-  ["Nachos", "Dorinachos sencillos", 35, "Con queso.", []],
-  ["Nachos", "Dorinachos especiales", 40, "Con queso, jalapeños y todo.", []],
-  ["Papas locas", "Papas locas chicas", 15, "", []],
-  ["Papas locas", "Papas locas medianas", 25, "", []],
-  ["Papas locas", "Papas locas grandes", 50, "", []],
-  ["Pepihuates", "Pepihuate chico", 10, "Pepino con cacahuate, chamoy y chile.", []],
-  ["Pepihuates", "Pepihuate grande", 50, "Pepino con cacahuate, chamoy y chile.", []],
+  ["Nieves", "Nieve chica", 35, "Pregunta por el sabor del día.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve mediana", 45, "Pregunta por el sabor del día.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve grande", 60, "Pregunta por el sabor del día.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve medio litro", 65, "Pregunta por el sabor del día.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Nieve litro", 120, "Pregunta por el sabor del día.", [MN_SABOR_NIEVE]],
+  ["Nieves", "Canasta", 90, "", [MN_SABOR_NIEVE]],
+  ["Nieves", "Banana split", 110, "", []],
+  ["Nieves", "Malteada", 75, "", [MN_SABOR_NIEVE]],
+  ["Paletas", "Paleta de crema", 30, "", [MN_SABOR_CREMA]],
+  ["Paletas", "Paleta de agua", 25, "", [MN_SABOR_AGUA_PALETA]],
+  ["Paletas", "Paleta plus", 35, "", []],
+  ["Paletas", "Trompito", 15, "", []],
+  ["Paletas", "Esquimal", 45, "", []],
+  ["Cocteles", "Coctel de frutas chico", 60, "", []],
+  ["Cocteles", "Coctel de frutas grande", 70, "", []],
+  ["Cocteles", "Fresas naturales chico", 80, "", []],
+  ["Cocteles", "Fresas naturales grande", 100, "", []],
+  ["Cocteles", "Fresas congeladas chico", 80, "", []],
+  ["Cocteles", "Fresas congeladas grande", 140, "", []],
+  ["Cocteles", "Mango con crema chico", 80, "", []],
+  ["Cocteles", "Mango con crema grande", 140, "", []],
+  ["Aguas", "Agua chica", 27, "", [MN_SABOR_AGUA]],
+  ["Aguas", "Agua mediana", 33, "", [MN_SABOR_AGUA]],
+  ["Aguas", "Agua grande", 50, "", [MN_SABOR_AGUA]],
+  ["Snacks", "Elote chico", 40, "", []],
+  ["Snacks", "Elote grande", 60, "", []],
+  ["Snacks", "Dorinachos sencillos", 60, "", []],
+  ["Snacks", "Dorinachos especiales", 70, "", []],
+  ["Snacks", "Nachos sencillos", 60, "", []],
+  ["Snacks", "Nachos especiales", 70, "", []],
+  ["Snacks", "Frituras", 13, "", []],
+  ["Snacks", "Troles", 35, "", []],
+  ["Extras", "Topping", 10, "", []],
+  ["Extras", "Queso amarillo", 20, "", []],
+  ["Extras", "Cono chico", 5, "", []],
+  ["Extras", "Cono grande", 7, "", []],
 ];
 const MANANTIAL: PielFixture = {
   id: "preview-manantial",
@@ -505,7 +511,7 @@ const MANANTIAL: PielFixture = {
       phone: "",
       whatsapp: "",
       categories: ["Paletería", "Nevería", "Postres"],
-      menuCategoryOrder: ["Nieves", "Paletas", "Coctel de frutas", "Fresas con crema", "Aguas frescas", "Nachos", "Papas locas", "Pepihuates"],
+      menuCategoryOrder: ["Nieves", "Paletas", "Cocteles", "Aguas", "Snacks", "Extras"],
       businessHours: {
         monday: day([11, 0], [22, 30]),
         tuesday: day([11, 0], [22, 30]),

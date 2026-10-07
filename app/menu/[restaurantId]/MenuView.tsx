@@ -933,8 +933,15 @@ function MenuCategoryList({
     // Una vitrina blanca por familia con su letrero morado (components/menu/skins/manantial.tsx). La descripción
     // que comparte la sección va una vez bajo el letrero; los tamaños ("Nieve sencilla / doble / triple") se
     // juntan en un renglón con pastillas, como la cartulina de precios de una nevería.
+    // La cinta de sabores: los "Sabor" de sus platillos, sin repetir (la nieve primero, luego paletas y aguas).
+    const flavors: string[] = [];
+    for (const g of groups)
+      for (const it of g.items)
+        for (const og of resolveOptionGroups(it))
+          if (/sabor/i.test(og.name))
+            for (const o of og.options) if (!flavors.includes(o.name) && flavors.length < 18) flavors.push(o.name);
     return (
-      <ManantialSheet>
+      <ManantialSheet flavors={flavors}>
         {groups.map((group, index) => {
           const { closed, note } = availabilityOf(group.category);
           const shared = mnSharedDescription(group.items);
@@ -956,6 +963,7 @@ function MenuCategoryList({
                   <ManantialSizeRow
                     key={row.sizes[0]!.item.id}
                     name={row.base}
+                    index={i}
                     orderingEnabled={canOrder}
                     optionsHint={optionsHintFor(row.sizes[0]!.item)}
                     description={shared === null ? (row.sizes[0]!.item.description?.trim() || null) : null}

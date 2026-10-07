@@ -15,13 +15,20 @@
  *  - Los tamaños (sencilla · doble · triple, chico · mediano · grande) se juntan en un renglón, como en la
  *    cartulina de precios de cualquier nevería.
  *
- * Cuando Ricardo consiga la foto de la CARTULINA de precios, la composición de las familias y los precios se
- * copia de ahí. La lógica (carrito, opciones, detalle) es la de MenuView: aquí solo se pinta.
+ * 7-oct: llegaron las fotos de ADENTRO (Saira) y de su pantalla de precios. De ahí sale el cuerpo:
+ *  - La pared: lila (#efe6f6) con dibujos a línea en magenta (conos, paletas, copas, cerezas, fresas) y arriba
+ *    una franja MAGENTA (#a12a8c) con puntitos blancos y la orilla en ola. Ese es el fondo de la hoja.
+ *  - El techo: lámparas en forma de paleta, de colores (verde, rojo, amarillo, naranja, azul marino, magenta,
+ *    celeste). Van flotando en la portada.
+ *  - Su pantalla de precios: pizarra morada oscura; "Nuestras" en cursiva verde agua y "NIEVES" en mayúsculas
+ *    gordas y angostas, blancas. Así va el título de cada sección ("Nuestros COCTELES", "Refréscate AGUAS").
+ * La portada sigue siendo la fachada (su letrero), porque es su logo. La lógica (carrito, opciones, detalle)
+ * es la de MenuView: aquí solo se pinta.
  */
 
 import Image from "next/image";
-import type { CSSProperties, ReactNode } from "react";
-import { Baloo_2, Nunito } from "next/font/google";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { Baloo_2, Nunito, Oswald, Dancing_Script } from "next/font/google";
 import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
@@ -29,9 +36,11 @@ import "./manantial.css";
 
 const baloo = Baloo_2({ weight: ["700", "800"], subsets: ["latin"], variable: "--mn-display" });
 const nunito = Nunito({ weight: ["400", "600", "700", "800"], subsets: ["latin"], variable: "--mn-sans" });
+const oswald = Oswald({ weight: ["600", "700"], subsets: ["latin"], variable: "--mn-board" });
+const script = Dancing_Script({ weight: ["600", "700"], subsets: ["latin"], variable: "--mn-script" });
 
 export const MN_ROOT_CLASS =
-  `${baloo.variable} ${nunito.variable} ` +
+  `${baloo.variable} ${nunito.variable} ${oswald.variable} ${script.variable} ` +
   "mn-skin min-h-screen text-[#2a1740] antialiased [font-family:var(--mn-sans),Nunito,system-ui,sans-serif]";
 
 /** Letras de bomba del letrero: títulos y botones grandes. */
@@ -113,7 +122,16 @@ export function mnRowsOf<T extends { name: string; price: number }>(items: T[]):
     row.sizes.push({ label: sizeLabel(m[2]!), item: it });
   }
   for (const r of rows) if (r.kind === "sizes") r.sizes.sort((a, b) => sizeRank(a.label, a.item.price) - sizeRank(b.label, b.item.price));
-  return rows;
+  // Como su pantalla: primero lo que se pide por tamaño (la nieve, las aguas), luego lo suelto de barato a caro.
+  const priceOf = (r: MnRow<T>) => (r.kind === "sizes" ? r.sizes[0]!.item.price : r.item.price);
+  return rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const ka = a.r.kind === "sizes" ? 0 : 1;
+      const kb = b.r.kind === "sizes" ? 0 : 1;
+      return ka - kb || priceOf(a.r) - priceOf(b.r) || a.i - b.i;
+    })
+    .map(({ r }) => r);
 }
 
 /** Calle y colonia, sin CP ni estado: completa no cabe en el teléfono. */
@@ -165,12 +183,55 @@ function Drip({ className = "", fill = "#f7ecd4" }: { className?: string; fill?:
   );
 }
 
-/** Título en letras de bomba blancas con el contorno y la sombra azul del letrero. */
-function Bubble({ children, id, className = "" }: { children: ReactNode; id?: string; className?: string }) {
+/** "Nuestras" / "Nuestros" / "Refréscate" en cursiva, como su pantalla de precios. */
+const SCRIPT_WORD: Record<string, string> = {
+  nieves: "Nuestras",
+  helados: "Nuestros",
+  paletas: "Nuestras",
+  cocteles: "Nuestros",
+  "coctel de frutas": "Nuestros",
+  snacks: "",
+  aguas: "Refréscate",
+  "aguas frescas": "Refréscate",
+  extras: "",
+  malteadas: "Nuestras",
+  "fresas con crema": "Nuestras",
+};
+
+/** Título de sección como su pantalla: cursiva verde agua chiquita + MAYÚSCULAS gordas y angostas. */
+function BoardTitle({ children, id }: { children: string; id?: string }) {
+  const word = SCRIPT_WORD[mnKeyOf(children)] ?? "";
   return (
-    <h2 id={id} className={`${MN_TITLE} mn-bubble text-center text-[26px] leading-none tracking-[0.01em] text-white sm:text-[30px] ${className}`}>
-      {children}
+    <h2 id={id} className="flex items-baseline justify-center gap-2 text-center leading-none">
+      {word ? <span className="[font-family:var(--mn-script),cursive] text-[22px] font-bold text-[#8fe3dc] sm:text-[24px]">{word}</span> : null}
+      <span className="[font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[30px] font-bold uppercase tracking-[0.01em] text-white sm:text-[34px]">
+        {children}
+      </span>
     </h2>
+  );
+}
+
+/** Las lámparas del techo: paletas de colores flotando. */
+const LAMPS: { c: string; x: string; y: string; r: number; w: number }[] = [
+  { c: "#1f5d4c", x: "4%", y: "18%", r: -8, w: 54 },
+  { c: "#e04b4b", x: "84%", y: "10%", r: 70, w: 46 },
+  { c: "#e7d83a", x: "10%", y: "62%", r: 80, w: 38 },
+  { c: "#f08a3c", x: "88%", y: "58%", r: -14, w: 44 },
+  { c: "#2f3a8f", x: "76%", y: "80%", r: 60, w: 34 },
+  { c: "#d62f8f", x: "18%", y: "88%", r: -20, w: 36 },
+  { c: "#7cc8e8", x: "92%", y: "34%", r: 20, w: 28 },
+];
+function Lamps() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {LAMPS.map((l, i) => (
+        <span
+          key={i}
+          className="mn-lamp absolute"
+          style={{ left: l.x, top: l.y, width: l.w, height: Math.round(l.w * 0.42), background: l.c, transform: `rotate(${l.r}deg)`, animationDelay: `${i * 0.4}s` } as CSSProperties}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -193,8 +254,9 @@ export function ManantialHeader({
 }) {
   const name = loading ? "El Manantial" : restaurantName || "El Manantial";
   return (
-    <header className="mn-wall mn-rise -mx-4 -mt-4 overflow-hidden px-4 pb-0 pt-6 sm:-mx-6 sm:px-6 sm:pt-8">
-      <div className="mx-auto max-w-3xl text-center">
+    <header className="mn-wall mn-rise relative overflow-hidden px-4 pb-0 pt-6 sm:px-6 sm:pt-8">
+      <Lamps />
+      <div className="relative mx-auto max-w-3xl text-center">
         {/* El listón blanco en arco: "Paletería y Heladería" en azul. */}
         <svg viewBox="0 0 320 76" className="mx-auto block h-[62px] w-[262px] sm:h-[70px] sm:w-[296px]" aria-hidden>
           <defs>
@@ -245,15 +307,52 @@ export function ManantialHeader({
           <div className="pb-7" />
         )}
       </div>
-      <Drip className="-mx-4 block h-6 w-[calc(100%+2rem)] sm:-mx-6 sm:w-[calc(100%+3rem)]" />
+      {/* La franja magenta de su pared, con sus puntitos blancos, que escurre sobre el lila (la ola va fuera del
+          morado: abajo se ve la pared). */}
+      <div className="mn-band relative -mx-4 h-7 sm:-mx-6" aria-hidden />
+      <div className="relative -mx-4 -mb-px h-6 bg-[#efe6f6] sm:-mx-6" aria-hidden>
+        <Drip className="absolute inset-0 block h-6 w-full" fill="#a12a8c" />
+      </div>
     </header>
   );
 }
 
 /* ─────────────────────────── Hoja ─────────────────────────── */
 
-export function ManantialSheet({ children }: { children: ReactNode }) {
-  return <div className="mn-sheet pb-6">{children}</div>;
+const LAMP_COLORS = ["#e04b4b", "#e7d83a", "#f08a3c", "#7cc8e8", "#d62f8f", "#1f5d4c", "#2f3a8f"];
+
+/** La cinta de sabores: corre despacio bajo la portada, cada sabor separado por una lamparita de color. */
+function FlavorTicker({ flavors }: { flavors: string[] }) {
+  if (flavors.length < 3) return null;
+  const run = (hidden: boolean) => (
+    <span aria-hidden={hidden || undefined}>
+      {flavors.map((f, i) => (
+        <span key={`${f}-${i}`} className="inline-flex items-center gap-3">
+          {f}
+          <i style={{ background: LAMP_COLORS[i % LAMP_COLORS.length] }} />
+        </span>
+      ))}
+    </span>
+  );
+  return (
+    <div className="mn-ticker -mx-4 mb-6 py-2.5 sm:-mx-6" role="presentation">
+      <div className="mn-ticker__track [font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[14px] font-semibold uppercase leading-none tracking-[0.12em] text-white">
+        <span className="mn-ticker__lead [font-family:var(--mn-script),cursive] text-[19px] font-bold normal-case tracking-normal text-[#8fe3dc]">Sabores</span>
+        {run(false)}
+        {run(true)}
+        {run(true)}
+      </div>
+    </div>
+  );
+}
+
+export function ManantialSheet({ children, flavors = [] }: { children: ReactNode; flavors?: string[] }) {
+  return (
+    <div className="pb-6">
+      <FlavorTicker flavors={flavors} />
+      <div className="mn-sheet">{children}</div>
+    </div>
+  );
 }
 
 function AddButton({ name, onAdd, small = false }: { name: string; onAdd: () => void; small?: boolean }) {
@@ -311,8 +410,30 @@ export function ManantialCategorySection({
   onToggle?: () => void;
 }) {
   const id = `menu-cat-${index}`;
+  const ref = useRef<HTMLElement>(null);
+  // Entrada al hacer scroll, como Kame: solo se "arma" lo que todavía no está en pantalla; sin IntersectionObserver
+  // o con movimiento reducido no se arma nada y la vitrina se ve de una vez.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+    el.classList.add("mn-armed");
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          el.classList.add("mn-in");
+          io.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
     <section
+      ref={ref}
       aria-labelledby={id}
       data-mn={mnKeyOf(category)}
       className={"mn-vitrina mn-rise " + (closed ? "opacity-60" : "")}
@@ -320,7 +441,7 @@ export function ManantialCategorySection({
     >
       {/* El letrero de la vitrina: morado, letras de bomba y la crema escurriendo. */}
       <div className="mn-vitrina__head px-4 pb-1 pt-4 sm:px-6">
-        <Bubble id={id}>{category}</Bubble>
+        <BoardTitle id={id}>{category}</BoardTitle>
         {description ? <p className="mx-auto mt-2 max-w-md text-center text-[13.5px] font-semibold leading-snug text-white/85 [text-wrap:balance]">{description}</p> : null}
         {note ? (
           <p className="mt-2 text-center text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f7ecd4]">
@@ -341,7 +462,7 @@ export function ManantialCategorySection({
           </div>
         ) : null}
       </div>
-      <Drip className="block h-5 w-full" fill="#7b3fa6" />
+      <Drip className="block h-5 w-full" fill="#3d2a6e" />
       {collapsed ? null : <ul className="mn-vitrina__body divide-y divide-[#7b3fa6]/12 px-4 pb-3 pt-1 sm:px-6">{children}</ul>}
     </section>
   );
@@ -363,7 +484,9 @@ export function ManantialItemRow({
   optionsHint = null,
   onOpen,
   hideDescription = false,
+  index = 0,
 }: MenuItemCardProps & { index?: number; hideDescription?: boolean }) {
+  const iv = { "--i": index } as CSSProperties;
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
   ) : (
@@ -388,7 +511,7 @@ export function ManantialItemRow({
   );
   if (imageUrl) {
     return (
-      <li className={"mn-row -mx-2 flex items-start gap-3 px-2 py-3 " + (quantity > 0 ? "mn-row--on" : "")}>
+      <li style={iv} className={"mn-row -mx-2 flex items-start gap-3 px-2 py-3 " + (quantity > 0 ? "mn-row--on" : "")}>
         <button type="button" onClick={onOpen} aria-label={`Ver foto de ${name}`} className="mn-photo mt-0.5 h-[84px] w-[84px] shrink-0 cursor-zoom-in sm:h-24 sm:w-24">
           <Image src={imageUrl} alt="" width={192} height={192} unoptimized className="h-full w-full object-cover" />
         </button>
@@ -400,7 +523,7 @@ export function ManantialItemRow({
     );
   }
   return (
-    <li className={"mn-row -mx-2 flex items-center gap-3 px-2 py-3 " + (quantity > 0 ? "mn-row--on" : "")}>
+    <li style={iv} className={"mn-row -mx-2 flex items-center gap-3 px-2 py-3 " + (quantity > 0 ? "mn-row--on" : "")}>
       <div className="min-w-0 flex-1">{text}</div>
       {control}
     </li>
@@ -426,17 +549,19 @@ export function ManantialSizeRow({
   sizes,
   orderingEnabled = true,
   optionsHint = null,
+  index = 0,
 }: {
   name: string;
   description?: string | null;
   sizes: MnSizeCell[];
   orderingEnabled?: boolean;
   optionsHint?: string | null;
+  index?: number;
 }) {
   const any = sizes.some((s) => s.quantity > 0);
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   return (
-    <li className={"mn-row -mx-2 px-2 py-3 " + (any ? "mn-row--on" : "")}>
+    <li style={{ "--i": index } as CSSProperties} className={"mn-row -mx-2 px-2 py-3 " + (any ? "mn-row--on" : "")}>
       <button type="button" onClick={sizes[0]?.onOpen} aria-label={`Ver ${name}`} className="block w-full cursor-pointer text-left">
         <span className={`${MN_NAME} text-[17px] leading-[1.15] text-[#2a1740] sm:text-[18px]`}>{name}</span>
         {hint ? (
@@ -470,9 +595,9 @@ export function ManantialPanel({ title, children }: { title: string; children: R
   return (
     <section className="mn-vitrina mn-rise mt-10" aria-label={title}>
       <div className="mn-vitrina__head px-4 pb-1 pt-4 sm:px-6">
-        <Bubble>{title}</Bubble>
+        <BoardTitle>{title}</BoardTitle>
       </div>
-      <Drip className="block h-5 w-full" fill="#7b3fa6" />
+      <Drip className="block h-5 w-full" fill="#3d2a6e" />
       <div className="mn-vitrina__body px-4 pb-5 pt-2 text-[#2a1740] sm:px-6">{children}</div>
     </section>
   );
