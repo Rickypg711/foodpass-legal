@@ -101,7 +101,7 @@ const card = rd("components/vendor/ActivationCard.tsx");
 // 5) La recompensa: la portada avisa la visita del link del dueño y el panel la pinta.
 {
   const route = rd("app/api/landing-visit/route.ts");
-  assert.ok(route.includes('["whatsapp", "instagram", "google"]') && route.includes("FieldValue.increment(1)"), "api: suma 1 por fuente");
+  assert.ok(route.includes('["whatsapp", "instagram", "google", "perfil"]') && route.includes("FieldValue.increment(1)"), "api: suma 1 por fuente");
   assert.ok(route.includes("private/stats"), "api: escribe en private/stats (solo servidor)");
   const an = rd("lib/analytics.ts");
   assert.ok(an.includes("export function reportOwnerShareVisit(") && an.includes('"/api/landing-visit"'), "analytics: reporta una vez por sesión");
