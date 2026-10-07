@@ -11,11 +11,12 @@
   --mn-cream: #f7ecd4;
   --mn-choco: #5a3222;
   --mn-ink: #2a1740;
-  /* La pared de adentro (7-oct, fotos de Saira): lila con sus dibujos a línea en magenta (cono, paleta, cereza,
-     fresa). El dibujo va en un SVG chiquito que se repite, bajito de tono para que la vitrina mande. */
+  /* La pared de adentro (7-oct, fotos de Saira): lila con sus dibujos a línea en magenta, como su vinil: cono
+     con galleta cuadriculada, paleta con volumen, copa con bolas escurriendo y cereza, fresas y cerezas
+     (public/skins/manantial/wall.svg). */
   background-color: #efe6f6;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260' fill='none' stroke='%23a12a8c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.22'%3E%3Cpath d='M38 70 l18 60 l18 -60'/%3E%3Cpath d='M30 70 a26 22 0 0 1 52 0 z'/%3E%3Cpath d='M44 88 l24 0 M48 100 l16 0'/%3E%3Crect x='150' y='30' width='34' height='64' rx='14'/%3E%3Cpath d='M167 94 v26'/%3E%3Cpath d='M160 46 v34'/%3E%3Ccircle cx='60' cy='200' r='9'/%3E%3Cpath d='M60 191 q8 -22 26 -26'/%3E%3Cpath d='M190 170 q-22 4 -22 30 q0 26 22 36 q22 -10 22 -36 q0 -26 -22 -30 z'/%3E%3Cpath d='M180 168 l10 -8 l10 8'/%3E%3Ccircle cx='184' cy='192' r='1.5'/%3E%3Ccircle cx='196' cy='206' r='1.5'/%3E%3Ccircle cx='186' cy='218' r='1.5'/%3E%3Ccircle cx='120' cy='140' r='3' fill='%23a12a8c'/%3E%3Ccircle cx='236' cy='120' r='3' fill='%23a12a8c'/%3E%3Ccircle cx='110' cy='40' r='2.5' fill='%23a12a8c'/%3E%3C/svg%3E");
-  background-size: 260px 260px;
+  background-image: url("/skins/manantial/wall.svg");
+  background-size: 520px 520px;
   background-attachment: fixed;
 }
 
@@ -96,14 +97,15 @@
 .mn-skin .mn-sheet {
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  padding-top: 16px;
+  /* Aire entre vitrinas para que asome su pared con los dibujos (Ricardo, 7-oct: "que se vea como su local"). */
+  gap: 64px;
+  padding-top: 24px;
 }
 @media (min-width: 1024px) {
   .mn-skin .mn-sheet {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 34px 28px;
+    gap: 64px 40px;
     align-items: start;
   }
 }

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="560" viewBox="0 0 560 560" fill="none" stroke="#9c2a88" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Su pared (foto de Saira, 7-oct): vinil lila con dibujos grandes a línea en magenta, con sombreado de rayitas.
+       Cono de galleta, paleta con volumen, copa con dos bolas que escurren y la cereza rellena, fresas con
+       semillas y hojas, cerezas en par, chispas y puntitos. -->
+  <defs>
+    <clipPath id="mn-cone"><path d="M52 168 L184 168 L118 344 Z"/></clipPath>
+  </defs>
+  <g opacity="0.6">
+    <!-- Cono (arriba a la izquierda), ladeado como en su pared -->
+    <g transform="rotate(-12 118 200)">
+      <path d="M52 168 L184 168 L118 344 Z"/>
+      <g clip-path="url(#mn-cone)" stroke-width="1.8">
+        <path d="M150 168 L112 344 M162 168 L120 344 M174 168 L128 344 M186 168 L136 344"/>
+        <path d="M40 190 L200 250 M40 230 L200 290 M40 270 L200 330 M40 150 L200 210"/>
+      </g>
+      <path d="M44 168 C38 100 96 62 140 72 C184 82 200 124 192 168"/>
+      <path d="M40 168 q12 16 28 4 q14 16 30 2 q14 16 30 2 q14 16 30 2 q14 14 28 -2"/>
+      <path d="M74 112 q18 -18 44 -12 M150 96 q16 8 22 24" stroke-width="2.2"/>
+      <g fill="#9c2a88" stroke="none"><circle cx="106" cy="130" r="3.2"/><circle cx="150" cy="140" r="3"/><circle cx="86" cy="150" r="2.6"/></g>
+    </g>
+
+    <!-- Paleta grande con volumen (arriba a la derecha) -->
+    <g transform="rotate(14 410 180)">
+      <rect x="360" y="60" width="98" height="196" rx="42"/>
+      <path d="M458 104 l16 12 v156 a42 42 0 0 1 -42 42 h-26 l-12 -14"/>
+      <path d="M462 130 l10 7 M462 150 l10 7 M462 170 l10 7 M462 190 l10 7 M462 210 l10 7 M462 230 l10 7 M462 250 l10 7" stroke-width="2"/>
+      <path d="M382 106 v122" stroke-width="2.4"/>
+      <rect x="394" y="256" width="32" height="76" rx="11"/>
+      <path d="M426 266 l8 6 v58 a10 10 0 0 1 -10 10 h-6" stroke-width="2.2"/>
+      <g fill="#9c2a88" stroke="none"><circle cx="412" cy="96" r="3.6"/><circle cx="432" cy="128" r="3.2"/><circle cx="404" cy="150" r="3"/><circle cx="430" cy="176" r="2.8"/></g>
+    </g>
+
+    <!-- Copa con dos bolas que escurren y su cereza (abajo al centro) -->
+    <path d="M150 440 C138 386 192 352 236 370 C256 330 330 330 342 382 C374 390 376 434 352 440"/>
+    <path d="M206 384 q20 -14 42 -2 M276 360 q22 -2 34 16" stroke-width="2.2"/>
+    <path d="M196 440 v22 q0 9 -8 9 q-8 0 -8 -9 v-16 M312 440 v30 q0 9 8 9 q8 0 8 -9 v-24"/>
+    <path d="M140 440 h226 l-30 76 h-166 Z"/>
+    <path d="M152 468 h202" stroke-width="2"/>
+    <path d="M338 444 l-24 66 M350 444 l-24 66" stroke-width="1.8"/>
+    <circle cx="258" cy="342" r="20" fill="#9c2a88" stroke="none"/>
+    <path d="M250 360 v14 q0 6 -5 6" stroke-width="2.4"/>
+    <path d="M258 322 q4 -30 30 -42"/>
+    <path d="M222 400 l8 4 M300 404 l6 -6 M262 414 l2 8" stroke-width="2.4"/>
+
+    <!-- Fresa grande con hojas (a la izquierda) -->
+    <g transform="rotate(-14 74 430)">
+      <path d="M52 386 C26 386 18 424 38 452 C50 470 62 478 74 480 C86 478 98 470 110 452 C130 424 122 386 96 386 C88 386 84 392 74 392 C64 392 60 386 52 386 Z"/>
+      <path d="M50 388 l-8 -12 l20 4 l12 -14 l12 14 l20 -4 l-8 12"/>
+      <g fill="#9c2a88" stroke="none">
+        <circle cx="52" cy="412" r="2.4"/><circle cx="74" cy="408" r="2.4"/><circle cx="96" cy="412" r="2.4"/>
+        <circle cx="60" cy="432" r="2.4"/><circle cx="88" cy="432" r="2.4"/><circle cx="74" cy="452" r="2.4"/>
+      </g>
+    </g>
+
+    <!-- Cerezas en par (abajo a la derecha) -->
+    <circle cx="452" cy="452" r="18"/>
+    <circle cx="496" cy="470" r="18"/>
+    <path d="M452 434 q14 -48 44 -64 M496 452 q-4 -46 0 -82"/>
+    <path d="M444 446 q6 -6 12 -3 M488 464 q6 -6 12 -3" stroke-width="2.2"/>
+
+    <!-- Fresita y cereza sueltas (para que no quede hueco al centro) -->
+    <g transform="rotate(12 280 220)">
+      <path d="M268 200 C254 200 250 222 262 236 C268 244 274 248 280 248 C286 248 292 244 298 236 C310 222 306 200 292 200 C286 200 286 204 280 204 C274 204 274 200 268 200 Z" stroke-width="2.4"/>
+      <path d="M268 200 l-4 -8 l12 3 l4 -9 l4 9 l12 -3 l-4 8" stroke-width="2.2"/>
+      <g fill="#9c2a88" stroke="none"><circle cx="272" cy="216" r="1.9"/><circle cx="288" cy="216" r="1.9"/><circle cx="280" cy="230" r="1.9"/></g>
+    </g>
+    <circle cx="232" cy="96" r="13"/>
+    <path d="M232 83 q8 -26 30 -34" />
+  </g>
+  <!-- Chispas y puntitos, como en su pared -->
+  <g fill="#9c2a88" stroke="none" opacity="0.6">
+    <circle cx="200" cy="40" r="4"/><circle cx="214" cy="270" r="3.4"/><circle cx="530" cy="250" r="4"/>
+    <circle cx="20" cy="320" r="3.4"/><circle cx="350" cy="300" r="4"/><circle cx="120" cy="540" r="3.4"/>
+    <circle cx="540" cy="540" r="3.6"/><circle cx="310" cy="140" r="3"/><circle cx="24" cy="40" r="3"/>
+    <circle cx="410" cy="380" r="3"/>
+  </g>
+</svg>
