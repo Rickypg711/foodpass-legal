@@ -98,4 +98,16 @@ const card = rd("components/vendor/ActivationCard.tsx");
   assert.ok(an.includes('sp.get("utm_medium") === "owner_share"'), "GA4: la vista de portada registra el utm del dueño");
 }
 
+// 5) La recompensa: la portada avisa la visita del link del dueño y el panel la pinta.
+{
+  const route = rd("app/api/landing-visit/route.ts");
+  assert.ok(route.includes('["whatsapp", "instagram", "google"]') && route.includes("FieldValue.increment(1)"), "api: suma 1 por fuente");
+  assert.ok(route.includes("private/stats"), "api: escribe en private/stats (solo servidor)");
+  const an = rd("lib/analytics.ts");
+  assert.ok(an.includes("export function reportOwnerShareVisit(") && an.includes('"/api/landing-visit"'), "analytics: reporta una vez por sesión");
+  const lv = rd("app/r/[restaurantId]/LandingView.tsx");
+  assert.ok(lv.includes("reportOwnerShareVisit(restaurantId);"), "portada: avisa la visita");
+  assert.ok(card.includes('"private", "stats"') && card.includes("abrió tu link") && card.includes("abrieron tu link"), "tarjeta: pinta cuántos abrieron");
+}
+
 console.log("validate-activation-card: OK — tres toques, señales reales, copy limpio, utm vivo");

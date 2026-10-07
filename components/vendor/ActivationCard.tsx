@@ -65,6 +65,7 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
   const [copied, setCopied] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [arrived, setArrived] = useState(false);
+  const [linkVisits, setLinkVisits] = useState<{ total: number; whatsapp: number; instagram: number; google: number } | null>(null);
   const mountedAt = useRef(0);
   const sawFirstSnapshot = useRef(false);
 
@@ -89,6 +90,20 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
     })();
     return () => { alive = false; };
   }, [restaurantId, variant]);
+
+  // La recompensa (6-oct-2026): cuántos abrieron el link que compartió.
+  // Lo suma el servidor en private/stats (ver /api/landing-visit); aquí
+  // solo se lee, en vivo, para que el dueño vea el número crecer.
+  useEffect(() => {
+    const ref = doc(getFirebaseDb(), "restaurants", restaurantId, "private", "stats");
+    const unsub = onSnapshot(ref, (snap) => {
+      const lv = (snap.data()?.linkVisits ?? null) as Record<string, unknown> | null;
+      if (!lv) { setLinkVisits(null); return; }
+      const n = (k: string) => (typeof lv[k] === "number" ? (lv[k] as number) : 0);
+      setLinkVisits({ total: n("total"), whatsapp: n("whatsapp"), instagram: n("instagram"), google: n("google") });
+    }, () => { /* sin permiso: sin número, sin drama */ });
+    return () => unsub();
+  }, [restaurantId]);
 
   // ¿Ya existe un pedido por el menú? Se busca por fuente, no por fecha: en
   // un local que cobra mucho en Caja (Suadero, 150 ventas) los últimos
@@ -226,6 +241,16 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
                       onOpenMenu={onOpenMenu}
                     />
                   )}
+                  {st.key === "share" && st.done && linkVisits && linkVisits.whatsapp > 0 && (
+                    <p className="mt-1 text-[14px] leading-5" style={{ color: SUCCESS }}>
+                      {visitsLine(linkVisits.whatsapp, "por tu WhatsApp")}
+                    </p>
+                  )}
+                  {st.key === "place" && st.done && linkVisits && (linkVisits.instagram + linkVisits.google) > 0 && (
+                    <p className="mt-1 text-[14px] leading-5" style={{ color: SUCCESS }}>
+                      {visitsLine(linkVisits.instagram + linkVisits.google, "desde Instagram o Google")}
+                    </p>
+                  )}
                   {st.key === "test" && st.done && arrived && (
                     <p className="mt-1 text-[14px] leading-5" style={{ color: SUCCESS }}>
                       Te llegó. Así te va a sonar cada vez que alguien te pida.
@@ -247,6 +272,11 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
       )}
     </section>
   );
+}
+
+/** "1 persona abrió tu link por tu WhatsApp" / "4 personas abrieron…" */
+function visitsLine(n: number, where: string): string {
+  return n === 1 ? `1 persona abrió tu link ${where}.` : `${n} personas abrieron tu link ${where}.`;
 }
 
 function StepMark({ done, current, index }: { done: boolean; current: boolean; index: number }) {

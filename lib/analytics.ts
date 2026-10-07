@@ -146,6 +146,36 @@ export function landingViaFromLocation(): string | null {
   }
 }
 
+/**
+ * Visita por link compartido por el DUEÑO (6-oct-2026): si la portada abrió
+ * con utm_medium=owner_share, avisa UNA vez por sesión a /api/landing-visit
+ * para sumar 1 en restaurants/{id}/private/stats (lo escribe el servidor).
+ * Es la recompensa de la activación: "4 abrieron tu link". Nunca rompe la
+ * página y no guarda nada de la persona.
+ */
+export function reportOwnerShareVisit(restaurantId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const source = sp.get("utm_source");
+    if (!source || sp.get("utm_medium") !== "owner_share") return;
+    if (!["whatsapp", "instagram", "google"].includes(source)) return;
+    const key = `cml_owner_share_visit_${restaurantId}_${source}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch { /* sin sessionStorage: se cuenta igual */ }
+    void fetch("/api/landing-visit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ restaurantId, source }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // no-op
+  }
+}
+
 export function trackWebLandingView(p: ClickParams & { via?: string | null }): void {
   if (typeof window === "undefined") return;
   try {

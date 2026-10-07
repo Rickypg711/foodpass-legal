@@ -21,6 +21,7 @@ import { MenuPoweredByFooter } from "@/components/menu/MenuPoweredByFooter";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import {
   landingViaFromLocation,
+  reportOwnerShareVisit,
   trackWebLandingMenuClick,
   trackWebLandingView,
   trackWebLandingWhatsappClick,
@@ -321,6 +322,7 @@ export default function LandingView({
   useEffect(() => {
     if (restaurant && restaurantId) {
       trackWebLandingView({ restaurantId, restaurantName: restaurant.name, via: landingViaFromLocation() });
+      reportOwnerShareVisit(restaurantId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId, restaurant?.name]);
