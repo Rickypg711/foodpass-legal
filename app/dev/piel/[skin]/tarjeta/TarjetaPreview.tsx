@@ -17,7 +17,7 @@ export default function TarjetaPreview({ skin }: { skin: string }) {
         <div ref={ref}>
           <ManantialShareCard
             name="El Manantial"
-            hasRewards
+            hasRewards={false}
             linkText="comeleal.com/menu/el-manantial"
             qr={<QRCodeSVG value="https://comeleal.com/menu/EAaj6MyzncMUNTNQVDQy" size={176} fgColor="#3d2a6e" bgColor="#FFFFFF" />}
           />
