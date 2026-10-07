@@ -7,7 +7,7 @@ import { getFirebaseAdminDb, hasFirebaseAdminCredentials } from "@/lib/firebaseA
  *
  * Contador de visitas por link compartido por el DUEÑO (6-oct-2026, la
  * recompensa de la activación en tres toques): cuando alguien abre
- * /r/{slug}?utm_source=whatsapp|instagram|google&utm_medium=owner_share, la
+ * /r/{slug}?utm_source=whatsapp|instagram|google|perfil&utm_medium=owner_share, la
  * portada avisa aquí una vez por sesión y se suma 1 en
  * restaurants/{id}/private/stats.linkVisits.{source} (+ total). Lo escribe
  * el Admin SDK: las reglas no dejan que un navegador anónimo escriba nada.
@@ -19,7 +19,9 @@ import { getFirebaseAdminDb, hasFirebaseAdminCredentials } from "@/lib/firebaseA
 export const dynamic = "force-dynamic";
 
 const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
-export const LANDING_VISIT_SOURCES = ["whatsapp", "instagram", "google"] as const;
+// "perfil" = el link copiado que pega en Facebook/Instagram/WhatsApp/Google
+// (uno para los cuatro). instagram|google se aceptan por los links ya pegados.
+export const LANDING_VISIT_SOURCES = ["whatsapp", "instagram", "google", "perfil"] as const;
 
 export async function POST(request: Request) {
   let body: { restaurantId?: unknown; source?: unknown };

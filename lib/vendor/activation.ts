@@ -74,6 +74,13 @@ export function activationProgressLabel(steps: ActivationStep[]): string {
 }
 
 /**
+ * De dónde vino la visita por link del dueño. "perfil" es el link que copia
+ * y pega en Facebook, Instagram, WhatsApp o Google: es UN link para los
+ * cuatro, así que no se finge saber en cuál lo pegó (6-oct-2026).
+ */
+export type ActivationUtmSource = "whatsapp" | "instagram" | "google" | "perfil";
+
+/**
  * Link público del local con el rastro de quién lo compartió. Usa el slug
  * cuando existe (el redirect de /r por ID conserva los parámetros desde el
  * 6-oct, pero el slug es la URL canónica y la que Google consolida).
@@ -81,7 +88,7 @@ export function activationProgressLabel(steps: ActivationStep[]): string {
 export function activationPublicLink(
   restaurantId: string,
   slug: string | null | undefined,
-  utmSource: "whatsapp" | "instagram" | "google",
+  utmSource: ActivationUtmSource,
 ): string {
   const handle = slug && slug.trim() ? slug.trim() : restaurantId;
   return `https://comeleal.com/r/${encodeURIComponent(handle)}?utm_source=${utmSource}&utm_medium=owner_share`;

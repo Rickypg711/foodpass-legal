@@ -137,7 +137,7 @@ export function landingViaFromLocation(): string | null {
     const m = sp.get("m");
     if (m === "wa") return "winback_whatsapp";
     // 6-oct-2026: activación en tres toques — el dueño comparte con
-    // utm_source=whatsapp|instagram|google & utm_medium=owner_share.
+    // utm_source=whatsapp|instagram|google|perfil & utm_medium=owner_share.
     const src = sp.get("utm_source");
     if (src && sp.get("utm_medium") === "owner_share") return `owner_${src.slice(0, 24)}`;
     return null;
@@ -159,7 +159,7 @@ export function reportOwnerShareVisit(restaurantId: string): void {
     const sp = new URLSearchParams(window.location.search);
     const source = sp.get("utm_source");
     if (!source || sp.get("utm_medium") !== "owner_share") return;
-    if (!["whatsapp", "instagram", "google"].includes(source)) return;
+    if (!["whatsapp", "instagram", "google", "perfil"].includes(source)) return;
     const key = `cml_owner_share_visit_${restaurantId}_${source}`;
     try {
       if (sessionStorage.getItem(key)) return;

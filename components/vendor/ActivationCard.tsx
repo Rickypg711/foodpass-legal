@@ -30,7 +30,7 @@ import { flashTabTitle, playNewOrderChime, primeChime } from "@/lib/vendor/newOr
 import {
   activationCurrent, activationLaterActive, activationLaterKey, activationProgressLabel,
   activationPublicLink, activationShareMessage, activationSignalsFromRestaurant, activationSteps,
-  isActivationMenuOrder, type ActivationSignals, type ActivationStepKey,
+  isActivationMenuOrder, type ActivationSignals, type ActivationStepKey, type ActivationUtmSource,
 } from "@/lib/vendor/activation";
 
 const SERIF = "var(--font-lora), Lora, Georgia, serif";
@@ -65,7 +65,7 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
   const [copied, setCopied] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [arrived, setArrived] = useState(false);
-  const [linkVisits, setLinkVisits] = useState<{ total: number; whatsapp: number; instagram: number; google: number } | null>(null);
+  const [linkVisits, setLinkVisits] = useState<{ total: number; whatsapp: number; pegado: number } | null>(null);
   const mountedAt = useRef(0);
   const sawFirstSnapshot = useRef(false);
 
@@ -100,7 +100,9 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
       const lv = (snap.data()?.linkVisits ?? null) as Record<string, unknown> | null;
       if (!lv) { setLinkVisits(null); return; }
       const n = (k: string) => (typeof lv[k] === "number" ? (lv[k] as number) : 0);
-      setLinkVisits({ total: n("total"), whatsapp: n("whatsapp"), instagram: n("instagram"), google: n("google") });
+      // "pegado" = lo que copió y pegó en sus redes/Google (perfil + los dos
+      // rastros viejos por canal; un link no sabe en cuál red cayó).
+      setLinkVisits({ total: n("total"), whatsapp: n("whatsapp"), pegado: n("perfil") + n("instagram") + n("google") });
     }, () => { /* sin permiso: sin número, sin drama */ });
     return () => unsub();
   }, [restaurantId]);
@@ -165,7 +167,7 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
   if (hidden || !loaded) return null;
   if (allDone && !arrived) return null;
 
-  const link = (utm: "whatsapp" | "instagram" | "google") => activationPublicLink(restaurantId, slug, utm);
+  const link = (utm: ActivationUtmSource) => activationPublicLink(restaurantId, slug, utm);
 
   async function stamp(field: "shareTappedAt" | "linkCopiedAt") {
     const key = field;
@@ -182,7 +184,7 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
   }
 
   async function onCopy() {
-    const url = link("instagram");
+    const url = link("perfil");
     try { await navigator.clipboard.writeText(url); } catch { /* el campo de abajo lo deja seleccionar */ }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2500);
@@ -235,7 +237,7 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
                       step={st.key}
                       copied={copied}
                       waiting={waiting}
-                      linkShown={link("instagram")}
+                      linkShown={link("perfil")}
                       onShare={onShare}
                       onCopy={onCopy}
                       onOpenMenu={onOpenMenu}
@@ -246,9 +248,9 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
                       {visitsLine(linkVisits.whatsapp, "por tu WhatsApp")}
                     </p>
                   )}
-                  {st.key === "place" && st.done && linkVisits && (linkVisits.instagram + linkVisits.google) > 0 && (
+                  {st.key === "place" && st.done && linkVisits && linkVisits.pegado > 0 && (
                     <p className="mt-1 text-[14px] leading-5" style={{ color: SUCCESS }}>
-                      {visitsLine(linkVisits.instagram + linkVisits.google, "desde Instagram o Google")}
+                      {visitsLine(linkVisits.pegado, "desde donde lo pegaste")}
                     </p>
                   )}
                   {st.key === "test" && st.done && arrived && (
@@ -272,6 +274,16 @@ export function ActivationCard({ restaurantId, variant = "panel" }: Props) {
       )}
     </section>
   );
+}
+
+/**
+ * Abre su WhatsApp (ahí pega el link en la info del perfil o en un estado).
+ * No hay link directo a ese campo: en el cel abre la app; en escritorio,
+ * WhatsApp Web.
+ */
+function whatsappAppUrl(): string {
+  if (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return "whatsapp://";
+  return "https://web.whatsapp.com/";
 }
 
 /** "1 persona abrió tu link por tu WhatsApp" / "4 personas abrieron…" */
@@ -325,7 +337,7 @@ function StepBody(p: {
     return (
       <div className="mt-2">
         <p className="text-[14px] leading-5" style={{ color: INK_SOFT }}>
-          Tu link va en la bio de Instagram y en tu ficha de Google. Cópialo y pégalo.
+          Tu link va en tu Facebook, tu Instagram, tu WhatsApp y tu ficha de Google. Cópialo y pégalo en los cuatro.
         </p>
         <p className="mt-2 truncate rounded-lg px-3 py-2 text-[13px]" style={{ background: "#FAF9F5", color: INK, border: `1px solid ${HAIRLINE}` }}>
           {p.linkShown}
@@ -334,8 +346,14 @@ function StepBody(p: {
           {p.copied ? "Copiado" : "Copiar mi link"}
         </button>
         <div className="mt-2 flex flex-wrap gap-2">
+          <a href="https://www.facebook.com/pages/?category=your_pages" target="_blank" rel="noopener noreferrer" className={BTN_SECONDARY}>
+            Abrir mi Facebook
+          </a>
           <a href="https://www.instagram.com/accounts/edit/" target="_blank" rel="noopener noreferrer" className={BTN_SECONDARY}>
             Abrir mi Instagram
+          </a>
+          <a href={whatsappAppUrl()} target="_blank" rel="noopener noreferrer" className={BTN_SECONDARY}>
+            Abrir mi WhatsApp
           </a>
           <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer" className={BTN_SECONDARY}>
             Abrir mi ficha de Google
