@@ -3,6 +3,7 @@
 // /dev/piel/{skin}/tarjeta — vista previa LOCAL de la tarjeta de "Compartir menú" del panel con la piel, y la
 // imagen PNG que sale al compartir/imprimir (html-to-image, igual que MenuShareModal). No existe en producción.
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { ManantialShareCard, ManantialTableCard } from "@/components/menu/skins/manantial";
@@ -18,17 +19,23 @@ const NAMES: Record<string, string> = {
 export default function TarjetaPreview({ skin }: { skin: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [png, setPng] = useState<string | null>(null);
+  // ?name=&id=&slug=&rewards=1 → la tarjeta de un local real, igual que la arma el panel (para sacar su imagen).
+  const q = useSearchParams();
   const id = menuSkinFromRestaurant({ menuSkin: skin });
   if (!id) return <p className="p-8 text-sm">No existe la piel &quot;{skin}&quot;.</p>;
-  const qr = <QRCodeSVG value="https://comeleal.com/menu/preview" size={176} fgColor={SKIN_QR_INK[id] ?? "#1C2526"} bgColor="#FFFFFF" />;
+  const realName = q.get("name");
+  const realLink = q.get("slug") ? `comeleal.com/menu/${q.get("slug")}` : null;
+  const realRewards = q.get("rewards") === "1";
+  const qrValue = q.get("id") ? `https://comeleal.com/menu/${q.get("id")}` : "https://comeleal.com/menu/preview";
+  const qr = <QRCodeSVG value={qrValue} size={176} fgColor={SKIN_QR_INK[id] ?? "#1C2526"} bgColor="#FFFFFF" />;
   return (
     <div className="flex min-h-screen flex-wrap items-start justify-center gap-8 bg-neutral-100 p-6">
       <div className="w-[340px]">
         <div ref={ref}>
           {id === "manantial" ? (
-            <ManantialShareCard name="El Manantial" hasRewards={false} linkText="comeleal.com/menu/el-manantial" qr={qr} />
+            <ManantialShareCard name={realName ?? "El Manantial"} hasRewards={realRewards} linkText={realLink ?? "comeleal.com/menu/el-manantial"} qr={qr} />
           ) : (
-            <SkinShareCard skin={id} name={NAMES[id] ?? "Mi local"} logoUrl={null} hasRewards={false} linkText={`comeleal.com/menu/${id}`} qr={qr} />
+            <SkinShareCard skin={id} name={realName ?? NAMES[id] ?? "Mi local"} logoUrl={null} hasRewards={realRewards} linkText={realLink ?? `comeleal.com/menu/${id}`} qr={qr} />
           )}
         </div>
         <button
