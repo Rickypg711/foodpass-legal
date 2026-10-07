@@ -703,7 +703,11 @@ export default function ConfiguracionPage() {
               const taken = await getDocs(
                 query(collection(db, "restaurants"), where("slug", "==", candidate), limit(1)),
               );
-              const other = taken.docs.find((d) => d.id !== restaurantId);
+              // Un slug VIEJO de otro local (slugAliases) tampoco se puede tomar: su link viejo sigue vivo.
+              const takenOld = await getDocs(
+                query(collection(db, "restaurants"), where("slugAliases", "array-contains", candidate), limit(1)),
+              );
+              const other = [...taken.docs, ...takenOld.docs].find((d) => d.id !== restaurantId);
               if (!other) claimedSlug = candidate;
             }
             if (claimedSlug) update.slug = claimedSlug;

@@ -192,6 +192,25 @@ export async function fetchRestaurantMenuRawDocs(
 export async function findRestaurantBySlug(
   slug: string,
 ): Promise<{ id: string; data: Record<string, unknown> } | null> {
+  return queryRestaurantByField("slug", "EQUAL", slug);
+}
+
+/**
+ * Busca un restaurante por un slug VIEJO (`slugAliases`, 7-oct-2026). Existe porque el slug sí puede cambiar a
+ * mano (Suadero: "tacos-de-suadero-la-familia" → "suadero") y el link viejo ya está en Facebook, Instagram, TikTok
+ * y Google: tiene que seguir abriendo y mandar al nuevo.
+ */
+export async function findRestaurantBySlugAlias(
+  slug: string,
+): Promise<{ id: string; data: Record<string, unknown> } | null> {
+  return queryRestaurantByField("slugAliases", "ARRAY_CONTAINS", slug);
+}
+
+async function queryRestaurantByField(
+  fieldPath: string,
+  op: "EQUAL" | "ARRAY_CONTAINS",
+  slug: string,
+): Promise<{ id: string; data: Record<string, unknown> } | null> {
   try {
     const res = await fetch(`${BASE}:runQuery?key=${API_KEY}`, {
       method: "POST",
@@ -201,8 +220,8 @@ export async function findRestaurantBySlug(
           from: [{ collectionId: "restaurants" }],
           where: {
             fieldFilter: {
-              field: { fieldPath: "slug" },
-              op: "EQUAL",
+              field: { fieldPath },
+              op,
               value: { stringValue: slug },
             },
           },
@@ -252,7 +271,10 @@ export async function resolveRestaurantHandle(
     };
   }
   if (byId.status === "error") return "error";
-  const bySlug = await findRestaurantBySlug(handle.toLowerCase());
+  const bySlug =
+    (await findRestaurantBySlug(handle.toLowerCase())) ??
+    // Slug viejo: matchedBy "slug" con handle ≠ slug canónico → page.tsx redirige al nuevo.
+    (await findRestaurantBySlugAlias(handle.toLowerCase()));
   if (bySlug) {
     return {
       id: bySlug.id,
