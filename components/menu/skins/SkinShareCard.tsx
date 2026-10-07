@@ -74,3 +74,40 @@ export function SkinShareCard({
     </div>
   );
 }
+
+/**
+ * Tarjeta de MESA con la ropa de la piel (7-oct-2026, Ricardo: "esto también premium"). Va dos por hoja y se
+ * recorta, así que no lleva la portada completa: el papel de la piel, el nombre del local en el título de sus
+ * tarjetas, "Mesa N" grande, el QR en su tinta y "Escanea y ordena". Los locales SIN piel siguen con la tarjeta de
+ * siempre (ya está pegada en mesas reales).
+ */
+export function SkinTableCard({
+  skin,
+  name,
+  mesa,
+  qr,
+  loyaltyLive,
+}: {
+  skin: MenuSkinId;
+  name: string;
+  mesa: string;
+  qr: ReactNode;
+  loyaltyLive: boolean;
+}) {
+  const t = landingThemeFor(skin);
+  return (
+    <div className={`${t.root} h-full overflow-hidden rounded-2xl p-2.5`} style={{ minHeight: 0, backgroundAttachment: "scroll", transform: "translateZ(0)" }}>
+      <div className={`${t.card} flex h-full flex-col items-center text-center`}>
+        {/* El letrero de la piel lleva "Mesa N" (corto, siempre cabe); el nombre del local va chico arriba, como en
+            la tarjeta de siempre. Con el nombre en el letrero, "Tacos de Suadero La Familia" salía en 5 renglones. */}
+        <p className={`mb-1.5 w-full truncate text-[11px] font-bold uppercase tracking-widest ${t.textSoft}`}>{name}</p>
+        {/* El título de algunas pieles se sale del plato con margen negativo (Suadero -mt-9): aquí se neutraliza
+            para que no tape el nombre, y "Mesa 1" no se parte. */}
+        <div className="[&>*]:mt-0! [&>*]:mb-2! [&>*]:whitespace-nowrap [&_*]:whitespace-nowrap">{t.cardTitle(mesa)}</div>
+        <div className="mt-1 rounded-xl bg-white p-2 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.6)]">{qr}</div>
+        <p className={`mt-3 text-[13px] font-black ${t.link.replace(/underline\S*|decoration-\S+/g, "")}`}>Escanea y ordena</p>
+        <p className={`mt-0.5 text-[11px] leading-snug ${t.textSoft}`}>{loyaltyLive ? "Pide desde tu teléfono y acumula puntos" : "Pide desde tu teléfono"}</p>
+      </div>
+    </div>
+  );
+}

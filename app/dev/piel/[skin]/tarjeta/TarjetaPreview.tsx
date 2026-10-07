@@ -5,8 +5,8 @@
 import { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
-import { ManantialShareCard } from "@/components/menu/skins/manantial";
-import { SKIN_QR_INK, SkinShareCard } from "@/components/menu/skins/SkinShareCard";
+import { ManantialShareCard, ManantialTableCard } from "@/components/menu/skins/manantial";
+import { SKIN_QR_INK, SkinShareCard, SkinTableCard } from "@/components/menu/skins/SkinShareCard";
 import { menuSkinFromRestaurant } from "@/lib/menu/menuSkin";
 
 const NAMES: Record<string, string> = {
@@ -38,6 +38,16 @@ export default function TarjetaPreview({ skin }: { skin: string }) {
         >
           Generar PNG
         </button>
+      </div>
+      <div className="grid w-[420px] grid-cols-2 gap-4">
+        {["Mesa 1", "Mesa 2"].map((m) => {
+          const tq = <QRCodeSVG value="https://comeleal.com/menu/preview?mesa=1" size={132} fgColor={SKIN_QR_INK[id] ?? "#1C2526"} bgColor="#FFFFFF" />;
+          return id === "manantial" ? (
+            <ManantialTableCard key={m} name="El Manantial" mesa={m} qr={tq} loyaltyLive={false} />
+          ) : (
+            <SkinTableCard key={m} skin={id} name={NAMES[id] ?? "Mi local"} mesa={m} qr={tq} loyaltyLive={false} />
+          );
+        })}
       </div>
       {png ? (
         // eslint-disable-next-line @next/next/no-img-element

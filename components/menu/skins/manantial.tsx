@@ -756,3 +756,30 @@ export function ManantialShareCard({
     </div>
   );
 }
+
+/** Tarjeta de MESA del Manantial: su letrero chico con chispas, la franja que escurre y su pared con el QR morado. */
+export function ManantialTableCard({ name, mesa, qr, loyaltyLive }: { name: string; mesa: string; qr: ReactNode; loyaltyLive: boolean }) {
+  return (
+    <div className={`${MN_FONT_VARS} mn-skin h-full overflow-hidden rounded-2xl text-center`} style={{ minHeight: 0, backgroundAttachment: "scroll", backgroundSize: "260px 260px" }}>
+      <div className="mn-wall relative overflow-hidden px-2 pt-3">
+        <Sprinkles />
+        <p className={`${MN_TITLE} mn-bubble relative text-[22px] leading-none text-white`}>{name || "El Manantial"}</p>
+        <p className="relative mt-1.5 pb-2.5 [font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[26px] font-bold uppercase leading-none text-white">{mesa}</p>
+        <div className="mn-band relative -mx-2 h-4" aria-hidden />
+        <div className="relative -mx-2 -mb-px -mt-[3px] h-3.5 bg-[#efe6f6]" aria-hidden>
+          <Drip className="absolute inset-0 block h-3.5 w-full" fill="#a12a8c" />
+        </div>
+      </div>
+      <div className="px-3 pb-4 pt-1">
+        <div className="mx-auto w-fit rounded-xl bg-white p-2 shadow-[0_0_0_3px_#fff,0_0_0_4.5px_#b99ad3]">{qr}</div>
+        <p className="mx-auto mt-2.5 flex w-fit items-baseline gap-1.5 rounded-full bg-gradient-to-b from-[#4a3480] to-[#3d2a6e] px-3.5 pb-1 pt-0.5 leading-none">
+          <span className="[font-family:var(--mn-script),cursive] text-[15px] font-bold text-[#8fe3dc]">Escanea</span>
+          <span className="[font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[16px] font-bold uppercase text-white">y ordena</span>
+        </p>
+        <p className="mx-auto mt-1.5 w-fit rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-[#5b2a80]">
+          {loyaltyLive ? "Pide desde tu teléfono y acumula puntos" : "Pide desde tu teléfono"}
+        </p>
+      </div>
+    </div>
+  );
+}

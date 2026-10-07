@@ -32,6 +32,9 @@ import {
   TABLE_MAX_LENGTH,
 } from "@/lib/order/tableSession";
 import { SITE_URL } from "@/lib/siteMetadata";
+import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
+import { SKIN_QR_INK, SkinTableCard } from "@/components/menu/skins/SkinShareCard";
+import { ManantialTableCard } from "@/components/menu/skins/manantial";
 
 const SERIF = "var(--font-lora), Lora, Georgia, serif";
 const INK = "#1C2526";
@@ -53,6 +56,8 @@ export default function MesasPage() {
   /** Premios apagados (5-sep): el letrero de mesa no promete puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState(true);
   const [count, setCount] = useState(8);
+  /** 7-oct-2026: un local con piel imprime sus mesas con SU ropa; sin piel, la tarjeta de siempre. */
+  const [skin, setSkin] = useState<MenuSkinId | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -76,6 +81,7 @@ export default function MesasPage() {
       const snap = await getDoc(doc(db, "restaurants", ctx.restaurantId));
       setRestaurantName((snap.data()?.name as string) ?? "Tu restaurante");
       setLoyaltyLive(restaurantPromisesPoints(snap.data()));
+      setSkin(menuSkinFromRestaurant(snap.data()));
       setLoading(false);
     }
     init().catch(() => setLoading(false));
@@ -133,6 +139,8 @@ export default function MesasPage() {
           .no-print { display: none !important; }
           .print-sheet { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0 !important; }
           .print-card { break-inside: avoid; page-break-inside: avoid; border: 1px dashed #bbb !important; box-shadow: none !important; }
+          /* Las tarjetas con piel llevan fondo de color: que la impresora sí lo pinte. */
+          .print-card, .print-card * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           nav, header, aside, footer { display: none !important; }
         }
       `}</style>
@@ -251,7 +259,20 @@ export default function MesasPage() {
 
       {/* ── La hoja imprimible: NO cambia, ya está pegada en mesas reales ── */}
       <div className="print-sheet mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-3">
-        {mesas.map((mesa) => (
+        {skin
+          ? mesas.map((mesa) => {
+              const qr = <QRCodeSVG value={tableMenuUrl(SITE_URL, restaurantId, mesa)} size={132} fgColor={SKIN_QR_INK[skin] ?? INK} bgColor="#FFFFFF" />;
+              return (
+                <div key={mesa} className="print-card rounded-2xl">
+                  {skin === "manantial" ? (
+                    <ManantialTableCard name={restaurantName} mesa={tableLabel(mesa)} qr={qr} loyaltyLive={loyaltyLive} />
+                  ) : (
+                    <SkinTableCard skin={skin} name={restaurantName} mesa={tableLabel(mesa)} qr={qr} loyaltyLive={loyaltyLive} />
+                  )}
+                </div>
+              );
+            })
+          : mesas.map((mesa) => (
           <div
             key={mesa}
             className="print-card flex flex-col items-center rounded-2xl bg-white px-4 py-5 text-center"
