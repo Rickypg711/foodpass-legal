@@ -15,6 +15,8 @@ import { trackVendorOnboardingCompleted } from "@/lib/analytics/vendorAcquisitio
 import MenuShareModal from "../../_components/MenuShareModal";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf, waNumber } from "@/lib/phone/phoneCountry";
 import { buildWhatsappUrl } from "@/lib/order/formatWhatsappMessage";
+import { slugFromRestaurantData } from "@/lib/slug";
+import { ActivationCard } from "@/components/vendor/ActivationCard";
 
 /**
  * Fire CompleteRegistration (Pixel + CAPI) + GA4 once per restaurant.
@@ -84,6 +86,7 @@ export default function SetupDonePage() {
       const wa = String(rSnap.data()?.whatsapp ?? "").replace(/\D/g, "");
       if (wa.length >= 10) setRestaurantWhatsapp(wa.slice(-10));
       setPhoneCountry(phoneCountryOf(rSnap.data()));
+      setSlug(slugFromRestaurantData(rSnap.data() as Record<string, unknown> | undefined));
       setPromisesPoints(rSnap.data()?.loyaltyReady !== false);
       setRestaurantId(rid);
       setLoading(false);
@@ -114,23 +117,24 @@ export default function SetupDonePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#faf9f5] px-4">
-      <div className="mx-auto w-full max-w-sm text-center">
+    <div className="flex min-h-screen flex-col items-center bg-[#faf9f5] px-4 py-10">
+      <div className="mx-auto w-full max-w-md">
 
-        {/* Celebration icon */}
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#F28C38]/10">
-          <span className="text-4xl" role="img" aria-label="confetti">🎉</span>
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-2xl font-bold tracking-tight text-[#141413]">
-          ¡{restaurantName} está listo!
+        {/* Opción A (6-oct-2026): sin confeti ni exclamaciones. El título dice lo que
+            pasó y la tarjeta de abajo dice qué sigue. */}
+        <h1 className="text-[26px] font-semibold leading-8 text-[#1C2526]" style={{ fontFamily: "var(--font-lora), Lora, Georgia, serif" }}>
+          {restaurantName} ya está listo.
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[#141413]/55">
-          Ya tienes horario y menú. Tus clientes ya pueden ver tu menú y ordenar.
-          {" "}
-          <Link href="/vendor/setup/recompensas" className="font-semibold text-[#F28C38] hover:underline">
-            ¿Quieres que junten puntos? Pon un premio (opcional) →
+        <p className="mb-6 mt-2 text-[15px] leading-5 text-[#5B6366]">
+          Tus clientes ya pueden ver tu menú y pedir. Faltan tres toques para que de verdad te pidan.
+        </p>
+
+        {/* Activación en tres toques — el minuto caliente es este. */}
+        {restaurantId && <ActivationCard restaurantId={restaurantId} variant="done" />}
+
+        <p className="mb-6 text-[14px] leading-5 text-[#5B6366]">
+          <Link href="/vendor/setup/recompensas" className="font-semibold text-[#8A4B12] hover:underline">
+            ¿Quieres que junten puntos? Pon un premio (opcional)
           </Link>
         </p>
 
@@ -139,7 +143,7 @@ export default function SetupDonePage() {
             bonito e imprimir. Aquí vivía el "antes" que el panel ya enterró
             (QR de api.qrserver.com + link de ID pelón + imprimir casero). */}
         {restaurantId && (
-          <div className="mt-8 rounded-2xl border border-[#141413]/8 bg-white p-6">
+          <div className="rounded-xl border border-[#D9D2C5] bg-white p-5 text-center">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#F28C38]">
               Tu código QR de menú
             </p>
@@ -165,7 +169,7 @@ export default function SetupDonePage() {
                 rel="noopener noreferrer"
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#25D366]/40 bg-[#25D366]/5 px-4 py-3 text-sm font-semibold text-[#128C4B] hover:bg-[#25D366]/10 transition-all"
               >
-                📲 Mandármelo a mi WhatsApp
+                Mandármelo a mi WhatsApp
               </a>
             )}
             {/* Verlo con sus propios ojos — la pantalla ofrecía el QR y el

@@ -17,9 +17,14 @@ import LandingView, { type LandingInitialData } from "./LandingView";
 
 export default async function RestaurantLandingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ restaurantId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // 6-oct-2026: el redirect ID→slug tiraba la query y con ella el utm con
+  // que el dueño compartió (activación en tres toques). Se conserva.
+  const qs = buildQueryString(await (searchParams ?? Promise.resolve({})));
   // El handle puede ser el ID de Firestore (QRs impresos, eternos) o el slug
   // bonito (comeleal.com/r/luzz-pizza). Canónico = slug cuando existe.
   const { restaurantId: handle } = await params;
@@ -30,7 +35,7 @@ export default async function RestaurantLandingPage({
     // Ni id ni slug → rescate de ids reescritos en minúsculas (FB/IG).
     const realId = await findRestaurantIdCaseInsensitive(handle);
     if (realId && realId !== handle) {
-      redirect(`/r/${realId}`);
+      redirect(`/r/${realId}${qs}`);
     }
     // De plano no existe → 404 de verdad. Antes contestaba 200 con la vista
     // client ("No encontramos…") y Google lo leía como página vacía (soft
@@ -47,11 +52,11 @@ export default async function RestaurantLandingPage({
   // Canónico: si llegó por ID y el restaurante YA tiene slug → redirige a la
   // URL bonita (los dos funcionan; Google y los shares consolidan en una).
   if (resolved.matchedBy === "id" && resolved.slug && resolved.slug !== handle) {
-    redirect(`/r/${resolved.slug}`);
+    redirect(`/r/${resolved.slug}${qs}`);
   }
   // Slug con mayúsculas raras → normaliza.
   if (resolved.matchedBy === "slug" && resolved.slug && handle !== resolved.slug) {
-    redirect(`/r/${resolved.slug}`);
+    redirect(`/r/${resolved.slug}${qs}`);
   }
 
   const restaurantId = resolved.id;
@@ -76,4 +81,15 @@ export default async function RestaurantLandingPage({
   };
 
   return <LandingView restaurantId={restaurantId} initial={initial} />;
+}
+
+/** Vuelve a armar `?a=b&c=d` a partir de los searchParams de Next (solo strings). */
+function buildQueryString(sp: Record<string, string | string[] | undefined>): string {
+  const u = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string") u.set(k, v);
+    else if (Array.isArray(v)) for (const x of v) u.append(k, x);
+  }
+  const q = u.toString();
+  return q ? `?${q}` : "";
 }

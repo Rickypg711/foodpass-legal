@@ -10,10 +10,18 @@ import { resolveRestaurantHandle } from "@/lib/server/restaurantLanding";
 
 export default async function RootHandleAlias({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { handle } = await params;
+  const sp = await (searchParams ?? Promise.resolve({}));
+  const u = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string") u.set(k, v);
+  }
+  const qs = u.toString() ? `?${u.toString()}` : "";
 
   // Sin pinta de handle (archivos, rutas técnicas) → 404 sin gastar fetch.
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,60}$/.test(handle)) {
@@ -22,7 +30,7 @@ export default async function RootHandleAlias({
 
   const resolved = await resolveRestaurantHandle(handle);
   if (resolved && resolved !== "error") {
-    redirect(`/r/${resolved.slug ?? resolved.id}`);
+    redirect(`/r/${resolved.slug ?? resolved.id}${qs}`);
   }
 
   notFound();

@@ -32,6 +32,7 @@ const main = raw.slice(jsxStart, jsxEnd);
 // 1. Los bloques van en orden dentro de <main>, cada uno UNA vez.
 {
   const markers = [
+    "<ActivationCard ",
     "<SetupBanner ",
     "<TodayCard",
     "<IdentifiedSalesCard ",
@@ -175,5 +176,12 @@ assert.equal(raw.split('"visitHistory"').length - 1, 1, "panel: visitHistory se 
 // 8. Palabras prohibidas para el dueño: jamás "cerebro", jamás "carta".
 assert.ok(!/cerebro/i.test(ownerFacing), "panel: 'cerebro' no es palabra de dueño");
 assert.ok(!/\bcarta\b/i.test(ownerFacing), "panel: es 'menú', jamás 'carta'");
+
+// 9. Activación en tres toques (6-oct-2026): PRIMERO, siempre visible (ella sola se va).
+{
+  const i = main.indexOf("<ActivationCard ");
+  assert.ok(!main.slice(Math.max(0, i - 40), i).includes("firstDay"), "panel: <ActivationCard no se esconde el primer día");
+  assert.ok(main.includes('<ActivationCard restaurantId={data.restaurantId} variant="panel" />'), "panel: ActivationCard con variante panel");
+}
 
 console.log("validate-panel-order: OK — 7 bloques en orden, sin secciones muertas");

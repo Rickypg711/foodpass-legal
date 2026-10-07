@@ -35,6 +35,7 @@ import {
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
+import { ActivationCard } from "@/components/vendor/ActivationCard";
 import { OwnerPushCard } from "@/components/vendor/OwnerPushCard";
 import { logOwnerAction } from "@/lib/ownerActions";
 import { WinbackTodayList, parseWinbackToday, type WinbackTodayRow } from "./_components/WinbackTodayList";
@@ -700,6 +701,11 @@ export default function VendorDashboard() {
           {/* Día cero: la brújula VA PRIMERO — la acción principal de un
               restaurante sin terminar de nacer es terminar de nacer, no
               "Nueva venta" (cazado por Ricardo en el primer claim). */}
+          {/* Activación en tres toques (6-oct-2026): lo primero que ve un
+              dueño nuevo. Mándaselo a 5 clientes · ponlo donde te buscan ·
+              haz un pedido de prueba. Se va sola cuando los tres están hechos. */}
+          <ActivationCard restaurantId={data.restaurantId} variant="panel" />
+
           {!data.isSetupComplete && (
             <SetupBanner reasons={data.setupIncompleteReasons} />
           )}

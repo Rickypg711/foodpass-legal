@@ -133,8 +133,14 @@ export function trackWebMenuDownloadClick(p: ClickParams): void {
 export function landingViaFromLocation(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    const m = new URLSearchParams(window.location.search).get("m");
-    return m === "wa" ? "winback_whatsapp" : null;
+    const sp = new URLSearchParams(window.location.search);
+    const m = sp.get("m");
+    if (m === "wa") return "winback_whatsapp";
+    // 6-oct-2026: activación en tres toques — el dueño comparte con
+    // utm_source=whatsapp|instagram|google & utm_medium=owner_share.
+    const src = sp.get("utm_source");
+    if (src && sp.get("utm_medium") === "owner_share") return `owner_${src.slice(0, 24)}`;
+    return null;
   } catch {
     return null;
   }
