@@ -43,14 +43,25 @@
   transform: rotate(-2deg);
 }
 
-/* La franja magenta de su pared, con los puntitos blancos (chispas). */
+/* La franja magenta de su pared, con sus puntitos blancos: más tupidos y de tres tamaños, como el vinil. */
 .mn-skin .mn-band {
   background-color: #a12a8c;
   background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.6px, transparent 2px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.8) 1.1px, transparent 1.5px);
-  background-size: 38px 22px, 27px 17px;
-  background-position: 4px 3px, 19px 11px;
+    radial-gradient(circle, rgba(255, 255, 255, 0.98) 2.2px, transparent 2.7px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.75) 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(255, 220, 240, 0.85) 1.3px, transparent 1.8px);
+  background-size: 46px 26px, 23px 15px, 13px 11px, 31px 19px;
+  background-position: 6px 4px, 15px 9px, 3px 13px, 22px 2px;
+}
+
+/* Chispas de colores de la portada: palitos redondos, como las de un helado. */
+.mn-skin .mn-sprinkle {
+  width: 13px;
+  height: 4.5px;
+  border-radius: 999px;
+  opacity: 0.85;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
 }
 
 /* Las lámparas del techo: paletas de colores con su marco blanco, flotando despacio. */

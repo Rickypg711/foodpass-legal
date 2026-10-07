@@ -222,6 +222,27 @@ const LAMPS: { c: string; x: string; y: string; r: number; w: number }[] = [
   { c: "#d62f8f", x: "18%", y: "88%", r: -20, w: 36 },
   { c: "#7cc8e8", x: "92%", y: "34%", r: 20, w: 28 },
 ];
+/** Chispas de colores (como las de un helado) regadas por la pared morada de la portada. */
+const SPRINKLES: { c: string; x: number; y: number; r: number }[] = [
+  { c: "#ffffff", x: 6, y: 8, r: 30 }, { c: "#f7d54a", x: 14, y: 30, r: -40 }, { c: "#7cc8e8", x: 26, y: 12, r: 70 },
+  { c: "#ff7aa8", x: 34, y: 40, r: 15 }, { c: "#ffffff", x: 46, y: 6, r: -20 }, { c: "#8fe3dc", x: 58, y: 34, r: 50 },
+  { c: "#f7d54a", x: 66, y: 10, r: -60 }, { c: "#ff7aa8", x: 76, y: 28, r: 35 }, { c: "#ffffff", x: 88, y: 16, r: -15 },
+  { c: "#7cc8e8", x: 94, y: 44, r: 80 }, { c: "#ffffff", x: 4, y: 56, r: -70 }, { c: "#ff7aa8", x: 12, y: 78, r: 20 },
+  { c: "#8fe3dc", x: 22, y: 64, r: -35 }, { c: "#f7d54a", x: 8, y: 92, r: 60 }, { c: "#ffffff", x: 96, y: 64, r: 10 },
+  { c: "#7cc8e8", x: 2, y: 40, r: -50 }, { c: "#ff7aa8", x: 98, y: 8, r: 75 }, { c: "#ffffff", x: 90, y: 80, r: -25 },
+  { c: "#f7d54a", x: 82, y: 70, r: 40 }, { c: "#8fe3dc", x: 92, y: 90, r: -65 }, { c: "#ffffff", x: 18, y: 48, r: 55 },
+  { c: "#f7d54a", x: 40, y: 22, r: -10 }, { c: "#ff7aa8", x: 86, y: 54, r: -45 }, { c: "#ffffff", x: 92, y: 30, r: 65 },
+];
+function Sprinkles() {
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      {SPRINKLES.map((p, i) => (
+        <span key={i} className="mn-sprinkle absolute" style={{ left: `${p.x}%`, top: `${p.y}%`, background: p.c, transform: `rotate(${p.r}deg)` } as CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
 function Lamps() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -255,11 +276,12 @@ export function ManantialHeader({
 }) {
   const name = loading ? "El Manantial" : restaurantName || "El Manantial";
   return (
-    <header className="mn-wall mn-rise relative overflow-hidden px-4 pb-0 pt-6 sm:px-6 sm:pt-8">
+    <header className="mn-wall mn-rise relative overflow-hidden px-4 pb-0 pt-8 sm:px-6 sm:pt-10">
+      <Sprinkles />
       <Lamps />
       <div className="relative mx-auto max-w-3xl text-center">
         {/* El listón blanco en arco: "Paletería y Heladería" en azul. */}
-        <svg viewBox="0 0 320 76" className="mx-auto block h-[62px] w-[262px] sm:h-[70px] sm:w-[296px]" aria-hidden>
+        <svg viewBox="0 0 320 76" className="mx-auto block h-[72px] w-[300px] sm:h-[84px] sm:w-[352px]" aria-hidden>
           <defs>
             <path id="mn-arc" d="M28 64 Q160 -6 292 64" />
           </defs>
@@ -273,10 +295,10 @@ export function ManantialHeader({
           </text>
         </svg>
         <div className="relative -mt-1 inline-block">
-          <MnScoop className="mn-scoop absolute -top-6 right-[6%] h-11 w-11 sm:-top-7 sm:h-12 sm:w-12" />
-          <h1 className={`${MN_TITLE} mn-bubble mn-bubble--big px-4 text-[44px] leading-[0.95] text-white sm:text-[58px]`}>{name}</h1>
+          <MnScoop className="mn-scoop absolute -top-8 right-[4%] h-14 w-14 sm:-top-10 sm:h-16 sm:w-16" />
+          <h1 className={`${MN_TITLE} mn-bubble mn-bubble--big px-1 text-[clamp(46px,14.5vw,84px)] leading-[0.95] text-white`}>{name}</h1>
         </div>
-        <p className={`${MN_NAME} mn-bubble mt-1 text-[15px] leading-none tracking-[0.04em] text-white sm:text-[17px]`}>
+        <p className={`${MN_NAME} mn-bubble mt-1.5 text-[19px] leading-none tracking-[0.04em] text-white sm:text-[22px]`}>
           {!loading && tagline?.trim() ? tagline.trim() : "La Original"}
         </p>
         {!loading ? (
@@ -310,7 +332,7 @@ export function ManantialHeader({
       </div>
       {/* La franja magenta de su pared, con sus puntitos blancos, que escurre sobre el lila (la ola va fuera del
           morado: abajo se ve la pared). */}
-      <div className="mn-band relative -mx-4 h-7 sm:-mx-6" aria-hidden />
+      <div className="mn-band relative -mx-4 h-9 sm:-mx-6" aria-hidden />
       <div className="relative -mx-4 -mb-px h-6 bg-[#efe6f6] sm:-mx-6" aria-hidden>
         <Drip className="absolute inset-0 block h-6 w-full" fill="#a12a8c" />
       </div>
