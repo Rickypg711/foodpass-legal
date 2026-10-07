@@ -159,15 +159,29 @@ function Price({ value, className = "" }: { value: number; className?: string })
   );
 }
 
-/** La bola de helado de chocolate del letrero, con su crema. */
+/** El cono de su letrero: bola de chocolate con su crema escurriendo, sobre un cono de galleta cuadriculado. */
 export function MnScoop({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" aria-hidden className={className}>
-      <ellipse cx="32" cy="50" rx="22" ry="7" fill="#f7ecd4" />
-      <circle cx="32" cy="30" r="21" fill="#5a3222" />
-      <path d="M14 30c4-8 10-12 18-12s14 4 18 12c-2-10-9-17-18-17S16 20 14 30z" fill="#7a4a33" />
-      <path d="M22 44c3 4 7 6 10 6s7-2 10-6c-2 2-5 3-10 3s-8-1-10-3z" fill="#3e2015" />
-      <circle cx="24" cy="22" r="3" fill="#8f6049" opacity="0.8" />
+    <svg viewBox="0 0 64 88" aria-hidden className={className}>
+      <defs>
+        <clipPath id="mn-cono-clip">
+          <path d="M14 38 L50 38 L32 86 Z" />
+        </clipPath>
+      </defs>
+      {/* Cono de galleta */}
+      <path d="M14 38 L50 38 L32 86 Z" fill="#e0a85a" stroke="#9a6326" strokeWidth="2" strokeLinejoin="round" />
+      <g clipPath="url(#mn-cono-clip)" stroke="#a86d2c" strokeWidth="1.6" opacity="0.8">
+        <path d="M6 30 L58 82 M6 42 L58 94 M6 18 L58 70 M18 30 L70 82" />
+        <path d="M58 30 L6 82 M58 42 L6 94 M58 18 L6 70 M46 30 L-6 82" />
+      </g>
+      {/* La crema que asoma en la orilla */}
+      <path d="M10 38 q6 6 11 1 q5 6 11 0 q6 6 11 0 q5 6 11 -1 q2 -4 0 -6 L10 32 q-2 3 0 6 z" fill="#f7ecd4" />
+      {/* La bola de chocolate con brillo y su escurrido */}
+      <circle cx="32" cy="22" r="18" fill="#5a3222" />
+      <path d="M15 28 q4 9 10 6 q3 8 8 2 q5 7 9 0 q5 4 7 -6" fill="#5a3222" />
+      <path d="M20 16 c3 -7 10 -9 16 -8" stroke="#8f6049" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <circle cx="40" cy="14" r="2.4" fill="#8f6049" />
+      <path d="M26 36 v5 q0 3 -2 3 q-2 0 -2 -3 v-3" fill="#5a3222" />
     </svg>
   );
 }
@@ -295,7 +309,7 @@ export function ManantialHeader({
           </text>
         </svg>
         <div className="relative -mt-1 inline-block">
-          <MnScoop className="mn-scoop absolute -top-8 right-[4%] h-14 w-14 sm:-top-10 sm:h-16 sm:w-16" />
+          <MnScoop className="mn-scoop absolute -top-12 right-[3%] h-[74px] w-[54px] sm:-top-14 sm:h-[88px] sm:w-[64px]" />
           <h1 className={`${MN_TITLE} mn-bubble mn-bubble--big px-1 text-[clamp(46px,14.5vw,84px)] leading-[0.95] text-white`}>{name}</h1>
         </div>
         <p className={`${MN_NAME} mn-bubble mt-1.5 text-[19px] leading-none tracking-[0.04em] text-white sm:text-[22px]`}>
@@ -660,7 +674,7 @@ export function ManantialFlowHeader({
       ) : null}
       <div className="relative mx-auto max-w-md pb-5 pt-1">
         <div className="relative inline-block">
-          <MnScoop className="absolute -top-4 right-[2%] h-8 w-8" />
+          <MnScoop className="absolute -top-7 right-[1%] h-12 w-9" />
           <p className={`${MN_TITLE} mn-bubble text-[30px] leading-none text-white`}>{name}</p>
         </div>
         <h1 className="mt-3 [font-family:var(--mn-board),Oswald,Impact,sans-serif] text-[24px] font-bold uppercase leading-none text-white">{shownTitle}</h1>
