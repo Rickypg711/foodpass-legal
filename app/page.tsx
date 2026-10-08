@@ -35,32 +35,33 @@ export const metadata: Metadata = {
 
 
 /** Números REALES de restaurantes en Comeleal, contados en Firestore el
- *  10-sep-2026 en hora de Chihuahua. Sin nombres a propósito (regla: nada de
- *  prueba social con nombre hasta ~50 locales). Los tres cuentan UNA historia,
- *  en el orden de la promesa: foto → ventas → clientes con nombre y teléfono.
+ *  8-oct-2026 (solo lectura), septiembre 2026 en hora de Chihuahua, pedidos
+ *  pagados. Sin nombres a propósito (regla: nada de prueba social con nombre
+ *  hasta ~50 locales). Los tres cuentan UNA historia, la del titular:
+ *  foto → teléfono en la venta → el cliente regresa.
  *  - 64 platillos: CENTRAL FAST FOOD (RzeRSmepS5JP0HY8kD8G) montó su menú de
- *    una foto en una tarde (4-sep); 64 docs en restaurants/{id}/menu.
- *  - 214 ventas: Pecado Escondido (d3v9krkR2YY90lrZGkjt) cobró 214 ventas
- *    (status completed + paid) en su Caja en agosto 2026; solo 1 con teléfono.
- *    Es el MISMO local del villano de abajo, a propósito: la Caja aguanta 214,
- *    sin el paso del teléfono te quedas con 1.
- *  - 10 de 10: CENTRAL FAST FOOD, primera semana con pedidos (5 al 11-sep):
- *    10 pedidos reales por el link, los 10 con nombre y teléfono. Muestra
- *    chica, pero real. Al recontar, correr scratch numeros.js (admin SDK). */
+ *    una foto en una tarde (4-sep); 64 docs en restaurants/{id}/menu (hoy 65,
+ *    uno lo agregó después).
+ *  - 105 de 120: Tacos de Suadero La Familia (gn3bKaysYnHIU3r8tun1) cobró 120
+ *    ventas en septiembre, 105 con teléfono (87 clientes distintos).
+ *  - 13 clientes: del mismo local, 13 teléfonos con 2+ compras en septiembre
+ *    (ninguno es el número de la casa).
+ *  Al recontar: FOODPASS/scripts/ventasIdentificadasReadOnly.js + conteo por
+ *  mes calendario en hora de Chihuahua (admin SDK, sin escribir). */
 const PROOF_POINTS = [
   { figure: "64 platillos", body: "leídos de una sola foto del menú, en una tarde" },
-  { figure: "214 ventas", body: "cobradas en un mes desde la Caja de un solo local" },
-  { figure: "10 de 10 pedidos", body: "con nombre y teléfono en la primera semana de un local" },
+  { figure: "105 de 120 ventas", body: "con nombre y teléfono en un mes, en un solo local" },
+  { figure: "13 clientes", body: "volvieron dos veces o más en el mismo mes" },
 ] as const;
 
 /** El villano (5-sep-2026, revisión contra Owner/Fluxsales): concreto y
- *  VERDADERO. "214 ventas, 1 teléfono" es Pecado Escondido en agosto 2026
- *  (mismo conteo que la tarjeta de arriba, 10-sep, hora de Chihuahua), sin
- *  nombre a propósito. Si cambia una cifra, cambian las dos. */
+ *  VERDADERO. "190 ventas, 0 teléfonos" es Pecado Escondido en septiembre
+ *  2026 (recontado 8-oct, hora de Chihuahua; antes 214/1 de agosto), sin
+ *  nombre a propósito. Aprobado por Ricardo el 8-oct. */
 const PROBLEM_CARDS = [
   {
     title: "No sabes quién te compró",
-    body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 214 ventas en un mes se quedó con 1 teléfono. Con 1 no traes a nadie de vuelta.",
+    body: "Cobras, entregas, y el cliente se va sin nombre ni número. Un local con 190 ventas en un mes se quedó con 0 teléfonos. Con 0 no traes a nadie de vuelta.",
   },
   {
     title: "El que no vuelve, no avisa",
@@ -291,7 +292,7 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <p className="mx-auto mt-6 max-w-6xl font-mono text-[11px] text-[#1C2526]/40">Cifras reales de locales en Comeleal, agosto 2026.</p>
+          <p className="mx-auto mt-6 max-w-6xl font-mono text-[11px] text-[#1C2526]/40">Cifras reales de locales en Comeleal, septiembre 2026.</p>
         </section>
 
         {/* ── Problem ── */}
