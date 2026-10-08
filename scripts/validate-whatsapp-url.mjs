@@ -172,3 +172,16 @@ console.log("✓ canon WhatsApp: 10 dígitos guardados, links a api.whatsapp.com
   if (!card.includes("buildWhatsappUrl(")) throw new Error("bigOrder: el link pasa por el canon buildWhatsappUrl");
   console.log("✅ pedido grande: mensaje escrito, link canónico, sin renglones vacíos");
 }
+
+// ── Switch "Pedidos grandes" (8-oct-2026): prendido por defecto ────────────
+{
+  const { bigOrdersOn } = await import("../lib/landing/bigOrderMessage.ts");
+  if (!bigOrdersOn({}) || !bigOrdersOn(null) || !bigOrdersOn({ bigOrdersEnabled: true })) throw new Error("bigOrders: sin campo = prendido");
+  if (bigOrdersOn({ bigOrdersEnabled: false })) throw new Error("bigOrders: false lo esconde");
+  const fs = await import("node:fs");
+  const lv = fs.readFileSync(new URL("../app/r/[restaurantId]/LandingView.tsx", import.meta.url), "utf8");
+  if (!lv.includes("restaurant.whatsapp && bigOrdersOn(rdata)")) throw new Error("bigOrders: la portada respeta el switch y pide WhatsApp");
+  const cfg = fs.readFileSync(new URL("../app/vendor/configuracion/page.tsx", import.meta.url), "utf8");
+  if (!cfg.includes("bigOrdersEnabled: bigOrders") || !cfg.includes("setBigOrders(bigOrdersOn(data))")) throw new Error("bigOrders: Configuración lee y guarda el switch");
+  console.log("✅ pedidos grandes: switch del dueño, prendido por defecto");
+}

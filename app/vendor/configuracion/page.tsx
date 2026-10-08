@@ -12,6 +12,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { getFirebaseDb, getFirebaseStorage } from "@/lib/firebase";
 import { POS_PAYMENT_OPTIONS, acceptedPaymentMethods, type PaymentMethod } from "@/lib/pos/paidOrderFields";
 import { deliveryFeeOf, deliveryZoneOf, restaurantOffersDelivery } from "@/lib/order/deliveryOptions";
+import { bigOrdersOn } from "@/lib/landing/bigOrderMessage";
 import { TICKET_SAMPLE_ID, autoPrintTickets, ticketPaperMm } from "@/lib/pos/ticketPaper";
 import {
   entitlementOf,
@@ -264,6 +265,8 @@ export default function ConfiguracionPage() {
   const [deliveryFee, setDeliveryFee] = useState<number | "">("");
   /** 🛵 "¿Hasta dónde entregas?" — texto que ve el comensal al elegir A domicilio. */
   const [deliveryZone, setDeliveryZone] = useState("");
+  /** 🎉 "¿Pedido grande o evento?" en la portada /r (8-oct-2026). Prendido por defecto. */
+  const [bigOrders, setBigOrders] = useState(true);
   /** 🖨️ Ancho del papel de la impresora térmica (10-sep): 80 o 58 mm. */
   const [paperMm, setPaperMm] = useState<58 | 80>(80);
   /** 🖨️ Sale solo (23-sep, Pro): cada pedido que entra se imprime desde Pedidos. */
@@ -343,6 +346,7 @@ export default function ConfiguracionPage() {
       const fee = deliveryFeeOf(data);
       setDeliveryFee(fee > 0 ? fee : "");
       setDeliveryZone(deliveryZoneOf(data));
+      setBigOrders(bigOrdersOn(data));
       setPaperMm(ticketPaperMm(data));
       setAutoPrintOn(autoPrintTickets(data));
       const bday = data.birthdayReward as Record<string, unknown> | undefined;
@@ -669,6 +673,7 @@ export default function ConfiguracionPage() {
         deliveryEnabled,
         deliveryFee: deliveryFee !== "" && Number(deliveryFee) > 0 ? Number(deliveryFee) : 0,
         deliveryZone: deliveryZone.trim(),
+        bigOrdersEnabled: bigOrders,
         ticketPaperMm: paperMm,
         autoPrintTickets: autoPrintOn,
         birthdayReward: { enabled: birthdayEnabled, points: birthdayPoints },
@@ -1376,6 +1381,19 @@ export default function ConfiguracionPage() {
                   ) : null}
                 </div>
               ) : null}
+            </SectionCard>
+
+            {/* ── Pedidos grandes (8-oct-2026) ──
+                La tarjeta "¿Pedido grande o evento?" de la portada /r. Prendida
+                por defecto; el que no hace pedidos grandes la apaga para no
+                prometer lo que no puede cumplir. Sin WhatsApp no sale igual. */}
+            <SectionCard label="Pedidos grandes">
+              <ToggleRow
+                on={bigOrders}
+                onToggle={() => { setBigOrders((v) => !v); setSaved(false); }}
+                title="Recibo pedidos grandes y eventos"
+                caption='En tu página sale "¿Pedido grande o evento?". Tu cliente pone la fecha y para cuántos, y te llega por WhatsApp para que le contestes.'
+              />
             </SectionCard>
 
             {/* ── Impresora de tickets (10-sep-2026) ──

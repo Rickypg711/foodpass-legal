@@ -4,6 +4,13 @@
 // dónde pedirlo. El cliente llena 4 datos y se abre el WhatsApp del local
 // con el mensaje ya escrito. El dueño contesta a mano, como siempre.
 
+/** Switch del dueño en Configuración (8-oct-2026). PRENDIDO por defecto: el
+ *  campo ausente = sí. Solo `bigOrdersEnabled: false` lo esconde, para el local
+ *  que no hace pedidos grandes y no quiere prometer lo que no puede cumplir. */
+export function bigOrdersOn(data: Record<string, unknown> | null | undefined): boolean {
+  return !data || data.bigOrdersEnabled !== false;
+}
+
 export const BIG_ORDER_KINDS = ["Oficina", "Fiesta o cumpleaños", "Escuela o equipo", "Otro"] as const;
 
 export type BigOrderInput = {
