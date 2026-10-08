@@ -15,6 +15,7 @@ import { ownerPhoneToE164 } from "../lib/phoneOwnerSignInPure.ts";
 
 // El país elegido entra al E.164 del SMS; un "+" escrito a mano le gana.
 assert.equal(ownerPhoneToE164("321 123 4567", "57"), "+573211234567", "Colombia elegida en el selector");
+assert.equal(ownerPhoneToE164("0414 123 4567", "58"), "+584141234567", "Venezuela: el 0 de adelante se cae");
 assert.equal(ownerPhoneToE164("809 952 4637", "1"), "+18099524637", "RD elegida en el selector");
 assert.equal(ownerPhoneToE164("+52 614 196 4086", "57"), "+526141964086", "el + escrito le gana al selector");
 assert.equal(ownerPhoneToE164("614 196 4086"), "+526141964086", "sin país sigue siendo México");

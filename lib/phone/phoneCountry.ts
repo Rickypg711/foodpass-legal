@@ -42,6 +42,10 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { code: "1", label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP", iso: "DO" },
   { code: "1", label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD", iso: "US" },
   { code: "57", label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP", iso: "CO" },
+  // Venezuela (8-oct-2026, Dani en TikTok: "no sirve para Venezuela"). Celular
+  // de 10 dígitos sin el 0 (414 123 4567). Moneda en dólares: allá se cobra en
+  // dólares y el bolívar cambia cada semana.
+  { code: "58", label: "Venezuela", flag: "🇻🇪", example: "414 123 4567", currency: "USD", iso: "VE" },
 ] as const;
 
 /** Ladas de República Dominicana dentro del +1 (NANP). */
@@ -63,7 +67,7 @@ export function phoneCountryEntryOf(
 
 /**
  * Moneda que delata el número escrito con "+": "+1 809..." es DOP (RD),
- * cualquier otro "+1" es USD, "+57" COP, "+52" MXN. Sin "+" no adivinamos.
+ * cualquier otro "+1" es USD, "+57" COP, "+58" USD, "+52" MXN. Sin "+" no adivinamos.
  */
 export function currencyForTypedPhone(raw: string): string | null {
   const code = countryFromTypedPhone(raw);

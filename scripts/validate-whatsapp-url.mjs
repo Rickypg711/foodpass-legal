@@ -23,7 +23,7 @@ if (!/export const DEFAULT_PHONE_COUNTRY = "52"/.test(countrySrc)) fail("DEFAULT
 if (!/export function waNumber\(/.test(countrySrc)) fail("waNumber no encontrado");
 if (!/export function toE164\(/.test(countrySrc)) fail("toE164 no encontrado");
 // Sólo países de 10 dígitos nacionales: la identidad de puntos son los últimos 10.
-for (const code of ['"52"', '"1"', '"57"']) {
+for (const code of ['"52"', '"1"', '"57"', '"58"']) {
   if (!countrySrc.includes(`code: ${code}`)) fail(`PHONE_COUNTRIES debe traer ${code}`);
 }
 for (const bad of ['"502"', '"593"', '"34"']) {
@@ -108,7 +108,8 @@ if (!/PHONE_COUNTRIES/.test(cfgSrc)) fail("Configuración debe ofrecer el select
 for (const pair of ['code: "52", label: "México", flag: "🇲🇽", example: "614 123 4567", currency: "MXN"',
                     'label: "República Dominicana", flag: "🇩🇴", example: "809 123 4567", currency: "DOP"',
                     'label: "Estados Unidos", flag: "🇺🇸", example: "915 123 4567", currency: "USD"',
-                    'label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP"']) {
+                    'label: "Colombia", flag: "🇨🇴", example: "321 123 4567", currency: "COP"',
+                    'code: "58", label: "Venezuela", flag: "🇻🇪", example: "414 123 4567", currency: "USD"']) {
   if (!countrySrc.includes(pair)) fail(`PHONE_COUNTRIES debe traer la moneda: ${pair}`);
 }
 if (!/DO_AREA_CODES = \["809", "829", "849"\]/.test(countrySrc)) fail("+1 809/829/849 debe reconocerse como República Dominicana (DOP)");

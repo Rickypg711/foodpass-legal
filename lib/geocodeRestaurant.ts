@@ -264,6 +264,7 @@ export function expectedCountryFromPhone(phone: string): string | null {
   if (raw.startsWith('+')) {
     if (digits.startsWith('502')) return 'GT';
     if (digits.startsWith('57')) return 'CO';
+    if (digits.startsWith('58')) return 'VE';
     if (digits.startsWith('52')) return 'MX';
     // El +1 no es un país, es el NANP: 809/829/849 son República Dominicana.
     // Antes TODO +1 se daba por Estados Unidos, así que al dominicano que
