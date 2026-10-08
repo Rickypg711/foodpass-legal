@@ -50,7 +50,7 @@ export const metadata: Metadata = {
  *  mes calendario en hora de Chihuahua (admin SDK, sin escribir). */
 const PROOF_POINTS = [
   { figure: "64 platillos", body: "leídos de una sola foto del menú, en una tarde" },
-  { figure: "105 de 120 ventas", body: "con nombre y teléfono en un mes, en un solo local" },
+  { figure: "105 de 120 ventas", body: "con teléfono en un mes, en un solo local" },
   { figure: "13 clientes", body: "volvieron dos veces o más en el mismo mes" },
 ] as const;
 
