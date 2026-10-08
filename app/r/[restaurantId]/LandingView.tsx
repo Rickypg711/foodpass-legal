@@ -36,7 +36,7 @@ import {
   weeklySchedule,
   type ScheduleStatus,
 } from "@/lib/schedule";
-import { buildFaq, buildSeoParagraph, cityForRestaurant, seoCategories } from "@/lib/landingContent";
+import { buildFaq, buildSeoParagraph, cityForRestaurant, hoursSentence, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
@@ -305,7 +305,7 @@ export default function LandingView({
       categories: restaurant.categories,
       address: restaurant.address,
       city: cityForRestaurant(rdata),
-      hoursText: weekly ? weekly.map((r) => `${r.day} ${r.hours}`).join(" · ") : null,
+      hoursText: hoursSentence(weekly),
       topItems: menuPhotos.slice(0, 3).map((p) => p.name),
       firstVisitReward: restaurant.firstVisitReward,
       earnRule: earnRuleLine(earnPolicyFromRestaurant(rdata)),

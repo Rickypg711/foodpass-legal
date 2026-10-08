@@ -24,6 +24,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  hoursSentence,
   seoCategories,
   isPlaceholderCategory,
   cityForRestaurant,
@@ -154,6 +155,25 @@ assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no mand
   assert.ok(!off.some((f) => f.a.includes("..")), "la dirección que ya trae punto no sale con 'Chih..'");
   const on = buildFaq({ name: "Suadero", categories: ["Mexicana"], address: null, hoursText: null, topItems: [], firstVisitReward: null, loyaltyLive: true });
   assert.ok(on[0].a.includes("sirve comida mexicana") && !on.some((f) => f.a.includes("—")), "FAQ: 'comida mexicana' y sin raya");
+}
+
+
+// 8-oct-2026: horario de la FAQ en una frase, no siete repeticiones.
+{
+  const D = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+  const rows = (hs) => D.map((day, i) => ({ day, hours: hs[i] }));
+  const same = "2:00 pm – 10:00 pm";
+  assert.equal(hoursSentence(rows(Array(7).fill(same))), "todos los días de 2:00 pm a 10:00 pm");
+  assert.equal(
+    hoursSentence(rows([...Array(5).fill("9:00 am – 6:00 pm"), "Cerrado", "Cerrado"])),
+    "de lunes a viernes de 9:00 am a 6:00 pm · sábado y domingo cerrado",
+  );
+  assert.equal(
+    hoursSentence(rows(["Cerrado", ...Array(6).fill(same)])),
+    "lunes cerrado · de martes a domingo de 2:00 pm a 10:00 pm",
+  );
+  assert.equal(hoursSentence(rows(Array(7).fill("Cerrado"))), null, "siempre cerrado: sin pregunta de horario");
+  assert.equal(hoursSentence(null), null);
 }
 
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

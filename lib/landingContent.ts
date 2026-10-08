@@ -136,6 +136,39 @@ export function buildSeoParagraph(
 }
 
 /**
+ * Horario de la FAQ en una frase de persona (8-oct-2026): siete días iguales
+ * eran siete repeticiones ("lunes 2:00 pm – 10:00 pm · martes 2:00 pm – …").
+ * Agrupa días seguidos con el mismo horario: "todos los días de 2:00 pm a
+ * 10:00 pm", "de lunes a viernes de 9:00 am a 6:00 pm · sábado y domingo
+ * cerrado". Recibe las filas de weeklySchedule (lunes primero).
+ */
+export function hoursSentence(
+  rows: readonly { day: string; hours: string }[] | null | undefined,
+): string | null {
+  if (!rows || rows.length === 0) return null;
+  const say = (h: string) => (h === "Cerrado" ? "cerrado" : `de ${h.replace(" – ", " a ")}`);
+  if (rows.every((r) => r.hours === rows[0].hours)) {
+    return rows[0].hours === "Cerrado" ? null : `todos los días ${say(rows[0].hours)}`;
+  }
+  const groups: { from: string; to: string; n: number; hours: string }[] = [];
+  for (const r of rows) {
+    const last = groups[groups.length - 1];
+    if (last && last.hours === r.hours) {
+      last.to = r.day;
+      last.n += 1;
+    } else {
+      groups.push({ from: r.day, to: r.day, n: 1, hours: r.hours });
+    }
+  }
+  return groups
+    .map((g) => {
+      const days = g.n === 1 ? g.from : g.n === 2 ? `${g.from} y ${g.to}` : `de ${g.from} a ${g.to}`;
+      return `${days} ${say(g.hours)}`;
+    })
+    .join(" · ");
+}
+
+/**
  * FAQ auto-generada (patrón FAQPage de Owner: 5 preguntas simples que Google
  * y los motores de IA citan). Solo se incluyen preguntas cuyos DATOS existen —
  * nunca inventamos respuestas.

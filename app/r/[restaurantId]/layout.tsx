@@ -9,7 +9,7 @@ import { buildMenuJsonLd } from "@/lib/server/menuSchema";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { restaurantFaviconUrl } from "@/lib/menu/menuFavicon";
 import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
-import { buildFaq, buildLandingTitle, cityForRestaurant, seoCategories } from "@/lib/landingContent";
+import { buildFaq, buildLandingTitle, cityForRestaurant, hoursSentence, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 
@@ -178,9 +178,7 @@ export default async function RestaurantLandingLayout({
     // FAQ con los MISMOS datos que renderiza LandingView (schema y página
     // nunca deben contradecirse).
     const weeklyRows = weeklySchedule(data);
-    const hoursText = weeklyRows
-      ? weeklyRows.map((r) => `${r.day} ${r.hours}`).join(" · ")
-      : null;
+    const hoursText = hoursSentence(weeklyRows);
     const fpr = data.firstPurchaseReward;
     let firstVisitReward: string | null = null;
     if (fpr && typeof fpr === "object") {
