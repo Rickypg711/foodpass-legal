@@ -164,7 +164,7 @@ const base = (overrides = {}) => ({
   const mustGate = [
     // (8-sep) el aviso de "lealtad llena" murió con el tope de 50 — ya no hay
     // capReached que gatear; ver scripts/validate-caja-pro-gate.mjs.
-    ["app/vendor/pos/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "promisesPoints: loyaltyLive", 'Para su recibo — 614']],
+    ["app/vendor/pos/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(rData))", "promisesPoints: loyaltyLive", 'Para su recibo: 614']],
     ["app/vendor/pedidos/page.tsx", ["promisesPoints: loyaltyLive"]],
     ["app/menu/[restaurantId]/order/[orderId]/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(d))", "{loyaltyLive ? (<>"]],
     ["app/menu/[restaurantId]/checkout/page.tsx", ["setLoyaltyLive(restaurantPromisesPoints(data))"]],

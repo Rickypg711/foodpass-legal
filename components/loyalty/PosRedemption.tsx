@@ -329,7 +329,7 @@ export function PosRedemption({
     >
       {discount ? (
         <p className="mb-2 text-[12px] font-bold" style={{ color: "#b45309" }}>
-          🏷️ Descuento {discount.name} activo — se aplica solo al cobrar
+          🏷️ Descuento {discount.name} activo: se aplica solo al cobrar
         </p>
       ) : !loading && canAssignDiscount && profiles.length > 0 ? (
         <div className="mb-2">
@@ -399,7 +399,7 @@ export function PosRedemption({
           </p>
           <p className="text-[11px] leading-snug" style={{ color: "rgba(6,95,70,0.85)" }}>
             Al cobrar, quien lo invitó se gana un{" "}
-            {referred.itemName || "premio"} — y este cliente también, para su
+            {referred.itemName || "premio"}, y este cliente también, para su
             siguiente visita.
           </p>
         </div>
@@ -410,11 +410,11 @@ export function PosRedemption({
         </p>
       ) : !known ? (
         <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.5)" }}>
-          ⭐ Número nuevo — esta venta le empieza a juntar puntos.
+          ⭐ Número nuevo: con esta venta empieza a juntar puntos.
         </p>
       ) : rewards.length === 0 ? (
         <p className="text-[12px]" style={{ color: "rgba(28,37,38,0.55)" }}>
-          ⭐ Este cliente tiene <b>{points} pts</b> — todavía sin premios canjeables.
+          ⭐ Este cliente tiene <b>{points} pts</b>. Todavía no le alcanza para un premio.
         </p>
       ) : (
         <>
@@ -438,7 +438,7 @@ export function PosRedemption({
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[13px] font-bold" style={{ color: "#1C2526" }}>
-                      {isSel ? "✓ " : ""}{t.name} — GRATIS
+                      {isSel ? "✓ " : ""}{t.name} GRATIS
                     </span>
                     <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                       {t.isFirstVisit
@@ -455,7 +455,7 @@ export function PosRedemption({
           {picked && codeState !== "ok" ? (
             <div className="mt-3">
               <p className="text-[11px] font-semibold" style={{ color: "rgba(28,37,38,0.6)" }}>
-                🔐 Pídele su <b>código de canje</b> — lo ve en{" "}
+                🔐 Pídele su <b>código de canje</b>. Lo ve en{" "}
                 <span className="font-bold">comeleal.com/puntos</span> en su teléfono
               </p>
               <div className="mt-1.5 flex items-center gap-2">
@@ -484,7 +484,7 @@ export function PosRedemption({
               </div>
               {codeState === "bad" ? (
                 <p className="mt-1 text-[11px] font-semibold" style={{ color: "#dc2626" }}>
-                  Código incorrecto — pídele que refresque su página de puntos.
+                  Código incorrecto. Pídele que recargue su página de puntos.
                 </p>
               ) : null}
               <button

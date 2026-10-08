@@ -726,7 +726,7 @@ function CheckoutDialog({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               // El guion de David (97 % de captura): "¿me das tu número, para tu recibo y tus puntos?" (29-sep).
-              placeholder={loyaltyLive ? "Para su recibo y sus puntos — 614 123 4567" : "Para su recibo — 614 123 4567"}
+              placeholder={loyaltyLive ? "Para su recibo y sus puntos: 614 123 4567" : "Para su recibo: 614 123 4567"}
               maxLength={16}
               className={INPUT_CLS}
               style={INPUT_STYLE}
@@ -1388,7 +1388,7 @@ export default function PosPage() {
         for (const ref of refs) {
           const snap = await transaction.get(ref);
           if (!snap.exists() || snap.data().isOpenTab !== true) {
-            throw new Error("Una ronda cambió — recarga las cuentas.");
+            throw new Error("Una ronda cambió. Recarga las cuentas.");
           }
         }
         for (const ref of refs) {
@@ -2811,7 +2811,7 @@ function CloseTabDialog({
             value={phone}
             autoFocus
             onChange={(e) => setPhone(e.target.value)}
-            placeholder={loyaltyLive ? "Su ticket y sus puntos — 614 123 4567" : "Su ticket — 614 123 4567"}
+            placeholder={loyaltyLive ? "Su ticket y sus puntos: 614 123 4567" : "Su ticket: 614 123 4567"}
             className={INPUT_CLS}
             style={INPUT_STYLE}
           />
