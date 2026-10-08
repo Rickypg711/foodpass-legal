@@ -142,4 +142,18 @@ assert.ok(pos.includes("con Pro"), "punto de venta: las cuentas por mesa dicen q
 const llms = read("app/llms.txt/route.ts");
 assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no manda WhatsApp por su cuenta"), "llms.txt: precio de la constante y sin WhatsApp automático");
 
+
+// 8-oct-2026, pasada sin robot a /r: sin rayas, "comida mexicana", sin "Chih..",
+// y sin premios prendidos la FAQ NO promete puntos.
+{
+  const par = buildSeoParagraph("Suadero", ["Mexicana"], null, true, "Chihuahua");
+  assert.ok(par.includes("Pide comida mexicana") && !par.includes("—"), "párrafo: 'comida mexicana' y sin raya");
+  assert.ok(!buildSeoParagraph("Omu", ["Sushi"], null, false).includes("—"), "párrafo sin premios: sin raya");
+  const off = buildFaq({ name: "Omu", categories: ["Sushi"], address: "Calle X, 31137 Chihuahua, Chih.", hoursText: null, topItems: [], firstVisitReward: null, loyaltyLive: false });
+  assert.ok(!off.some((f) => f.a.includes("puntos")), "sin premios prendidos la FAQ no promete puntos");
+  assert.ok(!off.some((f) => f.a.includes("..")), "la dirección que ya trae punto no sale con 'Chih..'");
+  const on = buildFaq({ name: "Suadero", categories: ["Mexicana"], address: null, hoursText: null, topItems: [], firstVisitReward: null, loyaltyLive: true });
+  assert.ok(on[0].a.includes("sirve comida mexicana") && !on.some((f) => f.a.includes("—")), "FAQ: 'comida mexicana' y sin raya");
+}
+
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

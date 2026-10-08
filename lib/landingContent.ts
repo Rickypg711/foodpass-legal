@@ -27,6 +27,18 @@ export function isPlaceholderCategory(c: string | null | undefined): boolean {
 }
 
 /** Categorías reales, en su orden, sin comodines. */
+/** "mexicana" es adjetivo: "Pide mexicana" / "sirve mexicana" suena roto
+ *  (cazado 8-oct en /r/suadero). Estas van con "comida" delante. */
+const CUISINE_ADJECTIVES = new Set([
+  "mexicana", "italiana", "japonesa", "china", "americana", "mediterránea", "árabe",
+  "coreana", "tailandesa", "peruana", "argentina", "francesa", "española", "vegetariana",
+  "vegana", "casera", "rápida", "oriental", "internacional", "saludable", "regional",
+  "norteña", "típica", "mexicana tradicional",
+]);
+function asDish(cat: string): string {
+  return CUISINE_ADJECTIVES.has(cat) ? `comida ${cat}` : cat;
+}
+
 export function seoCategories(categories: readonly string[] | null | undefined): string[] {
   return (categories ?? []).filter((c) => !isPlaceholderCategory(c)).map((c) => c.trim());
 }
@@ -106,20 +118,20 @@ export function buildSeoParagraph(
   cityHint: string | null = null,
 ): string {
   const cats = seoCategories(categories);
-  const cat = cats[0] ? cats[0].toLowerCase() : "comida";
+  const cat = cats[0] ? asDish(cats[0].toLowerCase()) : "comida";
   const city = cityHint ?? cityFromAddress(address);
   if (!loyaltyLive) {
     return (
       `Pide ${cat}${city ? ` en ${city}` : ""} directo de ${name}: mira el menú ` +
-      `con fotos y precios y haz tu pedido en línea. Sin apps de por medio — ` +
+      `con fotos y precios y haz tu pedido en línea. Sin apps de por medio: ` +
       `tu pedido llega directo al restaurante.`
     );
   }
   return (
     `Pide ${cat}${city ? ` en ${city}` : ""} directo de ${name}: mira el menú ` +
     `con fotos y precios, haz tu pedido en línea y junta puntos con cada compra ` +
-    `para canjearlos por platillos gratis. Sin apps de por medio — tu pedido ` +
-    `llega directo al restaurante y tú ganas recompensas por regresar.`
+    `para canjearlos por platillos gratis. Sin apps de por medio: tu pedido ` +
+    `llega directo al restaurante y cada visita te acerca a un premio.`
   );
 }
 
@@ -164,7 +176,7 @@ export function buildFaq(args: {
 
   const realCategories = seoCategories(categories);
   if (realCategories.length > 0 || topItems.length > 0) {
-    const cats = realCategories.slice(0, 3).map((c) => c.toLowerCase()).join(", ");
+    const cats = realCategories.slice(0, 3).map((c) => asDish(c.toLowerCase())).join(", ");
     const tops = topItems.slice(0, 3).join(", ");
     out.push({
       q: `¿Qué sirven en ${name}?`,
@@ -177,7 +189,9 @@ export function buildFaq(args: {
 
   out.push({
     q: `¿Puedo ordenar en línea en ${name}?`,
-    a: `Sí. Desde el menú de ${name} puedes armar tu pedido en línea con precios actualizados, o escribirle al restaurante por WhatsApp. Ordenar directo apoya al negocio y te da puntos por cada compra.`,
+    a: `Sí. Desde el menú de ${name} puedes armar tu pedido en línea con precios actualizados, o escribirle al restaurante por WhatsApp.` +
+      // Sin premios prendidos no se prometen puntos (cazado 8-oct en /r/omu).
+      (loyaltyLive ? " Ordenar directo apoya al negocio y te da puntos por cada compra." : ""),
   });
 
   if (address) {
@@ -187,7 +201,7 @@ export function buildFaq(args: {
       city && !address.toLowerCase().includes(city.toLowerCase()) ? `${address}, ${city}` : address;
     out.push({
       q: `¿Dónde está ${name}?`,
-      a: `${name} está en ${where}. En esta página encuentras el botón "Cómo llegar" con la ruta en Google Maps.`,
+      a: `${name} está en ${where.replace(/\.+$/, "")}. En esta página encuentras el botón "Cómo llegar" con la ruta en Google Maps.`,
     });
   }
 
@@ -205,7 +219,7 @@ export function buildFaq(args: {
   out.push({
     q: `¿${name} tiene recompensas?`,
     a:
-      `Sí — ${name} usa Comeleal: juntas puntos con cada compra` +
+      `Sí. ${name} usa Comeleal: juntas puntos con cada compra` +
       (earnRule ? ` (${earnRule})` : "") +
       ` y los canjeas por platillos gratis.` +
       (rewardExamples.length > 0
