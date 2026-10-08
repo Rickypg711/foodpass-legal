@@ -499,6 +499,7 @@ export function PecadoItemRow({
   optionsHint = null,
   onOpen,
   hideDescription = false,
+  topSeller = false,
 }: MenuItemCardProps & { hideDescription?: boolean }) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
@@ -509,6 +510,12 @@ export function PecadoItemRow({
   return (
     <li className="flex items-center gap-3 py-2.5">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (
+          // Sello de su papel: rojo de la casa, cursiva, como los letreros pintados del local.
+          <span className={`${F.name} mb-0.5 inline-flex -rotate-2 items-center rounded-[4px] bg-[#a61c21] px-2 py-[2px] text-[11px] font-extrabold uppercase italic tracking-[0.08em] text-[#fff3dc]`}>
+            🔥 El más pedido
+          </span>
+        ) : null}
         <p className="flex items-baseline justify-between gap-3">
           <span className={`${F.name} text-[19px] font-extrabold uppercase italic leading-tight tracking-wide text-[#a61c21] sm:text-[21px]`}>
             {name}

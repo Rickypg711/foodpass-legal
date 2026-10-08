@@ -449,6 +449,7 @@ export function KameItemRow({
   onOpen,
   index = 0,
   hideDescription = false,
+  topSeller = false,
 }: MenuItemCardProps & { index?: number; hideDescription?: boolean }) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
@@ -463,6 +464,12 @@ export function KameItemRow({
       style={{ "--i": index } as CSSProperties}
     >
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (
+          // Cinta amarilla como los títulos de su pizarra.
+          <span className={`${KAME_NAME} mb-1 inline-flex items-center rounded-[6px] bg-[#f0dc78] px-2 py-[2px] text-[10.5px] tracking-[0.1em] text-[#263532]`}>
+            🔥 El más pedido
+          </span>
+        ) : null}
         <span className="flex items-end gap-2.5">
           <span className={`${KAME_NAME} min-w-0 text-[17px] leading-[1.15] tracking-[0.07em] text-[#f0dc78] sm:text-[18px]`}>{name}</span>
           <span className="kame-leader" aria-hidden />

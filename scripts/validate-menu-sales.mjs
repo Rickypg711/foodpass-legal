@@ -119,3 +119,19 @@ console.log("validate-menu-sales: OK");
   if (!card.includes("🔥 El más pedido")) throw new Error("la tarjeta pinta el sello");
   console.log("✅ El más pedido: solo con 10+ ventas reales y máximo 3 platillos");
 }
+
+// ── "🔥 El más pedido" también en las pieles (8-oct-2026) ───────────────────
+{
+  const view = readFileSync(new URL("../app/menu/[restaurantId]/MenuView.tsx", import.meta.url), "utf8");
+  const once = view.match(/const topSellers = topSellerIds\(/g) || [];
+  if (once.length !== 1) throw new Error("pieles: topSellers se calcula una sola vez para todo el menú");
+  for (const skin of ["pecado", "suadero", "kame"]) {
+    const src = readFileSync(new URL(`../components/menu/skins/${skin}.tsx`, import.meta.url), "utf8");
+    if (!src.includes("topSeller = false") || !src.includes("🔥 El más pedido")) throw new Error(`piel ${skin}: pinta el sello a su modo`);
+  }
+  for (const row of ["PecadoItemRow", "SuaderoItemRow", "KameItemRow"]) {
+    const i = view.indexOf(`<${row}`);
+    if (i < 0 || !view.slice(i, i + 200).includes("topSeller={topSellers.has(")) throw new Error(`${row}: recibe el sello`);
+  }
+  console.log("✅ El más pedido en pieles: Pecado, Suadero y Kame lo pintan con su ropa");
+}

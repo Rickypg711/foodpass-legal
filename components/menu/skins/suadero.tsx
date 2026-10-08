@@ -279,6 +279,7 @@ export function SuaderoItemRow({
   optionsHint = null,
   onOpen,
   hideDescription = false,
+  topSeller = false,
 }: MenuItemCardProps & { index?: number; hideDescription?: boolean }) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
@@ -289,6 +290,12 @@ export function SuaderoItemRow({
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   const text = (
     <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="block w-full min-w-0 cursor-pointer text-left">
+      {topSeller ? (
+        // Misma pastilla que su "Elige tu salsa", pero rellena con el café de su tabla.
+        <span className={`${SD_NAME} mb-1 inline-flex items-center rounded-full bg-[#612f18] px-2.5 py-[3px] text-[10.5px] uppercase tracking-[0.08em] text-[#f6e7cf]`}>
+          🔥 El más pedido
+        </span>
+      ) : null}
       <span className="flex items-end gap-2">
         <span className={`${SD_NAME} min-w-0 text-[17px] leading-[1.15] text-[#3a2314] sm:text-[18px]`}>{name}</span>
         <span className="sd-dots" aria-hidden />

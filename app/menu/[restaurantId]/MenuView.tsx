@@ -735,6 +735,8 @@ function MenuCategoryList({
   /** Tocar la tarjeta/foto → hoja de detalle (9-sep, paridad app). */
   onOpenItem?: (item: MenuRow) => void;
 }) {
+  // "🔥 El más pedido" para TODAS las pieles (8-oct-2026): lo decide el dato, cada piel lo pinta a su modo.
+  const topSellers = topSellerIds(groups.flatMap((g) => g.items));
   const availabilityOf = (category: string) => {
     if (!now) return { closed: false, note: null as string | null };
     const a = categoryAvailability(category, windows, now);
@@ -775,6 +777,7 @@ function MenuCategoryList({
                     <PecadoItemRow
                       key={item.id}
                       id={item.id}
+                      topSeller={topSellers.has(item.id)}
                       name={item.name}
                       description={item.description}
                       price={item.price}
@@ -922,6 +925,7 @@ function MenuCategoryList({
                 <SuaderoItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1064,6 +1068,7 @@ function MenuCategoryList({
                   <KameItemRow
                     key={row.item.id}
                     id={row.item.id}
+                    topSeller={topSellers.has(row.item.id)}
                     name={row.item.name}
                     description={row.item.description}
                     price={row.item.price}
@@ -1422,7 +1427,6 @@ function MenuCategoryList({
       </div>
     );
   }
-  const topSellers = topSellerIds(groups.flatMap((g) => g.items));
   return (
     <div className="space-y-8">
       {groups.map((group, index) => {
