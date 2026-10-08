@@ -38,6 +38,7 @@ import {
   hourShort,
   payLabel,
   weekdayShort,
+  choiceHeadline,
   COMBOS_CAPTION,
   COMBOS_LINK,
   REGULARS_LINK,
@@ -545,7 +546,15 @@ export default function ReportesPage() {
               items: items.map((it) => {
                 const qty = Number(it.quantity) > 0 ? Number(it.quantity) : 1;
                 const sub = Number(it.subtotal ?? (Number(it.price) || 0) * qty);
-                return { name: String(it.name ?? "").trim(), qty, revenue: Number.isFinite(sub) ? sub : 0 };
+                // Lo que eligió dentro del platillo ("Carne" → "Suadero").
+                const mods = Array.isArray(it.selectedModifiers) ? (it.selectedModifiers as Record<string, unknown>[]) : [];
+                const options = mods.flatMap((m) =>
+                  (Array.isArray(m.selectedOptions) ? m.selectedOptions : []).map((c) => ({
+                    group: String(m.modifierName ?? ""),
+                    choice: String(c ?? ""),
+                  })),
+                );
+                return { name: String(it.name ?? "").trim(), qty, revenue: Number.isFinite(sub) ? sub : 0, options };
               }),
             });
           }
@@ -1132,6 +1141,31 @@ export default function ReportesPage() {
               </ListCard>
             )}
           </section>
+
+          {/* Lo que eligen (30 días): la carne, el tamaño, el picante… */}
+          {P && P.choices.length > 0 && (
+            <section>
+              <SectionTitle right="30 días">Lo que eligen</SectionTitle>
+              <div className="flex flex-col gap-4">
+                {P.choices.map((g) => (
+                  <div key={g.group}>
+                    <p className="mb-2 text-[15px] leading-5" style={{ color: INK }}>{choiceHeadline(g)}</p>
+                    <ListCard>
+                      {g.rows.map((r) => (
+                        <div key={r.choice} className="flex items-center justify-between gap-3 py-3">
+                          <span className="min-w-0 truncate text-[15px]" style={{ color: INK }}>{r.choice}</span>
+                          <div className="shrink-0 text-right">
+                            <p className="text-[15px] font-bold tabular-nums" style={{ color: INK }}>{r.pct} %</p>
+                            <p className="text-[13px] leading-4 tabular-nums" style={{ color: INK_SOFT }}>{plural(r.units, "vez", "veces")}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </ListCard>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Se piden juntos (30 días) */}
           {P && P.combos.length > 0 && (

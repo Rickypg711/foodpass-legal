@@ -15,6 +15,7 @@ import { readFileSync, existsSync } from "node:fs";
 import {
   salesPatterns,
   patternsCopy,
+  choiceHeadline,
   money0,
   signedPct,
   roundHalfUp,
@@ -60,6 +61,10 @@ check("taquería: sin aviso de cierre", taq.hints.bulkCapture, false);
 check("taquería: el teléfono de la casa no es cliente", taq.regulars != null, true);
 check("taquería: sin mes anterior no hay comparación", taq.monthCompare, null);
 check("taquería: platillos del menú sin venta", taq.menuMix.idle, ["Nopales", "Toreados"]);
+check("taquería: lo que eligen (carne)", taq.choices[0].group, "Carne");
+check("taquería: dos carnes en una orden cuentan las dos", taq.choices[0].rows.length >= 3, true);
+check("bar: lo que eligen (picante)", bar.choices[0].group, "Nivel de picante");
+check("frase de lo que eligen", choiceHeadline({ group: "Carne", total: 46, rows: [{ choice: "Suadero", units: 22, pct: 48 }, { choice: "Bistec", units: 12, pct: 26 }] }), "Suadero es lo que más piden en carne (48 %).");
 check("bar: hora pico escondida (captura al cierre)", bar.peakHour, null);
 check("bar: aviso de cierre", bar.hints.bulkCapture, true);
 check("bar: sin teléfonos no hay regulares", bar.regulars, null);
@@ -125,6 +130,7 @@ for (const s of [
   ">Tus noches<",
   ">Tu hora pico<",
   ">Clientes que regresan<",
+  ">Lo que eligen<",
   ">Se piden juntos<",
   ">Lo que deja el dinero<",
   ">Cómo te pagan<",

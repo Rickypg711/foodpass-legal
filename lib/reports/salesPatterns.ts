@@ -21,7 +21,9 @@
  * localeCompare.
  */
 
-export type PatternItem = { name: string; qty: number; revenue: number };
+/** Opción elegida en el platillo ("Carne" → "Suadero"); de selectedModifiers. */
+export type PatternChoice = { group: string; choice: string };
+export type PatternItem = { name: string; qty: number; revenue: number; options?: PatternChoice[] };
 
 export type PatternOrder = {
   /** createdAt en ms. */
@@ -85,6 +87,11 @@ export const TREND_MIN_PREV_UNITS = 5;
 export const HOUR_EDGE_MIN_SHARE = 0.02;
 export const TREND_MIN_PCT = 25;
 export const STOPPED_MIN_PREV_UNITS = 5;
+/** "Lo que eligen" (7-oct, Ricardo: "cuál carne se vende más, no solo tacos"):
+ *  un grupo de opciones sale con al menos 10 elecciones en 30 días. */
+export const CHOICES_MIN_PICKS = 10;
+export const CHOICES_MAX_GROUPS = 3;
+export const CHOICES_MAX_ROWS = 6;
 export const PREV_MONTH_MIN_NIGHTS = 8;
 export const PREV_MONTH_MAX_LATE_START_MS = 10 * 24 * 60 * 60 * 1000;
 export const BUSINESS_CUTOFF_HOUR = 4;
@@ -219,6 +226,9 @@ export type MonthCompare = {
 
 export type Tables = { rows: { name: string; count: number; revenue: number; ticket: number }[]; tagged: number };
 
+/** Por grupo de opción: cuántas veces se eligió cada una (unidades). */
+export type ChoiceGroup = { group: string; total: number; rows: { choice: string; units: number; pct: number }[] };
+
 export type PatternHints = {
   typedDiscounts: { count: number; example: string } | null;
   tableNames: { count: number } | null;
@@ -231,6 +241,8 @@ export type SalesPatterns = {
   regulars: Regulars | null;
   combos: Combo[];
   menuMix: MenuMix | null;
+  /** Lo que eligen dentro del platillo (carne, tamaño, picante…). */
+  choices: ChoiceGroup[];
   payMix: PayMix | null;
   /** PRO. null = todavía no hay un mes anterior completo para comparar. */
   monthCompare: MonthCompare | null;
@@ -442,6 +454,35 @@ export function salesPatterns(input: PatternInput): SalesPatterns {
     };
   }
 
+  // 5b. Lo que eligen: cada opción elegida cuenta las unidades del platillo
+  // (si eligió dos carnes en una orden, cuentan las dos).
+  const choiceBy = new Map<string, Map<string, number>>();
+  for (const o of last) {
+    for (const i of dishesOf(o)) {
+      for (const c of i.options ?? []) {
+        const g = (c.group ?? "").trim();
+        const ch = (c.choice ?? "").trim();
+        if (!g || !ch) continue;
+        const m = choiceBy.get(g) ?? new Map<string, number>();
+        m.set(ch, (m.get(ch) ?? 0) + i.qty);
+        choiceBy.set(g, m);
+      }
+    }
+  }
+  const choices: ChoiceGroup[] = [...choiceBy.entries()]
+    .map(([group, m]) => {
+      const total = [...m.values()].reduce((x, y) => x + y, 0);
+      const rows = [...m.entries()]
+        .sort((a, b) => b[1] - a[1] || cmp(a[0], b[0]))
+        .slice(0, CHOICES_MAX_ROWS)
+        .map(([choice, units]) => ({ choice, units, pct: pctOf(units, total) }))
+        .filter((r) => r.pct > 0); // una venta suelta de 300 no es "0 %"
+      return { group, total, rows };
+    })
+    .filter((g) => g.total >= CHOICES_MIN_PICKS && g.rows.length >= 2)
+    .sort((a, b) => b.total - a.total || cmp(a.group, b.group))
+    .slice(0, CHOICES_MAX_GROUPS);
+
   // 6. Efectivo, tarjeta, transferencia (por dinero).
   let payMix: PayMix | null = null;
   if (last.length >= PAY_MIX_MIN_SALES) {
@@ -550,7 +591,7 @@ export function salesPatterns(input: PatternInput): SalesPatterns {
     bulkCapture: qualified >= LIVE_MIN_NIGHTS && !isLive,
   };
 
-  return { weekNights, peakHour, regulars, combos, menuMix, payMix, monthCompare, tables, hints };
+  return { weekNights, peakHour, regulars, combos, menuMix, choices, payMix, monthCompare, tables, hints };
 }
 
 // ── Copy (las frases que lee el dueño; idénticas en la app) ───────────────────
@@ -580,6 +621,12 @@ export type PatternsCopy = {
   tablesTeaser: string | null;
   hints: string[];
 };
+
+/** "Suadero es lo que más piden en carne (51 %)." */
+export function choiceHeadline(g: ChoiceGroup): string {
+  const top = g.rows[0];
+  return `${top.choice} es lo que más piden en ${g.group.toLowerCase()} (${top.pct} %).`;
+}
 
 export const COMBOS_CAPTION = "Platillos que tus clientes piden en la misma cuenta. Puedes armarlos como combo.";
 export const COMBOS_LINK = "Armar un combo en tu menú";
