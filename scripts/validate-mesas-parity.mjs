@@ -47,3 +47,15 @@ must(!owner.includes("uppercase tracking-widest"), "sin pastilla en versalitas")
 
 if (failed) process.exit(1);
 console.log("validate-mesas-parity: OK");
+
+// ── Tarjeta para la bolsa de Rappi/DiDi (8-oct-2026) ───────────────────────
+{
+  const { bagCardUrl, bagCardLines } = await import("../lib/order/bagCard.ts");
+  const u = bagCardUrl("https://www.comeleal.com/", "abc 1");
+  if (u !== "https://www.comeleal.com/menu/abc%201?utm_source=bolsa&utm_medium=impreso") throw new Error("bolsa: QR a /menu por ID con utm_source=bolsa: " + u);
+  if (bagCardLines(false).cta.includes("puntos")) throw new Error("bolsa: sin premios no promete puntos");
+  if (!bagCardLines(true).cta.includes("puntos")) throw new Error("bolsa: con premios sí los dice");
+  const page = (await import("node:fs")).readFileSync(new URL("../app/vendor/bolsa/page.tsx", import.meta.url), "utf8");
+  if (!page.includes("bagCardUrl(SITE_URL") || page.includes("window.location.origin")) throw new Error("bolsa: el QR impreso usa SITE_URL, nunca el origin del navegador");
+  console.log("✅ tarjeta para la bolsa: QR a su menú con SITE_URL, sin promesas de puntos apagados");
+}

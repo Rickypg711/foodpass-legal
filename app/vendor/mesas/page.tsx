@@ -255,6 +255,12 @@ export default function MesasPage() {
           </Link>{" "}
           diciendo la mesa exacta.
         </p>
+        <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>
+          ¿Vendes por Rappi o DiDi?{" "}
+          <Link href="/vendor/bolsa" className="font-semibold underline underline-offset-2" style={{ color: LINK }}>
+            Imprime la tarjeta para la bolsa
+          </Link>
+        </p>
       </div>
 
       {/* ── La hoja imprimible: NO cambia, ya está pegada en mesas reales ── */}
