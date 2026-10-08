@@ -25,7 +25,7 @@ const FAQ = [
   },
   {
     q: "¿Qué necesito para empezar?",
-    a: "Solo tu menú (fotos y precios) y un WhatsApp. Te lo dejamos funcionando en unos 10 minutos. En Chihuahua también podemos ir a tu negocio; esa visita tiene costo y te decimos el precio antes.",
+    a: "Solo tu menú (fotos y precios) y un WhatsApp. Subes la foto de tu menú y lo ves en 1 minuto; si prefieres que lo montemos contigo, escríbenos por WhatsApp. En Chihuahua también podemos ir a tu negocio; esa visita tiene costo y te decimos el precio antes.",
   },
   {
     q: "¿Mis clientes necesitan descargar una app?",
@@ -77,7 +77,7 @@ export default function Page() {
             Menú digital QR <span className="text-[#F28C38]">gratis</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Gratis para empezar, sin comisión en efectivo.</b> Listo en 10 minutos.
+            Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Gratis para empezar, sin comisión en efectivo.</b> Sube la foto de tu menú y lo ves en 1 minuto.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -169,7 +169,7 @@ export default function Page() {
                 Te guiamos paso a paso. Solo ten a la mano fotos, platillos y precios: no necesitas diseñar nada.
               </>,
               <>
-                En menos de 10 minutos te entregamos tu página en comeleal.com con tu menú digital funcionando y tu código QR listo para imprimir.
+                Te dejamos tu página en comeleal.com con tu menú digital funcionando y tu código QR listo para imprimir. Si prefieres hacerlo tú, sube la foto de tu menú y lo ves en 1 minuto.
               </>,
               <>
                 Pégalo en tus mesas: tus clientes escanean, piden en línea y juntan puntos con su número de teléfono.

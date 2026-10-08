@@ -35,7 +35,7 @@ const FAQ = [
   },
   {
     q: "¿Qué incluye el menú QR gratis?",
-    a: "Tu menú digital con fotos y precios en comeleal.com, un código QR para imprimir, pedidos directos por WhatsApp y pago al recoger. Se configura en unos 10 minutos.",
+    a: "Tu menú digital con fotos y precios en comeleal.com, un código QR para imprimir, pedidos directos por WhatsApp y pago al recoger. Subes la foto de tu menú y lo ves en 1 minuto; en unos 5 tienes tu QR y tu primer premio.",
   },
   {
     q: "¿Cómo me ayuda a que mis clientes regresen?",

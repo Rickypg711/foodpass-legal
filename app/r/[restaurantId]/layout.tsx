@@ -71,8 +71,10 @@ export async function generateMetadata({
   // "{Nombre} | {Categoría} en {Ciudad} — menú, pedidos y horario".
   // La ciudad es la ESTRUCTURADA (Google, con el pin), no la adivinada.
   const title = buildLandingTitle(name, metaCategories, str(data.address), cityForRestaurant(data));
+  // 8-oct-2026: sin premios prendidos la vista previa no promete puntos
+  // (cazado en /r/omu; misma regla que /menu y la FAQ: restaurantPromisesPoints).
   const metaDescription = description
-    ? `${description} Mira el menú de ${name}, checa el horario, pide por WhatsApp y junta puntos con cada compra.`
+    ? `${description} Mira el menú de ${name}, checa el horario${restaurantPromisesPoints(data) ? ", pide por WhatsApp y junta puntos con cada compra." : " y pide por WhatsApp."}`
     : `Mira el menú de ${name} con fotos y precios, checa el horario y la ubicación, y pide por WhatsApp.`;
   const image = getRestaurantBannerUrl(data) ?? getRestaurantImageUrl(data);
   // Su logo en la pestaña (lib/menu/menuFavicon.ts); sin logo propio, la flama de Comeleal.

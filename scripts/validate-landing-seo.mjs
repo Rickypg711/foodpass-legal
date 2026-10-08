@@ -203,4 +203,11 @@ assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no mand
   assert.ok(read("lib/server/restaurantMetadata.ts").includes("loyaltyReady?.booleanValue !== false"), "metadata lee loyaltyReady");
 }
 
+
+// 8-oct-2026: la vista previa de /r tampoco promete puntos con premios apagados (cazado en /r/omu).
+{
+  const rLayout = read("app/r/[restaurantId]/layout.tsx");
+  assert.ok(rLayout.includes('restaurantPromisesPoints(data) ? ", pide por WhatsApp y junta puntos con cada compra." : " y pide por WhatsApp."'), "/r: 'junta puntos' solo con premios prendidos");
+}
+
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

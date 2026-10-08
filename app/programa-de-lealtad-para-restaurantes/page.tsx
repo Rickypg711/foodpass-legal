@@ -105,7 +105,7 @@ export default function Page() {
             {[
               {
                 n: "1",
-                t: "Actívalo en 10 minutos",
+                t: "Actívalo en unos 5 minutos",
                 d: "Eliges tus premios (ej. pizza gratis a los 50 puntos, premio de bienvenida para la primera visita) y listo. Funciona en tu Caja, tu menú QR y tus pedidos en línea al mismo tiempo.",
               },
               {
