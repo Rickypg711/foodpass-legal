@@ -69,7 +69,7 @@ const PROBLEM_CARDS = [
   },
   {
     title: "La app de reparto se queda con tu cliente",
-    body: "Te cobra comisión por cada pedido y además se queda con el nombre, el número y la costumbre. El cliente es de ellos, no tuyo.",
+    body: "Te cobra comisión por cada pedido, y el número de tu cliente se lo quedan ellos. Cuando quieres avisarle de una promoción, no tienes cómo.",
   },
 ] as const;
 
@@ -81,7 +81,7 @@ const VALUE_POINTS = [
   },
   {
     title: "Tu caja para cobrar, sin tope de ventas",
-    body: "Cobra en efectivo o con tu terminal de siempre: 0% de comisión. Saca tu corte del día, lleva tus turnos y dale su ticket al cliente. No cambias nada de lo que ya usas.",
+    body: "Cobra en efectivo o con tu terminal de siempre: 0% de comisión. Saca tu corte del día, lleva tus turnos y dale su ticket al cliente.",
   },
   {
     title: "Pedidos en línea y por WhatsApp",
@@ -114,7 +114,7 @@ const VALUE_POINTS = [
 ] as const;
 
 const STEPS = [
-  { step: "1", title: "Sube la foto de tu menú", body: "La IA lee tus platillos, precios, salsas y tamaños — y te enseña tu menú digital en ~1 minuto. Sin cuenta." },
+  { step: "1", title: "Sube la foto de tu menú", body: "La IA lee tus platillos, precios, salsas y tamaños, y te enseña tu menú digital en ~1 minuto. Sin cuenta." },
   { step: "2", title: "Míralo y quédatelo", body: "¿Te gustó? Es tuyo gratis: creas tu cuenta en 2 taps y tu menú ya viene montado adentro." },
   { step: "3", title: "Acepta tus premios", body: "La IA te propone recompensas con TUS platillos para que tus clientes regresen. Tú solo dices que sí." },
   { step: "4", title: "Imprime tu QR y a vender", body: "Tus clientes ven tu menú, ordenan y suman puntos. Todo activo en unos 5 minutos." },
@@ -151,7 +151,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Cuánto tarda activar mi negocio?",
-    a: "Menos de 5 minutos. Registras tu negocio, agregas un menú básico y activas tu primera recompensa — listo para escanear clientes el mismo día.",
+    a: "Menos de 5 minutos. Registras tu negocio, agregas un menú básico y activas tu primera recompensa. Ese mismo día ya puedes dar puntos.",
   },
   {
     q: "¿Me ayudan a configurarlo?",
@@ -301,7 +301,7 @@ export default function Home() {
             <Eyebrow>01 · El problema</Eyebrow>
             <h2 id="problema-heading" className={H2}>Lo que te está costando hoy</h2>
             <p className={LEAD}>
-              No es la comida. Es que no sabes quién te compró, y por eso no puedes hacer que vuelva.
+              El cliente paga y se va sin dejarte su número. Así no tienes cómo hacer que vuelva.
             </p>
             <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-[#1C2526]/10 bg-[#1C2526]/10 md:grid-cols-3">
               {PROBLEM_CARDS.map((card, i) => (
@@ -340,7 +340,7 @@ export default function Home() {
             <Eyebrow>03 · Cómo funciona</Eyebrow>
             <h2 id="como-funciona-heading" className={H2}>Cuatro pasos y a vender</h2>
             <p className={LEAD}>
-              Para dejar tu negocio listo y empezar a escanear clientes hoy.
+              Para dejar tu negocio listo hoy mismo.
             </p>
             <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((item) => (
@@ -375,7 +375,7 @@ export default function Home() {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">Empieza gratis hoy.</h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#1C2526]/60">
-              Sube la foto de tu menú. En 1 minuto lo ves digital. En 5 tienes tu QR y tu primer premio. Y desde la primera venta empiezas a saber quién te compró.
+              Sube la foto de tu menú. En 1 minuto lo ves digital. En 5 tienes tu QR y tu primer premio. Y desde la primera venta sabes a quién avisarle cuando tengas promoción.
             </p>
             <HomeCta section="home_final" />
           </div>
