@@ -24,6 +24,9 @@ export type RestaurantMetadata = {
   phone: string | null;
   /** Ícono de la pestaña (lib/menu/menuFavicon.ts); null = la flama de Comeleal. */
   faviconUrl: string | null;
+  /** Premios prendidos (loyaltyReady !== false, misma regla que
+   *  restaurantPromisesPoints). false = la vista previa NO promete puntos. */
+  loyaltyLive: boolean;
 };
 
 /** Flattens Firestore REST `fields` (stringValue only — all we need). */
@@ -78,6 +81,8 @@ export async function fetchRestaurantMetadata(
       categories,
       phone,
       faviconUrl: restaurantFaviconUrl(data),
+      loyaltyLive:
+        (rawFields as Record<string, { booleanValue?: boolean }>).loyaltyReady?.booleanValue !== false,
     };
   } catch {
     return null;

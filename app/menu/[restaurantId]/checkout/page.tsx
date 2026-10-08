@@ -139,6 +139,11 @@ export default function CheckoutPage() {
   /** Cerrado según horario configurado (lib/schedule) — bloquea el envío. */
   const [closedNow, setClosedNow] = useState(false);
   const [closedLabel, setClosedLabel] = useState<string | null>(null);
+  // "Cerrado · abre mañana 9:00 am" → "Abre mañana 9:00 am" (sin decir "cerrado" dos veces).
+  const reopenLabel = (() => {
+    const t = (closedLabel ?? "").replace(/^cerrado( por hoy)?\s*·?\s*/i, "").trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
+  })();
   const [payMethod, setPayMethod] = useState<OrderPaymentMethod | null>(null);
   /** True once the restaurant MP check resolved — prevents the "MP no disponible"
    * warning from flashing while the check is still in flight. */
@@ -300,8 +305,8 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (closedNow) {
       setError(
-        closedLabel
-          ? `El restaurante está cerrado — ${closedLabel.toLowerCase()}.`
+        reopenLabel
+          ? `El restaurante está cerrado. ${reopenLabel}.`
           : "El restaurante está cerrado por ahora.",
       );
       return;
@@ -765,7 +770,7 @@ export default function CheckoutPage() {
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className={`resize-none ${th.input}`}
-                    placeholder="Ej. Calle Duarte #12, casa azul frente al colmado"
+                    placeholder="Ej. Calle Duarte #12, casa azul frente a la tienda"
                     autoComplete="street-address"
                     disabled={submitting}
                   />
@@ -804,7 +809,7 @@ export default function CheckoutPage() {
                 {earnLine
                   ? "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."
                   : loyaltyLive
-                    ? "Aquí viven tus puntos y tus premios ⭐ — y te avisamos de tu pedido. Solo números, 10 dígitos."
+                    ? "Aquí se guardan tus puntos ⭐ y te avisamos de tu pedido. Solo números, 10 dígitos."
                     : "Te avisamos de tu pedido por WhatsApp. Solo números, 10 dígitos."}
               </span>
               <input
@@ -1007,7 +1012,7 @@ export default function CheckoutPage() {
             <div className={th.card}>
               <p className="text-sm text-red-800">
                 😴 El restaurante está cerrado por ahora
-                {closedLabel ? ` — ${closedLabel.toLowerCase()}` : ""}. Tu carrito se
+                {reopenLabel ? `. ${reopenLabel}` : ""}. Tu carrito se
                 queda guardado para cuando abra.
               </p>
             </div>

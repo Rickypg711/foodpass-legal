@@ -740,8 +740,8 @@ function OrderStatusPageContent() {
                 </p>
                 <p className={`mt-1 text-xs ${th.ink}/60`}>
                   {direccion
-                    ? "El restaurante ya tiene tu pedido y tu dirección — con el WhatsApp seguro lo ven al momento, y te queda tu recibo en el chat."
-                    : "El restaurante ya tiene tu pedido — con el WhatsApp seguro lo ven al momento, y te queda tu recibo con PIN en el chat."}
+                    ? "El restaurante ya tiene tu pedido y tu dirección. Con el WhatsApp seguro lo ven al momento, y te queda tu recibo en el chat."
+                    : "El restaurante ya tiene tu pedido. Con el WhatsApp seguro lo ven al momento, y te queda tu recibo con PIN en el chat."}
                 </p>
                 <button
                   type="button"

@@ -176,4 +176,12 @@ assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no mand
   assert.equal(hoursSentence(null), null);
 }
 
+
+// 8-oct-2026: la vista previa de /menu (Google, WhatsApp) no promete puntos con premios apagados.
+{
+  const menuLayout = read("app/menu/[restaurantId]/layout.tsx");
+  assert.ok(menuLayout.includes("restaurant.loyaltyLive ?") && !menuLayout.includes("pide por WhatsApp y junta puntos con cada compra.`"), "/menu: 'junta puntos' solo con premios prendidos");
+  assert.ok(read("lib/server/restaurantMetadata.ts").includes("loyaltyReady?.booleanValue !== false"), "metadata lee loyaltyReady");
+}
+
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

@@ -116,8 +116,8 @@ export function UpsellCard({
       goalGap = 0;
       goalPct = 100;
       goalLine = goal.topTierName
-        ? `🏆 Tu ${goal.topTierName} va gratis — cámbialo arriba en este pedido`
-        : "🏆 Ya tienes premios listos — cambia uno arriba en este pedido";
+        ? `🏆 Tu ${goal.topTierName} va gratis: cámbialo arriba en este pedido`
+        : "🏆 Ya tienes premios listos: cambia uno arriba en este pedido";
     } else if (goal && goal.nextTierPoints > 0) {
       const estimateEarn = (total: number) =>
         goal.earnBase + Math.floor(total / Math.max(1, goal.earnStep));
@@ -175,7 +175,7 @@ export function UpsellCard({
           atento y se vuelve un vendedor necio. */}
       <button
         type="button"
-        aria-label="No, gracias — no volver a sugerir esto"
+        aria-label="No, gracias. No me lo vuelvas a sugerir"
         onClick={() => {
           rememberUpsellDismissal(restaurantId, suggestion.menuItemId);
           setSuggestion(null);
@@ -231,8 +231,8 @@ export function UpsellCard({
           return (
             <p className="mt-2 text-xs font-bold" style={{ color: "#16A34A" }}>
               {goal.topTierName
-                ? `🏆 Tu ${goal.topTierName} va gratis — cámbialo arriba`
-                : "🏆 Ya tienes premios listos — cambia uno arriba"}
+                ? `🏆 Tu ${goal.topTierName} va gratis: cámbialo arriba`
+                : "🏆 Ya tienes premios listos: cambia uno arriba"}
             </p>
           );
         }

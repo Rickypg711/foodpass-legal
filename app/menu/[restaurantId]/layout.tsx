@@ -28,9 +28,12 @@ export async function generateMetadata({
   // SEO: the restaurant's own local search result ("{nombre} menú"), not a
   // generic Comeleal page — every vendor page is a Google/AI-citable surface.
   const title = `${restaurant.name} — Menú, precios y pedidos por WhatsApp`;
+  // Sin premios prendidos la vista previa no promete puntos (cazado 8-oct:
+  // Omu y El Manantial decían "junta puntos" con los premios apagados).
+  const points = restaurant.loyaltyLive ? " y junta puntos con cada compra" : "";
   const description = restaurant.description
-    ? `${restaurant.description} Mira el menú de ${restaurant.name}, pide por WhatsApp y junta puntos con cada compra.`
-    : `Mira el menú de ${restaurant.name} con fotos y precios, pide por WhatsApp y junta puntos con cada compra.`;
+    ? `${restaurant.description} Mira el menú de ${restaurant.name}, pide por WhatsApp${points}.`
+    : `Mira el menú de ${restaurant.name} con fotos y precios, pide por WhatsApp${points}.`;
   const image = restaurant.bannerUrl ?? restaurant.logoUrl;
   // Su logo en la pestaña (y en checkout y la página del pedido, que cuelgan de este layout).
   const icon = restaurant.faviconUrl;
