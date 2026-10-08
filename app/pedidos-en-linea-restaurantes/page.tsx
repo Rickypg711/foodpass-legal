@@ -8,11 +8,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Sistema de pedidos en línea para restaurantes — sin comisiones de apps",
-  description: "Recibe pedidos en línea en tu restaurante sin pagar 30% a las apps: menú web propio, pago al recoger o digital, alerta al instante y puntos de lealtad. Gratis.",
+  description: "Recibe pedidos en línea en tu restaurante sin pagar 30% a las apps: menú web propio, pago al recoger o digital, alerta al instante y puntos de lealtad. Gratis para empezar.",
   alternates: { canonical: "/pedidos-en-linea-restaurantes" },
   openGraph: {
     title: "Sistema de pedidos en línea para restaurantes — sin comisiones de apps",
-    description: "Recibe pedidos en línea en tu restaurante sin pagar 30% a las apps: menú web propio, pago al recoger o digital, alerta al instante y puntos de lealtad. Gratis.",
+    description: "Recibe pedidos en línea en tu restaurante sin pagar 30% a las apps: menú web propio, pago al recoger o digital, alerta al instante y puntos de lealtad. Gratis para empezar.",
     locale: "es_MX",
     type: "website",
   },
@@ -25,11 +25,11 @@ const FAQ = [
   },
   {
     q: "¿Incluye repartidores?",
-    a: "No — Comeleal es tu canal directo de pedidos, no una app de reparto. Funciona perfecto para recoger en mostrador, y si tienes tus propios repartidores, tú manejas la entrega.",
+    a: "No. Comeleal es tu canal directo de pedidos y no trae repartidores. Sirve para pedidos que recogen en mostrador, y si tienes tus propios repartidores, tú haces la entrega.",
   },
   {
     q: "¿Cómo sé que llegó un pedido nuevo?",
-    a: "Te suena una notificación en el teléfono al instante, el pedido aparece en tu panel de cocina, y el cliente además te manda la confirmación por WhatsApp con el detalle completo.",
+    a: "Te suena una notificación en el teléfono al instante, el pedido aparece en tu pantalla de Pedidos, y el cliente además te manda la confirmación por WhatsApp con el detalle completo.",
   },
   {
     q: "¿El cliente necesita descargar algo?",
@@ -62,7 +62,7 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Pedidos <span className="text-[#F28C38]">en línea</span> para tu restaurante — sin apps de reparto
+            Pedidos <span className="text-[#F28C38]">en línea</span> para tu restaurante, sin apps de reparto
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Tu propio menú en línea en comeleal.com: el cliente arma su pedido desde su teléfono, tú recibes la alerta al instante y cobras <b>sin regalarle el 30% a nadie.</b>
@@ -85,10 +85,10 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#1C2526" }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Tu canal directo, no el de las apps
+            Tu canal directo, sin intermediarios
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            En las apps de reparto el cliente es de la app — pagas hasta 30% por pedido y no te dejan ni su número. Con tu menú en línea de Comeleal el pedido es tuyo: 0% en pago al recoger, 3% en digital, y cada pedido suma puntos que hacen volver al cliente. El cliente es tuyo, el canal es tuyo, el margen es tuyo.
+            En las apps de reparto el cliente es de la app. Pagas hasta 30% por pedido y no te dejan ni su número. Con tu menú en línea de Comeleal el pedido es tuyo: 0% en pago al recoger, 3% en digital, y cada pedido suma puntos que hacen volver al cliente.
           </p>
         </div>
       </section>
@@ -108,12 +108,12 @@ export default function Page() {
               {
                 n: "2",
                 t: "Te llega la alerta al instante",
-                d: "Suena la notificación en tu teléfono y el pedido aparece completo en tu panel de cocina — y el cliente te lo confirma por WhatsApp con todo el detalle.",
+                d: "Suena la notificación en tu teléfono y el pedido aparece completo en tu pantalla de Pedidos. El cliente también te lo confirma por WhatsApp con todo el detalle.",
               },
               {
                 n: "3",
                 t: "Entregas con PIN y sumas puntos",
-                d: "Cada pedido lleva un PIN de entrega para cero confusiones, el recibo va por WhatsApp y los puntos del cliente se suman automáticamente.",
+                d: "Cada pedido lleva un PIN de entrega para cero confusiones, le mandas el recibo por WhatsApp en un toque y los puntos del cliente se suman solos.",
               }
             ].map((step) => (
               <div

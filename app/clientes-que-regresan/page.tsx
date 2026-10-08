@@ -8,11 +8,11 @@ import {
 
 export const metadata: Metadata = {
   title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-  description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar — gratis para empezar.",
+  description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
   alternates: { canonical: "/clientes-que-regresan" },
   openGraph: {
     title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-    description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar — gratis para empezar.",
+    description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
     locale: "es_MX",
     type: "website",
   },
@@ -21,11 +21,11 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Por qué mis clientes no regresan?",
-    a: "Rara vez es por mala comida — es porque no existe un motivo concreto ni un recordatorio. Entre tantas opciones, el negocio que premia la lealtad y aparece en el momento correcto es el que gana la siguiente visita.",
+    a: "Rara vez es por mala comida. Casi siempre falta un motivo concreto y un recordatorio. Entre tantas opciones, el negocio que premia la lealtad y aparece en el momento correcto es el que gana la siguiente visita.",
   },
   {
     q: "¿Sirven los programas de puntos en negocios pequeños?",
-    a: "Sí — funcionan mejor que en cadenas, porque se combinan con el trato personal. La clave es que sea fácil: sin tarjetas de cartón que se pierden, sin apps obligatorias. El número de teléfono basta.",
+    a: "Sí, y funcionan mejor que en cadenas porque se combinan con el trato personal. Tiene que ser fácil: sin tarjetas de cartón que se pierden y sin apps obligatorias. El número de teléfono basta.",
   },
   {
     q: "¿Qué es un cliente “en riesgo”?",
@@ -65,7 +65,7 @@ export default function Page() {
             ¿Cómo hacer que tus clientes <span className="text-[#F28C38]">regresen</span>?
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno que ya te conoce. La respuesta no es más publicidad — es <b>un motivo para volver</b> y <b>un recordatorio a tiempo.</b>
+            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno que ya te conoce. La respuesta está en <b>un motivo para volver</b> y <b>un recordatorio a tiempo.</b>
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -88,7 +88,7 @@ export default function Page() {
             La fórmula: puntos + recordatorio + premio
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Cada venta suma puntos con el número de teléfono del cliente. Cuando alguien deja de venir, Comeleal lo detecta: si tiene la app, le llega un recordatorio solo — y a los que dejaron su WhatsApp, tú les escribes en un toque con un mensaje que la IA te redacta. El premio le da la razón para volver hoy y no “algún día”.
+            Cada venta suma puntos con el número de teléfono del cliente. Cuando alguien deja de venir, Comeleal lo detecta: si tiene la app, le llega un recordatorio solo. A los que dejaron su WhatsApp tú les escribes en un toque, con un mensaje que la IA te deja escrito. El premio le da la razón para volver hoy y no “algún día”.
           </p>
         </div>
       </section>
@@ -103,17 +103,17 @@ export default function Page() {
               {
                 n: "1",
                 t: "Captura el número en cada cobro",
-                d: "“¿Tu número para tus puntos?” — 5 segundos al cobrar. Ese número es su tarjeta de lealtad y tu canal directo con él.",
+                d: "“¿Tu número para tus puntos?” Son 5 segundos al cobrar. Ese número es su tarjeta de lealtad y tu canal directo con él.",
               },
               {
                 n: "2",
                 t: "La IA detecta quién se está enfriando",
-                d: "Comeleal vigila quién no ha regresado en 14 días y trabaja solo: notificaciones automáticas a usuarios de la app y avisos para que tú escribas a los de WhatsApp.",
+                d: "Comeleal revisa quién no ha regresado en 14 días. A los usuarios de la app les llega un aviso automático, y a ti te avisa para que les escribas por WhatsApp a los demás.",
               },
               {
                 n: "3",
                 t: "El premio cierra el círculo",
-                d: "Recompensas ligadas a tus platillos (ej. pizza gratis a los 50 puntos). El cliente ve cuánto le falta — y esa cuenta pendiente lo trae de vuelta.",
+                d: "Recompensas ligadas a tus platillos (ej. pizza gratis a los 50 puntos). El cliente ve cuánto le falta. Esa cuenta pendiente lo trae de vuelta.",
               }
             ].map((step) => (
               <div

@@ -7,11 +7,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Programa de lealtad para restaurantes — puntos que hacen volver clientes",
-  description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
+  description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que te avisa quién dejó de venir y te escribe el WhatsApp.",
   alternates: { canonical: "/programa-de-lealtad-para-restaurantes" },
   openGraph: {
     title: "Programa de lealtad para restaurantes — puntos que hacen volver clientes",
-    description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que recupera a los que dejaron de venir.",
+    description: "Programa de lealtad para tu restaurante, gratis para empezar: puntos automáticos con el número de teléfono, premios ligados a tu menú e IA que te avisa quién dejó de venir y te escribe el WhatsApp.",
     locale: "es_MX",
     type: "website",
   },
@@ -24,19 +24,19 @@ const FAQ = [
   },
   {
     q: "¿Funciona si mis clientes no usan apps?",
-    a: "Sí — está diseñado exactamente para eso. El número de teléfono es la tarjeta de lealtad: nada que descargar, nada que imprimir. Quien quiera la app gana extras, pero nadie la necesita.",
+    a: "Sí. Está hecho justo para eso. El número de teléfono es la tarjeta de lealtad: nada que descargar, nada que imprimir. Quien quiera la app gana extras, pero nadie la necesita.",
   },
   {
     q: "¿Cómo evito que empleados regalen premios?",
-    a: "Cada canje pide un código personal que solo el cliente ve en su teléfono. Sin cliente presente no hay canje — y todo queda registrado para que tú lo audites.",
+    a: "Cada canje pide un código personal que solo el cliente ve en su teléfono. Sin cliente presente no hay canje, y todo queda registrado para que tú lo revises.",
   },
   {
     q: "¿De verdad es gratis?",
-    a: "Sí: el programa de puntos, el menú QR, los pedidos en línea y el punto de venta no tienen mensualidad. Solo los pagos digitales llevan 3% — en efectivo, 0%. Compáralo con los $749+ MXN al mes de otras plataformas.",
+    a: "Sí: el programa de puntos, el menú QR, los pedidos en línea y el punto de venta no tienen mensualidad. Solo los pagos digitales llevan 3%. En efectivo, 0%. Compáralo con los $749+ MXN al mes de otras plataformas.",
   },
   {
     q: "¿Están en mi ciudad?",
-    a: "Comeleal funciona en todo México desde el navegador — te configuramos por WhatsApp en el mismo día. Y si estás en Chihuahua capital, vamos en persona a tu negocio a dejarte todo listo.",
+    a: "Comeleal funciona en todo México desde el navegador. Te configuramos por WhatsApp el mismo día. Si estás en Chihuahua capital, también podemos ir a tu negocio a dejarte todo listo. Esa visita tiene costo y te decimos el precio antes.",
   }
 ];
 
@@ -68,7 +68,7 @@ export default function Page() {
             Programa de <span className="text-[#F28C38]">lealtad</span> para tu restaurante
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Puntos automáticos con el número de teléfono, premios ligados a tus platillos y una IA que trae de vuelta a los que dejaron de venir. <b>Gratis para empezar, sin apps obligatorias</b> — así compra México.
+            Puntos automáticos con el número de teléfono, premios ligados a tus platillos y una IA que te avisa quién dejó de venir y te escribe el mensaje para traerlo de vuelta. <b>Gratis para empezar y sin apps obligatorias.</b>
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -88,10 +88,10 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#1C2526" }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            La lealtad no es un lujo de cadenas — es tu arma contra ellas
+            Las cadenas usan puntos para quitarte clientes. Úsalos tú también
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Las cadenas gastan millones en sus programas de puntos porque funcionan: un cliente con puntos acumulados regresa aunque tenga opciones más cerca. Comeleal te da la misma arma gratis: cada venta suma puntos con el número del cliente, los premios usan tus propios platillos, y la IA vigila quién se enfría y lo recupera. Otras plataformas cobran desde $749 MXN al mes por esto.
+            Las cadenas gastan millones en sus programas de puntos porque funcionan: un cliente con puntos acumulados regresa aunque tenga opciones más cerca. Comeleal te da la misma arma gratis: cada venta suma puntos con el número del cliente, los premios usan tus propios platillos, y la IA te avisa quién se está enfriando y te deja escrito el mensaje para que tú lo mandes. Otras plataformas cobran desde $749 MXN al mes por esto.
           </p>
         </div>
       </section>
@@ -106,17 +106,17 @@ export default function Page() {
               {
                 n: "1",
                 t: "Actívalo en 10 minutos",
-                d: "Eliges tus premios (ej. pizza gratis a los 50 puntos, premio de bienvenida para la primera visita) y listo — funciona en tu Caja, tu menú QR y tus pedidos en línea al mismo tiempo.",
+                d: "Eliges tus premios (ej. pizza gratis a los 50 puntos, premio de bienvenida para la primera visita) y listo. Funciona en tu Caja, tu menú QR y tus pedidos en línea al mismo tiempo.",
               },
               {
                 n: "2",
                 t: "Cada venta suma sola",
-                d: "El cliente da su número al pagar y sus puntos se acumulan automáticamente — en mostrador, en línea o por teléfono. Sin sellos, sin tarjetas, sin trabajo extra para tu equipo.",
+                d: "El cliente da su número al pagar y sus puntos se suman solos, en mostrador, en línea o por teléfono. Sin sellos ni tarjetas, y sin trabajo extra para tu equipo.",
               },
               {
                 n: "3",
-                t: "La IA cierra el círculo",
-                d: "Cuando un cliente deja de venir, la IA lo detecta y actúa: un recordatorio solo si tiene la app, el mensaje de WhatsApp listo para que tú lo mandes a los demás, y un reporte de cuántos clientes y pesos te regresó.",
+                t: "La IA te avisa a tiempo",
+                d: "Cuando un cliente deja de venir, la IA lo detecta. Si tiene la app, le llega un recordatorio. Para los demás te deja escrito el WhatsApp y tú lo mandas. Luego ves cuántos clientes regresaron y cuánto dejaron.",
               }
             ].map((step) => (
               <div

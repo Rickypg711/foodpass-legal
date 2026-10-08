@@ -7,11 +7,11 @@ import {
 
 export const metadata: Metadata = {
   title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
-  description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
+  description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes regresaron y cuánto dejaron. Gratis para empezar.",
   alternates: { canonical: "/inteligencia-artificial-para-restaurantes" },
   openGraph: {
     title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
-    description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes y pesos te regresó. Gratis.",
+    description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes regresaron y cuánto dejaron. Gratis para empezar.",
     locale: "es_MX",
     type: "website",
   },
@@ -20,19 +20,19 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Qué hace exactamente la IA de Comeleal?",
-    a: "Detecta clientes en riesgo de no volver, envía recordatorios automáticos a usuarios de la app, redacta mensajes de WhatsApp para que tú recuperes a los demás, te recomienda tu siguiente mejor acción cada día, sugiere recompensas para tu menú y puede digitalizar tu carta a partir de una foto.",
+    a: "Ve qué clientes llevan tiempo sin volver, manda recordatorios automáticos a usuarios de la app y te escribe el WhatsApp para los demás, que tú mandas. También te dice cada día qué hacer primero, te sugiere premios para tu menú y puede pasar tu carta a digital desde una foto.",
   },
   {
     q: "¿Necesito saber de tecnología?",
-    a: "No. La IA trabaja sola y te habla en español claro: “tienes 2 clientes con WhatsApp que no han vuelto — contáctalos hoy”. Tú decides y ella ejecuta.",
+    a: "No. La IA hace las cuentas y te habla en español claro: “tienes 2 clientes con WhatsApp que no han vuelto, escríbeles hoy”. Tú decides y tú mandas cada mensaje.",
   },
   {
     q: "¿La IA manda mensajes sin mi permiso?",
-    a: "Las notificaciones a usuarios de la app son automáticas (recordatorios de premios y de regreso). Los mensajes de WhatsApp los mandas tú — la IA te dice a quién y te redacta el texto, pero el botón lo aprietas tú.",
+    a: "Las notificaciones a usuarios de la app son automáticas (recordatorios de premios y de regreso). Los mensajes de WhatsApp los mandas tú. La IA te dice a quién y te escribe el texto, y tú lo lees y lo mandas.",
   },
   {
     q: "¿Cuánto cuesta la IA?",
-    a: "Nada — viene incluida gratis con Comeleal, junto con el menú QR, los pedidos en línea y el punto de venta. Otras plataformas cobran desde $749 MXN al mes y su IA es un extra de pago.",
+    a: "Nada. Viene incluida gratis con Comeleal, junto con el menú QR, los pedidos en línea y el punto de venta. Otras plataformas cobran desde $749 MXN al mes y su IA es un extra de pago.",
   }
 ];
 
@@ -61,10 +61,10 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Inteligencia artificial para tu restaurante — <span className="text-[#F28C38]">el empleado que no duerme</span>
+            Inteligencia artificial para tu restaurante: <span className="text-[#F28C38]">el empleado que no duerme</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            La IA de Comeleal vigila tu negocio mientras tú cocinas: detecta quién dejó de venir, le recuerda solo a quien tiene la app y te escribe el WhatsApp para los demás, y cada día te dice <b>cuál es tu siguiente movimiento</b> — con resultados en pesos, no en promesas.
+            La IA de Comeleal revisa tu negocio mientras tú cocinas. Ve quién dejó de venir, le recuerda solo a quien tiene la app y te escribe el WhatsApp para los demás. Cada día te dice <b>cuál es tu siguiente movimiento</b> y te enseña los resultados en pesos.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -84,10 +84,10 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#1C2526" }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            No es un chatbot — es un empleado que trabaja solo
+            Te dice qué hacer y te deja el trabajo listo
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Mientras otras plataformas te dan gráficas para que tú adivines, la IA de Comeleal actúa: manda los recordatorios a quien tiene la app, te redacta los mensajes de WhatsApp para los demás, sugiere recompensas para tus platillos y digitaliza tu menú de una foto. Y te rinde cuentas: “Comeleal trabajó por ti: te recuperó N clientes ≈ $X MXN”. Todo incluido gratis.
+            Otras plataformas te dan gráficas para que tú adivines. La IA de Comeleal manda los recordatorios a quien tiene la app y te escribe los mensajes de WhatsApp para los demás, que tú mandas. También sugiere premios para tus platillos y pasa tu menú a digital desde una foto. Y en el panel ves cuántos mensajes mandaste, cuántos clientes regresaron y cuánto dejaron. Todo incluido gratis.
           </p>
         </div>
       </section>
@@ -102,17 +102,17 @@ export default function Page() {
               {
                 n: "1",
                 t: "Detecta quién se está enfriando",
-                d: "La IA vigila las visitas de tus clientes. Cuando alguien lleva 14 días sin volver, actúa: notificación automática a usuarios de la app, y a los de WhatsApp te dice a quién escribirle — con el mensaje ya redactado, tú solo lo mandas.",
+                d: "La IA revisa las visitas de tus clientes. Cuando alguien lleva 14 días sin volver, a quien tiene la app le llega un aviso automático. Para los demás te dice a quién escribirle por WhatsApp, con el mensaje ya escrito. Tú lo lees y lo mandas.",
               },
               {
                 n: "2",
                 t: "Te dice tu siguiente movimiento",
-                d: "Cada día tu panel te muestra UNA acción clara: a quién recuperar, qué recompensa activar, qué número capturar. Nada de estudiar gráficas — la IA estudia por ti y te da la jugada.",
+                d: "Cada día tu panel te muestra UNA acción clara: a quién recuperar, qué recompensa activar, qué número capturar. Nada de estudiar gráficas. La IA hace las cuentas y te da la jugada.",
               },
               {
                 n: "3",
-                t: "Te muestra el dinero, no solo datos",
-                d: "El panel te dice cuántos mensajes mandó la IA, cuántos clientes regresaron y cuántos pesos representa. Si no te está haciendo ganar dinero, lo ves — y si sí, también.",
+                t: "Te muestra el dinero que regresó",
+                d: "El panel te dice cuántos mensajes mandaste, cuántos clientes regresaron y cuántos pesos dejaron. Si no te está haciendo ganar dinero, lo ves. Y si sí, también.",
               }
             ].map((step) => (
               <div

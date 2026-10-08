@@ -80,7 +80,7 @@ const COLS: { key: keyof Row; label: string }[] = [
   { key: "menu", label: "Menú con QR" },
   { key: "fotos", label: "Fotos de platillos" },
   { key: "pedidos", label: "Pedidos por WhatsApp" },
-  { key: "cliente", label: "¿Sabes quién te compró?" },
+  { key: "cliente", label: "¿Guarda al cliente para que regrese?" },
   { key: "horario", label: "Horario por categoría" },
   { key: "caja", label: "Caja" },
 ];
@@ -127,7 +127,7 @@ const FAQ = [
   },
   {
     q: "¿Por qué importa que el pedido deje el teléfono del cliente?",
-    a: "Porque sin teléfono no sabes quién te compró ni puedes hacer que regrese. Con el número, el cliente junta puntos, ve sus premios y tú puedes escribirle por WhatsApp cuando lleva semanas sin venir.",
+    a: "Porque sin teléfono no sabes a quién avisarle ni puedes hacer que regrese. Con el número, el cliente junta puntos, ve sus premios y tú puedes escribirle por WhatsApp cuando lleva semanas sin venir.",
   },
 ];
 
@@ -218,7 +218,7 @@ export default function Page() {
             El menú es lo fácil. Lo difícil es que regresen.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Las cuatro te hacen un menú bonito. Solo una te deja el teléfono del cliente en cada venta, incluida la de mostrador en efectivo, y le da puntos para que vuelva. Por eso Comeleal regala el menú: el negocio no es el menú, es el cliente que regresa.
+            Las cuatro te hacen un menú bonito. Solo una te deja el teléfono del cliente en cada venta, incluida la de mostrador en efectivo, y le da puntos para que vuelva. Por eso Comeleal regala el menú: lo que importa es el cliente que regresa.
           </p>
         </div>
       </section>

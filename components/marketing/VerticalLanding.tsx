@@ -116,16 +116,15 @@ export function VerticalLanding({ v }: { v: Vertical }) {
             Tu caja, a prueba de faltantes
           </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-[#1C2526]/70">
-            La razón número uno por la que un dueño en México pone un sistema no
-            es vender más: es dejar de perder dinero sin saber por dónde. En
-            Comeleal cada venta queda con el nombre de quien la cobró, cada
+            Casi todo dueño en México pone un sistema por una razón: dejar de
+            perder dinero sin saber por dónde. En Comeleal cada venta queda con el nombre de quien la cobró, cada
             descuento y cada cortesía quedan registrados, y al cerrar el día el
             sistema te dice cuánto <b>debería</b> haber en efectivo. Si no
             cuadra, no adivinas: ves el turno, el empleado y la venta.
           </p>
           <ul className="mt-6 space-y-3">
             {[
-              "Cada empleado cobra con su PIN — toda venta lleva su nombre",
+              "Con Pro, cada empleado cobra con su PIN y toda venta lleva su nombre",
               "Corte de caja con arqueo: lo esperado contra lo contado",
               "Descuentos y cortesías auditados en Reportes, uno por uno",
               "Ventas por empleado y por turno, sin preguntarle a nadie",
@@ -150,7 +149,7 @@ export function VerticalLanding({ v }: { v: Vertical }) {
             Comeleal corre en el celular, la tablet o la computadora que ya
             tienes, desde el navegador y sin instalar nada. Si quieres impresora
             de tickets o una tablet para la caja, te decimos cuáles funcionan y
-            dónde salen baratas — <b>nosotros no vendemos hardware</b>, así que
+            dónde salen baratas. <b>Nosotros no vendemos equipo</b>, así que
             no tenemos por qué recomendarte lo caro.
           </p>
           <Link
@@ -195,8 +194,8 @@ export function VerticalLanding({ v }: { v: Vertical }) {
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-[#1C2526]/60">
             Operar es gratis para siempre, puntos incluidos. Cuando tu Caja
-            crece — todo tu historial, tu equipo con su PIN y mesas — eso es
-            Pro: pruébalo <b>14 días gratis, sin tarjeta</b>.
+            crece (todo tu historial, tu equipo con su PIN y mesas), eso es
+            Pro. Pruébalo <b>14 días gratis, sin tarjeta</b>.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />

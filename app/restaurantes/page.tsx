@@ -69,7 +69,7 @@ export default async function RestaurantDirectoryPage() {
         <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
           {restaurants.length === 0 ? (
             <p className="col-span-full text-center text-[14px] text-[#1C2526]/50">
-              No pudimos cargar el directorio — intenta de nuevo en un momento.
+              No pudimos cargar el directorio. Intenta de nuevo en un momento.
             </p>
           ) : (
             restaurants.map((r) => (

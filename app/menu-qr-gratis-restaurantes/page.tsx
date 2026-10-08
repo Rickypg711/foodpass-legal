@@ -25,15 +25,15 @@ const FAQ = [
   },
   {
     q: "¿Qué necesito para empezar?",
-    a: "Solo tu menú (fotos y precios) y un WhatsApp. Te lo dejamos funcionando en unos 10 minutos — en Chihuahua podemos ir en persona a tu negocio.",
+    a: "Solo tu menú (fotos y precios) y un WhatsApp. Te lo dejamos funcionando en unos 10 minutos. En Chihuahua también podemos ir a tu negocio; esa visita tiene costo y te decimos el precio antes.",
   },
   {
     q: "¿Mis clientes necesitan descargar una app?",
-    a: "No. Escanean el QR, ven tu menú en el navegador y piden en línea — el pedido te llega a tu WhatsApp. Sus puntos se juntan con su número de teléfono.",
+    a: "No. Escanean el QR, ven tu menú en el navegador y piden en línea. El pedido te llega a tu WhatsApp. Sus puntos se juntan con su número de teléfono.",
   },
   {
     q: "¿Puedo actualizar precios y platillos?",
-    a: "Sí, cuando quieras desde tu panel — los cambios se ven al instante en el QR que ya imprimiste, sin reimprimir nada.",
+    a: "Sí, cuando quieras desde tu panel. Los cambios se ven al instante en el QR que ya imprimiste, sin reimprimir nada.",
   },
   {
     q: "¿Qué es un menú digital y cómo funciona?",
@@ -41,11 +41,11 @@ const FAQ = [
   },
   {
     q: "¿Es mejor un menú digital que un menú en PDF?",
-    a: "Un PDF es una foto estática: pesa, se ve mal en el teléfono y no vende. Un menú digital de Comeleal se actualiza al instante, recibe pedidos en línea y junta puntos de lealtad con el número de teléfono de tu cliente.",
+    a: "Un PDF es una foto fija: pesa y se ve mal en el teléfono. Un menú digital de Comeleal se actualiza al instante, recibe pedidos en línea y junta puntos de lealtad con el número de teléfono de tu cliente.",
   },
   {
     q: "¿Puedo ver un ejemplo de menú digital?",
-    a: "Sí — busca Luzz Pizza en comeleal.com: es un restaurante real de Chihuahua usando su menú digital con fotos, precios, pedidos en línea y puntos. Así se vería el tuyo.",
+    a: "Sí. Busca Luzz Pizza en comeleal.com: es un restaurante real de Chihuahua usando su menú digital con fotos, precios, pedidos en línea y puntos. Así se vería el tuyo.",
   }
 ];
 
@@ -97,10 +97,10 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#1C2526" }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Gratis de verdad — no “gratis por 14 días”
+            Gratis de verdad y sin fecha de vencimiento
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            El menú QR, los pedidos en línea y el programa de puntos no cuestan mensualidad. Solo pagamos nosotros cuando tú cobras digital (3%); en efectivo, 0%. Compáralo: otras plataformas cobran desde $749 MXN al mes por lo mismo.
+            El menú QR, los pedidos en línea y el programa de puntos no cuestan mensualidad. Solo cobramos cuando tú cobras digital (3%). En efectivo, 0%. Compáralo: otras plataformas cobran desde $749 MXN al mes por lo mismo.
           </p>
         </div>
       </section>
@@ -120,7 +120,7 @@ export default function Page() {
               {
                 n: "2",
                 t: "Tus clientes escanean y piden",
-                d: "Ven el menú en su teléfono, arman su pedido y te llega directo a tu WhatsApp — sin apps de por medio, sin comisiones de reparto.",
+                d: "Ven el menú en su teléfono, arman su pedido y te llega directo a tu WhatsApp. Sin apps de por medio y sin comisiones de reparto.",
               },
               {
                 n: "3",
@@ -165,8 +165,8 @@ export default function Page() {
                   className="font-bold text-[#25D366] underline underline-offset-4"
                 >
                   Dale clic aquí y mándanos un mensaje por WhatsApp
-                </a>{" "}
-                — te guiamos paso a paso. Solo ten a la mano fotos, platillos y precios: no necesitas diseñar nada.
+                </a>.{" "}
+                Te guiamos paso a paso. Solo ten a la mano fotos, platillos y precios: no necesitas diseñar nada.
               </>,
               <>
                 En menos de 10 minutos te entregamos tu página en comeleal.com con tu menú digital funcionando y tu código QR listo para imprimir.
@@ -184,7 +184,7 @@ export default function Page() {
             ))}
           </ol>
           <p className="mt-5 text-[14px] leading-relaxed text-[#1C2526]/65">
-            Con Canva o un PDF obtienes una imagen bonita — pero no recibe pedidos ni sabe quién es tu cliente. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones de reparto que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
+            Con Canva o un PDF obtienes una imagen bonita, pero no recibe pedidos ni guarda a tus clientes. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones de reparto que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
           </p>
           <p className="mt-4">
             <Link href="/menu/kdjJsNwriU4AL4528a4d" className="text-[14px] font-semibold text-[#F28C38] underline underline-offset-4">

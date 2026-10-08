@@ -21,14 +21,14 @@ export const metadata: Metadata = {
 };
 
 const FREE_FEATURES = [
-  "Menú digital QR — tus clientes escanean y ven tu menú",
+  "Menú digital QR: tus clientes escanean y ven tu menú",
   "Caja / punto de venta: cobra en segundos, sin tope de ventas",
   "Pedidos en línea y por WhatsApp",
   "Tus clientes guardados: visitas, gasto y quién dejó de venir",
   "Recupera al que dejó de venir: Comeleal te dice quién y te arma el WhatsApp — tú lo mandas, sin tope",
   "Reportes de hoy, de la semana y de 30 días",
-  "Tu página en Google — te ponemos en los resultados de búsqueda",
-  "Puntos para tus clientes — sin tope de visitas, nunca",
+  "Tu página pública, hecha para que te encuentren en Google",
+  "Puntos para tus clientes, sin tope de visitas",
 ];
 
 const PRO_FEATURES = [
@@ -43,7 +43,7 @@ const PRO_FEATURES = [
 const FAQ = [
   {
     q: "¿Lo gratis es gratis de verdad?",
-    a: "Sí. Menú QR, Caja, pedidos, tus clientes y reportes no cuestan nada, sin límite de tiempo y sin tarjeta. Solo los pagos digitales en línea (Mercado Pago) llevan un 3% — efectivo y tu terminal de siempre: 0%.",
+    a: "Sí. Menú QR, Caja, pedidos, tus clientes y reportes no cuestan nada, sin límite de tiempo y sin tarjeta. Solo los pagos digitales en línea (Mercado Pago) llevan un 3%. Efectivo y tu terminal de siempre: 0%.",
   },
   {
     q: "¿Los puntos de mis clientes tienen tope?",
@@ -51,11 +51,11 @@ const FAQ = [
   },
   {
     q: `¿Qué es Pro y por qué cuesta ${PRO_PRICE_LABEL}?`,
-    a: "Pro es para cuando tu Caja crece: ves todo tu historial de ventas (más de 30 días), tu equipo cobra con su PIN y llevas cuentas por mesa. Cobramos por eso. Lo que necesitas para operar — menú, Caja, pedidos, puntos y tus clientes — sigue gratis.",
+    a: "Pro es para cuando tu Caja crece: ves todo tu historial de ventas (más de 30 días), tu equipo cobra con su PIN y llevas cuentas por mesa. Cobramos por eso. Lo que necesitas para operar (menú, Caja, pedidos, puntos y tus clientes) sigue gratis.",
   },
   {
     q: "¿Cómo funciona la prueba de 14 días?",
-    a: "Le das un botón desde tu panel y ya: Pro completo por 14 días, sin tarjeta y sin dejar datos de pago. Al día 15, si no lo activas, no te cobramos nada — regresas solo al plan gratis con tu menú, tu Caja, tus clientes y todo tu historial intactos. Es una prueba por restaurante.",
+    a: "Le das un botón desde tu panel y ya: Pro completo por 14 días, sin tarjeta y sin dejar datos de pago. Al día 15, si no lo activas, no te cobramos nada. Regresas solo al plan gratis con tu menú, tu Caja, tus clientes y todo tu historial intactos. Es una prueba por restaurante.",
   },
   {
     q: "¿Puedo cancelar cuando quiera?",
@@ -95,7 +95,7 @@ export default function Page() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Tu menú, tu Caja, tus pedidos y los puntos de tus clientes no cuestan
-            nada — hoy ni nunca. Pro es para cuando tu Caja crece: todo tu
+            nada, ni hoy ni nunca. Pro es para cuando tu Caja crece: todo tu
             historial, tu equipo con su PIN y mesas.
           </p>
         </div>
@@ -164,8 +164,8 @@ export default function Page() {
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-[13px] leading-relaxed text-[#1C2526]/50">
           ¿Y las comisiones? Efectivo y cobros con tu terminal: <b>0%</b>. Solo los
-          pagos digitales en línea con Mercado Pago llevan un 3% — cobramos
-          únicamente cuando tú vendes. Las apps de delivery cobran hasta 30%.
+          pagos digitales en línea con Mercado Pago llevan un 3%. Solo cobramos
+          cuando tú vendes. Las apps de delivery cobran hasta 30%.
         </p>
       </section>
       <NeverTouchesYourMoney />

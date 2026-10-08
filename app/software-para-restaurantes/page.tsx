@@ -10,7 +10,7 @@ import { VERTICALES } from "@/lib/marketing/verticals";
 export const metadata: Metadata = {
   title: "Software para restaurantes en México — punto de venta gratis | Comeleal",
   description:
-    "Software para restaurantes, gratis para empezar: punto de venta, menú QR, pedidos en línea y programa de lealtad. Elige tu tipo de negocio — taquerías, pizzerías, cafeterías, bares, food trucks y más.",
+    "Software para restaurantes, gratis para empezar: punto de venta, menú QR, pedidos en línea y programa de lealtad. Elige tu tipo de negocio: taquerías, pizzerías, cafeterías, bares, food trucks y más.",
   alternates: { canonical: "/software-para-restaurantes" },
   openGraph: {
     title: "Software para restaurantes en México — punto de venta gratis | Comeleal",
@@ -36,7 +36,7 @@ export default function Page() {
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Punto de venta, menú QR, pedidos en línea, tus clientes y tus
             reportes: <b>gratis para empezar</b>. Pro es para cuando tu Caja crece:
-            todo tu historial, tu equipo con su PIN y mesas — y lo pruebas 14
+            todo tu historial, tu equipo con su PIN y mesas. Lo pruebas 14
             días sin tarjeta.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -90,7 +90,7 @@ export default function Page() {
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
             Cobrar, tu menú, tus pedidos, tus clientes y tus reportes no cuestan
             nada y nunca van a costar: son lo que necesitas para operar. Solo los
-            pagos digitales en línea llevan 3% — en efectivo y con tu terminal de
+            pagos digitales en línea llevan 3%. En efectivo y con tu terminal de
             siempre, 0%. Pro cuesta {PRO_PRICE_LABEL} al mes y es para cuando tu Caja crece:
             todo tu historial de ventas, tu equipo cobra con su PIN y llevas mesas.
           </p>

@@ -6,7 +6,7 @@ import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 export const metadata: Metadata = {
   title: "Equipo compatible con Comeleal — no necesitas comprar nada nuevo",
   description:
-    "Comeleal funciona en el celular, tablet o computadora que ya tienes. Si quieres impresora de tickets te decimos cuál sirve y cuánto cuesta — no vendemos hardware.",
+    "Comeleal funciona en el celular, tablet o computadora que ya tienes. Si quieres impresora de tickets te decimos cuál sirve y cuánto cuesta. Nosotros no vendemos equipo.",
   alternates: { canonical: "/hardware" },
   openGraph: {
     title: "Equipo compatible con Comeleal — no necesitas comprar nada nuevo",
@@ -24,11 +24,11 @@ const FAQ = [
   },
   {
     q: "¿Ustedes venden el equipo?",
-    a: "No, y es a propósito. Si vendiéramos hardware tendríamos un incentivo para recomendarte lo caro. Te decimos qué sirve, tú lo compras donde te salga mejor.",
+    a: "No, y es a propósito. Si vendiéramos equipo, nos convendría recomendarte lo caro. Te decimos qué sirve y tú lo compras donde te salga mejor.",
   },
   {
     q: "¿Qué impresora me recomiendan?",
-    a: "Cualquier impresora térmica de 58mm o 80mm. Las de 80mm son las de ticket normal y las de 58mm son más chicas y baratas, buenas para puestos y food trucks. Si nos dices qué negocio tienes te decimos cuál te conviene por WhatsApp.",
+    a: "Cualquier impresora térmica de 58mm o 80mm. Las de 80mm son las de ticket normal y las de 58mm son más chicas y baratas, buenas para puestos y food trucks. Si nos dices qué negocio tienes te decimos cuál te conviene por WhatsApp. El botón de imprimir ticket es gratis; que salga impreso solo con cada pedido es parte de Pro.",
   },
   {
     q: "¿Necesito una computadora para el punto de venta?",
@@ -120,7 +120,7 @@ export default function Page() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Comeleal corre en el navegador del celular, la tablet o la
-            computadora que ya tienes. <b>Nosotros no vendemos hardware</b>, así
+            computadora que ya tienes. <b>Nosotros no vendemos equipo</b>, así
             que aquí no hay nada que empujarte: solo qué sirve, cuándo lo
             necesitas de verdad y cuándo no.
           </p>
@@ -189,11 +189,12 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#ffffff" }}>
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
-            Opcional — solo si lo necesitas
+            Opcional: solo si lo necesitas
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] text-[#1C2526]/60">
             Nada de esto es obligatorio para arrancar. Cómpralo donde te salga
-            más barato: no tenemos comisión ni convenio con ninguna marca.
+            más barato: no tenemos comisión ni convenio con ninguna marca. El botón
+            de imprimir ticket es gratis; que salga impreso solo es parte de Pro.
           </p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {OPCIONAL.map((x) => (
@@ -217,7 +218,7 @@ export default function Page() {
           </div>
           <p className="mx-auto mt-8 max-w-2xl text-center text-[14px] leading-relaxed text-[#1C2526]/55">
             ¿No sabes cuál te conviene? Mándanos un WhatsApp diciéndonos qué
-            negocio tienes y te decimos exactamente qué comprar —{" "}
+            negocio tienes y te decimos exactamente qué comprar{" "}
             <b>y qué no comprar</b>.
           </p>
         </div>

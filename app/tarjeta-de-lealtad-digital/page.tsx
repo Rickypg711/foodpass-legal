@@ -20,19 +20,19 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Mis clientes necesitan descargar una app?",
-    a: "No. El número de teléfono basta para juntar puntos y canjear premios. La app de Comeleal es opcional — quien la usa gana extras como su tarjeta en el Wallet y notificaciones de sus premios.",
+    a: "No. El número de teléfono basta para juntar puntos y canjear premios. La app de Comeleal es opcional. Quien la usa gana extras como su tarjeta en el Wallet y notificaciones de sus premios.",
   },
   {
     q: "¿Cómo es más segura que una tarjeta de sellos?",
-    a: "Los sellos se falsifican y las tarjetas se prestan. Aquí cada canje pide un código personal que solo el cliente ve en su teléfono — queda registrado quién canjeó qué y cuándo.",
+    a: "Los sellos se falsifican y las tarjetas se prestan. Aquí cada canje pide un código personal que solo el cliente ve en su teléfono. Queda registrado quién canjeó qué y cuándo.",
   },
   {
     q: "¿Qué premios puedo dar?",
-    a: "Los que tú decidas, ligados a tus platillos reales: ej. pizza personal gratis a los 20 puntos. También hay premio de bienvenida para la primera visita — el gancho para que el cliente nuevo regrese.",
+    a: "Los que tú decidas, ligados a tus platillos reales: ej. pizza personal gratis a los 20 puntos. También hay premio de bienvenida para la primera visita, para que el cliente nuevo tenga un motivo para regresar.",
   },
   {
     q: "¿Cuánto cuesta?",
-    a: "Nada — la tarjeta digital, los puntos y los premios vienen gratis con Comeleal, junto con el menú QR y el punto de venta. Otras plataformas de lealtad cobran desde $749 MXN al mes.",
+    a: "Nada. La tarjeta digital, los puntos y los premios vienen gratis con Comeleal, junto con el menú QR y el punto de venta. Otras plataformas de lealtad cobran desde $749 MXN al mes.",
   }
 ];
 
@@ -61,10 +61,10 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Tarjeta de lealtad <span className="text-[#F28C38]">digital</span> — adiós a las tarjetitas de cartón
+            Tarjeta de lealtad <span className="text-[#F28C38]">digital</span>: adiós a las tarjetitas de cartón
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            La tarjeta que no se pierde, no se moja y no se olvida: <b>el número de teléfono de tu cliente ES su tarjeta.</b> Puntos automáticos en cada compra, premios que lo hacen volver — y para los que usan la app, su tarjeta vive en su Wallet.
+            La tarjeta que no se pierde ni se moja: <b>el número de teléfono de tu cliente ES su tarjeta.</b> Puntos automáticos en cada compra, premios que lo hacen volver. Y para los que usan la app, su tarjeta vive en su Wallet.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -84,10 +84,10 @@ export default function Page() {
       <section className="px-5 py-14" style={{ background: "#1C2526" }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Las tarjetas de sellos se pierden — los números no
+            Una tarjeta de sellos se pierde. Un número de teléfono, nunca
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            El 90% de las tarjetitas de cartón terminan en la lavadora. Con Comeleal el cliente solo da su número al pagar: sus puntos se acumulan solos, ve su saldo y sus premios en su teléfono, y canjea con un código personal que solo él tiene — nadie puede usar sus puntos sin él. Sin apps obligatorias, sin sellos falsificables, sin cartón.
+            Las tarjetitas de cartón se pierden o terminan en la lavadora. Con Comeleal el cliente solo da su número al pagar: sus puntos se acumulan solos, ve su saldo y sus premios en su teléfono, y canjea con un código personal que solo él tiene. Nadie puede usar sus puntos sin él.
           </p>
         </div>
       </section>
@@ -102,17 +102,17 @@ export default function Page() {
               {
                 n: "1",
                 t: "El número es la tarjeta",
-                d: "Al cobrar preguntas: “¿tu número para tus puntos?”. Eso es todo — sus puntos se suman automáticamente en cada compra, sin descargar nada.",
+                d: "Al cobrar preguntas: “¿tu número para tus puntos?”. Eso es todo. Sus puntos se suman solos en cada compra, sin descargar nada.",
               },
               {
                 n: "2",
                 t: "El cliente ve sus puntos y premios",
-                d: "Desde su teléfono consulta cuántos puntos tiene, qué premios ya desbloqueó y cuánto le falta para el siguiente — esa cuenta pendiente es la que lo trae de vuelta.",
+                d: "Desde su teléfono consulta cuántos puntos tiene, qué premios ya desbloqueó y cuánto le falta para el siguiente. Esa cuenta pendiente lo trae de vuelta.",
               },
               {
                 n: "3",
                 t: "Canje seguro, hasta en Wallet",
-                d: "Para canjear muestra su código personal — así ni un empleado puede regalar puntos ajenos. Y quien usa la app de Comeleal puede llevar su tarjeta en Apple Wallet, como una tarjeta de crédito.",
+                d: "Para canjear muestra su código personal. Así ningún empleado puede regalar puntos ajenos. Y quien usa la app de Comeleal puede llevar su tarjeta en Apple Wallet, como una tarjeta de crédito.",
               }
             ].map((step) => (
               <div

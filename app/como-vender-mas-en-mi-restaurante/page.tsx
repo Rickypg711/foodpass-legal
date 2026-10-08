@@ -20,19 +20,19 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "¿Qué funciona mejor: publicidad o lealtad?",
-    a: "La publicidad trae desconocidos una vez; la lealtad convierte a los que ya te probaron en clientes frecuentes. Lo sano es tener ambas — pero si hoy tienes que elegir una con presupuesto cero, la lealtad da retorno más rápido y medible.",
+    a: "La publicidad trae desconocidos una vez; la lealtad convierte a los que ya te probaron en clientes frecuentes. Lo sano es tener las dos. Pero si hoy tienes que elegir una con presupuesto cero, la lealtad da resultados más rápido y más fáciles de medir.",
   },
   {
     q: "¿Cuánto cuesta empezar con Comeleal?",
-    a: "Nada de mensualidad. Menú QR, pedidos directos, punto de venta y programa de puntos son gratis; solo los pagos digitales llevan 3%. Otras plataformas cobran desde $749 MXN al mes.",
+    a: "Empezar no cuesta nada. Menú QR, pedidos directos, punto de venta y programa de puntos son gratis; solo los pagos digitales llevan 3%. Otras plataformas cobran desde $749 MXN al mes.",
   },
   {
     q: "¿Cómo mido si está funcionando?",
-    a: "Tu panel te muestra clientes únicos, visitas, canjes y clientes en riesgo — y te dice cuántos clientes te recuperó Comeleal y cuánto dinero representa. Números, no sensaciones.",
+    a: "Tu panel te muestra clientes únicos, visitas, canjes y clientes en riesgo. También te dice cuántos clientes regresaron después de tus mensajes y cuánto dejaron.",
   },
   {
     q: "¿Y si mis clientes no usan apps?",
-    a: "Perfecto — Comeleal no les pide ninguna. Su número de teléfono es su tarjeta de lealtad y su WhatsApp es el canal. Así compra México.",
+    a: "Mejor. Comeleal no les pide ninguna. Su número de teléfono es su tarjeta de lealtad y su WhatsApp es el canal.",
   }
 ];
 
@@ -64,7 +64,7 @@ export default function Page() {
             ¿Cómo <span className="text-[#F28C38]">vender más</span> en tu restaurante?
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            No es magia ni más publicidad. Son tres palancas: <b>que tus clientes vuelvan más seguido, que te compren directo sin comisiones, y que cada visita gaste un poco más.</b> Comeleal trabaja las tres — gratis.
+            Hay tres palancas: <b>que tus clientes vuelvan más seguido, que te compren directo sin comisiones, y que cada visita gaste un poco más.</b> Comeleal te ayuda con las tres, gratis para empezar.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -87,7 +87,7 @@ export default function Page() {
             La venta más barata es la del cliente que ya te conoce
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno existente. Si tus clientes vuelven una vez más al mes y piden directo en lugar de por apps con 30% de comisión, tu venta neta sube sin gastar un peso en anuncios. Eso es exactamente lo que automatiza Comeleal.
+            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno existente. Si tus clientes vuelven una vez más al mes y piden directo en lugar de por apps con 30% de comisión, tu venta neta sube sin gastar un peso en anuncios. En eso te ayuda Comeleal.
           </p>
         </div>
       </section>
@@ -102,7 +102,7 @@ export default function Page() {
               {
                 n: "1",
                 t: "Palanca 1: que regresen",
-                d: "Puntos automáticos con el número de teléfono, premios ligados a tus platillos, y una IA que detecta quién dejó de venir y te ayuda a traerlo de vuelta — mientras tú cocinas.",
+                d: "Puntos automáticos con el número de teléfono, premios ligados a tus platillos, y una IA que detecta quién dejó de venir y te deja escrito el mensaje para traerlo de vuelta. Tú lo mandas.",
               },
               {
                 n: "2",

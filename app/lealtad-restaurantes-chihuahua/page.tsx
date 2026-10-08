@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Programa de lealtad para restaurantes en Chihuahua — Comeleal",
     description:
-      "Menú QR, pedidos por WhatsApp y puntos que hacen volver a tus clientes. Gratis para empezar — hecho en Chihuahua.",
+      "Menú QR, pedidos por WhatsApp y puntos que hacen volver a tus clientes. Gratis para empezar y hecho en Chihuahua.",
     locale: "es_MX",
     type: "website",
   },
@@ -109,7 +109,7 @@ export default function LealtadRestaurantesChihuahua() {
             Con Comeleal los pedidos llegan directo a tu WhatsApp. En efectivo
             pagas <b className="text-white">0% de comisión</b>; en pagos digitales,
             solo 3%. Otras plataformas de lealtad cobran desde{" "}
-            <b className="text-white">$749 MXN al mes</b> — aquí empiezas gratis.
+            <b className="text-white">$749 MXN al mes</b>. Aquí empiezas gratis.
           </p>
           <div className="mx-auto mt-8 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
             {[
@@ -141,16 +141,16 @@ export default function LealtadRestaurantesChihuahua() {
               {
                 n: "1",
                 t: "Tu menú QR gratis",
-                d: "Subimos tu menú con sus precios desde una foto. Imprimes el QR y tus clientes piden por WhatsApp — sin apps de por medio.",
+                d: "Subimos tu menú con sus precios desde una foto. Imprimes el QR y tus clientes piden por WhatsApp, sin apps de por medio.",
               },
               {
                 n: "2",
                 t: "El teléfono es la tarjeta",
-                d: "Al cobrar pides el número del cliente. Sus puntos se suman solos en cada venta — no necesita descargar nada.",
+                d: "Al cobrar pides el número del cliente. Sus puntos se suman solos en cada venta. No necesita descargar nada.",
               },
               {
                 n: "3",
-                t: "La IA los hace volver",
+                t: "La IA te ayuda a que vuelvan",
                 d: "Comeleal te dice quién dejó de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás y te muestra cuántos clientes te regresaron.",
               },
             ].map((step) => (
@@ -177,7 +177,7 @@ export default function LealtadRestaurantesChihuahua() {
           style={{ background: "rgba(242,140,56,0.08)", border: "1px solid rgba(242,140,56,0.2)" }}
         >
           <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-            Somos de aquí — no una plataforma de Monterrey o CDMX
+            Somos de aquí, de Chihuahua
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-[#1C2526]/65">
             Nos mandas la foto de tu menú y te dejamos listos tu menú, tu QR y tus

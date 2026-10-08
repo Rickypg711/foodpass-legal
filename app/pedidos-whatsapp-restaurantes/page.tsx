@@ -24,11 +24,11 @@ const FAQ = [
   },
   {
     q: "¿Necesito repartidores?",
-    a: "No es obligatorio. Puedes trabajar solo con pedidos para recoger, o usar tus propios repartidores si ya los tienes — tú decides tu esquema.",
+    a: "No es obligatorio. Puedes trabajar solo con pedidos para recoger, o usar tus propios repartidores si ya los tienes. Tú decides.",
   },
   {
     q: "¿Cómo me llegan los pedidos?",
-    a: "Llegan al instante a tu panel de Comeleal con notificación sonora en tu teléfono, y el cliente te manda la confirmación por WhatsApp con el detalle completo del pedido. Sin tablets extra, sin comisiones de reparto.",
+    a: "Llegan al instante a tu panel de Comeleal con notificación sonora en tu teléfono, y el cliente te manda la confirmación por WhatsApp con el detalle completo del pedido. No necesitas tablet extra ni pagas comisión de reparto.",
   },
   {
     q: "¿Esto reemplaza a las apps de reparto?",
@@ -61,10 +61,10 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Pedidos por <span className="text-[#F28C38]">WhatsApp</span> — deja de regalar el 30%
+            Pedidos por <span className="text-[#F28C38]">WhatsApp</span>: deja de regalar el 30%
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Las apps de reparto te cobran hasta un 30% por pedido. Con Comeleal los pedidos llegan directo a tu negocio — alerta al instante en tu teléfono y el detalle por WhatsApp: <b>0% en efectivo, 3% en pago digital.</b> Tú te quedas con tu margen.
+            Las apps de reparto te cobran hasta un 30% por pedido. Con Comeleal los pedidos llegan directo a tu negocio, con alerta al instante en tu teléfono y el detalle por WhatsApp: <b>0% en efectivo, 3% en pago digital.</b> Tú te quedas con tu margen.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />
@@ -87,7 +87,7 @@ export default function Page() {
             Haz las cuentas de un mes
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Si vendes $20,000 MXN al mes por apps de reparto, les regalas hasta $6,000. Con pedidos directos por WhatsApp ese dinero se queda en tu caja — y además cada pedido junta puntos que hacen volver al cliente. Es tu cliente, tu canal y tu margen.
+            Si vendes $20,000 MXN al mes por apps de reparto, les regalas hasta $6,000. Con pedidos directos por WhatsApp ese dinero se queda en tu caja. Y además cada pedido junta puntos que hacen volver al cliente.
           </p>
         </div>
       </section>
@@ -111,7 +111,7 @@ export default function Page() {
               },
               {
                 n: "3",
-                t: "El cliente vuelve solo",
+                t: "El cliente vuelve",
                 d: "Su número junta puntos en cada compra y sus recompensas lo traen de regreso. La IA de Comeleal te avisa a quién escribirle y cuándo.",
               }
             ].map((step) => (

@@ -14,7 +14,7 @@ const VALUE_CARDS = [
     icon: "⭐",
   },
   {
-    title: "Canjea recompensas exclusivas",
+    title: "Canjea tus premios",
     icon: "🎁",
   },
   {

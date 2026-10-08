@@ -26,19 +26,19 @@ const FAQ = [
   },
   {
     q: "¿Necesito comprar equipo?",
-    a: "No. La Caja funciona en el navegador de tu teléfono, tablet o computadora. Para cobros con tarjeta sigues usando la terminal que ya tienes — Comeleal registra la venta y le suma los puntos al cliente.",
+    a: "No. La Caja funciona en el navegador de tu teléfono, tablet o computadora. Para cobros con tarjeta sigues usando la terminal que ya tienes. Comeleal registra la venta y le suma los puntos al cliente.",
   },
   {
     q: "¿Puedo manejar cuentas abiertas por mesa?",
-    a: `Sí, con Pro (${PRO_PRICE_LABEL} al mes, 14 días de prueba gratis). Abres una cuenta con nombre (“Mesa 3”, “Juan”), le agregas platillos durante la visita y la cobras al final — y los puntos del cliente se aplican al cerrar.`,
+    a: `Sí, con Pro (${PRO_PRICE_LABEL} al mes, 14 días de prueba gratis). Abres una cuenta con nombre (“Mesa 3”, “Juan”), le agregas platillos durante la visita y la cobras al final. Los puntos del cliente se suman al cerrar.`,
   },
   {
     q: "¿Cómo funciona la lealtad en la Caja?",
-    a: "Al cobrar pides el número del cliente: sus puntos se suman solos y sus premios disponibles aparecen ahí mismo. Para canjear, el cliente muestra su código personal — así nadie puede usar sus puntos sin él.",
+    a: "Al cobrar pides el número del cliente: sus puntos se suman solos y sus premios disponibles aparecen ahí mismo. Para canjear, el cliente muestra su código personal. Así nadie puede usar sus puntos sin él.",
   },
   {
     q: "¿Puedo ver reportes de ventas?",
-    a: "Sí — ventas del día, tus productos más vendidos y la actividad de tus clientes frecuentes, desde tu panel en cualquier dispositivo.",
+    a: "Sí: ventas del día, tus productos más vendidos y la actividad de tus clientes frecuentes, desde tu panel en cualquier dispositivo.",
   }
 ];
 
@@ -93,7 +93,7 @@ export default function Page() {
             Otras plataformas cobran desde $749 MXN/mes por su punto de venta
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            La Caja de Comeleal es gratis: registras ventas en efectivo o tarjeta, mandas el recibo por WhatsApp y cada venta suma puntos de lealtad automáticamente con el número del cliente. Funciona en el teléfono que ya tienes — sin terminales especiales ni contratos.
+            La Caja de Comeleal es gratis: registras ventas en efectivo o tarjeta, mandas el recibo por WhatsApp y cada venta suma puntos de lealtad automáticamente con el número del cliente. Funciona en el teléfono que ya tienes, sin terminales caras ni contratos.
           </p>
         </div>
       </section>
@@ -113,7 +113,7 @@ export default function Page() {
               {
                 n: "2",
                 t: "Cobra como trabajes tú",
-                d: "Cobro inmediato en efectivo o tarjeta (con tu terminal de siempre), o, con Pro, cuenta abierta por mesa para cerrar al final. El recibo le llega al cliente por WhatsApp.",
+                d: "Cobro inmediato en efectivo o tarjeta (con tu terminal de siempre), o, con Pro, cuenta abierta por mesa para cerrar al final. Le mandas el recibo al cliente por WhatsApp en un toque.",
               },
               {
                 n: "3",
