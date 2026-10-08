@@ -143,3 +143,17 @@ if (!/loyaltyEarnPolicy: newVenueEarnPolicy\(signupCurrency\)/.test(modalSrc)) f
 }
 
 console.log("✓ canon WhatsApp: 10 dígitos guardados, links a api.whatsapp.com/send con PAÍS+últimos10, y cero wa.me (rompe los emojis)");
+
+// ── Pantalla de espera en la pestaña de WhatsApp (8-oct-2026) ───────────────
+// La pestaña se abre en blanco antes del await (Safari) y el cliente veía una
+// pantalla blanca 1–3 s. Candado: el checkout la pinta y el nombre va escapado.
+{
+  const { whatsappHandoffHtml } = await import("../lib/order/whatsappHandoffPage.ts");
+  const { readFileSync: rf } = await import("node:fs");
+  const h = whatsappHandoffHtml('Tacos <b>"Suadero"');
+  if (h.includes("<b>\"Suadero") || !h.includes("&lt;b&gt;")) throw new Error("handoff: el nombre del local debe ir escapado");
+  if (!h.includes("Abriendo WhatsApp")) throw new Error("handoff: dice qué está pasando");
+  const co = rf(new URL("../app/menu/[restaurantId]/checkout/page.tsx", import.meta.url), "utf8");
+  if (!/window\.open\("about:blank", "_blank"\)[\s\S]{0,200}paintWhatsappHandoff\(waWindow/.test(co)) throw new Error("handoff: el checkout pinta la pestaña justo después de abrirla");
+  console.log("✅ handoff de WhatsApp: la pestaña ya no queda en blanco");
+}

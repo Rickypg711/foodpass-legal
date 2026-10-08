@@ -24,6 +24,7 @@ import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreference
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
 import { createCustomerWebOrder } from "@/lib/order/createCustomerOrder";
 import { buildWhatsappUrl, formatWhatsappOrderMessage } from "@/lib/order/formatWhatsappMessage";
+import { paintWhatsappHandoff } from "@/lib/order/whatsappHandoffPage";
 import { DEFAULT_PHONE_COUNTRY, phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { loadDinerIdentity } from "@/lib/order/dinerIdentity";
@@ -373,6 +374,8 @@ export default function CheckoutPage() {
       // features: con él window.open devuelve null y perdemos la pestaña.
       const abreWhatsapp = Boolean(restaurantWhatsapp) && !enMesa;
       const waWindow: Window | null = abreWhatsapp ? window.open("about:blank", "_blank") : null;
+      // Que no vea una pantalla blanca mientras se crea el pedido (8-oct-2026).
+      paintWhatsappHandoff(waWindow, restaurantName);
       try {
         const result = await createCustomerWebOrder({
           restaurantId,
