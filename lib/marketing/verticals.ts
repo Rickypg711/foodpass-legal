@@ -65,7 +65,7 @@ export const VERTICALES: Vertical[] = [
     h1kw: "taquerías",
     h1post: " que cobra rápido y hace volver al cliente",
     heroP:
-      "En una taquería el sistema o te ayuda en la hora pico o estorba. Comeleal cobra en tres toques y guarda al cliente con su número para que regrese. <b>Gratis para operar.</b>",
+      "En una taquería el sistema o te ayuda en la hora pico o estorba. Comeleal cobra en pocos toques y guarda al cliente con su número para que regrese. <b>Gratis para operar.</b>",
     dolorH2: "El de enfrente vende los mismos tacos que tú.",
     dolorP:
       "En taquería casi nadie tiene menú de precios estable, todos compiten por ubicación y antojo, y el cliente que vino hoy mañana se para en la esquina de junto. Lo único que te lo amarra es que aquí acumula algo. Comeleal guarda a cada cliente con su número al momento de cobrar, sin apps ni tarjetitas y sin trabajo extra para tu taquero. Y te avisa cuándo dejó de venir. Otras plataformas cobran desde $749 MXN al mes por esto.",
@@ -163,7 +163,7 @@ export const VERTICALES: Vertical[] = [
     dolorP:
       "En este negocio compites por velocidad y por precio, y las dos cosas se te acaban tarde o temprano. Lo que no se acaba es tener al cliente identificado: saber quién viene seguido, qué pide y cuándo dejó de venir. Comeleal te da la caja veloz que necesitas hoy y la base de clientes que te va a servir el año que entra. Otras plataformas cobran desde $749 MXN al mes.",
     razones: [
-      { t: "Los más vendidos siempre a la mano", d: "La caja aprende qué se vende más y lo deja a un toque. Menos búsquedas, menos errores, menos fila." },
+      { t: "Tu menú en la Caja, por secciones", d: "Tocas la sección, tocas el platillo y se suma a la cuenta. Y en Reportes ves qué se vende más." },
       { t: "Comanda automática a cocina", d: "El pedido aparece en pantalla con el tiempo corriendo y lo que lleva cada uno. Se acabó el papelito perdido." },
       { t: "Combos y extras que suben el ticket", d: "Cuando el cliente arma su pedido en tu menú, el sistema le sugiere el complemento. Así el ticket promedio sube sin que nadie tenga que memorizar el guion." },
       { t: "Control de caja por turno", d: "Cada turno abre y cierra su caja, y el sistema te dice cuánto debería haber. Los faltantes salen a la luz el mismo día." },
@@ -172,7 +172,7 @@ export const VERTICALES: Vertical[] = [
     ],
     faq: [
       { q: "¿Cuántas cajas puedo tener al mismo tiempo?", a: "Las que necesites. Con Pro, cada una entra desde su propio dispositivo con su PIN y todas se ven en el mismo panel, en tiempo real." },
-      { q: "¿Puedo tener varios puntos de venta o sucursales?", a: "Sí, puedes manejar varias sucursales y ver las ventas de todas juntas o por separado." },
+      { q: "¿Puedo tener varios puntos de venta o sucursales?", a: "Cada sucursal es su propia cuenta, con su menú, su Caja y sus reportes. Hoy no hay una vista que junte las ventas de todas; si tienes varias, escríbenos y lo vemos." },
       { q: "¿Qué tan rápido aprende mi equipo a usarlo?", a: "Está hecho para que un empleado nuevo cobre bien el primer día sin capacitación. Si prefieres, te lo dejamos configurado y le explicamos a tu equipo por WhatsApp. Si estás en Chihuahua también podemos ir en persona; te decimos el precio antes." },
       { q: "¿Puedo ver cuánto vendió cada empleado?", a: "Sí, con Pro. En Reportes tienes ventas por empleado y por turno, porque cada venta queda ligada al PIN de quien cobró." },
     ],
@@ -227,7 +227,7 @@ export const VERTICALES: Vertical[] = [
     razones: [
       { t: "Cuentas abiertas por mesa toda la noche (Pro)", d: "Abres la cuenta, va sumando todo lo que pidan y la cierras al final. Nada se queda fuera del ticket." },
       { t: "Cada quien cobra con su PIN (Pro)", d: "Meseros y barra entran con su código. Cada venta, cada descuento y cada cortesía quedan con nombre y hora." },
-      { t: "Corte de caja por turno", d: "El sistema sabe cuánto entró en efectivo y cuánto en tarjeta. Si el corte no cuadra, ves exactamente en qué turno y con quién." },
+      { t: "Corte de caja por turno", d: "El corte te dice cuánto entró en efectivo y cuánto en tarjeta, por turno. Lo comparas con lo que hay en el cajón." },
       { t: "Descuentos y cortesías con control (Pro)", d: "Defines quién tiene descuento y de cuánto. Todo queda en Reportes, sin discusiones al día siguiente." },
       { t: "Propinas sobre el neto, repartidas justo", d: "La propina se calcula sobre el neto y se registra por empleado, así el reparto es claro para todos." },
       { t: "Clientes frecuentes identificados", d: "El cliente que viene cada viernes queda guardado con su número. Puedes premiarlo y avisarle cuando tengas evento." },

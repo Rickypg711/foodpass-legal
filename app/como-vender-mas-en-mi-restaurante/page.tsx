@@ -87,7 +87,7 @@ export default function Page() {
             La venta más barata es la del cliente que ya te conoce
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
-            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno existente. Si tus clientes vuelven una vez más al mes y piden directo en lugar de por apps con 30% de comisión, tu venta neta sube sin gastar un peso en anuncios. En eso te ayuda Comeleal.
+            Traer a un cliente nuevo cuesta más que hacer volver a uno que ya te conoce. Si tus clientes vuelven una vez más al mes y piden directo en lugar de por apps con 30% de comisión, tu venta neta sube sin gastar un peso en anuncios. En eso te ayuda Comeleal.
           </p>
         </div>
       </section>

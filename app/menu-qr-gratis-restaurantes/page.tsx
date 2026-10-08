@@ -45,7 +45,7 @@ const FAQ = [
   },
   {
     q: "¿Puedo ver un ejemplo de menú digital?",
-    a: "Sí. Busca Luzz Pizza en comeleal.com: es un restaurante real de Chihuahua usando su menú digital con fotos, precios, pedidos en línea y puntos. Así se vería el tuyo.",
+    a: "Sí, y con TU menú: sube una foto de tu menú de papel en comeleal.com/demo y en 1 minuto ves tu menú digital con fotos y precios. Sin cuenta y sin pagar.",
   }
 ];
 
@@ -187,8 +187,8 @@ export default function Page() {
             Con Canva o un PDF obtienes una imagen bonita, pero no recibe pedidos ni guarda a tus clientes. Con Comeleal tu menú digital además <b>vende y hace que la gente regrese</b>: pedidos en línea sin comisiones de reparto que te llegan al WhatsApp y puntos de lealtad con el puro número de teléfono.
           </p>
           <p className="mt-4">
-            <Link href="/menu/kdjJsNwriU4AL4528a4d" className="text-[14px] font-semibold text-[#F28C38] underline underline-offset-4">
-              Mira un ejemplo real: el menú digital de Luzz Pizza en Chihuahua →
+            <Link href="/demo" className="text-[14px] font-semibold text-[#F28C38] underline underline-offset-4">
+              Pruébalo con tu menú: sube una foto y míralo en 1 minuto →
             </Link>
           </p>
         </div>

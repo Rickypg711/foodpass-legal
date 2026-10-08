@@ -8,11 +8,11 @@ import {
 
 export const metadata: Metadata = {
   title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-  description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
+  description: "Muchos clientes prueban una vez y no regresan. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
   alternates: { canonical: "/clientes-que-regresan" },
   openGraph: {
     title: "¿Cómo hacer que tus clientes regresen a tu restaurante?",
-    description: "El 70% de los clientes de un restaurante no vuelve. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
+    description: "Muchos clientes prueban una vez y no regresan. Aprende cómo un programa de puntos con WhatsApp y recordatorios los hace regresar. Gratis para empezar.",
     locale: "es_MX",
     type: "website",
   },
@@ -65,7 +65,7 @@ export default function Page() {
             ¿Cómo hacer que tus clientes <span className="text-[#F28C38]">regresen</span>?
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
-            Conseguir un cliente nuevo cuesta hasta 5 veces más que hacer volver a uno que ya te conoce. La respuesta está en <b>un motivo para volver</b> y <b>un recordatorio a tiempo.</b>
+            Traer a un cliente nuevo cuesta más que hacer volver a uno que ya te conoce. La respuesta está en <b>un motivo para volver</b> y <b>un recordatorio a tiempo.</b>
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <WhatsAppButton />

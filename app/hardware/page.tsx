@@ -147,7 +147,7 @@ export default function Page() {
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/60">
             Los sistemas de punto de venta tradicionales te venden el paquete
             completo: la computadora, la impresora, el cajón, la instalación y el
-            técnico. Entre $8,000 y $25,000 pesos antes de vender el primer taco.
+            técnico, todo antes de vender el primer taco.
             Comeleal no funciona así porque no lo necesita: es un sistema en la
             nube, entra por el navegador y no instala nada. El equipo que ya
             traes en la bolsa alcanza para empezar hoy.

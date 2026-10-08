@@ -6,11 +6,11 @@ import {
 } from "@/lib/contactEmail";
 
 export const metadata: Metadata = {
-  title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
+  title: "Inteligencia artificial para restaurantes: te dice a quién escribirle hoy",
   description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes regresaron y cuánto dejaron. Gratis para empezar.",
   alternates: { canonical: "/inteligencia-artificial-para-restaurantes" },
   openGraph: {
-    title: "Inteligencia artificial para restaurantes — el empleado que no duerme",
+    title: "Inteligencia artificial para restaurantes: te dice a quién escribirle hoy",
     description: "IA para tu restaurante: detecta clientes que dejaron de venir, le recuerda solo a quien tiene la app, te escribe el WhatsApp para los demás, te dice tu siguiente movimiento y te muestra cuántos clientes regresaron y cuánto dejaron. Gratis para empezar.",
     locale: "es_MX",
     type: "website",
@@ -61,7 +61,7 @@ export default function Page() {
             Hecho en Chihuahua 🇲🇽
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Inteligencia artificial para tu restaurante: <span className="text-[#F28C38]">el empleado que no duerme</span>
+            Inteligencia artificial para tu restaurante: <span className="text-[#F28C38]">te dice a quién escribirle hoy y te deja el mensaje escrito</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             La IA de Comeleal revisa tu negocio mientras tú cocinas. Ve quién dejó de venir, le recuerda solo a quien tiene la app y te escribe el WhatsApp para los demás. Cada día te dice <b>cuál es tu siguiente movimiento</b> y te enseña los resultados en pesos.
