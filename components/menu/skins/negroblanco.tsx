@@ -407,6 +407,7 @@ export function NegroBlancoItemRow({
   optionsHint = null,
   onOpen,
   tone = "blanco",
+  topSeller = false,
 }: MenuItemCardProps & { tone?: NBTone }) {
   const dark = tone === "negro";
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -417,6 +418,7 @@ export function NegroBlancoItemRow({
   return (
     <li className={"flex items-center gap-4 border-t py-4 first:border-t-0 " + (dark ? "border-white/[0.12]" : "border-[#0b0b0b]/[0.08]")}>
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${dark ? "bg-white text-black" : "bg-black text-white"} rounded-none uppercase tracking-[0.1em]`}>🔥 Más pedido</span>) : null}
         <p className="flex items-baseline gap-3">
           <span className="text-[17px] font-medium leading-snug tracking-[-0.02em] sm:text-[19px]">{name}</span>
           <span className={`${NB_MONO} ml-auto shrink-0 text-[14px] tabular-nums sm:text-[15px] ${dark ? "text-white/80" : "text-[#0b0b0b]/75"}`}>

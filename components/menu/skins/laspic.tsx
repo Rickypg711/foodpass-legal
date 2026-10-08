@@ -365,6 +365,7 @@ export function LaspicItemRow({
   optionsHint = null,
   onOpen,
   wine,
+  topSeller = false,
 }: MenuItemCardProps & { wine?: string }) {
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -378,6 +379,7 @@ export function LaspicItemRow({
         <Figures code={wine} size={15} />
       </span>
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] bg-[#141414] text-white rounded-none uppercase tracking-[0.14em]`}>🔥 Más pedido</span>) : null}
         <span className="flex items-baseline gap-3">
           <span className="min-w-0 flex-1 text-[14px] leading-snug tracking-[0.1em] sm:text-[15px]">
             <DishName name={name} />

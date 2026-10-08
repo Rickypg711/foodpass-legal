@@ -371,6 +371,7 @@ export function TerceraItemRow({
   orderingEnabled = true,
   optionsHint = null,
   onOpen,
+  topSeller = false,
 }: MenuItemCardProps) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <Stepper name={name} quantity={quantity} onIncrement={onIncrement} onDecrement={onDecrement} />
@@ -380,6 +381,7 @@ export function TerceraItemRow({
   return (
     <li className="flex items-center gap-3 py-3">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] bg-[#1a1a1a] text-white rounded-full uppercase`}>🔥 Más pedido</span>) : null}
         <p className="flex items-baseline gap-2">
           <span className="[font-family:var(--tz-name),Impact,sans-serif] text-[17px] font-extrabold uppercase leading-tight tracking-wide text-[#1a1a1a] sm:text-[19px]">
             {name}

@@ -264,6 +264,7 @@ export function TortasItemRow({
   orderingEnabled = true,
   optionsHint = null,
   onOpen,
+  topSeller = false,
 }: MenuItemCardProps) {
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   const money = paperPrice(price);
@@ -275,6 +276,7 @@ export function TortasItemRow({
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 pb-5 [break-inside:avoid]">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] bg-[#8f0d19] text-white rounded-[4px] uppercase`}>🔥 Más pedido</span>) : null}
         <span className="flex items-baseline gap-3">
           <span className="min-w-0 flex-1 text-[15px] font-bold uppercase leading-tight tracking-[0.035em] text-[#cf1225] sm:text-[16px]">
             {name}

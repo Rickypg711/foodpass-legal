@@ -293,7 +293,7 @@ export function SuaderoItemRow({
       {topSeller ? (
         // Misma pastilla que su "Elige tu salsa", pero rellena con el café de su tabla.
         <span className={`${SD_NAME} mb-1 inline-flex items-center rounded-full bg-[#612f18] px-2.5 py-[3px] text-[10.5px] uppercase tracking-[0.08em] text-[#f6e7cf]`}>
-          🔥 El más pedido
+          🔥 Más pedido
         </span>
       ) : null}
       <span className="flex items-end gap-2">

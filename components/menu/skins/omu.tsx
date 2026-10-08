@@ -608,6 +608,7 @@ export function OmuItemRow({
   category = "",
   groups = [],
   onAddWith,
+  topSeller = false,
 }: MenuItemCardProps & {
   category?: string;
   groups?: MenuItemOptionGroup[];
@@ -705,6 +706,7 @@ export function OmuItemRow({
   return (
     <li className={`${rowClass} -mx-2 flex items-start gap-3 px-2 [break-inside:avoid] ` + (dark ? "py-2" : "py-1")}>
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${OMU_NAME} ${dark ? "bg-[#f9f8f8] text-[#151311]" : "bg-[#151311] text-[#f9f8f8]"} rounded-[3px] uppercase`}>🔥 Más pedido</span>) : null}
         <span className="flex items-end gap-2">
           <span className={`${OMU_NAME} ${ink} min-w-0 text-[15px] leading-tight tracking-[0.01em] sm:text-[16px]`}>{name}</span>
           <Dots dark={dark} />

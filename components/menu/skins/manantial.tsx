@@ -533,6 +533,7 @@ export function ManantialItemRow({
   onOpen,
   hideDescription = false,
   index = 0,
+  topSeller = false,
 }: MenuItemCardProps & { index?: number; hideDescription?: boolean }) {
   const iv = { "--i": index } as CSSProperties;
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -544,6 +545,7 @@ export function ManantialItemRow({
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   const text = (
     <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="block w-full min-w-0 cursor-pointer text-left">
+      {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${MN_NAME} bg-gradient-to-b from-[#4a3480] to-[#3d2a6e] text-[#8fe3dc] rounded-full`}>🔥 Más pedido</span>) : null}
       <span className="flex items-end gap-2">
         <span className={`${MN_NAME} min-w-0 text-[17px] leading-[1.15] text-[#2a1740] sm:text-[18px]`}>{name}</span>
         <span className="mn-dots" aria-hidden />

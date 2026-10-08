@@ -475,6 +475,7 @@ export function BloomsItemRow({
   altPrice,
   priceColumns = false,
   hidePrice = false,
+  topSeller = false,
 }: MenuItemCardProps & {
   /** Segundo precio de la tabla (EN LAS ROCAS). null = "-" como en su papel. */
   altPrice?: number | null;
@@ -496,6 +497,7 @@ export function BloomsItemRow({
   return (
     <li className="flex items-center gap-2.5 border-t border-dashed border-[#ff5c9a]/30 py-3 first:border-t-0 sm:gap-3">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center whitespace-nowrap px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] bg-[#ff5c9a] text-white rounded-full uppercase tracking-[0.14em]`}>🔥 Más pedido</span>) : null}
         <p className="flex items-start gap-2">
           <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full bg-[#1c1a1b]" aria-hidden />
           <span className="min-w-0 flex-1 text-[13.5px] font-extrabold uppercase leading-snug tracking-[0.16em] text-[#1c1a1b] sm:text-[15px]">{name}</span>

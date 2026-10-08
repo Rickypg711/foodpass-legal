@@ -338,6 +338,7 @@ export function IGOItemRow({
   optionsHint = null,
   onOpen,
   category = "",
+  topSeller = false,
 }: MenuItemCardProps & { category?: string }) {
   const hint = optionsHint && optionsHint !== "Se arma a tu gusto" ? optionsHint.replace(/^🌶️\s*/, "") : null;
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -348,6 +349,7 @@ export function IGOItemRow({
   return (
     <li className="flex items-start gap-2 pb-4 [break-inside:avoid] sm:gap-3">
       <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${IGO_NAME} bg-[#0b652a] text-white rounded-[4px] uppercase`}>🔥 Más pedido</span>) : null}
         <span className="flex items-center gap-2">
           <span className={`${IGO_NAME} shrink-0 text-[14px] font-medium uppercase leading-tight tracking-[0.02em] text-[#0b652a] sm:text-[15.5px]`}>
             {shortName(name, category)}

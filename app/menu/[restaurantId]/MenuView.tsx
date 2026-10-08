@@ -822,6 +822,7 @@ function MenuCategoryList({
                 <LaspicItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -879,6 +880,7 @@ function MenuCategoryList({
                 <FresheriaItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1001,6 +1003,7 @@ function MenuCategoryList({
                   <ManantialItemRow
                     key={row.item.id}
                     id={row.item.id}
+                    topSeller={topSellers.has(row.item.id)}
                     name={row.item.name}
                     description={row.item.description}
                     price={row.item.price}
@@ -1124,6 +1127,7 @@ function MenuCategoryList({
                 <OmuItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1168,6 +1172,7 @@ function MenuCategoryList({
                 <IGOItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1209,6 +1214,7 @@ function MenuCategoryList({
                 <TortasItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1260,6 +1266,7 @@ function MenuCategoryList({
                     <MixtecoItemRow
                       key={item.id}
                       id={item.id}
+                      topSeller={topSellers.has(item.id)}
                       name={item.name}
                       description={item.description}
                       price={item.price}
@@ -1323,6 +1330,7 @@ function MenuCategoryList({
                 <BloomsItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   name={item.name}
                   description={item.description}
                   price={item.price}
@@ -1368,6 +1376,7 @@ function MenuCategoryList({
                 <NegroBlancoItemRow
                   key={item.id}
                   id={item.id}
+                  topSeller={topSellers.has(item.id)}
                   tone={tone}
                   name={item.name}
                   description={item.description}
@@ -1408,6 +1417,7 @@ function MenuCategoryList({
               <TerceraItemRow
                 key={item.id}
                 id={item.id}
+                topSeller={topSellers.has(item.id)}
                 name={item.name}
                 description={item.description}
                 price={item.price}

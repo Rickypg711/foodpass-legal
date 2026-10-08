@@ -513,7 +513,7 @@ export function PecadoItemRow({
         {topSeller ? (
           // Sello de su papel: rojo de la casa, cursiva, como los letreros pintados del local.
           <span className={`${F.name} mb-0.5 inline-flex -rotate-2 items-center rounded-[4px] bg-[#a61c21] px-2 py-[2px] text-[11px] font-extrabold uppercase italic tracking-[0.08em] text-[#fff3dc]`}>
-            🔥 El más pedido
+            🔥 Más pedido
           </span>
         ) : null}
         <p className="flex items-baseline justify-between gap-3">

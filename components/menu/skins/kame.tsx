@@ -467,7 +467,7 @@ export function KameItemRow({
         {topSeller ? (
           // Cinta amarilla como los títulos de su pizarra.
           <span className={`${KAME_NAME} mb-1 inline-flex items-center rounded-[6px] bg-[#f0dc78] px-2 py-[2px] text-[10.5px] tracking-[0.1em] text-[#263532]`}>
-            🔥 El más pedido
+            🔥 Más pedido
           </span>
         ) : null}
         <span className="flex items-end gap-2.5">

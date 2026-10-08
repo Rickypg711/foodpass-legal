@@ -116,7 +116,7 @@ console.log("validate-menu-sales: OK");
   chk(ids(topSellerIds([{ id: "a", orderCount: 50 }, { id: "b", orderCount: 40 }, { id: "c", orderCount: 30 }, { id: "d", orderCount: 20 }])), "a,b,c", "máximo 3, los de más ventas");
   chk(ids(topSellerIds([{ id: "a", orderCount: NaN }, { id: "b", orderCount: null }])), "", "datos raros no truenan");
   const card = readFileSync(new URL("../components/menu/MenuItemCard.tsx", import.meta.url), "utf8");
-  if (!card.includes("🔥 El más pedido")) throw new Error("la tarjeta pinta el sello");
+  if (!card.includes("🔥 Más pedido") || card.includes("El más pedido")) throw new Error("la tarjeta pinta el sello");
   console.log("✅ El más pedido: solo con 10+ ventas reales y máximo 3 platillos");
 }
 
@@ -125,13 +125,13 @@ console.log("validate-menu-sales: OK");
   const view = readFileSync(new URL("../app/menu/[restaurantId]/MenuView.tsx", import.meta.url), "utf8");
   const once = view.match(/const topSellers = topSellerIds\(/g) || [];
   if (once.length !== 1) throw new Error("pieles: topSellers se calcula una sola vez para todo el menú");
-  for (const skin of ["pecado", "suadero", "kame"]) {
+  for (const skin of ["pecado", "suadero", "kame", "omu", "fresheria", "blooms", "igo", "mixteco", "laspic", "tortasperras", "negroblanco", "tercera", "manantial"]) {
     const src = readFileSync(new URL(`../components/menu/skins/${skin}.tsx`, import.meta.url), "utf8");
-    if (!src.includes("topSeller = false") || !src.includes("🔥 El más pedido")) throw new Error(`piel ${skin}: pinta el sello a su modo`);
+    if (!src.includes("topSeller = false") || !src.includes("🔥 Más pedido") || src.includes("El más pedido")) throw new Error(`piel ${skin}: pinta el sello a su modo`);
   }
-  for (const row of ["PecadoItemRow", "SuaderoItemRow", "KameItemRow"]) {
+  for (const row of ["PecadoItemRow", "SuaderoItemRow", "KameItemRow", "OmuItemRow", "FresheriaItemRow", "BloomsItemRow", "IGOItemRow", "MixtecoItemRow", "LaspicItemRow", "TortasItemRow", "NegroBlancoItemRow", "TerceraItemRow", "ManantialItemRow"]) {
     const i = view.indexOf(`<${row}`);
     if (i < 0 || !view.slice(i, i + 200).includes("topSeller={topSellers.has(")) throw new Error(`${row}: recibe el sello`);
   }
-  console.log("✅ El más pedido en pieles: Pecado, Suadero y Kame lo pintan con su ropa");
+  console.log("✅ El más pedido en las 13 pieles, cada una con su ropa");
 }

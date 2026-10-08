@@ -708,6 +708,7 @@ export function FresheriaItemRow({
   category = "",
   groups = [],
   first = false,
+  topSeller = false,
 }: MenuItemCardProps & { category?: string; groups?: MenuItemOptionGroup[]; first?: boolean }) {
   const block = frBlockOf(category);
   const control = !orderingEnabled ? null : quantity > 0 ? (
@@ -741,6 +742,7 @@ export function FresheriaItemRow({
     return (
       <li className="flex flex-col items-center gap-2">
         <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="cursor-pointer text-center">
+          {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${FR_NAME} bg-[#56052d] text-[#fff1f6] rounded-full text-[12px]`}>🔥 Más pedido</span>) : null}
           {description ? <span className={`${FR_NAME} block text-[19px] leading-snug text-[#56052d] [text-wrap:balance]`}>({description.replace(/\.$/, "")})</span> : <span className={`${FR_NAME} block text-[20px] text-[#56052d]`}>{label}</span>}
           <span className={`${FR_NAME} mt-2 flex items-center justify-center gap-3 text-[21px] text-[#56052d]`}>
             {block === "pops" ? <>Precio General : <Pill big>{money(price)}</Pill></> : <><Pill big>{money(price)}</Pill> Precio General</>}
@@ -767,6 +769,7 @@ export function FresheriaItemRow({
         ) : null}
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="block w-full cursor-pointer text-left">
+            {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${FR_NAME} bg-[#56052d] text-[#fff1f6] rounded-full text-[12px]`}>🔥 Más pedido</span>) : null}
             <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className={`${FR_SCRIPT} text-[34px] leading-none text-[#56052d] sm:text-[40px]`}>{short.charAt(0).toUpperCase() + short.slice(1)}</span>
               <Pill>{money(price)}</Pill>
@@ -802,6 +805,7 @@ export function FresheriaItemRow({
       <li className={preparada ? "fr-box px-4 py-3 sm:px-6" : "px-1"}>
         <div className="flex items-start gap-3">
           <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="min-w-0 flex-1 cursor-pointer text-left">
+            {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${FR_NAME} bg-[#56052d] text-[#fff1f6] rounded-full text-[12px]`}>🔥 Más pedido</span>) : null}
             {head}
             {bullets.length ? (
               <ul className={`${FR_NAME} mt-2 space-y-0.5 text-[18px] leading-snug text-[#56052d]`}>
@@ -831,6 +835,7 @@ export function FresheriaItemRow({
   const inner = (
     <>
       <button type="button" onClick={onOpen} aria-label={`Ver ${label}`} className="block w-full cursor-pointer text-center">
+        {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${FR_NAME} bg-[#56052d] text-[#fff1f6] rounded-full text-[12px]`}>🔥 Más pedido</span>) : null}
         <span className={`${FR_SCRIPT} block text-[42px] leading-[1.05] text-[#56052d] [text-wrap:balance] sm:text-[50px]`}>{label}</span>
         {tamano ? (
           <SizePills price={price} tamano={tamano} />

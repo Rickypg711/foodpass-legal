@@ -552,6 +552,7 @@ export function MixtecoItemRow({
   category,
   drinks = false,
   hidePrice = false,
+  topSeller = false,
 }: MenuItemCardProps & {
   category: string;
   /** Hoja de bebidas: una línea, la descripción entre paréntesis como su "(355 ml)". */
@@ -573,6 +574,7 @@ export function MixtecoItemRow({
     return (
       <li className="flex flex-col items-center text-center">
         <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="flex flex-col items-center">
+          {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${MX_DISPLAY} bg-[#234933] text-[#f3ead2] rounded-full`}>🔥 Más pedido</span>) : null}
           <span className={`${MX_DISPLAY} text-[10.5px] leading-tight tracking-[0.08em] text-[#1f3a2b] sm:text-[12px]`}>{name.toUpperCase()}</span>
           <Price price={price} className="mt-0.5 text-[12px]" />
           {imageUrl ? (
@@ -589,6 +591,7 @@ export function MixtecoItemRow({
     return (
       <li className="flex items-center gap-2.5 border-t border-dashed border-[#234933]/15 py-2 first:border-t-0 sm:gap-3">
         <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 text-left">
+          {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${MX_DISPLAY} bg-[#234933] text-[#f3ead2] rounded-full`}>🔥 Más pedido</span>) : null}
           <span className={`${MX_DISPLAY} text-[13.5px] leading-snug tracking-[0.15em] text-[#1f3a2b] sm:text-[15.5px]`}>{shown.toUpperCase()}</span>
           {desc ? <span className="ml-1.5 text-[13.5px] leading-snug text-[#1f3a2b]/80">({desc})</span> : null}
           {hint ? <span className="mt-0.5 block text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#2f7a50]">{hint}</span> : null}
@@ -608,6 +611,7 @@ export function MixtecoItemRow({
     <li className="break-inside-avoid border-t border-dashed border-[#234933]/15 py-3.5 first:border-t-0 lg:[&:nth-child(n)]:border-t-0 lg:pb-5 lg:pt-0">
       <div className="flex items-start gap-3">
         <button type="button" onClick={onOpen} aria-label={`Ver ${name}`} className="min-w-0 flex-1 cursor-pointer text-left">
+          {topSeller ? (<span className={`mb-1 inline-flex w-fit items-center px-2 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] ${MX_DISPLAY} bg-[#234933] text-[#f3ead2] rounded-full`}>🔥 Más pedido</span>) : null}
           <span className="flex items-baseline gap-3">
             <span className={`${MX_DISPLAY} min-w-0 flex-1 text-[15px] leading-[1.25] tracking-[0.15em] text-[#1f3a2b] sm:text-[17px]`}>{shown.toUpperCase()}</span>
             <Price price={price} className="text-[15px] sm:text-[17px]" />
