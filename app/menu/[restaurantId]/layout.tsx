@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import { fetchRestaurantMetadata } from "@/lib/server/restaurantMetadata";
-import { fetchRestaurantMenuFull } from "@/lib/server/restaurantLanding";
-import { buildMenuJsonLd } from "@/lib/server/menuSchema";
+import { fetchRestaurantDocFull, fetchRestaurantMenuFull } from "@/lib/server/restaurantLanding";
+import { buildRestaurantJsonLd } from "@/lib/server/restaurantJsonLd";
 import MenuRestaurantLayoutClient from "./MenuRestaurantLayoutClient";
 
 // Per-restaurant link preview for the MENU link itself — the URL behind every
@@ -69,35 +69,20 @@ export default async function MenuRestaurantLayout({
   // dedupe, cero viajes extra a Firestore dentro del request).
   const menuItems = restaurant ? await fetchRestaurantMenuFull(restaurantId) : [];
 
-  // Restaurant JSON-LD so Google and AI engines understand WHO this page is:
-  // a real local restaurant with a menu and WhatsApp ordering.
-  const jsonLd = restaurant
-    ? {
-        "@context": "https://schema.org",
-        "@type": "Restaurant",
-        name: restaurant.name,
-        url: `${SITE_URL}/menu/${restaurantId}`,
-        ...(restaurant.logoUrl ? { image: restaurant.logoUrl } : {}),
-        ...(restaurant.description ? { description: restaurant.description } : {}),
-        ...(restaurant.address
-          ? {
-              address: {
-                "@type": "PostalAddress",
-                streetAddress: restaurant.address,
-                addressRegion: "Chihuahua",
-                addressCountry: "MX",
-              },
-            }
-          : {}),
-        ...(restaurant.categories.length > 0
-          ? { servesCuisine: restaurant.categories }
-          : {}),
-        // Schema Menu COMPLETO (secciones + precios), no solo la URL — es la
-        // página del menú: que el menú estructurado viva AQUÍ es lo mínimo.
-        hasMenu: buildMenuJsonLd(`${SITE_URL}/menu/${restaurantId}`, menuItems),
-        acceptsReservations: false,
-      }
-    : null;
+  // Restaurant JSON-LD: el MISMO que /r (lib/server/restaurantJsonLd.ts) —
+  // horario, teléfono, ciudad/región/país del doc y menú con precios. Antes
+  // aquí decía "Chihuahua, MX" a fuerza para todos (8-oct-2026).
+  const doc = restaurant ? await fetchRestaurantDocFull(restaurantId) : null;
+  const jsonLd =
+    restaurant && doc?.status === "ok"
+      ? buildRestaurantJsonLd({
+          data: doc.data,
+          name: restaurant.name,
+          url: `${SITE_URL}/menu/${restaurantId}`,
+          menuUrl: `${SITE_URL}/menu/${restaurantId}`,
+          menu: menuItems,
+        })
+      : null;
 
   return (
     <>

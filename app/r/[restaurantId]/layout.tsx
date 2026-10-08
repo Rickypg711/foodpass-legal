@@ -5,10 +5,10 @@ import {
   fetchRestaurantMenuFull,
   resolveRestaurantHandle,
 } from "@/lib/server/restaurantLanding";
-import { buildMenuJsonLd } from "@/lib/server/menuSchema";
+import { buildRestaurantJsonLd } from "@/lib/server/restaurantJsonLd";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
 import { restaurantFaviconUrl } from "@/lib/menu/menuFavicon";
-import { weeklyHoursRaw, weeklySchedule } from "@/lib/schedule";
+import { weeklySchedule } from "@/lib/schedule";
 import { buildFaq, buildLandingTitle, cityForRestaurant, hoursSentence, seoCategories } from "@/lib/landingContent";
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
@@ -118,62 +118,20 @@ export default async function RestaurantLandingLayout({
   if (restaurant) {
     const { data, name } = restaurant;
     const address = str(data.address);
-    const phone = str(data.phone);
-    const description = str(data.description);
-    const logoUrl = getRestaurantImageUrl(data);
-    const bannerUrl = getRestaurantBannerUrl(data);
     const categories = seoCategories(
       Array.isArray(data.categories)
         ? (data.categories as unknown[]).map((c) => (typeof c === "string" ? c.trim() : ""))
         : [],
     );
     const city = cityForRestaurant(data);
-    const region = str(data.state);
-    const country = str(data.countryCode);
-    const hours = weeklyHoursRaw(data);
-    const prices = menu.map((i) => i.price).filter((p) => p > 0);
-    const images = [bannerUrl, logoUrl].filter(Boolean) as string[];
 
-    jsonLd = {
-      "@context": "https://schema.org",
-      "@type": "Restaurant",
+    jsonLd = buildRestaurantJsonLd({
+      data,
       name,
       url: `${SITE_URL}/r/${restaurant.canonicalHandle}`,
-      ...(images.length > 0 ? { image: images } : {}),
-      ...(description ? { description } : {}),
-      ...(phone ? { telephone: phone } : {}),
-      ...(address
-        ? {
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: address,
-              // Región y país salen del doc (hay locales en Oaxaca, Colombia y
-              // RD): jamás "Chihuahua" a fuerza. Sin dato, se omite.
-              ...(city ? { addressLocality: city } : {}),
-              ...(region ? { addressRegion: region } : {}),
-              ...(country ? { addressCountry: country } : {}),
-            },
-          }
-        : {}),
-      ...(categories.length > 0 ? { servesCuisine: categories } : {}),
-      ...(hours && hours.length > 0
-        ? {
-            openingHoursSpecification: hours.map((h) => ({
-              "@type": "OpeningHoursSpecification",
-              dayOfWeek: h.day,
-              opens: h.opens,
-              closes: h.closes,
-            })),
-          }
-        : {}),
-      ...(prices.length > 0
-        ? {
-            priceRange: `MX$${Math.min(...prices)}–MX$${Math.max(...prices)}`,
-          }
-        : {}),
-      hasMenu: buildMenuJsonLd(`${SITE_URL}/menu/${restaurant.id}`, menu),
-      acceptsReservations: false,
-    };
+      menuUrl: `${SITE_URL}/menu/${restaurant.id}`,
+      menu,
+    });
 
     // FAQ con los MISMOS datos que renderiza LandingView (schema y página
     // nunca deben contradecirse).

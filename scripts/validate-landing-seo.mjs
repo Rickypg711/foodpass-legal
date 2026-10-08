@@ -113,7 +113,26 @@ const layout = read("app/r/[restaurantId]/layout.tsx");
 assert.ok(layout.includes("cityForRestaurant(data)"), "el layout usa la ciudad estructurada");
 assert.ok(layout.includes("seoCategories("), "el layout filtra comodines (title + servesCuisine)");
 assert.ok(!layout.includes('addressRegion: "Chihuahua"'), "el JSON-LD ya no dice Chihuahua a fuerza (hay locales en Oaxaca, Colombia, RD)");
-assert.ok(layout.includes("addressLocality"), "el JSON-LD lleva addressLocality cuando hay ciudad");
+// 8-oct-2026: /r y /menu arman el JSON-LD con UNA sola fuente. /menu decía
+// "Chihuahua, MX" a fuerza (Mexican Fresh Water es de Carolina del Sur) y no
+// mandaba horario ni teléfono; el rango de precios decía MX$ aunque fuera USD.
+const noComments = (t) => t.replace(/\/\/.*$/gm, "");
+const ldSrc = noComments(read("lib/server/restaurantJsonLd.ts"));
+assert.ok(ldSrc.includes("addressLocality") && ldSrc.includes("openingHoursSpecification") && ldSrc.includes("telephone"), "el builder lleva ciudad, horario y teléfono");
+assert.ok(!ldSrc.includes('"Chihuahua"') && !/addressCountry:\s*"MX"/.test(ldSrc), "el builder jamás fija Chihuahua ni MX");
+for (const f of ["app/r/[restaurantId]/layout.tsx", "app/menu/[restaurantId]/layout.tsx"]) {
+  const src = noComments(read(f));
+  assert.ok(src.includes("buildRestaurantJsonLd("), `${f}: usa el builder compartido`);
+  assert.ok(!src.includes('"Chihuahua"') && !/addressCountry:\s*"MX"/.test(src), `${f}: no fija Chihuahua ni MX`);
+}
+{
+  const { priceRangeFor } = await import("../lib/server/restaurantJsonLd.ts");
+  assert.equal(priceRangeFor([45, 180, 0], "MXN"), "MX$45–MX$180");
+  assert.equal(priceRangeFor([5, 15], "USD"), "$5–$15", "un local en dólares no dice MX$");
+  assert.equal(priceRangeFor([9000, 30000], "cop"), "COP 9000–COP 30000");
+  assert.equal(priceRangeFor([], "MXN"), null);
+  assert.equal(priceRangeFor([50], undefined), "MX$50–MX$50");
+}
 const view = read("app/r/[restaurantId]/LandingView.tsx");
 assert.ok(view.includes("seoCategories("), "la vista filtra comodines en chips/FAQ/párrafo");
 const dir = read("lib/server/restaurantDirectory.ts");
