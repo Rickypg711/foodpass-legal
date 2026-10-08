@@ -61,7 +61,7 @@ export function formatWhatsappOrderMessage(ctx: WhatsappOrderContext): string {
     "",
     itemsLines,
     ...(fee > 0 ? [`Envío — ${formatPrice(fee)}`] : []),
-    ...(ctx.redemptionName ? [`🎁 Premio en este pedido: ${ctx.redemptionName} — GRATIS`] : []),
+    ...(ctx.redemptionName ? [`🎁 Premio en este pedido: ${ctx.redemptionName} GRATIS`] : []),
     "",
     `*Total: ${formatPrice(ctx.total)}*`,
     ctx.paymentMethod === "pay_at_pickup"

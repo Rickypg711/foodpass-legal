@@ -89,7 +89,7 @@ export function buildReceiptWhatsappText(r: ReceiptWhatsappInput): string {
     "",
     `*Total: ${fmt(r.total)}*`,
     ...(r.redemptionName
-      ? [`🎁 Premio canjeado: ${r.redemptionName} — GRATIS`]
+      ? [`🎁 Premio canjeado: ${r.redemptionName} GRATIS`]
       : []),
     ...(points > 0
       ? ["", `⭐ Ganaste *+${points} puntos* con esta compra`]

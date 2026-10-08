@@ -33,7 +33,7 @@ export function fallbackWinback(params: {
     };
   }
   return {
-    message: `¡Hola ${name}! 👋 Te extrañamos en ${venue}. Esta semana tenemos algo especial para ti 🎁`,
+    message: `¡Hola ${name}! 👋 Te extrañamos en ${venue}. ¿Cuándo vienes? Aquí te esperamos 🙌`,
     hook: "special",
     fromAi: false,
   };
