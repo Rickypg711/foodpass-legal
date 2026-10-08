@@ -397,3 +397,21 @@ check("la Caja web guarda en un lote (writeBatch)", posSrc.includes("writeBatch(
 // podian fallar sin tumbar el candado.
 if (failed) process.exit(1);
 console.log("validate-cart-options: OK");
+
+// ── Tamaños con precio en la cara de la tarjeta (8-oct-2026) ────────────────
+{
+  const { sizePriceLine } = await import("../lib/menu/sizePrices.ts");
+  const g = (opts, extra = {}) => [{ id: "t", name: "Tamaño", required: true, min: 1, max: 1, options: opts, ...extra }];
+  const o = (name, priceDelta, available) => ({ id: name, name, priceDelta, ...(available === false ? { available } : {}) });
+  const eq = (a, b, m) => { if (a !== b) throw new Error(`${m}: esperaba ${JSON.stringify(b)}, salió ${JSON.stringify(a)}`); };
+  eq(sizePriceLine(60, g([o("Chico", 0), o("Grande", 30)])), "Chico $60 · Grande $90", "dos tamaños");
+  eq(sizePriceLine(60, g([o("Grande", 30), o("Chico", 0)])), "Chico $60 · Grande $90", "ordena de barato a caro");
+  eq(sizePriceLine(60, g([o("Roja", 0), o("Verde", 0)])), null, "salsas sin costo no son tamaños");
+  eq(sizePriceLine(60, g([o("Chico", 0), o("Grande", 30)], { required: false })), null, "solo grupos obligatorios");
+  eq(sizePriceLine(60, g([o("Chico", 0), o("Grande", 30)], { max: 3 })), null, "solo 'elige uno'");
+  eq(sizePriceLine(60, g([o("Chico", 0), o("Grande", 30, false)])), null, "una opción agotada no se enseña (queda una sola)");
+  eq(sizePriceLine(50, g([o("1", 0), o("2", 40), o("3", 80), o("4", 120)])), "Desde $50", "más de 3 → desde");
+  eq(sizePriceLine(60, []), null, "sin grupos");
+  eq(sizePriceLine(60, g([o("Orden completa con todo", 0), o("Media", -20)])), "Media $40 · Orden complet… $60", "nombres largos se cortan");
+  console.log("✅ tamaños en la tarjeta: cada precio es base + sobreprecio guardado, nunca inventado");
+}

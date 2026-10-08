@@ -20,6 +20,7 @@ import { TableServiceButtons } from "@/components/menu/TableServiceButtons";
 import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import { OwnerHoursStrip } from "@/components/menu/OwnerHoursStrip";
 import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
+import { sizePriceLine } from "@/lib/menu/sizePrices";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import { useCart } from "@/lib/cart/CartProvider";
@@ -1452,6 +1453,7 @@ function MenuCategoryList({
                 imageUrl={item.imageUrl}
                 orderingEnabled={orderingEnabled && !closed}
                 optionsHint={optionsHintFor(item)}
+                priceLine={sizePriceLine(item.price, resolveOptionGroups(item))}
                 quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
                 onIncrement={() => onIncrementItem?.(item)}

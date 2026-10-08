@@ -26,6 +26,9 @@ export type MenuItemCardProps = {
   optionsHint?: string | null;
   /** Tocar el texto o la foto abre la hoja de detalle (9-sep, paridad app). */
   onOpen?: () => void;
+  /** "Chico $60 · Grande $90" (lib/menu/sizePrices.ts). Si viene, va en lugar
+   * del precio base: el cliente ve cuánto cuesta cada tamaño sin abrir nada. */
+  priceLine?: string | null;
 };
 
 function AddButton({ name, onAdd }: { name: string; onAdd: () => void }) {
@@ -89,6 +92,7 @@ export function MenuItemCard({
   orderingEnabled = true,
   optionsHint = null,
   onOpen,
+  priceLine = null,
 }: MenuItemCardProps) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <QuantityStepper
@@ -124,9 +128,15 @@ export function MenuItemCard({
               {description}
             </p>
           ) : null}
-          <p className="mt-auto pt-2 text-[15px] font-bold tabular-nums text-[#1C2526]">
-            {formatPrice(price)}
-          </p>
+          {priceLine ? (
+            <p className="mt-auto pt-2 text-[13.5px] font-bold leading-snug tabular-nums text-[#1C2526]">
+              {priceLine}
+            </p>
+          ) : (
+            <p className="mt-auto pt-2 text-[15px] font-bold tabular-nums text-[#1C2526]">
+              {formatPrice(price)}
+            </p>
+          )}
         </button>
 
         {/* Image block with the add control anchored to its corner */}
