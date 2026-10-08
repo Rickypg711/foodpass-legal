@@ -40,6 +40,7 @@ import { buildFaq, buildSeoParagraph, cityForRestaurant, hoursSentence, seoCateg
 import { parseRewardTiers } from "@/lib/loyalty/rewardCatalog";
 import { earnPolicyFromRestaurant, earnRuleLine } from "@/lib/loyalty/earnPolicy";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { BigOrderCard } from "@/components/landing/BigOrderCard";
 import { menuSkinFromRestaurant } from "@/lib/menu/menuSkin";
 import { landingThemeFor, type LandingTheme } from "@/components/menu/skins/landingTheme";
 
@@ -555,6 +556,22 @@ export default function LandingView({
                 >
                   Ver menú completo →
                 </Link>
+              </SectionCard>
+            ) : null}
+
+            {/* ---- PEDIDO GRANDE / EVENTO (8-oct-2026, copiado del catering
+                 de Rebellion Pizza): un pedido de oficina vale lo de diez
+                 normales. Solo con WhatsApp: ahí llega la cotización. ---- */}
+            {restaurant.whatsapp ? (
+              <SectionCard theme={theme} title="¿Pedido grande o evento?">
+                <BigOrderCard
+                  restaurantId={restaurantId}
+                  restaurantName={name}
+                  whatsapp={restaurant.whatsapp}
+                  phoneCountry={phoneCountryOf(rdata)}
+                  btnClass={theme.btnWhatsapp}
+                  textClass={theme.text}
+                />
               </SectionCard>
             ) : null}
 

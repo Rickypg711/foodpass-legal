@@ -157,3 +157,18 @@ console.log("✓ canon WhatsApp: 10 dígitos guardados, links a api.whatsapp.com
   if (!/window\.open\("about:blank", "_blank"\)[\s\S]{0,200}paintWhatsappHandoff\(waWindow/.test(co)) throw new Error("handoff: el checkout pinta la pestaña justo después de abrirla");
   console.log("✅ handoff de WhatsApp: la pestaña ya no queda en blanco");
 }
+
+// ── "¿Pedido grande o evento?" en /r (8-oct-2026) ──────────────────────────
+{
+  const { bigOrderMessage, spanishDate } = await import("../lib/landing/bigOrderMessage.ts");
+  const msg = bigOrderMessage({ restaurantName: "Suadero", kind: "Oficina", date: "2026-10-16", people: 25, customerName: "Ana", notes: "a las 2" });
+  const want = "Hola Suadero, quiero cotizar un pedido grande 🙌\nPara: Oficina\nFecha: viernes, 16 de octubre\nPersonas: 25\nSoy Ana\nNota: a las 2";
+  const want2 = want.replace("viernes, 16", "viernes 16");
+  if (msg !== want && msg !== want2) throw new Error("bigOrder: mensaje inesperado:\n" + msg);
+  if (spanishDate("2026-13-40") !== null && spanishDate("x") !== null) throw new Error("bigOrder: fecha inválida no truena");
+  const min = bigOrderMessage({ restaurantName: "X", kind: "", date: "", people: null, customerName: "", notes: "" });
+  if (min !== "Hola X, quiero cotizar un pedido grande 🙌") throw new Error("bigOrder: sin datos opcionales no deja renglones vacíos: " + min);
+  const card = (await import("node:fs")).readFileSync(new URL("../components/landing/BigOrderCard.tsx", import.meta.url), "utf8");
+  if (!card.includes("buildWhatsappUrl(")) throw new Error("bigOrder: el link pasa por el canon buildWhatsappUrl");
+  console.log("✅ pedido grande: mensaje escrito, link canónico, sin renglones vacíos");
+}
