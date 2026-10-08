@@ -77,6 +77,8 @@ import {
   type TabDiscountRecalc,
 } from "@/lib/loyalty/tabDiscountRecalc";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
+import { looksLikeTable, tableTabPrompt, TABLE_TAB_PROMPT_SUB } from "@/lib/pos/tableNameHint";
+import { logOwnerAction } from "@/lib/ownerActions";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -773,6 +775,30 @@ function CheckoutDialog({
               className={INPUT_CLS}
               style={INPUT_STYLE}
             />
+            {/* Lazo 4 (7-oct): tecleó una mesa en "Cobrar ahora" → ofrecer la
+                cuenta en el momento. Misma puerta que el botón "Cuenta abierta". */}
+            {mode === "now" && !isRedeemOnly && looksLikeTable(name) && (
+              <button
+                type="button"
+                onClick={() => {
+                  logOwnerAction(restaurantId, "nba_tap", { actionCode: "table_tab_suggest" });
+                  if (tableTabsLocked && onTabsLocked) {
+                    setQuiereCuenta(true);
+                    onTabsLocked();
+                    return;
+                  }
+                  setMode("tab");
+                }}
+                className="mt-2 w-full rounded-xl px-3.5 py-2.5 text-left transition hover:opacity-90"
+                style={{ background: "#F0EBE1" }}
+              >
+                <span className="block text-[15px] font-semibold" style={{ color: LINK }}>
+                  {tableTabPrompt(name)}
+                  {tableTabsLocked ? " · Pro" : ""}
+                </span>
+                <span className="block text-[13px] leading-[18px]" style={{ color: INK_SOFT }}>{TABLE_TAB_PROMPT_SUB}</span>
+              </button>
+            )}
           </div>
           {/* Notes: collapsed behind a link during a $0 canje so the fast
               lane stays clean, but the kitchen note is one tap away (the free

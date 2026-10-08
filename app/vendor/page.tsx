@@ -38,6 +38,15 @@ import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
 import { ActivationCard } from "@/components/vendor/ActivationCard";
 import { OwnerPushCard } from "@/components/vendor/OwnerPushCard";
 import { logOwnerAction } from "@/lib/ownerActions";
+import { PatternLoopAction } from "./_components/PatternLoopAction";
+import {
+  PATTERN_LOOP_CODES,
+  isPatternLoopCode,
+  loopCtaLabel,
+  loopReady,
+  parsePatternLoops,
+  type PatternLoopsInsight,
+} from "@/lib/vendor/patternLoops";
 import { WinbackTodayList, parseWinbackToday, type WinbackTodayRow } from "./_components/WinbackTodayList";
 import { phoneCountryOf } from "@/lib/phone/phoneCountry";
 import { resolveVendorContext, vendorHomeForRole } from "@/lib/vendorContext";
@@ -121,6 +130,8 @@ interface DashboardData {
   nbaQueue: NbaQueueItem[];
   /** "Escríbele hoy" (29-sep): hasta 3 clientes en riesgo con nombre, del cerebro. */
   winbackToday: WinbackTodayRow[];
+  /** Lazos de los patrones (7-oct): lo que cada consejo necesita para el toque. */
+  patternLoops: PatternLoopsInsight | null;
   /** País del teléfono del local: el WhatsApp marca como él. */
   phoneCountry: string;
   lookback: LookbackStats;
@@ -504,6 +515,7 @@ export default function VendorDashboard() {
               ), r.loyaltyReady !== false),
           // Si el código se corrigió a otra acción, la lista hablaría de otra cosa.
           winbackToday: nbaOverridden ? [] : parseWinbackToday(ins?.winbackToday),
+          patternLoops: nbaOverridden ? null : parsePatternLoops(ins?.patternLoops),
           phoneCountry: phoneCountryOf(r as Record<string, unknown>),
           lookback,
           menuSales,
@@ -547,6 +559,30 @@ export default function VendorDashboard() {
           trialEndsAtMs,
           founderBypass,
         });
+        // QA sin datos de clientes (AGENTS.md §2): SOLO en desarrollo,
+        // ?lazo=promo_weak_night|publish_combo|hide_stale_dish pinta el
+        // consejo con una muestra sintética (no toca Firestore hasta tocar el
+        // botón: no lo toques sobre un local real).
+        if (process.env.NODE_ENV === "development") {
+          const lazo = new URLSearchParams(window.location.search).get("lazo");
+          if (lazo && isPatternLoopCode(lazo)) {
+            const muestra = parsePatternLoops({
+              weakNight: { weekday: 3, weekdayName: "miércoles", perNight: 463, avgPerNight: 1512, daysUntil: 1, targetDayKey: "2026-10-14", active: true, alreadySent: false, message: "Mañana miércoles te esperamos en Tacos de Suadero. ¿Se te antoja tu orden de 4 tacos? 🙌\n\nMenú: https://comeleal.com/r/tacos-de-suadero-la-familia" },
+              combo: { a: "Orden de 4 tacos", b: "Torito", aId: "a", bId: "b", count: 14, fullPrice: 165, price: 145, name: "Orden de 4 tacos + Torito", category: "Combos" },
+              staleDish: { id: "muestra", name: "CARAJILLO", prev: 43 },
+              promoResults: { sent: 1, measured: 1, wins: 1, avgLiftPct: 34, last: { dayKey: "2026-09-30", weekdayName: "miércoles", revenue: 620, baseline: 463, liftPct: 34 } },
+            });
+            setData((prev) => prev ? {
+              ...prev,
+              nbaActionCode: lazo,
+              nbaTitle: lazo === "promo_weak_night" ? "Mañana es miércoles: invita a tus clientes" : lazo === "publish_combo" ? "Ya piden Orden de 4 tacos con Torito: hazlo combo" : "CARAJILLO ya no se vende",
+              nbaBody: lazo === "promo_weak_night" ? "Tus miércoles dejan $463 por noche y tu promedio es $1,512. Te escribimos un mensaje para tus clientes: léelo y, si te gusta, mándalo por WhatsApp a tu lista o a tu estado." : lazo === "publish_combo" ? "En 30 días 14 cuentas llevaron Orden de 4 tacos y Torito juntos. Te armamos el combo a $145 (por separado son $165). Si te gusta, publícalo en tu menú con un toque; el precio lo puedes cambiar antes." : "El mes pasado vendiste 43 y en los últimos 30 días ninguno. Si ya no lo haces, escóndelo de tu menú con un toque; lo vuelves a prender cuando quieras.",
+              nbaStake: null,
+              nbaQueue: PATTERN_LOOP_CODES.filter((c) => c !== lazo).map((c) => ({ actionCode: c, title: getNbaFallbackTitle(c), body: getNbaFallbackBody(c), stake: null })),
+              patternLoops: muestra,
+            } : prev);
+          }
+        }
         setLoadState("ready");
       } catch (err) {
         console.error("[vendor/dashboard]", err);
@@ -763,6 +799,7 @@ export default function VendorDashboard() {
             metrics={data.nbaMetrics}
             weeklyBriefText={data.weeklyBriefText}
             winbackToday={data.winbackToday}
+            patternLoops={data.patternLoops}
           />
 
           {/* ── 4 · Clientes · últimos 30 días ── */}
@@ -965,6 +1002,10 @@ function getNbaFallbackTitle(actionCode: string): string {
     case "send_receipts": return "Mándales su recibo";
     case "referral_tacos_unseen": return "Ganaron un premio y no lo saben";
     case "invites_without_purchase": return "Mandan su link y nadie llega";
+    // 7-oct: lazos de los patrones (el cerebro manda el título con el día real).
+    case "promo_weak_night": return "Invita a tus clientes a tu noche floja";
+    case "publish_combo": return "Arma un combo con lo que ya piden";
+    case "hide_stale_dish": return "Un platillo ya no se vende";
     case "healthy":
     case "keep_going":
     case "stable": return "Tu negocio va avanzando";
@@ -991,6 +1032,9 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
     case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
     case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
+    case "promo_weak_night": return "Te escribimos un mensaje para tus clientes. Léelo y, si te gusta, mándalo por WhatsApp.";
+    case "publish_combo": return "Hay platillos que tus clientes piden juntos. Ármalos como combo en tu menú.";
+    case "hide_stale_dish": return "Un platillo de tu menú dejó de venderse. Si ya no lo haces, escóndelo con un toque.";
     case "grow_phone_capture":
       // Sin premio no se prometen puntos: el número es para SU lista.
       if (!loyaltyReady) return "Ya cobras en la Caja, pero sin pedir el número tu lista de clientes está vacía. Pídelo en cada cobro (\"¿tu número, para avisarte de promos?\"): cada número es un cliente al que puedes escribirle cuando quieras.";
@@ -1079,6 +1123,11 @@ function getNbaCtaLabel(actionCode: string, atRiskCount: number): string {
     case "send_receipts": return "Abrir la Caja";
     case "referral_tacos_unseen": return "Ver clientes";
     case "invites_without_purchase": return "Revisar mi premio";
+    // 7-oct: con datos, el toque vive en la tarjeta (PatternLoopAction); esto
+    // es solo si el cerebro no dejó con qué.
+    case "promo_weak_night": return "Ver mis clientes";
+    case "publish_combo":
+    case "hide_stale_dish": return "Abrir mi menú";
     default: return "Ver recompensas";
   }
 }
@@ -1109,6 +1158,9 @@ function getNbaCtaHref(actionCode: string): string {
     case "send_receipts": return "/vendor/pos";
     case "referral_tacos_unseen": return "/vendor/clientes";
     case "invites_without_purchase": return "/vendor/recompensas";
+    case "promo_weak_night": return "/vendor/clientes";
+    case "publish_combo":
+    case "hide_stale_dish": return "/vendor/menu";
     default: return "/vendor/recompensas";
   }
 }
@@ -1125,6 +1177,7 @@ function AICoachPreviewCard({
   metrics,
   weeklyBriefText,
   winbackToday = [],
+  patternLoops = null,
 }: {
   restaurantId: string;
   restaurantName: string;
@@ -1137,8 +1190,12 @@ function AICoachPreviewCard({
   metrics: NbaMetrics;
   weeklyBriefText?: string;
   winbackToday?: WinbackTodayRow[];
+  patternLoops?: PatternLoopsInsight | null;
 }) {
   const router = useRouter();
+  // Lazos (7-oct): un pendiente de la cola que se hace en un toque sube al
+  // lugar principal en vez de mandar a otra pantalla.
+  const [focus, setFocus] = useState<string | null>(null);
 
   // "Ahora no" (30-sep): de esta sesión más los de los últimos 14 días. El
   // cerebro ya los saca de su cola cada noche; esto cubre el rato entre el
@@ -1178,7 +1235,10 @@ function AICoachPreviewCard({
     body: nbaBody || getNbaFallbackBody(mainCode),
     stake: nbaStake,
   };
-  const items = [main, ...nbaQueue].filter((i) => !skipped.has(i.actionCode));
+  const all = [main, ...nbaQueue].filter((i) => !skipped.has(i.actionCode));
+  const items = focus && all.some((i) => i.actionCode === focus)
+    ? [...all.filter((i) => i.actionCode === focus), ...all.filter((i) => i.actionCode !== focus)]
+    : all;
   // Dijo "ahora no" a todo: se le respeta y se queda el "vas avanzando".
   const first: NbaQueueItem = items[0] ?? {
     actionCode: "keep_going",
@@ -1198,6 +1258,8 @@ function AICoachPreviewCard({
   const ctaHref = getNbaCtaHref(actionCode);
   // La lista de "escríbele hoy" solo con el principal REAL (no promovido).
   const showWinback = actionCode === "send_winback" && actionCode === mainCode && winbackToday.length > 0;
+  // Noche floja, combo o platillo dormido: el toque vive en la tarjeta.
+  const showLoop = isPatternLoopCode(actionCode) && loopReady(actionCode, patternLoops);
 
   // Only surface a weekly insight when the AI actually produced one — never filler.
   const hasInsight = !!(weeklyBriefText && weeklyBriefText.trim());
@@ -1214,7 +1276,7 @@ function AICoachPreviewCard({
   // consejo, como link) y su "Ahora no". El costo del problema en pesos va
   // como línea bajo el título, solo con dinero real (jamás proyección).
   return (
-    <section className="mb-7">
+    <section id="tu-siguiente-movimiento" className="mb-7 scroll-mt-24">
       <SectionTitle>Tu siguiente movimiento</SectionTitle>
       <p className="text-[15px] font-semibold leading-[22px]" style={{ color: INK }}>{displayTitle}</p>
       {first.stake && (
@@ -1224,7 +1286,9 @@ function AICoachPreviewCard({
       {hasInsight && (
         <p className="mt-2 text-[13px] leading-4" style={{ color: INK_SOFT }}>{compactInsight}</p>
       )}
-      {showWinback ? (
+      {showLoop && patternLoops && isPatternLoopCode(actionCode) ? (
+        <PatternLoopAction key={actionCode} restaurantId={restaurantId} code={actionCode} loops={patternLoops} />
+      ) : showWinback ? (
         <>
           <WinbackTodayList
             restaurantId={restaurantId}
@@ -1266,9 +1330,16 @@ function AICoachPreviewCard({
                 key={item.actionCode}
                 item={item}
                 last={i === rest.length - 1}
-                ctaLabel={getNbaCtaLabel(item.actionCode, atRiskShown(metrics))}
-                ctaHref={getNbaCtaHref(item.actionCode)}
-                onYes={() => logOwnerAction(restaurantId, "nba_tap", { actionCode: item.actionCode })}
+                ctaLabel={loopReady(item.actionCode, patternLoops)
+                  ? (loopCtaLabel(item.actionCode) ?? getNbaCtaLabel(item.actionCode, atRiskShown(metrics)))
+                  : getNbaCtaLabel(item.actionCode, atRiskShown(metrics))}
+                ctaHref={loopReady(item.actionCode, patternLoops) ? "#tu-siguiente-movimiento" : getNbaCtaHref(item.actionCode)}
+                onYes={() => {
+                  // El lazo se registra cuando de verdad lo hace (mandar,
+                  // publicar, esconder), no al subirlo.
+                  if (loopReady(item.actionCode, patternLoops)) setFocus(item.actionCode);
+                  else logOwnerAction(restaurantId, "nba_tap", { actionCode: item.actionCode });
+                }}
                 onSkip={() => skip(item.actionCode)}
               />
             ))}

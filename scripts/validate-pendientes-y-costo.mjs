@@ -44,8 +44,10 @@ assert.match(lib, /"nba_skip"/, "el rastro conoce nba_skip");
 assert.match(page, />Pendientes<\/p>/);
 assert.match(page, /<div className="mt-2 rounded-xl bg-white" style=\{\{ border: `1px solid \$\{BORDER\}` \}\}>/);
 assert.match(page, /function PendingAdviceRow\(/);
-assert.match(page, /ctaLabel=\{getNbaCtaLabel\(item\.actionCode, atRiskShown\(metrics\)\)\}/);
-assert.match(page, /ctaHref=\{getNbaCtaHref\(item\.actionCode\)\}/);
+// 7-oct: los lazos de patrones (noche floja, combo, platillo dormido) suben
+// al lugar principal; los demás pendientes siguen con su mismo botón.
+assert.match(page, /: getNbaCtaLabel\(item\.actionCode, atRiskShown\(metrics\)\)\}/);
+assert.match(page, /: getNbaCtaHref\(item\.actionCode\)\}/);
 assert.match(page, /borderBottom: `1px solid \$\{HAIRLINE\}`/);
 // La lista de "escríbele hoy" solo con el principal REAL (no promovido).
 assert.match(page, /const showWinback = actionCode === "send_winback" && actionCode === mainCode && winbackToday\.length > 0;/);
