@@ -29,6 +29,8 @@ export type MenuItemCardProps = {
   /** "Chico $60 · Grande $90" (lib/menu/sizePrices.ts). Si viene, va en lugar
    * del precio base: el cliente ve cuánto cuesta cada tamaño sin abrir nada. */
   priceLine?: string | null;
+  /** "🔥 El más pedido" (lib/menu/topSellers.ts): lo decide el dato de ventas. */
+  topSeller?: boolean;
 };
 
 function AddButton({ name, onAdd }: { name: string; onAdd: () => void }) {
@@ -93,6 +95,7 @@ export function MenuItemCard({
   optionsHint = null,
   onOpen,
   priceLine = null,
+  topSeller = false,
 }: MenuItemCardProps) {
   const control = !orderingEnabled ? null : quantity > 0 ? (
     <QuantityStepper
@@ -115,6 +118,11 @@ export function MenuItemCard({
           aria-label={`Ver ${name}`}
           className="flex min-w-0 flex-1 cursor-pointer flex-col py-0.5 text-left"
         >
+          {topSeller ? (
+            <span className="mb-1 inline-flex w-fit items-center rounded-full bg-[#1C2526] px-2 py-0.5 text-[11px] font-bold text-white">
+              🔥 El más pedido
+            </span>
+          ) : null}
           <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#1C2526] sm:text-base">
             {name}
           </p>

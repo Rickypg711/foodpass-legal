@@ -21,6 +21,7 @@ import { ItemOptionsSheet } from "@/components/menu/ItemOptionsSheet";
 import { OwnerHoursStrip } from "@/components/menu/OwnerHoursStrip";
 import { resolveOptionGroups, type MenuItemOptionGroup } from "@/lib/menu/optionGroups";
 import { sizePriceLine } from "@/lib/menu/sizePrices";
+import { topSellerIds } from "@/lib/menu/topSellers";
 import type { SelectedOptionGroup } from "@/lib/cart/types";
 import { RewardLadder, hasRewardLadder } from "@/components/loyalty/RewardLadder";
 import { useCart } from "@/lib/cart/CartProvider";
@@ -185,6 +186,8 @@ type MenuRow = {
   optionGroups?: MenuItemOptionGroup[];
   /** Maridaje impreso en el papel del local (LasPic, 11-sep): "t" ▽ · "c" ○ · "s" □. Solo lo pinta su piel. */
   wine?: string;
+  /** Ventas acumuladas (functions/menu_order_count.js). Decide "🔥 El más pedido". */
+  orderCount?: number;
 };
 
 /**
@@ -232,6 +235,7 @@ function mapMenuDoc(id: string, data: Record<string, unknown>): MenuRow {
       ? (data.optionGroups as MenuItemOptionGroup[])
       : undefined,
     wine: typeof data.wine === "string" && data.wine ? data.wine : undefined,
+    orderCount: typeof data.orderCount === "number" && Number.isFinite(data.orderCount) ? data.orderCount : undefined,
   };
 }
 
@@ -1409,6 +1413,7 @@ function MenuCategoryList({
       </div>
     );
   }
+  const topSellers = topSellerIds(groups.flatMap((g) => g.items));
   return (
     <div className="space-y-8">
       {groups.map((group, index) => {
@@ -1454,6 +1459,7 @@ function MenuCategoryList({
                 orderingEnabled={orderingEnabled && !closed}
                 optionsHint={optionsHintFor(item)}
                 priceLine={sizePriceLine(item.price, resolveOptionGroups(item))}
+                topSeller={topSellers.has(item.id)}
                 quantity={getItemQuantity?.(item.id) ?? 0}
                 onAdd={() => onAddItem(item)}
                 onIncrement={() => onIncrementItem?.(item)}

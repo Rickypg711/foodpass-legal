@@ -102,3 +102,20 @@ if (existsSync(`${APP}/pubspec.yaml`)) {
 
 if (failed) process.exit(1);
 console.log("validate-menu-sales: OK");
+
+// ── "🔥 El más pedido" (8-oct-2026) ─────────────────────────────────────────
+// Lo pone el dato (orderCount del trigger). Candado: nunca con pocas ventas y
+// nunca más de 3, para que el menú no mienta.
+{
+  const { topSellerIds, TOP_SELLER_MIN_ORDERS } = await import("../lib/menu/topSellers.ts");
+  const ids = (s) => [...s].sort().join(",");
+  const chk = (got, want, m) => { if (got !== want) throw new Error(`${m}: esperaba "${want}", salió "${got}"`); };
+  chk(String(TOP_SELLER_MIN_ORDERS), "10", "el mínimo es 10 ventas");
+  chk(ids(topSellerIds([{ id: "a", orderCount: 2 }, { id: "b", orderCount: 9 }])), "", "con pocas ventas no hay más pedido");
+  chk(ids(topSellerIds([{ id: "a", orderCount: 50 }, { id: "b", orderCount: 10 }, { id: "c" }])), "a,b", "desde 10 sí");
+  chk(ids(topSellerIds([{ id: "a", orderCount: 50 }, { id: "b", orderCount: 40 }, { id: "c", orderCount: 30 }, { id: "d", orderCount: 20 }])), "a,b,c", "máximo 3, los de más ventas");
+  chk(ids(topSellerIds([{ id: "a", orderCount: NaN }, { id: "b", orderCount: null }])), "", "datos raros no truenan");
+  const card = readFileSync(new URL("../components/menu/MenuItemCard.tsx", import.meta.url), "utf8");
+  if (!card.includes("🔥 El más pedido")) throw new Error("la tarjeta pinta el sello");
+  console.log("✅ El más pedido: solo con 10+ ventas reales y máximo 3 platillos");
+}
