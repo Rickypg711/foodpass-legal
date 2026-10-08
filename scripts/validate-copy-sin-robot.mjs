@@ -43,7 +43,8 @@ const SPANISH = /[a-záéíóúñ]{3,} [a-záéíóúñ]{2,}/i;
 const STR = /"((?:[^"\\\n]|\\.){8,})"|'((?:[^'\\\n]|\\.){8,})'|`([^`]{8,})`|>\s*([^<>{}\n]{8,}?)\s*</g;
 const SKIP_LINE = /^\s*(\/\/|\*|\/\*|\{\/\*|import |export \* )/;
 const LOG_LINE = /\b(console\.\w+|throw new|new Error)\s*\(/;
-const CODE_ISH = /(px|rem)\b|text-\[|bg-|font-|rounded|tracking-|https?:\/\/|^[\w./@-]+$/;
+// 8-oct: también código atrapado entre dos comillas ("x" || y !== "z"), no es texto.
+const CODE_ISH = /(px|rem)\b|text-\[|bg-|font-|rounded|tracking-|https?:\/\/|^[\w./@-]+$|\|\||&&|!==|===|\btypeof\b|=>/;
 
 function* walk(dir) {
   for (const name of readdirSync(dir)) {

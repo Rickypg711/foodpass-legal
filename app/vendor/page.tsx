@@ -479,15 +479,18 @@ export default function VendorDashboard() {
           setupIncompleteReasons: (r.setupIncompleteReasons as string[]) ?? [],
           loyaltyReady: r.loyaltyReady !== false,
           nbaActionCode: nbaCode,
+          // 8-oct-2026: si el código se corrigió en vivo, el texto sale del
+          // cerebro (copyByCode, premios on/off); la copia local es solo para
+          // el día cero. Una sola voz (functions/restaurant_brain.js).
           nbaTitle: nbaOverridden
-            ? getNbaFallbackTitle(nbaCode)
+            ? (brainCopyFor(ins, nbaCode, r.loyaltyReady !== false)?.title ?? getNbaFallbackTitle(nbaCode))
             : ((ins?.title_es as string) ?? getNbaFallbackTitle(nbaCode)),
           // Si el codigo se corrigio, el texto guardado por el cerebro habla de
           // OTRA accion: dejarlo pone "Completa tu perfil" arriba de un boton que
           // dice "Cobrar con numero". El texto tiene que venir del codigo que se
           // esta mostrando, no del que el cerebro creia.
           nbaBody: nbaOverridden
-            ? getNbaFallbackBody(nbaCode, r.loyaltyReady !== false)
+            ? (brainCopyFor(ins, nbaCode, r.loyaltyReady !== false)?.body ?? getNbaFallbackBody(nbaCode, r.loyaltyReady !== false))
             : ((ins?.body_es as string) ?? ""),
           nbaMetrics: {
             atRiskCount: (insMetrics.atRiskCount as number) ?? 0,
@@ -925,6 +928,23 @@ const SETUP_BLOCKING_NBA = new Set([
  * configurado el siguiente paso de verdad siempre es el mismo — su primera
  * visita con puntos sale de la Caja.
  */
+/** Texto del cerebro para un código corregido en vivo (copyByCode), o null. */
+function brainCopyFor(
+  ins: Record<string, unknown> | null | undefined,
+  code: string,
+  loyaltyReady: boolean,
+): { title: string; body: string } | null {
+  const all = ins?.copyByCode;
+  if (!all || typeof all !== "object") return null;
+  const c = (all as Record<string, unknown>)[code];
+  if (!c || typeof c !== "object") return null;
+  const m = c as Record<string, unknown>;
+  const title = loyaltyReady ? m.title_es : (m.title_es_off ?? m.title_es);
+  const body = loyaltyReady ? m.body_es : (m.body_es_off ?? m.body_es);
+  if (typeof title !== "string" || !title.trim() || typeof body !== "string" || !body.trim()) return null;
+  return { title: title.trim(), body: body.trim() };
+}
+
 function resolveNbaActionCode(
   brainActionCode: string,
   isSetupComplete: boolean,
@@ -1020,7 +1040,7 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
     return "Tu local ya está completo. Sin un premio, el escáner queda en pausa y no sales en la app de puntos; tu Caja, tu menú y tu QR siguen igual. Ponle un premio: la IA te lo arma con tu menú en 30 segundos.";
   }
   switch (actionCode) {
-    case "set_business_hours": return "Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir — toma 2 minutos.";
+    case "set_business_hours": return "Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir. Toma 2 minutos.";
     case "complete_profile": return "Completa tu perfil para que tus clientes puedan encontrarte y confiar más rápido en tu negocio.";
     case "add_menu_items": return "Agrega productos a tu menú para que tus clientes vean mejor lo que vendes.";
     case "configure_rewards": return "Tus clientes ya pueden juntar puntos contigo, pero hoy no ganan nada. Ponles un premio: la IA te lo arma con tu menú en 30 segundos.";
@@ -1028,19 +1048,19 @@ function getNbaFallbackBody(actionCode: string, loyaltyReady = true): string {
     case "get_first_scan": return "Tu primera visita con puntos sale de la Caja: cobra y pídele su WhatsApp. El cliente no necesita traer la app.";
     case "ring_first_sale": return "Tu menú, tu horario y tu QR ya están listos. Cobra tu siguiente venta en la Caja: llevas tus ventas del día y, si pides el número, empiezas tu lista de clientes. Toma 10 segundos.";
     case "charge_web_orders": return "Te llegaron pedidos en línea desde tu menú que siguen sin cobrar en Comeleal. Si ya te pagaron, entra a Pedidos y toca con qué te pagaron: queda cobrado y entregado en un toque, y el cliente recibe sus puntos.";
-    case "review_rewards": return "Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.";
-    case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.";
-    case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos — reseñas de clientes reales, sin que tú hagas nada.";
+    case "review_rewards": return "Revisa tu premio. Si es más fácil de ganar, más clientes lo van a canjear.";
+    case "lower_reward_threshold": return "Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla. Si pides menos puntos, más clientes la van a canjear.";
+    case "add_google_review_link": return "Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar puntos. Son reseñas de clientes reales, sin que tú hagas nada.";
     case "send_winback": return "Tienes clientes que no han regresado en más de 14 días. Un mensaje personalizado puede traerlos de vuelta.";
     case "promo_weak_night": return "Te escribimos un mensaje para tus clientes. Léelo y, si te gusta, mándalo por WhatsApp.";
     case "publish_combo": return "Hay platillos que tus clientes piden juntos. Ármalos como combo en tu menú.";
     case "hide_stale_dish": return "Un platillo de tu menú dejó de venderse. Si ya no lo haces, escóndelo con un toque.";
     case "grow_phone_capture":
       // Sin premio no se prometen puntos: el número es para SU lista.
-      if (!loyaltyReady) return "Ya cobras en la Caja, pero sin pedir el número tu lista de clientes está vacía. Pídelo en cada cobro (\"¿tu número, para avisarte de promos?\"): cada número es un cliente al que puedes escribirle cuando quieras.";
-      return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próximos los recuperas tú en persona.";
-    case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
-    case "check_ai_draft": return "Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque — es lo único que falta para prender tu escáner de puntos.";
+      if (!loyaltyReady) return "Ya cobras en la Caja, pero sin pedir el número tu lista de clientes está vacía. Pídelo en cada cobro (\"¿a qué número te mando tu recibo?\"): casi nadie dice que no, y cada número es un cliente al que puedes escribirle cuando quieras.";
+      return "Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro. Así a los siguientes los recuperas tú en persona.";
+    case "set_map_pin": return "Tu negocio no aparece en el mapa de Comeleal. Los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una sola vez.";
+    case "check_ai_draft": return "Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque. Es lo único que falta para prender tu escáner de puntos.";
     case "trial_ending_soon": return `Tu prueba de Pro termina pronto. Al terminar se cierran las mesas y el segundo PIN; cobras igual. Sigue con Pro por ${PRO_PRICE_LABEL} al mes para no perderlo.`;
     case "trial_ended": return `Tu prueba terminó y se cerraron las mesas y el segundo PIN. Cobras igual. Volver a Pro son ${PRO_PRICE_LABEL} al mes.`;
     case "healthy":

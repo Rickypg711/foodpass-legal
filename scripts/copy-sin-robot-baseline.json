@@ -99,15 +99,8 @@
  "app/vendor/configuracion/page.tsx | raya — (muletilla de IA; usa coma o punto) | ¿Cómo empezó tu restaurante? Los negocios con historia venden más — sale en tu página pública.",
  "app/vendor/layout.tsx | raya — (muletilla de IA; usa coma o punto) | Modo Caja activo — salir requiere PIN de gerente",
  "app/vendor/layout.tsx | raya — (muletilla de IA; usa coma o punto) | Modo Caja — salir",
- "app/vendor/page.tsx | palabra de oficina/robot | Revisa tu recompensa. Puede ser una oportunidad para hacerla más atractiva y lograr más redenciones.",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Comeleal ya está recuperando a tus clientes de la app con notificaciones automáticas. Tu mejor jugada: pide el número de WhatsApp en cada cobro — así los próxim",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Comeleal ya te armó una propuesta de premios con tu propio menú: bienvenida y niveles con números que cuidan tu margen. Revísala y actívala con un toque — es lo",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Pega tu link de reseñas de Google en el perfil de tu local. Cada vez que un cliente escanee, Comeleal le ofrece dejarte reseña justo cuando acaba de ganar punto",
  "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Poner mi horario — 2 min",
  "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Ponerme en el mapa — 1 min",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Tu menú ya está adentro. Ponle tu horario para que tus clientes sepan cuándo ir — toma 2 minutos.",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Tu negocio no aparece en el mapa de Comeleal — los clientes cercanos no te encuentran (tu QR y tu link sí funcionan). Ponte en el mapa: toma 1 minuto y es una s",
- "app/vendor/page.tsx | raya — (muletilla de IA; usa coma o punto) | Tu recompensa requiere demasiadas visitas. La mayoría de tus clientes se van antes de ganarla — bajar el umbral puede duplicar tus canjes.",
  "app/vendor/plan/page.tsx | palabra de oficina/robot | Descuentos especiales (staff y familia): la caja los aplica sola",
  "app/vendor/plan/page.tsx | palabra de oficina/robot | Nada se rompe: sigues cobrando gratis y tus clientes siguen juntando puntos. Solo se cierra lo de Pro — el historial de más de 30 días, los PINs del equipo, las",
  "app/vendor/plan/page.tsx | raya — (muletilla de IA; usa coma o punto) | Caja / POS: cobra en segundos, propinas y recibo por WhatsApp — sin tope de ventas",
@@ -178,6 +171,5 @@
  "lib/mercadoPago/mpWebDebug.ts | raya — (muletilla de IA; usa coma o punto) | Use Vercel Preview (HTTPS) — see docs/WEB_MP_VERCEL_PREVIEW_TESTING.md; or optional local tunnel in docs/WEB_MP_HTTPS_LOCAL_TESTING.md",
  "lib/meta/capi.ts | raya — (muletilla de IA; usa coma o punto) | [Meta CAPI error] FACEBOOK_CONVERSIONS_API_TOKEN is not set — CAPI send skipped",
  "lib/order/customerWebCheckoutPolicy.ts | raya — (muletilla de IA; usa coma o punto) | Sandbox — tarjeta de prueba en Mercado Pago",
- "lib/reports/salesPatterns.ts | palabra de oficina/robot | Descuentos especiales",
- "lib/reports/salesPatterns.ts | palabra de oficina/robot | Escribiste un descuento en el nombre del cliente (\"${p.hints.typedDiscounts.example}\") en ${n} ${n === 1 ? \"venta\" : \"ventas\"}. Si lo pones en Descuentos especi"
+ "lib/reports/salesPatterns.ts | palabra de oficina/robot | Descuentos especiales"
 ]
