@@ -33,7 +33,7 @@ const PRO_INCLUDES = [
   "Tu equipo cobra con su PIN — cada venta con el nombre de quien la hizo",
   "Cuentas por mesa — las rondas juntas, un solo cobro",
   "Reportes de más de 30 días",
-  "Descuentos especiales (staff y familia) — la caja los aplica sola",
+  "Descuentos especiales (staff y familia): la caja los aplica sola",
   "Cuentas con acceso propio para tu equipo, cada quien con su rol",
   "Comeleal AI sin límite: tus ventas, tus VIP, cuándo lanzar promos",
 ];

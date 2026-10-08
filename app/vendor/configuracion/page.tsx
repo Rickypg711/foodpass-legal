@@ -824,7 +824,7 @@ export default function ConfiguracionPage() {
     "Cuentas por mesa",
     "Cuentas con acceso propio para tu equipo, cada quien con su rol",
     "Pregúntale a Comeleal sin límite",
-    "Descuentos especiales (staff y familia) — la Caja los aplica sola",
+    "Descuentos especiales (staff y familia): la Caja los aplica sola",
   ];
   const planLines = (lines: string[]) => (
     <ul className="mt-2">

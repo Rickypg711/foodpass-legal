@@ -26,7 +26,7 @@ const PRO_LINES = [
   "Cuentas por mesa",
   "Cuentas con acceso propio para tu equipo, cada quien con su rol",
   "Pregúntale a Comeleal sin límite",
-  "Descuentos especiales (staff y familia) — la Caja los aplica sola",
+  "Descuentos especiales (staff y familia): la Caja los aplica sola",
 ];
 let cursor = -1;
 for (const line of PRO_LINES) {
