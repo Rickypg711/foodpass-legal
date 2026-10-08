@@ -74,7 +74,8 @@
     "test:owner-email-card": "node scripts/validate-owner-email-card.mjs",
     "test:sitemap-excluded": "node --experimental-strip-types scripts/validate-sitemap-excluded.mjs",
     "test:copy-sin-robot": "node scripts/validate-copy-sin-robot.mjs",
-    "test:nba-one-voice": "node scripts/validate-nba-one-voice.mjs"
+    "test:nba-one-voice": "node scripts/validate-nba-one-voice.mjs",
+    "check:pages": "node scripts/check-public-pages.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",
@@ -92,6 +93,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "playwright": "^1.64.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
