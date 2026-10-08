@@ -59,3 +59,28 @@ console.log("validate-mesas-parity: OK");
   if (!page.includes("bagCardUrl(SITE_URL") || page.includes("window.location.origin")) throw new Error("bolsa: el QR impreso usa SITE_URL, nunca el origin del navegador");
   console.log("✅ tarjeta para la bolsa: QR a su menú con SITE_URL, sin promesas de puntos apagados");
 }
+
+// ── Tarjeta para tus pedidos: nombre, sticker y el resultado (8-oct-2026 tarde) ──
+{
+  const bc = await import("../lib/order/bagCard.ts");
+  if (bc.BAG_PAGE_TITLE !== "Tarjeta para tus pedidos") throw new Error("bolsa: el nombre ya no dice 'bolsa' (cabe la caja y el vaso)");
+  if (bc.PER_SHEET.tarjeta !== 8 || bc.PER_SHEET.sticker !== 12) throw new Error("bolsa: 8 tarjetas o 12 stickers por hoja");
+  if (bc.bagStatsLine(0, 0) !== "0 personas escanearon tu tarjeta · 0 pidieron por ella en los últimos 30 días") throw new Error("bolsa: el cero se dice tal cual");
+  if (bc.bagStatsLine(1, 1) !== "1 persona escaneó tu tarjeta · 1 pidió por ella en los últimos 30 días") throw new Error("bolsa: singular");
+  const es = await import("../lib/order/entrySource.ts");
+  if (es.entrySourceFromSearch("?utm_source=bolsa&utm_medium=impreso") !== "bolsa") throw new Error("entrada: el QR impreso cuenta");
+  if (es.entrySourceFromSearch("?utm_source=bolsa") !== null) throw new Error("entrada: sin utm_medium=impreso no cuenta");
+  if (es.entrySourceFromSearch("?utm_source=otra&utm_medium=impreso") !== null) throw new Error("entrada: solo fuentes conocidas");
+  const now = 1_000_000_000_000;
+  if (es.parseStoredEntry(es.storedEntryValue("bolsa", now), now + 13 * 864e5) !== "bolsa") throw new Error("entrada: dura 14 días");
+  if (es.parseStoredEntry(es.storedEntryValue("bolsa", now), now + 15 * 864e5) !== null) throw new Error("entrada: a los 15 días se olvida");
+  if (es.parseStoredEntry("basura", now) !== null) throw new Error("entrada: basura no truena");
+  const fs = await import("node:fs");
+  const rd = (p) => fs.readFileSync(new URL("../" + p, import.meta.url), "utf8");
+  if (!rd("lib/order/createCustomerOrder.ts").includes("entrySource: readStoredEntrySource(")) throw new Error("entrada: el pedido la lleva");
+  if (!rd("app/menu/[restaurantId]/MenuView.tsx").includes("captureEntrySource(restaurantId)")) throw new Error("entrada: el menú la captura");
+  const lv = rd("app/api/landing-visit/route.ts");
+  if (!lv.includes('"bolsa"]') || !lv.includes('source === "bolsa"')) throw new Error("entrada: el escaneo suma en linkVisits.bolsa y NO en el total del dueño");
+  if (!rd("app/vendor/layout.tsx").includes('href: "/vendor/bolsa"')) throw new Error("bolsa: está en el menú de la izquierda");
+  console.log("✅ tarjeta para tus pedidos: tarjeta o sticker, con su piel, y el dueño ve cuántos escanearon y pidieron");
+}

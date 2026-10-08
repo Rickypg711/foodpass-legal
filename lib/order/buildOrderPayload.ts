@@ -1,3 +1,4 @@
+import { parseEntrySource } from "./entrySource.ts";
 import { serverTimestamp } from "firebase/firestore";
 import type { CartLine } from "@/lib/cart/types";
 import { resolveInitialOrderStatus } from "@/lib/order/orderLifecycle";
@@ -38,6 +39,8 @@ export type BuildOrderInput = {
    * NUNCA viaja: solo este código, que únicamente el servidor puede resolver.
    */
   referralCode?: string | null;
+  /** Por dónde llegó (lib/order/entrySource.ts). Solo valores conocidos. */
+  entrySource?: string | null;
   pickupPin: string;
   cartLines: CartLine[];
   restaurantName: string;
@@ -242,6 +245,12 @@ export function buildCustomerWebOrderPayload(
   const ref = parseReferralCode(input.referralCode);
   if (ref) {
     payload.referralCode = ref;
+  }
+
+  // Tarjeta impresa (8-oct-2026): solo valores conocidos, basura no se guarda.
+  const entry = parseEntrySource(input.entrySource);
+  if (entry) {
+    payload.entrySource = entry;
   }
 
   const r = input.redemptionRequest;

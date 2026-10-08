@@ -131,3 +131,16 @@ if (mpPayload.status !== "payment_pending") {
 
 if (failed) process.exit(1);
 console.log("OK: order payload contract keys validated");
+
+// ── entrySource (8-oct-2026): solo valores conocidos viajan en el pedido ────
+{
+  const src = readFileSync(join(__dirname, "../lib/order/buildOrderPayload.ts"), "utf8");
+  if (!/const entry = parseEntrySource\(input\.entrySource\);\s*if \(entry\) \{\s*payload\.entrySource = entry;/.test(src)) {
+    throw new Error("entrySource: el builder solo guarda valores conocidos (parseEntrySource)");
+  }
+  const { parseEntrySource } = await import("../lib/order/entrySource.ts");
+  if (parseEntrySource("bolsa") !== "bolsa" || parseEntrySource("<script>") !== null || parseEntrySource(undefined) !== null) {
+    throw new Error("entrySource: parseEntrySource acepta solo fuentes conocidas");
+  }
+  console.log("✅ order payload: entrySource solo con valores conocidos");
+}

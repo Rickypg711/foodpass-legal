@@ -87,12 +87,20 @@ export function SkinTableCard({
   mesa,
   qr,
   loyaltyLive,
+  cta = "Escanea y ordena",
+  sub,
+  wrapTitle = false,
 }: {
   skin: MenuSkinId;
   name: string;
   mesa: string;
   qr: ReactNode;
   loyaltyLive: boolean;
+  /** 8-oct-2026: la tarjeta para tus pedidos (/vendor/bolsa) reusa esta con su propio texto. */
+  cta?: string;
+  sub?: string;
+  /** "Pídenos directo" no cabe en un renglón en pieles de letra grande (Kame, Suadero): que baje. "Mesa N" sí cabe. */
+  wrapTitle?: boolean;
 }) {
   const t = landingThemeFor(skin);
   return (
@@ -103,10 +111,10 @@ export function SkinTableCard({
         <p className={`mb-1.5 w-full truncate text-[11px] font-bold uppercase tracking-widest ${t.textSoft}`}>{name}</p>
         {/* El título de algunas pieles se sale del plato con margen negativo (Suadero -mt-9): aquí se neutraliza
             para que no tape el nombre, y "Mesa 1" no se parte. */}
-        <div className="[&>*]:mt-0! [&>*]:mb-2! [&>*]:whitespace-nowrap [&_*]:whitespace-nowrap">{t.cardTitle(mesa)}</div>
+        <div className={wrapTitle ? "max-w-full [&>*]:mt-0! [&>*]:mb-2! [&>*]:whitespace-normal! [&_*]:whitespace-normal! [&>*]:leading-tight! [&>*]:mx-0!" : "[&>*]:mt-0! [&>*]:mb-2! [&>*]:whitespace-nowrap [&_*]:whitespace-nowrap"}>{t.cardTitle(mesa)}</div>
         <div className="mt-1 rounded-xl bg-white p-2 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.6)]">{qr}</div>
-        <p className={`mt-3 text-[13px] font-black ${t.link.replace(/underline\S*|decoration-\S+/g, "")}`}>Escanea y ordena</p>
-        <p className={`mt-0.5 text-[11px] leading-snug ${t.textSoft}`}>{loyaltyLive ? "Pide desde tu teléfono y acumula puntos" : "Pide desde tu teléfono"}</p>
+        <p className={`mt-3 text-[13px] font-black ${t.link.replace(/underline\S*|decoration-\S+/g, "")}`}>{cta}</p>
+        <p className={`mt-0.5 text-[11px] leading-snug ${t.textSoft}`}>{sub ?? (loyaltyLive ? "Pide desde tu teléfono y acumula puntos" : "Pide desde tu teléfono")}</p>
       </div>
     </div>
   );

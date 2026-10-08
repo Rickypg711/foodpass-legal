@@ -56,6 +56,17 @@ export default function TarjetaPreview({ skin }: { skin: string }) {
           );
         })}
       </div>
+      {/* Tarjeta para tus pedidos (8-oct-2026): mismo ancho que la hoja de /vendor/bolsa (4 por renglón). */}
+      <div className="grid w-[768px] grid-cols-3 gap-4" data-testid="pedidos">
+        {[0, 1, 2, 3].map((k) => {
+          const bq = <QRCodeSVG value="https://comeleal.com/menu/preview?utm_source=bolsa&utm_medium=impreso" size={104} fgColor={SKIN_QR_INK[id] ?? "#1C2526"} bgColor="#FFFFFF" />;
+          return id === "manantial" ? (
+            <ManantialTableCard key={k} name="El Manantial" mesa="Pídenos directo" qr={bq} loyaltyLive={false} ctaLead="Escanea" ctaTail="y pide" sub="Desde tu teléfono" />
+          ) : (
+            <SkinTableCard key={k} skin={id} name={NAMES[id] ?? "Mi local"} mesa="Pídenos directo" qr={bq} loyaltyLive={false} cta="Escanea y pide" wrapTitle sub="Desde tu teléfono" />
+          );
+        })}
+      </div>
       {png ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={png} alt="PNG de la tarjeta" className="w-[340px] rounded-xl border border-neutral-300" />

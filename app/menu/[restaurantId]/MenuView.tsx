@@ -32,6 +32,7 @@ import { warmUpsellSuggestion } from "@/lib/upsellSuggestionCache";
 import { isWebOrderingEnabled } from "@/lib/ordering/flags";
 import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { resolveRefFromLocation } from "@/lib/referral/refSession";
+import { captureEntrySource } from "@/lib/order/entrySource";
 import ReferralClaimBar from "@/components/loyalty/ReferralClaimBar";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
@@ -1913,6 +1914,7 @@ function PublicMenuPageWithOrdering({
   useEffect(() => {
     if (!restaurantId) return;
     setRefCode(resolveRefFromLocation(restaurantId));
+    captureEntrySource(restaurantId);
   }, [restaurantId]);
 
   useEffect(() => {
@@ -2500,6 +2502,7 @@ function PublicMenuPageBrowseOnly({
   useEffect(() => {
     if (!restaurantId) return;
     setRefCode(resolveRefFromLocation(restaurantId));
+    captureEntrySource(restaurantId);
   }, [restaurantId]);
 
   const categoryGroups = groupMenuByCategory(items);

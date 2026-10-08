@@ -37,6 +37,15 @@ function IconQr() {
     </svg>
   );
 }
+function IconBag() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 7h12l1 13H5L6 7z" />
+      <path d="M9 7V5a3 3 0 0 1 6 0v2" />
+    </svg>
+  );
+}
+
 function IconUsers() {
   return (
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -180,6 +189,9 @@ const NAV_SECONDARY: NavDef[] = [
   // Mesas = imprimir el QR de cada mesa (pedido desde la mesa). Va en el
   // secundario porque se usa UNA vez al montar el negocio, no a diario.
   { href: "/vendor/mesas", label: "Mesas / QR", icon: <IconQr /> },
+  // Tarjeta para tus pedidos (8-oct-2026): estaba escondida bajo Mesas y Ricardo
+  // no la encontró. Tarjeta o sticker con el QR de su menú para Rappi/DiDi.
+  { href: "/vendor/bolsa", label: "Tarjeta para pedidos", icon: <IconBag /> },
   // Escanear debajo de Mesas / QR (orden de Ricardo, 9-sep): el escáner es
   // "solo si trae la app"; phone-first manda y la Caja cobra con número.
   { href: "/vendor/scanner", label: "Escanear", icon: <IconQr /> },

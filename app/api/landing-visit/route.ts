@@ -21,7 +21,8 @@ export const dynamic = "force-dynamic";
 const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
 // "perfil" = el link copiado que pega en Facebook/Instagram/WhatsApp/Google
 // (uno para los cuatro). instagram|google se aceptan por los links ya pegados.
-export const LANDING_VISIT_SOURCES = ["whatsapp", "instagram", "google", "perfil"] as const;
+// "bolsa" (8-oct-2026): escaneos de la tarjeta impresa de Rappi/DiDi (lib/order/entrySource.ts).
+export const LANDING_VISIT_SOURCES = ["whatsapp", "instagram", "google", "perfil", "bolsa"] as const;
 
 export async function POST(request: Request) {
   let body: { restaurantId?: unknown; source?: unknown };
@@ -44,7 +45,10 @@ export async function POST(request: Request) {
     if (!rest.exists) return NextResponse.json({ error: "not_found" }, { status: 404 });
     await db.doc(`restaurants/${restaurantId}/private/stats`).set(
       {
-        linkVisits: { [source]: FieldValue.increment(1), total: FieldValue.increment(1) },
+        // La tarjeta impresa NO suma al total: "total" son los links que compartió el dueño.
+        linkVisits: source === "bolsa"
+          ? { bolsa: FieldValue.increment(1) }
+          : { [source]: FieldValue.increment(1), total: FieldValue.increment(1) },
         linkVisitsUpdatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },

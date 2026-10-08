@@ -59,6 +59,8 @@ export type CustomerOrderPayload = {
    * viaja en el pedido ni en la URL: solo este código.
    */
   referralCode?: string;
+  /** Por dónde llegó (lib/order/entrySource.ts): "bolsa" = la tarjeta impresa de Rappi/DiDi. */
+  entrySource?: string;
   restaurantId: string;
   customerId: string;
   items: OrderItemPayload[];

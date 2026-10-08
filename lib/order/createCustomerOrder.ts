@@ -13,6 +13,7 @@ import { generatePickupPin } from "@/lib/order/pickupPin";
 import { saveOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import { saveDinerIdentity } from "@/lib/order/dinerIdentity";
 import { readStoredRef } from "@/lib/referral/refSession";
+import { readStoredEntrySource } from "@/lib/order/entrySource";
 import type { CartLine } from "@/lib/cart/types";
 
 export type CreateOrderResult = {
@@ -84,6 +85,8 @@ export async function createCustomerWebOrder(params: {
     // para que ningún camino del checkout se lo olvide. Si no hay, el pedido
     // sale igual que siempre.
     referralCode: readStoredRef(params.restaurantId),
+    // Llegó por la tarjeta impresa de Rappi/DiDi (lib/order/entrySource.ts).
+    entrySource: readStoredEntrySource(params.restaurantId),
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {
