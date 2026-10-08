@@ -12,6 +12,9 @@
 export type MenuSignals = {
   topItemIds: string[];
   pairs: Record<string, string[]>;
+  /** "🔥 Más pedido" (8-oct-2026): hasta 3 con 10+ unidades en 30 días. null = el
+   *  cerebro aún no lo escribe (versión vieja de las señales). */
+  hotIds: string[] | null;
 };
 
 const TOP_MAX = 6;
@@ -43,8 +46,9 @@ export function parseMenuSignals(raw: Record<string, unknown> | null | undefined
       if (ids.length) pairs[k] = ids;
     }
   }
+  const hotIds = Array.isArray(m.hotIds) ? cleanIds(m.hotIds, 3) : null;
   if (!topItemIds.length && !Object.keys(pairs).length) return null;
-  return { topItemIds, pairs };
+  return { topItemIds, pairs, hotIds };
 }
 
 /** "Lo más pedido": solo los platillos que siguen en el menú (y disponibles),

@@ -135,3 +135,21 @@ console.log("validate-menu-sales: OK");
   }
   console.log("✅ El más pedido en las 13 pieles, cada una con su ropa");
 }
+
+// ── Una sola fuente de 30 días para el sello y la fila (8-oct-2026) ─────────
+{
+  const { topSellerIds } = await import("../lib/menu/topSellers.ts");
+  const items = [{ id: "a", orderCount: 500 }, { id: "b", orderCount: 50 }, { id: "c", orderCount: 2 }];
+  const ids = (s) => [...s].sort().join(",");
+  const chk = (got, want, m) => { if (got !== want) throw new Error(`${m}: esperaba "${want}", salió "${got}"`); };
+  chk(ids(topSellerIds(items, { hotIds: ["c"] })), "c", "con hotIds manda el mes, no el histórico");
+  chk(ids(topSellerIds(items, { hotIds: ["zz", "b"] })), "b", "solo platillos que siguen en el menú");
+  chk(ids(topSellerIds(items, { hotIds: [] })), "", "mes sin platillos de 10+ → sin sello");
+  chk(ids(topSellerIds(items, null, true)), "", "el cerebro corrió y no hay señales → sin sello");
+  chk(ids(topSellerIds(items, null, false)), "a,b", "señales aún no escritas → respaldo histórico");
+  chk(ids(topSellerIds(items, { hotIds: null })), "a,b", "señales viejas sin hotIds → respaldo histórico");
+  const ms = await import("../components/menu/menuSignals.ts");
+  const p = ms.parseMenuSignals({ menuSignals: { topItemIds: ["a"], hotIds: ["a", "a", "b", "c", "d"], pairs: {} } });
+  chk(p.hotIds.join(","), "a,b,c", "hotIds máx 3 sin repetidos");
+  console.log("✅ Más pedido y Lo más pedido: el mismo número de 30 días");
+}

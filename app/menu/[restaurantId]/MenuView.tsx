@@ -44,6 +44,7 @@ import {
   pairItemsFor,
   parseMenuSignals,
   topItemsFromSignals,
+  type MenuSignals,
 } from "@/components/menu/menuSignals";
 import { menuPaymentLine } from "@/lib/order/menuPaymentLine";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
@@ -717,6 +718,8 @@ function MenuCategoryList({
   skin = null,
   windows = {},
   now,
+  menuSignals = null,
+  signalsField = false,
 }: {
   groups: { category: string; items: MenuRow[] }[];
   orderingEnabled: boolean;
@@ -734,9 +737,13 @@ function MenuCategoryList({
   onDecrementItem?: (item: MenuRow) => void;
   /** Tocar la tarjeta/foto → hoja de detalle (9-sep, paridad app). */
   onOpenItem?: (item: MenuRow) => void;
+  /** Señales de 30 días: el sello y la fila "Lo más pedido" leen el MISMO número. */
+  menuSignals?: MenuSignals | null;
+  /** El doc ya trae el campo menuSignals (el cerebro corrió): sin señales = sin sello, no histórico. */
+  signalsField?: boolean;
 }) {
   // "🔥 El más pedido" para TODAS las pieles (8-oct-2026): lo decide el dato, cada piel lo pinta a su modo.
-  const topSellers = topSellerIds(groups.flatMap((g) => g.items));
+  const topSellers = topSellerIds(groups.flatMap((g) => g.items), menuSignals, signalsField);
   const availabilityOf = (category: string) => {
     if (!now) return { closed: false, note: null as string | null };
     const a = categoryAvailability(category, windows, now);
@@ -2191,6 +2198,8 @@ function PublicMenuPageWithOrdering({
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
+            menuSignals={menuSignals}
+            signalsField={Boolean(rdata && "menuSignals" in rdata)}
             skin={skin}
             windows={windows}
             now={now}
@@ -2576,6 +2585,8 @@ function PublicMenuPageBrowseOnly({
         {!loading && !error && items.length > 0 && (
           <MenuCategoryList
             groups={categoryGroups}
+            menuSignals={menuSignals}
+            signalsField={Boolean(rdata && "menuSignals" in rdata)}
             skin={skin}
             windows={windows}
             now={now}
