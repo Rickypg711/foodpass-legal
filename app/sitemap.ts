@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/siteMetadata";
 import { fetchActiveRestaurantHandles } from "@/lib/server/restaurantMetadata";
 import { VERTICALES } from "@/lib/marketing/verticals";
+import { fetchCategoryCityPages } from "@/app/restaurantes/_lib/categoryPages";
 
 // Marketing surfaces + every active restaurant's public menu page (the
 // Owner.com play: each vendor page is a local-search result). Restaurant
@@ -104,5 +105,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...verticalEntries, ...menuEntries, ...landingEntries];
+  // 8-oct-2026: /restaurantes/{ciudad}/{categoria}, solo las combinaciones
+  // con 2+ locales activos con menú (las demás dan 404 y no se anuncian).
+  const categoryPages = await fetchCategoryCityPages().catch(() => []);
+  const categoryEntries: MetadataRoute.Sitemap = categoryPages.map((p) => ({
+    url: `${SITE_URL}/restaurantes/${p.citySlug}/${p.categorySlug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...verticalEntries, ...menuEntries, ...landingEntries, ...categoryEntries];
 }

@@ -10,7 +10,16 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { PUBLIC_WHATSAPP_WA_ME_ACTIVATE } from "@/lib/contactEmail";
 
-export function WhatsAppButton({ label = "💬 Háblanos por WhatsApp" }: { label?: string }) {
+// variant="link" (8-oct-2026): ayuda chica debajo del CTA principal
+// "Sube la foto de tu menú" (SubeMenuCta). Mismo modal, mismo lead.
+export function WhatsAppButton({
+  label,
+  variant = "button",
+}: {
+  label?: string;
+  variant?: "button" | "link";
+}) {
+  const text = label ?? (variant === "link" ? "¿Prefieres que te ayudemos? Escríbenos por WhatsApp" : "💬 Háblanos por WhatsApp");
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,14 +52,24 @@ export function WhatsAppButton({ label = "💬 Háblanos por WhatsApp" }: { labe
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-[16px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-        style={{ background: "#25D366", boxShadow: "0 6px 24px rgba(37,211,102,0.35)" }}
-      >
-        {label}
-      </button>
+      {variant === "link" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[13px] font-semibold text-[#1C2526]/60 underline underline-offset-4 transition-colors hover:text-[#1C2526]"
+        >
+          {text}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-[16px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+          style={{ background: "#25D366", boxShadow: "0 6px 24px rgba(37,211,102,0.35)" }}
+        >
+          {text}
+        </button>
+      )}
       {open ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-5"

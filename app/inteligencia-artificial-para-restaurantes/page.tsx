@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
 } from "@/lib/contactEmail";
@@ -66,14 +67,9 @@ export default function Page() {
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             La IA de Comeleal revisa tu negocio mientras tú cocinas. Ve quién dejó de venir, le recuerda solo a quien tiene la app y te escribe el WhatsApp para los demás. Cada día te dice <b>cuál es tu siguiente movimiento</b> y te enseña los resultados en pesos.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_inteligencia-artificial-para-restaurantes_hero" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot
@@ -158,8 +154,9 @@ export default function Page() {
           <h2 className="text-2xl font-bold tracking-tight">
             Te lo dejamos funcionando hoy
           </h2>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_inteligencia-artificial-para-restaurantes_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
             <Link href="/clientes-que-regresan" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">¿Cómo hacer que tus clientes regresen? →</Link>

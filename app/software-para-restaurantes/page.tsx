@@ -4,8 +4,10 @@ import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney
 import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 import { VERTICALES } from "@/lib/marketing/verticals";
+import { NO_ES_PARA } from "@/lib/marketing/noEsPara";
 
 export const metadata: Metadata = {
   title: "Software para restaurantes en México — punto de venta gratis | Comeleal",
@@ -39,17 +41,12 @@ export default function Page() {
             todo tu historial, tu equipo con su PIN y mesas. Lo pruebas 14
             días sin tarjeta.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_software-para-restaurantes_hero" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
-            Se crea en menos de 3 minutos · sin tarjeta · WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
+            En 1 minuto ves tu menú digital · sin cuenta · WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
           </p>
         </div>
       </section>
@@ -105,6 +102,29 @@ export default function Page() {
         </div>
       </section>
 
+      <section className="px-5 pt-16">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+            ¿Para quién NO es Comeleal?
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-[15px] leading-relaxed text-[#1C2526]/60">
+            Te lo decimos antes de que pierdas tu tiempo.
+          </p>
+          <ul className="mt-7 space-y-3">
+            {NO_ES_PARA.map((x) => (
+              <li
+                key={x.t}
+                className="rounded-2xl bg-white px-5 py-4"
+                style={{ border: "1px solid rgba(28,37,38,0.08)" }}
+              >
+                <p className="text-[15px] font-bold">{x.t}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-[#1C2526]/65">{x.d}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <section className="px-5 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight">
@@ -115,8 +135,9 @@ export default function Page() {
             económicas, heladerías y cualquier negocio que venda de comer.
             Escríbenos y te lo dejamos configurado hoy.
           </p>
-          <div className="mt-6 flex justify-center">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_software-para-restaurantes_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
             <Link href="/punto-de-venta-gratis-restaurantes" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Punto de venta gratis →</Link>

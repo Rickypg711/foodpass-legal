@@ -26,6 +26,11 @@ export type MenuItemDetailSheetProps = {
   onAdd: () => void;
   /** Piel del local (11-sep, Mixteco): la hoja se viste como su menú. Sin piel, la de siempre clase por clase. */
   skin?: MenuSkinId | null;
+  /** "Va bien con" (8-oct): hasta 2 platillos que la gente pide junto con este
+   *  (restaurants/{id}.menuSignals.pairs). Vacío o sin dato = no se pinta. */
+  pairs?: { id: string; name: string; price: number; quantity?: number }[];
+  /** Agregar uno de "Va bien con" por el mismo camino del "+" de la tarjeta. */
+  onAddPair?: (id: string) => void;
 };
 
 /** Fresheria: página rosa con marco dorado, cursiva vino y botón magenta (components/menu/skins/fresheria.tsx). */
@@ -198,6 +203,8 @@ export function MenuItemDetailSheet({
   onClose,
   onAdd,
   skin = null,
+  pairs = [],
+  onAddPair,
 }: MenuItemDetailSheetProps) {
   // Escape cierra, como cualquier hoja (el toque fuera y la ✕ también).
   useEffect(() => {
@@ -291,6 +298,31 @@ export function MenuItemDetailSheet({
               </button>
             ) : null}
           </div>
+          {pairs.length > 0 ? (
+            <div className="mt-5 border-t border-current/10 pt-4">
+              <p className="text-[13px] font-semibold opacity-70">Va bien con</p>
+              <ul className="mt-2 space-y-2">
+                {pairs.slice(0, 2).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold">{p.name}</p>
+                      <p className="text-[13px] tabular-nums opacity-70">{formatPrice(p.price)}</p>
+                    </div>
+                    {orderingEnabled && onAddPair ? (
+                      <button
+                        type="button"
+                        aria-label={`Agregar ${p.name}`}
+                        onClick={() => onAddPair(p.id)}
+                        className="shrink-0 rounded-full border border-current/25 px-4 py-2 text-[13px] font-semibold transition-all hover:opacity-80 active:scale-[0.97]"
+                      >
+                        {p.quantity && p.quantity > 0 ? `Llevas ${p.quantity} · +` : "Agregar +"}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

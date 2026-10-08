@@ -44,8 +44,11 @@ import { BigOrderCard } from "@/components/landing/BigOrderCard";
 import { bigOrdersOn } from "@/lib/landing/bigOrderMessage";
 import { menuSkinFromRestaurant } from "@/lib/menu/menuSkin";
 import { landingThemeFor, type LandingTheme } from "@/components/menu/skins/landingTheme";
+import { dishMenuHref } from "@/components/menu/menuSignals";
 
 export type LandingMenuPhoto = {
+  /** Id del platillo (menu/{id}); con él la foto abre su hoja en /menu. */
+  id?: string;
   name: string;
   price: number;
   imageUrl: string;
@@ -110,7 +113,7 @@ function mapRestaurant(data: Record<string, unknown>): LandingRestaurant {
 /** Hasta 6 platillos CON foto para el carrusel (camino client de respaldo).
  *  Con datos de ventas (orderCount) → "Los más pedidos"; sin datos → nombre. */
 function mapMenuPhotos(
-  docs: { data: Record<string, unknown> }[],
+  docs: { id?: string; data: Record<string, unknown> }[],
 ): { photos: LandingMenuPhoto[]; popular: boolean } {
   const out: (LandingMenuPhoto & { orderCount: number })[] = [];
   for (const d of docs) {
@@ -127,6 +130,7 @@ function mapMenuPhotos(
           ? parseFloat(priceRaw)
           : NaN;
     out.push({
+      ...(d.id ? { id: d.id } : {}),
       name,
       price: Number.isFinite(price) ? price : 0,
       imageUrl,
@@ -138,7 +142,7 @@ function mapMenuPhotos(
     popular ? b.orderCount - a.orderCount : a.name.localeCompare(b.name, "es"),
   );
   return {
-    photos: out.slice(0, 6).map(({ name, price, imageUrl }) => ({ name, price, imageUrl })),
+    photos: out.slice(0, 6).map(({ id, name, price, imageUrl }) => ({ ...(id ? { id } : {}), name, price, imageUrl })),
     popular,
   };
 }
@@ -271,6 +275,7 @@ export default function LandingView({
           if (!cancelled) {
             const { photos, popular } = mapMenuPhotos(
               menuSnap.docs.map((d) => ({
+                id: d.id,
                 data: d.data() as Record<string, unknown>,
               })),
             );
@@ -527,7 +532,7 @@ export default function LandingView({
                   {menuPhotos.map((item, i) => (
                     <Link
                       key={`${item.name}-${i}`}
-                      href={menuHref}
+                      href={dishMenuHref(restaurantId, item)}
                       onClick={() =>
                         trackWebLandingMenuClick({ restaurantId, restaurantName: name })
                       }

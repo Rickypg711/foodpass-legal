@@ -265,3 +265,68 @@ export function buildFaq(args: {
 
   return out;
 }
+
+// ── Páginas por tipo de comida y ciudad (8-oct-2026, robo #10 a Owner) ──────
+// /restaurantes/{ciudad}/{categoria}, ej. /restaurantes/chihuahua/tacos.
+// Versión honesta: "Tacos en Chihuahua", jamás "los mejores" ni "cerca de mí".
+// Solo locales reales con menú, y solo si hay 2 o más (sin páginas flacas).
+
+/** Mínimo de locales para que exista la página (y entre al sitemap). */
+export const MIN_RESTAURANTS_PER_CATEGORY_PAGE = 2;
+
+/** "Puerto Escondido" → "puerto-escondido", "Panadería" → "panaderia". */
+export function seoSlug(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** "Tacos" → "Tacos", "Mexicana" → "Comida mexicana" (para H1 y títulos). */
+export function categoryHeading(category: string): string {
+  return capitalizeFirst(asDish(category.trim().toLowerCase()));
+}
+
+/** "Tacos en Chihuahua: menú, pedidos y horario". */
+export function buildCategoryCityTitle(category: string, city: string): string {
+  return `${categoryHeading(category)} en ${city}: menú, pedidos y horario`;
+}
+
+export type CategoryCityGroup<T> = {
+  citySlug: string;
+  categorySlug: string;
+  /** Como lo escribió el primer local (orden alfabético del directorio). */
+  city: string;
+  category: string;
+  restaurants: T[];
+};
+
+/**
+ * Agrupa locales por ciudad + categoría real (sin comodines), sin repetir un
+ * local dentro del mismo grupo. Devuelve TODOS los grupos; el que llama
+ * filtra por MIN_RESTAURANTS_PER_CATEGORY_PAGE.
+ */
+export function groupByCityAndCategory<T extends { city: string | null; categories: readonly string[] }>(
+  restaurants: readonly T[],
+): CategoryCityGroup<T>[] {
+  const groups = new Map<string, CategoryCityGroup<T>>();
+  for (const r of restaurants) {
+    const city = r.city?.trim();
+    if (!city) continue;
+    const citySlug = seoSlug(city);
+    if (!citySlug) continue;
+    const seen = new Set<string>();
+    for (const cat of seoCategories(r.categories)) {
+      const categorySlug = seoSlug(cat);
+      if (!categorySlug || seen.has(categorySlug)) continue;
+      seen.add(categorySlug);
+      const key = `${citySlug}/${categorySlug}`;
+      const g = groups.get(key);
+      if (g) g.restaurants.push(r);
+      else groups.set(key, { citySlug, categorySlug, city, category: cat, restaurants: [r] });
+    }
+  }
+  return Array.from(groups.values());
+}

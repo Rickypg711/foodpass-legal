@@ -76,7 +76,7 @@ export default async function RestaurantLandingPage({
     raw: docResult.data,
     menuPhotos: sorted
       .slice(0, 6)
-      .map((i) => ({ name: i.name, price: i.price, imageUrl: i.imageUrl as string })),
+      .map((i) => ({ ...(i.id ? { id: i.id } : {}), name: i.name, price: i.price, imageUrl: i.imageUrl as string })),
     menuPhotosArePopular: hasSales,
   };
 

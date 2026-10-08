@@ -81,6 +81,8 @@ export async function fetchRestaurantDocFull(
 }
 
 export type LandingMenuItem = {
+  /** Id del doc (restaurants/{id}/menu/{itemId}); 8-oct: la foto de /r abre su hoja en /menu. */
+  id?: string;
   name: string;
   description: string | null;
   price: number;
@@ -106,12 +108,13 @@ export async function fetchRestaurantMenuFull(
     );
     if (!res.ok) return [];
     const json = (await res.json()) as {
-      documents?: { fields?: Record<string, Record<string, unknown>> }[];
+      documents?: { name?: string; fields?: Record<string, Record<string, unknown>> }[];
     };
     if (!Array.isArray(json.documents)) return [];
     const items: LandingMenuItem[] = [];
     for (const d of json.documents) {
       const data = decodeFields(d.fields);
+      const docId = typeof d.name === "string" ? d.name.split("/").pop() || undefined : undefined;
       const available =
         typeof data.isAvailable === "boolean" ? data.isAvailable : true;
       const name =
@@ -125,6 +128,7 @@ export async function fetchRestaurantMenuFull(
             ? parseFloat(priceRaw)
             : NaN;
       items.push({
+        ...(docId ? { id: docId } : {}),
         name,
         description:
           typeof data.description === "string" && data.description.trim()

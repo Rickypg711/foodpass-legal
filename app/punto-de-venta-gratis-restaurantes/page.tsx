@@ -3,6 +3,7 @@ import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney
 import Link from "next/link";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
 } from "@/lib/contactEmail";
@@ -72,14 +73,9 @@ export default function Page() {
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             La Caja de Comeleal: cobra en segundos desde tu teléfono o tablet, con recibo por WhatsApp y lealtad integrada. <b>Gratis para empezar y sin equipos caros.</b>
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_punto-de-venta-gratis-restaurantes_hero" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot
@@ -136,6 +132,62 @@ export default function Page() {
           </div>
         </div>
       </section>
+      {/* 8-oct-2026: la Caja contada como un ciclo de 4 pasos (así vende Owner
+          su POS). Cada paso existe hoy: número en la Caja (app/vendor/pos),
+          "Enviar recibo por WhatsApp" con puntos solo si hay premios
+          (lib/receiptWhatsapp.ts), "Escríbele hoy" con el mensaje escrito
+          (app/vendor/_components/WinbackTodayList.tsx). El WhatsApp lo manda
+          el dueño, nunca sale solo. */}
+      <section className="px-5 py-14" style={{ background: "#1C2526" }}>
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            De un cobro a que el cliente regrese, en 4 pasos
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-[15px] leading-relaxed text-white/60">
+            Así se ve una venta en la Caja, de principio a fin.
+          </p>
+          <ol className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                n: "1",
+                t: "Cobras en la Caja",
+                d: "Tocas los platillos y cobras en efectivo o con tu terminal de siempre.",
+              },
+              {
+                n: "2",
+                t: "Pides el número",
+                d: "“¿A qué número te mando tu recibo?” Con ese número el cliente queda guardado en tu lista.",
+              },
+              {
+                n: "3",
+                t: "Le mandas su recibo por WhatsApp",
+                d: "Tocas “Enviar recibo por WhatsApp” y se abre tu WhatsApp con el recibo ya escrito. Si tienes premios prendidos, ahí ve los puntos que ganó.",
+              },
+              {
+                n: "4",
+                t: "Cuando deja de venir, te avisamos",
+                d: "En tu panel te sale quién dejó de venir, con el mensaje ya escrito. Tú lo lees y se lo mandas por WhatsApp.",
+              },
+            ].map((step) => (
+              <li
+                key={step.n}
+                className="rounded-2xl p-6"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F28C38]/15 text-[15px] font-black text-[#F28C38]">
+                  {step.n}
+                </span>
+                <h3 className="mt-4 text-lg font-bold text-white">{step.t}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-white/60">{step.d}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mx-auto mt-6 max-w-2xl text-center text-[13px] leading-relaxed text-white/45">
+            Comeleal no manda WhatsApp por su cuenta. Cada mensaje sale de tu celular, cuando tú decides.
+          </p>
+        </div>
+      </section>
+
       <NeverTouchesYourMoney />
 
 
@@ -166,8 +218,9 @@ export default function Page() {
           <h2 className="text-2xl font-bold tracking-tight">
             Te lo dejamos funcionando hoy
           </h2>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_punto-de-venta-gratis-restaurantes_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
             <Link href="/menu-qr-gratis-restaurantes" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Menú QR gratis →</Link>

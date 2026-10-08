@@ -32,6 +32,7 @@ import {
   menuUnpaidLine,
   type MenuSalesSummary,
 } from "@/lib/order/menuSales";
+import { deliveryAppSavingsLine } from "@/components/menu/menuSignals";
 import { TrialClock } from "@/components/vendor/TrialClock";
 import { waitForAuthReady } from "@/lib/auth";
 import { OwnerEmailCard } from "@/components/vendor/OwnerEmailCard";
@@ -145,6 +146,10 @@ interface DashboardData {
    * referido para el dueño. 0 = no se pinta.
    */
   referredOrders30d: number;
+  /** "Te habría costado en una app de reparto" (8-oct): la arma
+   *  components/menu/menuSignals.ts con vendorInsights.metrics
+   *  webOrdersPaid30d / webOrdersPaidAmount30d. null = no se pinta. */
+  deliveryAppSavings: string | null;
   // Revenue goal
   dailyGoal: number | null;
   ventasHoy: number;
@@ -523,6 +528,7 @@ export default function VendorDashboard() {
           lookback,
           menuSales,
           referredOrders30d,
+          deliveryAppSavings: deliveryAppSavingsLine(insMetrics.webOrdersPaid30d, insMetrics.webOrdersPaidAmount30d),
           dailyGoal: (r.dailyRevenueGoal as number | null) ?? null,
           ventasHoy,
           // Veredicto de meta contra el horario REAL (espejo de la app,
@@ -807,7 +813,7 @@ export default function VendorDashboard() {
 
           {/* ── 4 · Clientes · últimos 30 días ── */}
           {!firstDay && (
-            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} menuSales={data.menuSales} referredOrders30d={data.referredOrders30d ?? 0} />
+            <OwnerLookbackCard stats={data.lookback} atRiskCount={data.atRiskCount ?? 0} menuSales={data.menuSales} referredOrders30d={data.referredOrders30d ?? 0} deliveryAppSavings={data.deliveryAppSavings ?? null} />
           )}
 
           {/* ── 5 · Pregúntale a Comeleal (compacto) ── */}
@@ -1629,7 +1635,7 @@ function IdentifiedSalesCard({ data }: { data: Pick<DashboardData, "weekPaidSale
 /** 4 · Clientes · últimos 30 días — espejo de OwnerLookbackCard (app):
  *  Con teléfono · Volvieron · % que volvió · Premios canjeados. Sin escáner
  *  ni promesa de puntos: "Cada venta con número suma aquí." */
-function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 0 }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary; referredOrders30d?: number }) {
+function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 0, deliveryAppSavings = null }: { stats: LookbackStats; atRiskCount: number; menuSales: MenuSalesSummary; referredOrders30d?: number; deliveryAppSavings?: string | null }) {
   const lowSample = stats.withPhone < 5;
   // Sin valor no se pinta la celda (29-sep): "—" y "Premios canjeados 0" se
   // leían como roto. Espejo app.
@@ -1664,6 +1670,11 @@ function OwnerLookbackCard({ stats, atRiskCount, menuSales, referredOrders30d = 
           )}
         </div>
       )}
+      {/* Lo que no se llevó una app de reparto (8-oct): solo con 1+ pedido
+          en línea pagado en 30 días (vendorInsights). Sin dato no se pinta. */}
+      {deliveryAppSavings ? (
+        <p className="mb-3 text-[14px] leading-[18px]" style={{ color: INK }}>{deliveryAppSavings}</p>
+      ) : null}
       {/* REFERIDOS (§10): lo que cierra el loop para el dueño. Con 0 no se
           pinta — un cero no le dice nada y solo ocupa lugar. */}
       {referredOrders30d > 0 && (

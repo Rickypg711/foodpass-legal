@@ -3,8 +3,10 @@ import { NeverTouchesYourMoney } from "@/components/vendor/NeverTouchesYourMoney
 import { LivePlatformStats } from "@/components/vendor/LivePlatformStats";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
+import { NO_ES_PARA_FAQ } from "@/lib/marketing/noEsPara";
 
 export const metadata: Metadata = {
   title: "Precios — Comeleal para restaurantes",
@@ -65,6 +67,7 @@ const FAQ = [
     q: "¿Cómo pago?",
     a: "Con Mercado Pago desde tu panel web, o desde la app (App Store / Google Play). El plan se activa al momento.",
   },
+  NO_ES_PARA_FAQ,
 ];
 
 const faqJsonLd = {
@@ -98,6 +101,10 @@ export default function Page() {
             nada, ni hoy ni nunca. Pro es para cuando tu Caja crece: todo tu
             historial, tu equipo con su PIN y mesas.
           </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_precios_hero" />
+            <WhatsAppButton variant="link" />
+          </div>
         </div>
       </section>
 
@@ -118,12 +125,7 @@ export default function Page() {
                 </li>
               ))}
             </ul>
-            <Link
-              href="/activar"
-              className="mt-7 inline-flex w-full items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-6 py-3.5 text-[15px] font-bold transition-all hover:shadow-md"
-            >
-              Empieza gratis →
-            </Link>
+            <SubeMenuCta section="seo_precios_gratis" className="mt-7 w-full" />
           </div>
 
           {/* Pro */}
@@ -152,7 +154,7 @@ export default function Page() {
             </ul>
             <Link
               href="/activar"
-              className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-[#F28C38] px-6 py-3.5 text-[15px] font-bold text-[#1C2526] transition-all hover:opacity-90"
+              className="mt-7 inline-flex w-full items-center justify-center rounded-2xl border border-[#F28C38]/60 px-6 py-3.5 text-[15px] font-bold text-[#F28C38] transition-all hover:bg-[#F28C38]/10"
             >
               Prueba Pro 14 días gratis →
             </Link>
@@ -193,8 +195,9 @@ export default function Page() {
       <section className="px-5 pb-20">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold tracking-tight">Te lo dejamos funcionando hoy</h2>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_precios_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot

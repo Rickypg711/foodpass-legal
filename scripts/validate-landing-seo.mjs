@@ -210,4 +210,90 @@ assert.ok(llms.includes("${PRO_PRICE_LABEL}") && llms.includes("Comeleal no mand
   assert.ok(rLayout.includes('restaurantPromisesPoints(data) ? ", pide por WhatsApp y junta puntos con cada compra." : " y pide por WhatsApp."'), "/r: 'junta puntos' solo con premios prendidos");
 }
 
+
+// 8-oct-2026 (robo #7 a Owner): JSON-LD con geo, areaServed y OrderAction,
+// solo con datos reales. Y sin premios prendidos, el JSON-LD no dice "puntos".
+{
+  const { buildRestaurantJsonLd, geoFor } = await import("../lib/server/restaurantJsonLd.ts");
+  const menu = [
+    { name: "Taco de suadero", description: null, price: 25, category: "Tacos", imageUrl: null, orderCount: 0 },
+    { name: "Agua de horchata", description: null, price: 30, category: "Bebidas", imageUrl: null, orderCount: 0 },
+  ];
+  const base = {
+    name: "Suadero", address: "Calle X 12, 31100 Chihuahua, Chih.", city: "Chihuahua", state: "Chihuahua", countryCode: "MX",
+    categories: ["Tacos", "Otro"], lat: 28.63, lng: -106.07, locationPrecision: "ROOFTOP", currencyCode: "MXN",
+  };
+  const build = (data, m = menu) =>
+    buildRestaurantJsonLd({ data, name: data.name, url: "https://comeleal.com/r/suadero", menuUrl: "https://comeleal.com/menu/abc", menu: m });
+
+  const prevFlag = process.env.NEXT_PUBLIC_ORDERING_ENABLED;
+  process.env.NEXT_PUBLIC_ORDERING_ENABLED = "true";
+  const ld = build(base);
+  assert.equal(ld["@type"], "Restaurant");
+  assert.deepEqual(ld.geo, { "@type": "GeoCoordinates", latitude: 28.63, longitude: -106.07 }, "geo sale de lat/lng del doc");
+  assert.deepEqual(ld.areaServed, { "@type": "City", name: "Chihuahua" }, "areaServed = la ciudad real");
+  assert.deepEqual(ld.servesCuisine, ["Tacos"], "servesCuisine sin 'Otro'");
+  assert.equal(ld.priceRange, "MX$25–MX$30", "priceRange sale de los precios del menú");
+  assert.equal(ld.acceptsReservations, false);
+  assert.equal(ld.hasMenu["@type"], "Menu");
+  assert.equal(ld.hasMenu.url, "https://comeleal.com/menu/abc", "hasMenu apunta a /menu/{id}");
+  assert.equal(ld.potentialAction["@type"], "OrderAction");
+  assert.equal(ld.potentialAction.target["@type"], "EntryPoint");
+  assert.equal(ld.potentialAction.target.urlTemplate, "https://comeleal.com/menu/abc", "OrderAction lleva a /menu/{id}");
+  assert.deepEqual(ld.potentialAction.deliveryMethod, ["http://purl.org/goodrelations/v1#DeliveryModePickUp"], "sin deliveryEnabled: solo recoger");
+  assert.ok(build({ ...base, deliveryEnabled: true }).potentialAction.deliveryMethod.some((d) => d.endsWith("DeliveryModeOwnFleet")), "con entrega prendida: también a domicilio");
+
+  // Sin dato, se omite (jamás inventar)
+  const bare = build({ name: "Sin datos" }, []);
+  for (const k of ["geo", "areaServed", "servesCuisine", "priceRange", "potentialAction", "address", "telephone"]) {
+    assert.ok(!(k in bare), `sin dato no hay ${k}`);
+  }
+  assert.equal(bare.hasMenu, "https://comeleal.com/menu/abc", "sin platillos, hasMenu es la URL del menú");
+  assert.equal(geoFor({ lat: 0, lng: 0 }), null, "Null Island no es un pin");
+  assert.equal(geoFor({ lat: 28.6, lng: -106 , locationNeedsReview: true }), null, "pin en revisión: fuera");
+  assert.equal(geoFor({ lat: 28.6, lng: -106, locationPrecision: "CITY_APPROX" }), null, "centro de la ciudad no es el local");
+  assert.equal(geoFor({}), null);
+  assert.ok(!("potentialAction" in build(base, [{ ...menu[0], price: 0 }])), "sin nada con precio, no hay OrderAction");
+  process.env.NEXT_PUBLIC_ORDERING_ENABLED = "false";
+  assert.ok(!("potentialAction" in build(base)), "pedidos web apagados: no hay OrderAction");
+  if (prevFlag === undefined) delete process.env.NEXT_PUBLIC_ORDERING_ENABLED;
+  else process.env.NEXT_PUBLIC_ORDERING_ENABLED = prevFlag;
+
+  // Premios apagados: nada en el JSON-LD habla de puntos ni premios.
+  const off = JSON.stringify(build({ ...base, loyaltyReady: false, description: "Tacos de suadero desde 1998." }));
+  assert.ok(!/puntos|premio|recompensa/i.test(off), "loyaltyReady false: el JSON-LD no menciona puntos");
+}
+
+// 8-oct-2026 (robo #10 a Owner): /restaurantes/{ciudad}/{categoria}, honesto.
+{
+  const { seoSlug, categoryHeading, buildCategoryCityTitle, groupByCityAndCategory, MIN_RESTAURANTS_PER_CATEGORY_PAGE } =
+    await import("../lib/landingContent.ts");
+  assert.equal(seoSlug("Puerto Escondido"), "puerto-escondido");
+  assert.equal(seoSlug("Panadería"), "panaderia");
+  assert.equal(categoryHeading("Mexicana"), "Comida mexicana");
+  assert.equal(buildCategoryCityTitle("tacos", "Chihuahua"), "Tacos en Chihuahua: menú, pedidos y horario");
+  assert.equal(MIN_RESTAURANTS_PER_CATEGORY_PAGE, 2);
+  const groups = groupByCityAndCategory([
+    { id: "a", city: "Chihuahua", categories: ["Tacos", "Otro", "tacos"] },
+    { id: "b", city: "Chihuahua", categories: ["TACOS"] },
+    { id: "c", city: "Delicias", categories: ["Tacos"] },
+    { id: "d", city: null, categories: ["Tacos"] },
+  ]);
+  const cuu = groups.find((g) => g.citySlug === "chihuahua" && g.categorySlug === "tacos");
+  assert.deepEqual(cuu.restaurants.map((r) => r.id), ["a", "b"], "mismo local no se repite; mayúsculas no parten el grupo");
+  assert.ok(!groups.some((g) => g.categorySlug === "otro"), "'Otro' no tiene página");
+  assert.ok(!groups.some((g) => g.restaurants.some((r) => r.id === "d")), "sin ciudad no entra");
+
+  const pageSrc = read("app/restaurantes/[ciudad]/[categoria]/page.tsx");
+  const dataSrc = read("app/restaurantes/_lib/categoryPages.ts");
+  const noComm = (t) => t.replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(pageSrc.includes("notFound()"), "combinación con menos de 2 locales: 404");
+  assert.ok(!/mejor|best|cerca de m[ií]|near me/i.test(noComm(pageSrc)), "sin 'los mejores' ni 'cerca de mí'");
+  assert.ok(!/puntos|premio/i.test(noComm(pageSrc)), "la página por categoría no promete puntos (hay locales sin premios)");
+  assert.ok(!noComm(pageSrc).includes("—"), "sin rayas en el copy");
+  assert.ok(dataSrc.includes('status !== "active"') && dataSrc.includes("isSitemapExcluded(") && dataSrc.includes("price > 0"), "solo activos, sin pruebas y con menú real");
+  assert.ok(dataSrc.includes(">= MIN_RESTAURANTS_PER_CATEGORY_PAGE"), "solo 2+ locales");
+  assert.ok(read("app/sitemap.ts").includes("fetchCategoryCityPages("), "el sitemap anuncia solo las combinaciones que existen");
+}
+
 console.log("✅ validate-landing-seo: sin 'Otro' en el title y la ciudad la dice Google, no la colonia");

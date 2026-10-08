@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 
@@ -253,14 +254,9 @@ export default function Page() {
           <p className="mt-3 text-[14px] text-[#1C2526]/60">
             Gratis para empezar. Sin tarjeta. Si no te gusta, no pasa nada.
           </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_mejores-apps-menu-digital-restaurantes_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot

@@ -10,7 +10,7 @@ import {
 } from "@/lib/brand/brandColor";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Image from "next/image";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CartBar } from "@/components/cart/CartBar";
 import { MenuAppRewardsCta } from "@/components/menu/MenuAppRewardsCta";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
@@ -36,6 +36,14 @@ import ReferralClaimBar from "@/components/loyalty/ReferralClaimBar";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
 import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
+import { MenuTopPicks } from "@/components/menu/MenuTopPicks";
+import {
+  DISH_PARAM,
+  findLinkedDish,
+  pairItemsFor,
+  parseMenuSignals,
+  topItemsFromSignals,
+} from "@/components/menu/menuSignals";
 import { menuPaymentLine } from "@/lib/order/menuPaymentLine";
 import { menuSkinFromRestaurant, type MenuSkinId } from "@/lib/menu/menuSkin";
 import {
@@ -1707,6 +1715,33 @@ function MenuRewardsLadderSection({
   );
 }
 
+/** Link directo a un platillo (/menu/{id}?platillo={itemId}, las fotos de
+ *  /r): abre su hoja UNA vez al cargar. Sin el parámetro, nada cambia. */
+function useDishDeepLink(items: MenuRow[], loading: boolean, open: (item: MenuRow) => void) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current) return;
+    let param: string | null = null;
+    try {
+      param = new URLSearchParams(window.location.search).get(DISH_PARAM);
+    } catch {
+      param = null;
+    }
+    if (!param) {
+      done.current = true;
+      return;
+    }
+    const hit = findLinkedDish(items, param);
+    if (hit) {
+      done.current = true;
+      open(hit);
+    } else if (!loading) {
+      done.current = true; // ya cargó y no está (borrado o agotado)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, loading]);
+}
+
 function MenuBottomDock({ children, skin = null }: { children: ReactNode; skin?: MenuSkinId | null }) {
   return (
     <div
@@ -1917,7 +1952,8 @@ function PublicMenuPageWithOrdering({
             return typeof s === "string" && s.trim().toLowerCase() === wanted;
           });
           if (match) {
-            window.location.replace(`/menu/${match.id}`);
+            // Con su ?platillo= / ?mesa= (el link de una foto de /r no se pierde).
+            window.location.replace(`/menu/${match.id}${window.location.search}`);
             return;
           }
 
@@ -2013,6 +2049,14 @@ function PublicMenuPageWithOrdering({
   };
 
   const categoryGroups = groupMenuByCategory(items);
+
+  // Señales de 30 días (8-oct, components/menu/menuSignals.ts): "Lo más
+  // pedido" arriba del menú de siempre y "Va bien con" en la hoja. Sin el
+  // campo en el doc, las dos cosas no se pintan.
+  const menuSignals = useMemo(() => parseMenuSignals(rdata), [rdata]);
+  const topPicks = topItemsFromSignals(menuSignals, items);
+  const detailPairs = pairItemsFor(menuSignals, detailItem?.id, items);
+  useDishDeepLink(items, loading, setDetailItem);
   // Cerrado (positivo) = el menú se VE, pero no se puede ordenar.
   const orderingEnabled = webOrderingReady && webOrderingAvailable && !closedNow;
 
@@ -2108,6 +2152,16 @@ function PublicMenuPageWithOrdering({
           </div>
         )}
 
+        {!loading && !error && !skin && topPicks.length > 0 && (
+          <MenuTopPicks
+            items={topPicks}
+            onOpen={(id) => {
+              const it = items.find((i) => i.id === id);
+              if (it) setDetailItem(it);
+            }}
+          />
+        )}
+
         {!loading && !error && items.length > 0 && (
           <MenuCategoryChips
             skin={skin}
@@ -2178,6 +2232,22 @@ function PublicMenuPageWithOrdering({
           const it = detailItem;
           setDetailItem(null);
           handleAddItem(it);
+        }}
+        pairs={detailPairs
+          .filter((p) => !categoryClosedNow(p.category))
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            quantity: quantityByItemId.get(p.id) ?? 0,
+          }))}
+        onAddPair={(id) => {
+          const p = items.find((i) => i.id === id);
+          if (!p) return;
+          // Con opciones se abre su hoja de opciones (cierra esta); sin
+          // opciones se agrega y la hoja sigue abierta.
+          if (resolveOptionGroups(p).length > 0) setDetailItem(null);
+          handleAddItem(p);
         }}
       />
 
@@ -2433,6 +2503,11 @@ function PublicMenuPageBrowseOnly({
   }, [restaurantId]);
 
   const categoryGroups = groupMenuByCategory(items);
+  // Mismas señales que el menú con pedidos (solo mirar: sin botón de agregar).
+  const menuSignals = useMemo(() => parseMenuSignals(rdata), [rdata]);
+  const topPicks = topItemsFromSignals(menuSignals, items);
+  const detailPairs = pairItemsFor(menuSignals, detailItem?.id, items);
+  useDishDeepLink(items, loading, setDetailItem);
 
   return (
     <div className={pageClassFor(skin)}>
@@ -2462,6 +2537,16 @@ function PublicMenuPageBrowseOnly({
         {!loading && !error && items.length === 0 && (
           <MenuStatusMessage>No hay platillos disponibles</MenuStatusMessage>
         )}
+        {!loading && !error && !skin && topPicks.length > 0 && (
+          <MenuTopPicks
+            items={topPicks}
+            onOpen={(id) => {
+              const it = items.find((i) => i.id === id);
+              if (it) setDetailItem(it);
+            }}
+          />
+        )}
+
         {!loading && !error && items.length > 0 && (
           <MenuCategoryChips
             skin={skin}
@@ -2506,6 +2591,7 @@ function PublicMenuPageBrowseOnly({
         orderingEnabled={false}
         onClose={() => setDetailItem(null)}
         onAdd={() => setDetailItem(null)}
+        pairs={detailPairs.map((p) => ({ id: p.id, name: p.name, price: p.price }))}
       />
 
       <MenuBottomDock skin={skin}>

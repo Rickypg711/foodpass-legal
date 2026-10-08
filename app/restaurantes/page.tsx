@@ -11,11 +11,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/siteMetadata";
 import { fetchDirectoryRestaurants } from "@/lib/server/restaurantDirectory";
+import { categoryHeading } from "@/lib/landingContent";
+import { fetchCategoryCityPages } from "./_lib/categoryPages";
 
 export const metadata: Metadata = {
   title: "Restaurantes en Chihuahua con menú en línea y recompensas",
   description:
-    "Descubre restaurantes locales de Chihuahua en Comeleal: mira su menú con fotos y precios, pide en línea o por WhatsApp, y junta puntos con cada compra.",
+    "Descubre restaurantes locales de Chihuahua en Comeleal: mira su menú con fotos y precios, y pide en línea o por WhatsApp.",
   alternates: { canonical: "/restaurantes" },
   openGraph: {
     title: `Restaurantes en Chihuahua | ${SITE_NAME}`,
@@ -25,7 +27,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RestaurantDirectoryPage() {
-  const restaurants = await fetchDirectoryRestaurants();
+  const [restaurants, categoryPages] = await Promise.all([
+    fetchDirectoryRestaurants(),
+    // Links a /restaurantes/{ciudad}/{categoria} (solo las que tienen 2+ locales).
+    fetchCategoryCityPages(),
+  ]);
 
   const itemListJsonLd =
     restaurants.length > 0
@@ -63,6 +69,20 @@ export default async function RestaurantDirectoryPage() {
           Menú con fotos y precios, pedidos en línea y puntos en cada compra.
           Toca un lugar para ver su carta.
         </p>
+        {categoryPages.length > 0 && (
+          <nav aria-label="Por tipo de comida" className="mx-auto mt-6 flex max-w-2xl flex-wrap justify-center gap-2">
+            {categoryPages.map((p) => (
+              <Link
+                key={`${p.citySlug}/${p.categorySlug}`}
+                href={`/restaurantes/${p.citySlug}/${p.categorySlug}`}
+                className="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-[#B05E14] hover:shadow-sm"
+                style={{ border: "1px solid rgba(242,140,56,0.25)" }}
+              >
+                {categoryHeading(p.category)} en {p.city}
+              </Link>
+            ))}
+          </nav>
+        )}
       </section>
 
       <section className="px-5 pb-20">
@@ -127,7 +147,7 @@ export default async function RestaurantDirectoryPage() {
                     </p>
                   ) : null}
                   <p className="mt-3 text-[13px] font-bold text-[#F28C38]">
-                    Ver menú y premios →
+                    Ver menú →
                   </p>
                 </div>
               </Link>

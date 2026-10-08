@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PRO_PRICE_LABEL } from "@/lib/subscription/pricing";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
 } from "@/lib/contactEmail";
@@ -83,14 +84,9 @@ export default function LealtadRestaurantesChihuahua() {
             clientes. <b>Gratis para empezar.</b> Te lo dejamos funcionando en 10
             minutos.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_lealtad-restaurantes-chihuahua_hero" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot
@@ -184,8 +180,9 @@ export default function LealtadRestaurantesChihuahua() {
             puntos, y te acompañamos por WhatsApp. Si algo no jala, nos escribes y
             lo arreglamos.
           </p>
-          <div className="mt-6">
-            <WhatsAppButton label={`💬 Escríbenos: ${PUBLIC_WHATSAPP_DISPLAY}`} />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_lealtad-restaurantes-chihuahua_local" />
+            <WhatsAppButton variant="link" label={`¿Prefieres hablar con alguien? Escríbenos al ${PUBLIC_WHATSAPP_DISPLAY}`} />
           </div>
         </div>
       </section>
@@ -223,8 +220,9 @@ export default function LealtadRestaurantesChihuahua() {
             Mándanos un WhatsApp con la foto de tu menú y te dejamos tu menú QR y
             tus puntos funcionando.
           </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_lealtad-restaurantes-chihuahua_final" />
+            <WhatsAppButton variant="link" />
             <Link
               href="/"
               className="text-[13px] font-semibold text-[#1C2526]/50 underline underline-offset-4 hover:text-[#1C2526]"

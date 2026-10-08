@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import {
   PUBLIC_WHATSAPP_DISPLAY,
   PUBLIC_WHATSAPP_WA_ME_ACTIVATE,
@@ -79,14 +80,9 @@ export default function Page() {
           <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70">
             Tu menú digital con fotos y precios, un QR para imprimir y pedidos en línea que te llegan directo al WhatsApp. <b>Gratis para empezar, sin comisión en efectivo.</b> Sube la foto de tu menú y lo ves en 1 minuto.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_menu-qr-gratis-restaurantes_hero" />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
             WhatsApp {PUBLIC_WHATSAPP_DISPLAY} · te contesta una persona, no un bot
@@ -221,8 +217,9 @@ export default function Page() {
           <h2 className="text-2xl font-bold tracking-tight">
             Te lo dejamos funcionando hoy
           </h2>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section="seo_menu-qr-gratis-restaurantes_final" />
+            <WhatsAppButton variant="link" />
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-6">
             <Link href="/lealtad-restaurantes-chihuahua" className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4">Programa de lealtad en Chihuahua →</Link>

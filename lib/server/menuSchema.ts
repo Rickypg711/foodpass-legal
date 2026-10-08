@@ -11,7 +11,10 @@ import type { LandingMenuItem } from "@/lib/server/restaurantLanding";
 export function buildMenuJsonLd(
   menuUrl: string,
   items: LandingMenuItem[],
+  /** 8-oct-2026: la moneda del local (Mexican Fresh Water cobra en USD); MXN si no hay. */
+  currencyCode?: unknown,
 ): string | Record<string, unknown> {
+  const currency = typeof currencyCode === "string" && currencyCode.trim() ? currencyCode.trim().toUpperCase() : "MXN";
   if (items.length === 0) return menuUrl;
   const byCategory = new Map<string, LandingMenuItem[]>();
   for (const item of items) {
@@ -34,7 +37,7 @@ export function buildMenuJsonLd(
           offers: {
             "@type": "Offer",
             price: item.price,
-            priceCurrency: "MXN",
+            priceCurrency: currency,
           },
         })),
       }),

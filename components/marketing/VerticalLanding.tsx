@@ -16,6 +16,7 @@
 
 import Link from "next/link";
 import { WhatsAppButton } from "@/components/marketing/WhatsAppLeadButton";
+import { SubeMenuCta } from "@/components/marketing/SubeMenuCta";
 import { PUBLIC_WHATSAPP_DISPLAY } from "@/lib/contactEmail";
 import { FAQ_COMUN, VERTICALES, type Vertical } from "@/lib/marketing/verticals";
 
@@ -56,17 +57,12 @@ export function VerticalLanding({ v }: { v: Vertical }) {
             className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-[#1C2526]/70"
             dangerouslySetInnerHTML={{ __html: v.heroP }}
           />
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
-            <Link
-              href="/activar"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
-            >
-              Empieza gratis en línea →
-            </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section={`seo_${v.slug}_hero`} />
+            <WhatsAppButton variant="link" />
           </div>
           <p className="mt-3 text-[12px] text-[#1C2526]/45">
-            Se crea en menos de 3 minutos · sin tarjeta · WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
+            En 1 minuto ves tu menú digital · sin cuenta · WhatsApp {PUBLIC_WHATSAPP_DISPLAY}
           </p>
         </div>
       </section>
@@ -197,11 +193,12 @@ export function VerticalLanding({ v }: { v: Vertical }) {
             crece (todo tu historial, tu equipo con su PIN y mesas), eso es
             Pro. Pruébalo <b>14 días gratis, sin tarjeta</b>.
           </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <WhatsAppButton />
+          <div className="mt-6 flex flex-col items-center justify-center gap-3">
+            <SubeMenuCta section={`seo_${v.slug}_final`} />
+            <WhatsAppButton variant="link" />
             <Link
               href="/precios"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#1C2526]/15 bg-white px-7 py-4 text-[15px] font-bold text-[#1C2526] transition-all hover:shadow-md"
+              className="text-[13px] font-semibold text-[#F28C38] underline underline-offset-4"
             >
               Ver precios →
             </Link>
