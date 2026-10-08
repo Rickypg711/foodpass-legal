@@ -279,7 +279,7 @@ export function PosRedemption({
   function applyWithoutCode() {
     if (!picked) return;
     const sure = window.confirm(
-      "¿Aplicar el premio SIN código de verificación?\n\nQuedará registrado como canje no verificado — el dueño puede auditarlo en el pedido.",
+      "¿Aplicar el premio SIN código de verificación?\n\nQuedará registrado como canje no verificado. El dueño lo puede revisar en el pedido.",
     );
     if (!sure) return;
     setCodeState("ok");
@@ -443,7 +443,7 @@ export function PosRedemption({
                     <span className="block text-[11px]" style={{ color: "rgba(28,37,38,0.5)" }}>
                       {t.isFirstVisit
                         ? "Premio de bienvenida (1a compra)"
-                        : `Canje de ${t.points} pts — le quedarían ${points - t.points}`}
+                        : `Cuesta ${t.points} pts, le quedarían ${points - t.points}`}
                     </span>
                   </span>
                   <span aria-hidden>🎁</span>
