@@ -282,7 +282,11 @@ export default function ProspectosPage() {
 
   const hot = rows.filter((r) => !r.converted && r.status === "ready" && !r.hasAccount);
   const withAccount = rows.filter((r) => !r.converted && r.status === "ready" && r.hasAccount);
-  const converted = rows.filter((r) => r.converted);
+  // Un local por nombre: Omu, Mixteco y El Campirano tienen 2 demos convertidos.
+  const converted = rows.filter((r, i, all) => r.converted && (
+    r.name === "(menú sin nombre)" ||
+    all.findIndex((x) => x.converted && x.name.trim().toLowerCase() === r.name.trim().toLowerCase()) === i
+  ));
 
   return (
     <main className="min-h-screen px-5 py-8" style={{ background: "#faf9f5" }}>
