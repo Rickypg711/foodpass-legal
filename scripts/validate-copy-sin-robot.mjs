@@ -30,7 +30,12 @@ const FORMAS = [
   [/\bno es\b[^.\n]{0,60}\.\s*es (que )?\b/i, "«No es X. Es Y» (en dos frases)"],
   [/,\s*no \w+\.(\s|$)/i, "cierre «X, no Y.» que repite lo dicho"],
   [/—/, "raya — (muletilla de IA; usa coma o punto)"],
-  [/\bsab(es|er|emos|rás) quién (te compr|fue)/i, "suena a vigilancia"],
+  [/\bsab\w* (a )?quién (te |le )?(compr|vend|fue)/i, "suena a vigilancia"],
+  // 9-oct-2026, pasada al deck de Tec Startups: estas cinco se le escaparon al candado.
+  [/(^|[.!?\n]\s*)(\S+\s){1,2}no es \S+\.(\s|$)/i, "frase hecha «X no es Y.»"],
+  [/,\s*no (el|la|los|las|un|una|tu|tus|su|sus|mi|al|del)\s\w+\.(\s|$)/i, "cierre «X, no el Y.» que repite lo dicho"],
+  [/(?<![\wáéíóúñ])(nuestra ventaja|una sola cosa|lo importante|lo que importa|el truco|la diferencia|la respuesta)\s*:/i, "dos puntos de revelación"],
+  [/(^|[^\d.,])0\s?%\s*([.\n]|$)/, "«0 %» a secas (di qué no se cobra)"],
 ];
 
 function revisar(t) {
