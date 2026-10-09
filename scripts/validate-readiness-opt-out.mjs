@@ -17,7 +17,8 @@
  *     que nunca guardó la pantalla — el muro #1 del embudo no se abre.
  *  3. Pantalla guardada + todo apagado → loyaltyOptedOut, completo, active.
  *  4. `loyaltyReady` (algo que ganar) es OTRA verdad: gate del escáner y de
- *     la visibilidad para diners, jamás del status.
+ *     la promesa de puntos, jamás del status. Desde el 9-oct ya NO filtra
+ *     la visibilidad para diners (ver sección 6).
  *  5. El opt-out no perdona lo demás (horario, menú, datos).
  *  6. Los 5 campos persistidos salen de UNA sola función.
  *
@@ -29,6 +30,8 @@ import {
   evaluateReadiness,
   readinessFieldsForFirestore,
   isRestaurantVisibleToDiners,
+  isRestaurantVisibleWithPointsPromise,
+  readRestaurantMillis,
   restaurantPromisesPoints,
 } from "../lib/readiness/evaluate.ts";
 import { buildSeoParagraph, buildFaq } from "../lib/landingContent.ts";
@@ -121,11 +124,53 @@ const base = (overrides = {}) => ({
   assert.equal(r.loyaltyOptedOut, true);
 }
 
-// ── 6. Visibilidad para diners: completo + loyaltyReady false → invisible ───
+// ── 6. Visibilidad para diners (regla 9-oct-2026, espejo de la app:
+// test/services/restaurant_diner_visibility_test.dart). La regla vieja
+// (completo + loyaltyReady) escondía locales reales sin premios (El Manantial,
+// El Ruper's, Blooms, Omu) y enseñaba "TAQUERIA EL PRUEBAS". Ahora: completo,
+// no prueba, no borrado y VIVO (nuevo ≤30 días o pedido en 30 días). Los
+// premios son insignia; donde se prometen puntos, además restaurantPromisesPoints.
 {
-  assert.equal(isRestaurantVisibleToDiners({ isSetupComplete: true, loyaltyReady: false }), false);
-  assert.equal(isRestaurantVisibleToDiners({ isSetupComplete: true }), true, "doc viejo: completo implica premios");
-  assert.equal(isRestaurantVisibleToDiners({ isSetupComplete: false, loyaltyReady: true }), false);
+  const NOW = Date.parse("2026-10-09T18:00:00Z");
+  const DAY = 864e5;
+  const ago = (d) => new Date(NOW - d * DAY);
+  const doc = (extra = {}) => ({ isSetupComplete: true, status: "active", ...extra });
+  const vis = (d) => isRestaurantVisibleToDiners(d, NOW);
+
+  assert.equal(vis(doc({ createdAt: ago(5) })), true, "nuevo sin pedidos → visible");
+  assert.equal(vis(doc({ createdAt: ago(200), lastOrderAt: ago(3) })), true, "viejo con pedido reciente → visible");
+  assert.equal(vis(doc({ createdAt: ago(200), lastOrderAt: ago(31) })), false, "sin vida en 30 días → fuera");
+  assert.equal(vis(doc({ lastOrderAt: ago(30) })), false, "borde: 30 días exactos ya no cuenta");
+  assert.equal(vis(doc({ lastOrderAt: ago(29) })), true, "29 días sí");
+  assert.equal(vis(doc({ isTest: true, lastOrderAt: ago(1) })), false, "prueba → fuera aunque esté viva");
+  assert.equal(vis(doc({ status: "deleted", createdAt: ago(1) })), false, "borrado → fuera");
+  assert.equal(vis(doc({ isSetupComplete: false, lastOrderAt: ago(1) })), false, "incompleto → fuera");
+  assert.equal(vis(doc()), false, "doc viejo sin lastOrderAt ni createdAt → fuera");
+  assert.equal(vis(doc({ lastOrderAt: ago(2) })), true, "sin createdAt pero con pedido → visible");
+  assert.equal(vis(doc({ isTest: false, lastOrderAt: ago(2) })), true, "isTest false no esconde");
+  assert.equal(vis(undefined), false);
+  assert.equal(vis(null), false);
+
+  // Premios apagados YA NO esconden; solo quitan la promesa.
+  const sinPremios = doc({ loyaltyReady: false, lastOrderAt: ago(2) });
+  assert.equal(vis(sinPremios), true, "premios son insignia, no filtro");
+  assert.equal(isRestaurantVisibleWithPointsPromise(sinPremios, NOW), false);
+  assert.equal(isRestaurantVisibleWithPointsPromise(doc({ lastOrderAt: ago(2) }), NOW), true, "grandfather + vivo");
+  assert.equal(isRestaurantVisibleWithPointsPromise(doc({ loyaltyReady: true, lastOrderAt: ago(90) }), NOW), false);
+
+  // Fechas en todas sus formas: ISO (REST), ms, Timestamp del SDK, {seconds}.
+  assert.equal(vis(doc({ lastOrderAt: ago(1).toISOString() })), true);
+  assert.equal(vis(doc({ lastOrderAt: ago(1).getTime() })), true);
+  assert.equal(vis(doc({ lastOrderAt: { toMillis: () => ago(1).getTime() } })), true);
+  assert.equal(vis(doc({ lastOrderAt: { seconds: Math.floor(ago(1).getTime() / 1000) } })), true);
+  assert.equal(vis(doc({ lastOrderAt: "basura" })), false);
+  assert.equal(readRestaurantMillis(null), null);
+
+  // El directorio público (/restaurantes) usa la regla; el sitemap salta isTest.
+  const dirSrc = readFileSync(new URL("../lib/server/restaurantDirectory.ts", import.meta.url), "utf8");
+  assert.ok(dirSrc.includes("if (!isRestaurantVisibleToDiners(data)) continue;"), "el directorio aplica la regla de diners");
+  const metaSrc = readFileSync(new URL("../lib/server/restaurantMetadata.ts", import.meta.url), "utf8");
+  assert.ok(metaSrc.includes("isTest?.booleanValue === true"), "el sitemap no anuncia pruebas marcadas");
 }
 
 // ── 7. La página de premios avisa lo real: escáner en pausa, no "incompleto" ─

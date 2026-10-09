@@ -7,6 +7,7 @@
 import { decodeFields } from "@/lib/server/restaurantLanding";
 import { cityForRestaurant, seoCategories } from "@/lib/landingContent";
 import { getRestaurantBannerUrl, getRestaurantImageUrl } from "@/lib/restaurantImage";
+import { isRestaurantVisibleToDiners } from "@/lib/readiness/evaluate";
 
 const PROJECT_ID = "foodpass-18b33";
 const API_KEY = "AIzaSyB6JpeqOiPEFyELSHl9p64v2XPXk6uN9Xk"; // public web config
@@ -24,7 +25,11 @@ export type DirectoryRestaurant = {
   imageUrl: string | null;
 };
 
-/** Locales ACTIVOS y COMPLETOS, listos para el aparador público. */
+/**
+ * Locales listos para el aparador público. El query trae los completos; la
+ * regla de diners (9-oct, espejo de la app) quita pruebas, borrados y locales
+ * sin vida (ni nuevos ni con pedido en 30 días).
+ */
 export async function fetchDirectoryRestaurants(
   max = 150,
 ): Promise<DirectoryRestaurant[]> {
@@ -60,6 +65,7 @@ export async function fetchDirectoryRestaurants(
       const id = r.document?.name?.split("/").pop();
       if (!id) continue;
       const data = decodeFields(r.document?.fields);
+      if (!isRestaurantVisibleToDiners(data)) continue;
       const name = typeof data.name === "string" && data.name.trim() ? data.name.trim() : null;
       if (!name) continue;
       const rawSlug =

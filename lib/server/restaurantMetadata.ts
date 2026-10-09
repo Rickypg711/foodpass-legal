@@ -136,12 +136,19 @@ export async function fetchActiveRestaurantHandles(
     });
     if (!res.ok) return [];
     const rows = (await res.json()) as {
-      document?: { name?: string; fields?: Record<string, { stringValue?: string }> };
+      document?: {
+        name?: string;
+        fields?: Record<string, { stringValue?: string; booleanValue?: boolean }>;
+      };
     }[];
     const out: { id: string; slug: string | null }[] = [];
     for (const r of rows) {
       const id = r.document?.name?.split("/").pop();
       if (!id) continue;
+      // Prueba marcada (isTest, 9-oct): no se anuncia a los buscadores. El
+      // sitemap NO aplica "vivo/30 días": la página sigue existiendo y su
+      // indexación no debe ir y venir con cada mes flojo.
+      if (r.document?.fields?.isTest?.booleanValue === true) continue;
       const rawSlug = r.document?.fields?.slug?.stringValue?.trim().toLowerCase();
       const slug =
         rawSlug && /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(rawSlug) ? rawSlug : null;

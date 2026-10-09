@@ -93,17 +93,86 @@ export function restaurantPromisesPoints(data: Record<string, unknown> | null | 
   return data.loyaltyReady !== false;
 }
 
+/** Ventana de "vivo" para diners: nuevo (≤30 días) o con pedido en 30 días. */
+export const DINER_ALIVE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
 /**
- * Diners (búsqueda, feed, cerca de ti, puntos): solo locales completos CON
- * algo que ganar. Un local que apagó sus premios es invisible en la app de
- * puntos — igual que antes del 5-sep — pero su menú y su QR viven aquí.
- * Espejo de `isRestaurantVisibleToDiners` en la app. Docs anteriores al
- * 5-sep no traen `loyaltyReady`: completo implicaba premios.
+ * Fecha de Firestore venga como venga: Timestamp del SDK (toMillis/toDate),
+ * Date, milisegundos, ISO (REST `timestampValue`) o {seconds}/{_seconds}.
+ * null si no se puede leer.
  */
-export function isRestaurantVisibleToDiners(data: Record<string, unknown> | undefined): boolean {
+export function readRestaurantMillis(v: unknown): number | null {
+  if (v == null) return null;
+  if (v instanceof Date) return Number.isFinite(v.getTime()) ? v.getTime() : null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string") {
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof v === "object") {
+    const o = v as { toMillis?: () => number; seconds?: unknown; _seconds?: unknown };
+    if (typeof o.toMillis === "function") return o.toMillis();
+    const s = typeof o.seconds === "number" ? o.seconds : typeof o._seconds === "number" ? o._seconds : null;
+    if (s != null) return s * 1000;
+  }
+  return null;
+}
+
+/**
+ * Local de prueba o borrado: jamás lo ve un comensal. `isTest` lo pone
+ * scripts/backfillLastOrderAtAndTestFlags.js (FOODPASS).
+ */
+export function isRestaurantHiddenFromDiners(data: Record<string, unknown> | null | undefined): boolean {
+  if (!data) return true;
+  if (data.isTest === true) return true;
+  return data.status === "deleted";
+}
+
+/**
+ * ¿Está VIVO? Nuevo (createdAt dentro de 30 días) o con pedido reciente
+ * (`lastOrderAt`, lo estampa onOrderCreatedStampLastOrderAt). Docs viejos sin
+ * `lastOrderAt` = sin pedido reciente; sin `createdAt` = no es nuevo.
+ */
+export function isRestaurantAliveForDiners(
+  data: Record<string, unknown> | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (!data) return false;
+  const cutoff = now - DINER_ALIVE_WINDOW_MS;
+  const created = readRestaurantMillis(data.createdAt);
+  if (created != null && created > cutoff) return true;
+  const lastOrder = readRestaurantMillis(data.lastOrderAt);
+  return lastOrder != null && lastOrder > cutoff;
+}
+
+/**
+ * Diners (directorio /restaurantes, Hoy y Explorar en la app): decisión de
+ * Ricardo 9-oct-2026. Visible cuando TODO se cumple:
+ *   1. `isSetupComplete === true` (menú listo),
+ *   2. no es prueba (`isTest !== true`),
+ *   3. no está borrado (`status !== "deleted"`),
+ *   4. está vivo: nuevo (≤30 días) o con pedido en los últimos 30 días.
+ * Los premios YA NO filtran (antes `loyaltyReady !== false` escondía locales
+ * reales sin premios y dejaba pasar pruebas): son una insignia. Donde se
+ * PROMETEN puntos se exige además `restaurantPromisesPoints`.
+ * Espejo de `isRestaurantVisibleToDiners` en la app.
+ */
+export function isRestaurantVisibleToDiners(
+  data: Record<string, unknown> | null | undefined,
+  now: number = Date.now(),
+): boolean {
   if (!data) return false;
   if (data.isSetupComplete !== true) return false;
-  return data.loyaltyReady !== false;
+  if (isRestaurantHiddenFromDiners(data)) return false;
+  return isRestaurantAliveForDiners(data, now);
+}
+
+/** Contextos que PROMETEN puntos: visible para diners Y con algo que ganar. */
+export function isRestaurantVisibleWithPointsPromise(
+  data: Record<string, unknown> | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  return isRestaurantVisibleToDiners(data, now) && restaurantPromisesPoints(data);
 }
 
 export type SetupStep = "business" | "hours" | "menu" | "rewards";
