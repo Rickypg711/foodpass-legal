@@ -5,6 +5,12 @@
 // (generateDemoNudge, solo plataforma), Ricardo tap-y-enviar por SU
 // WhatsApp, y el envío queda estampado (nudgedAt) — human-in-the-loop
 // MEDIDO, con fecha de muerte: la Cloud API post-RFC.
+//
+// 8-oct-2026 (revisión antes de mandar 7 nudges): el link cosía +52 (Sabor
+// Zuliano es de Colombia), contaba el nudge al escribirlo y no al mandarlo,
+// y enseñaba como "sin reclamar" a Tortas y Birria González, que ya tenía
+// cuenta. Ahora: país del job, estampa al abrir el WhatsApp, cuentas ya
+// creadas aparte y un renglón por número (El Molcajete subió 3 veces).
 
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +20,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  where,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseApp, getFirebaseDb } from "@/lib/firebase";
@@ -37,7 +44,32 @@ type Prospect = {
   converted: boolean;
   nudgeCount: number;
   status: string;
+  uid: string | null;
+  phoneCountryCode: string;
+  expiresAt: Timestamp | null;
+  /** Nombre del restaurante si ese dueño (uid o WhatsApp) ya tiene cuenta. */
+  hasAccount: string | null;
+  /** Cuántas veces subió menú con el mismo WhatsApp. */
+  uploads: number;
 };
+
+/** "vence hoy", "vence mañana", "vence en 3 días", "venció". */
+function expiresLabel(ts: Timestamp | null): string | null {
+  if (!ts) return null;
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOf(ts.toDate()) - startOf(new Date())) / 86400000);
+  if (ts.toMillis() < Date.now()) return "venció";
+  if (days <= 0) return "vence hoy";
+  if (days === 1) return "vence mañana";
+  return `vence en ${days} días`;
+}
+
+/** Trozos de 30 para los `in` de Firestore. */
+function chunks<T>(xs: T[], n = 30): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
+  return out;
+}
 
 function ago(ts: Timestamp | null): string {
   if (!ts) return "—";
@@ -80,7 +112,13 @@ export default function ProspectosPage() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [rows, setRows] = useState<Prospect[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ jobId: string; text: string; whatsapp: string | null } | null>(null);
+  const [msg, setMsg] = useState<{
+    jobId: string;
+    text: string;
+    whatsapp: string | null;
+    countryCode: string;
+    sent: boolean;
+  } | null>(null);
 
   useEffect(() => {
     waitForAuthReady().then(async (u) => {
@@ -91,8 +129,7 @@ export default function ProspectosPage() {
       const snap = await getDocs(
         query(collection(db, "menuDemoJobs"), orderBy("createdAt", "desc"), limit(100)),
       );
-      setRows(
-        snap.docs.map((d) => {
+      const base = snap.docs.map((d) => {
           const x = d.data();
           return {
             id: d.id,
@@ -108,9 +145,50 @@ export default function ProspectosPage() {
             converted: !!x.convertedToRestaurantId,
             nudgeCount: x.nudgeCount || 0,
             status: x.status || "?",
+            uid: typeof x.uid === "string" ? x.uid : null,
+            phoneCountryCode: typeof x.phoneCountryCode === "string" ? x.phoneCountryCode : "52",
+            expiresAt: x.expiresAt ?? null,
+            hasAccount: null as string | null,
+            uploads: 1,
           };
-        }),
-      );
+        });
+
+      // ¿Ya tiene cuenta por otro camino? Restaurante con su uid de dueño o
+      // con su WhatsApp. restaurants se lee público (reglas: read if true).
+      const pending = base.filter((r) => !r.converted && r.status === "ready");
+      const byUid = new Map<string, string>();
+      const byPhone = new Map<string, string>();
+      const uids = [...new Set(pending.map((r) => r.uid).filter((u): u is string => !!u))];
+      const phones = [...new Set(pending.map((r) => r.whatsapp).filter((p): p is string => !!p))];
+      try {
+        for (const part of chunks(uids)) {
+          const rs = await getDocs(query(collection(db, "restaurants"), where("ownerId", "in", part)));
+          rs.forEach((d) => byUid.set(String(d.data().ownerId), String(d.data().name || "su restaurante")));
+        }
+        for (const part of chunks(phones)) {
+          const rs = await getDocs(query(collection(db, "restaurants"), where("whatsapp", "in", part)));
+          rs.forEach((d) => byPhone.set(String(d.data().whatsapp), String(d.data().name || "su restaurante")));
+        }
+      } catch (e) {
+        console.error("[prospectos] cuentas", e);
+      }
+      for (const r of base) {
+        r.hasAccount = (r.uid && byUid.get(r.uid)) || (r.whatsapp && byPhone.get(r.whatsapp)) || null;
+      }
+
+      // Un renglón por WhatsApp: el más nuevo se queda y cuenta las subidas.
+      const seen = new Map<string, (typeof base)[number]>();
+      const rowsOut: typeof base = [];
+      for (const r of base) {
+        const open = !r.converted && r.status === "ready";
+        if (open && r.whatsapp) {
+          const first = seen.get(r.whatsapp);
+          if (first) { first.uploads += 1; continue; }
+          seen.set(r.whatsapp, r);
+        }
+        rowsOut.push(r);
+      }
+      setRows(rowsOut);
     });
   }, []);
 
@@ -121,19 +199,31 @@ export default function ProspectosPage() {
     try {
       const fns = getFunctions(getFirebaseApp(), "us-central1");
       const res = await httpsCallable(fns, "generateDemoNudge")({ jobId: row.id });
-      const data = res.data as { text: string; whatsapp: string | null };
-      setMsg({ jobId: row.id, text: data.text, whatsapp: data.whatsapp });
-      if (data.whatsapp) {
-        window.open(
-          buildWhatsappUrl(data.whatsapp, data.text),
-          "_blank",
-        );
-      }
+      const data = res.data as { text: string; whatsapp: string | null; phoneCountryCode?: string | null };
+      setMsg({
+        jobId: row.id,
+        text: data.text,
+        whatsapp: data.whatsapp,
+        countryCode: data.phoneCountryCode || row.phoneCountryCode,
+        sent: false,
+      });
     } catch (e) {
       console.error("[prospectos] nudge", e);
-      setMsg({ jobId: row.id, text: "No se pudo generar el mensaje.", whatsapp: null });
+      setMsg({ jobId: row.id, text: "No se pudo generar el mensaje.", whatsapp: null, countryCode: row.phoneCountryCode, sent: false });
     } finally {
       setBusy(null);
+    }
+  }
+
+  // Cuenta como mandado cuando Ricardo abre el WhatsApp, no al escribirlo.
+  async function markSent(jobId: string) {
+    setMsg((m) => (m && m.jobId === jobId ? { ...m, sent: true } : m));
+    setRows((rs) => rs.map((r) => (r.id === jobId ? { ...r, nudgeCount: r.nudgeCount + 1 } : r)));
+    try {
+      const fns = getFunctions(getFirebaseApp(), "us-central1");
+      await httpsCallable(fns, "generateDemoNudge")({ jobId, markSent: true });
+    } catch (e) {
+      console.error("[prospectos] markSent", e);
     }
   }
 
@@ -144,7 +234,8 @@ export default function ProspectosPage() {
     return <main className="p-8 text-sm">Esta página es de plataforma.</main>;
   }
 
-  const hot = rows.filter((r) => !r.converted && r.status === "ready");
+  const hot = rows.filter((r) => !r.converted && r.status === "ready" && !r.hasAccount);
+  const withAccount = rows.filter((r) => !r.converted && r.status === "ready" && r.hasAccount);
   const converted = rows.filter((r) => r.converted);
 
   return (
@@ -177,6 +268,9 @@ export default function ProspectosPage() {
                     {r.itemCount} platillos · {ago(r.createdAt)} ·{" "}
                     {r.claimStarted ? "🟠 empezó a reclamar" : r.played ? "🟡 jugó el demo" : r.viewed ? "👀 vio su menú" : "subió la foto"}
                     {r.trail && ` · se quedó en: ${r.trail}`}
+                    {r.uploads > 1 && ` · subió ${r.uploads} veces`}
+                    {expiresLabel(r.expiresAt) && ` · ${expiresLabel(r.expiresAt)}`}
+                    {r.phoneCountryCode !== "52" && ` · +${r.phoneCountryCode}`}
                     {r.nudgeCount > 0 && ` · 📨 ${r.nudgeCount} nudge${r.nudgeCount > 1 ? "s" : ""}`}
                   </p>
                 </div>
@@ -192,21 +286,55 @@ export default function ProspectosPage() {
                     onClick={() => nudge(r)}
                     className="rounded-xl px-3 py-2 text-[12px] font-extrabold disabled:opacity-40"
                     style={{ background: "#F28C38", color: "#1C2526" }}
-                    title={r.whatsapp ? `wa.me/52${r.whatsapp}` : "No dejó WhatsApp"}
+                    title={r.whatsapp ? `+${r.phoneCountryCode} ${r.whatsapp}` : "No dejó WhatsApp"}
                   >
                     {busy === r.id ? "Escribiendo…" : r.whatsapp ? "💬 Nudge" : "Sin WhatsApp"}
                   </button>
                 </div>
               </div>
               {msg?.jobId === r.id && (
-                <p className="mt-3 rounded-xl p-3 text-[12px] leading-relaxed"
-                  style={{ background: "rgba(242,140,56,0.08)", color: "#1C2526" }}>
-                  {msg.text}
-                </p>
+                <div className="mt-3 rounded-xl p-3"
+                  style={{ background: "rgba(242,140,56,0.08)" }}>
+                  <textarea
+                    value={msg.text}
+                    onChange={(e) => setMsg({ ...msg, text: e.target.value })}
+                    rows={4}
+                    className="w-full resize-y rounded-lg bg-white p-2 text-[13px] leading-relaxed"
+                    style={{ color: "#1C2526", border: "1px solid rgba(28,37,38,0.1)" }}
+                  />
+                  {msg.whatsapp && (
+                    <a
+                      href={buildWhatsappUrl(msg.whatsapp, msg.text, msg.countryCode)}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => { if (!msg.sent) markSent(msg.jobId); }}
+                      className="mt-2 inline-block rounded-xl px-3 py-2 text-[12px] font-extrabold"
+                      style={{ background: "#25D366", color: "#fff" }}
+                    >
+                      {msg.sent ? "✓ Abierto en WhatsApp" : `Mandar a +${msg.countryCode} ${msg.whatsapp}`}
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           ))}
         </div>
+
+        {withAccount.length > 0 && (
+          <>
+            <p className="mt-8 text-[11px] font-bold uppercase tracking-wide"
+              style={{ color: "rgba(28,37,38,0.4)" }}>
+              Ya tienen cuenta por otro lado ({withAccount.length})
+            </p>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {withAccount.map((r) => (
+                <p key={r.id} className="text-[13px]" style={{ color: "rgba(28,37,38,0.6)" }}>
+                  🟢 {r.name} · cuenta: {r.hasAccount} · su demo trae {r.itemCount} platillos
+                </p>
+              ))}
+            </div>
+          </>
+        )}
 
         {converted.length > 0 && (
           <>
