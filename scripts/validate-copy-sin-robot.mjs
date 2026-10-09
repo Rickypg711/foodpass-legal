@@ -37,6 +37,9 @@ const FORMAS = [
   [/(?<![\wáéíóúñ])(nuestra ventaja|una sola cosa|lo importante|lo que importa|el truco|la diferencia|la respuesta)\s*:/i, "dos puntos de revelación"],
   [/(^|[^\d.,])0\s?%\s*([.\n]|$)/, "«0 %» a secas (di qué no se cobra)"],
   [/\bno es\b[^.,\n]{1,40},\s*es\b/i, "«no es X, es Y»"],
+  // 9-oct-2026, colección de ropa: espejo de las dos formas nuevas de anti_robot.py.
+  [/(?<![\wáéíóúñ])([\wáéíóúñ]+ [\wáéíóúñ]+),\s*\1(?![\wáéíóúñ])/i, "cierre que se repite («cuando se acaban, se acaban»)"],
+  [/(?<![\wáéíóúñ])lo (de [\wáéíóúñ]+|fino|chido|caro)\s*:/i, "dos puntos de revelación («lo fino: …»)"],
 ];
 
 function revisar(t) {
