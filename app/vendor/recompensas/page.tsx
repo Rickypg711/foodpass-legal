@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
+import { rewardDraftFitsMenu } from "@/lib/rewardDraftFitsMenu";
 
 interface RewardTier {
   pointsRequired: number;
@@ -145,7 +146,12 @@ export default function RecompensasPage() {
         if (!draftsSnap.empty) {
           const dd = draftsSnap.docs[0];
           const draft = dd.data();
-          if (draft.status === "draft" || draft.status === "ready") {
+          // Un borrador con platillos que ya no están en el menú no se enseña:
+          // Aplicar truena (menú reimportado, Kame House 8-oct).
+          const menuIds = (draft.status === "draft" || draft.status === "ready")
+            ? (await getDocs(collection(db, "restaurants", rid, "menu"))).docs.map((m) => m.id)
+            : [];
+          if ((draft.status === "draft" || draft.status === "ready") && rewardDraftFitsMenu(draft, menuIds)) {
             const fpr = draft.proposedFirstPurchaseReward || draft.firstPurchaseReward;
             const tiers = (draft.proposedRewardTiers || draft.rewardTiers || []) as RawTier[];
             setPendingDraft({

@@ -229,4 +229,21 @@ assert.ok(
   assert.ok(editor.includes("const muchosPuntos = Math.max(pocosPuntos, Math.floor(item.price / (HEALTHY_MIN_RATIO * spendStepAmount)));"), "muchosPuntos usa floor y nunca queda debajo de pocosPuntos");
   assert.ok(!editor.includes("const muchosPuntos = Math.ceil("), "muchosPuntos ya no usa ceil");
 }
+// 8-oct (Kame House): menú reimportado → el borrador apuntaba a platillos
+// borrados y la tarjeta "Aplicar" tronaba. Las dos páginas que leen el
+// borrador lo filtran con rewardDraftFitsMenu, y el helper hace lo que dice.
+{
+  const { rewardDraftFitsMenu, draftMenuItemIds } = await import("../lib/rewardDraftFitsMenu.ts");
+  const draft = {
+    proposedFirstPurchaseReward: { enabled: true, menuItemId: "m1" },
+    proposedRewardTiers: [{ visitsRequired: 9, menuItemId: "m2" }],
+  };
+  assert.deepEqual(draftMenuItemIds(draft).sort(), ["m1", "m2"]);
+  assert.equal(rewardDraftFitsMenu(draft, ["m1", "m2", "m3"]), true, "todos los platillos en el menú → se enseña");
+  assert.equal(rewardDraftFitsMenu(draft, ["m1", "m9"]), false, "un platillo borrado → no se enseña");
+  assert.equal(rewardDraftFitsMenu(draft, []), true, "menú desconocido → no se esconde a ciegas");
+  for (const page of ["app/vendor/recompensas/page.tsx", "app/vendor/setup/recompensas/page.tsx"]) {
+    assert.ok(read(page).includes("rewardDraftFitsMenu("), `${page} debe filtrar el borrador con rewardDraftFitsMenu`);
+  }
+}
 console.log("validate-reward-draft-visibility: OK — el borrador de la IA es visible, con botón propio y salida honesta");

@@ -18,6 +18,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getFirebaseDb, getFirebaseApp } from "@/lib/firebase";
 import { waitForAuthReady } from "@/lib/auth";
 import { persistReadiness, wizardDoneKeys, evaluateReadiness } from "@/lib/vendorReadiness";
+import { rewardDraftFitsMenu } from "@/lib/rewardDraftFitsMenu";
 
 // must match hardFailRatio/bumpStartRatio in FOODPASS functions/reward_recommendation_core.js
 const HARD_FAIL_RATIO = 0.20;
@@ -383,7 +384,10 @@ function RecompensasSetupPageInner() {
       if (!draftsSnap.empty) {
         const d = draftsSnap.docs[0];
         const draftData = d.data();
-        if (draftData.status === "draft" || draftData.status === "ready") {
+        // Platillos que ya no están en el menú (menú reimportado) = borrador
+        // roto: no llena el formulario con premios que no se pueden guardar.
+        if ((draftData.status === "draft" || draftData.status === "ready") &&
+            rewardDraftFitsMenu(draftData, items.map((m) => m.id))) {
           const fpr = draftData.proposedFirstPurchaseReward || draftData.firstPurchaseReward;
           const tiers = draftData.proposedRewardTiers || draftData.rewardTiers || [];
           const notes = draftData.proposedNotes || draftData.reasoning || "";
