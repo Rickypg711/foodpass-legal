@@ -64,6 +64,20 @@ function expiresLabel(ts: Timestamp | null): string | null {
   return `vence en ${days} días`;
 }
 
+/** "Tortas y Birria González" → ["tortas","birria","gonzalez"]: palabras de 4+ letras sin acentos. */
+function nameWords(name: string): string[] {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 4);
+}
+function sameLocal(a: string, b: string): boolean {
+  const wb = new Set(nameWords(b));
+  return nameWords(a).some((w) => wb.has(w));
+}
+
 /** Trozos de 30 para los `in` de Firestore. */
 function chunks<T>(xs: T[], n = 30): T[][] {
   const out: T[][] = [];
@@ -156,14 +170,21 @@ export default function ProspectosPage() {
       // ¿Ya tiene cuenta por otro camino? Restaurante con su uid de dueño o
       // con su WhatsApp. restaurants se lee público (reglas: read if true).
       const pending = base.filter((r) => !r.converted && r.status === "ready");
-      const byUid = new Map<string, string>();
+      // Por uid se guardan TODOS los restaurantes de ese dueño: un mismo
+      // celular subió demos de locales distintos (el que monta menús), así que
+      // el uid solo cuenta si el nombre también coincide (8-oct: Omu salía
+      // como "Tacos de Suadero").
+      const byUid = new Map<string, string[]>();
       const byPhone = new Map<string, string>();
       const uids = [...new Set(pending.map((r) => r.uid).filter((u): u is string => !!u))];
       const phones = [...new Set(pending.map((r) => r.whatsapp).filter((p): p is string => !!p))];
       try {
         for (const part of chunks(uids)) {
           const rs = await getDocs(query(collection(db, "restaurants"), where("ownerId", "in", part)));
-          rs.forEach((d) => byUid.set(String(d.data().ownerId), String(d.data().name || "su restaurante")));
+          rs.forEach((d) => {
+            const k = String(d.data().ownerId);
+            byUid.set(k, [...(byUid.get(k) ?? []), String(d.data().name || "")]);
+          });
         }
         for (const part of chunks(phones)) {
           const rs = await getDocs(query(collection(db, "restaurants"), where("whatsapp", "in", part)));
@@ -172,21 +193,46 @@ export default function ProspectosPage() {
       } catch (e) {
         console.error("[prospectos] cuentas", e);
       }
+      const convertedNames = base.filter((r) => r.converted && r.name !== "(menú sin nombre)").map((r) => r.name);
       for (const r of base) {
-        r.hasAccount = (r.uid && byUid.get(r.uid)) || (r.whatsapp && byPhone.get(r.whatsapp)) || null;
+        if (r.converted) continue;
+        const byOwner = (r.uid && byUid.get(r.uid)?.find((n) => sameLocal(n, r.name))) || null;
+        r.hasAccount = (r.whatsapp && byPhone.get(r.whatsapp)) || byOwner || null;
+        // El mismo local ya se convirtió con otro demo (Omu, El Campirano).
+        if (!r.hasAccount && r.name !== "(menú sin nombre)" &&
+            convertedNames.some((n) => n.trim().toLowerCase() === r.name.trim().toLowerCase())) {
+          r.converted = true;
+        }
       }
 
-      // Un renglón por WhatsApp: el más nuevo se queda y cuenta las subidas.
-      const seen = new Map<string, (typeof base)[number]>();
+      // Un renglón por WhatsApp. Se queda el que tiene nombre y más platillos
+      // (8-oct: El Molcajete subió 3 veces y el más nuevo venía sin nombre),
+      // con la fecha de vencimiento más lejana y el conteo de subidas.
+      const groups = new Map<string, (typeof base)[number][]>();
       const rowsOut: typeof base = [];
       for (const r of base) {
         const open = !r.converted && r.status === "ready";
         if (open && r.whatsapp) {
-          const first = seen.get(r.whatsapp);
-          if (first) { first.uploads += 1; continue; }
-          seen.set(r.whatsapp, r);
+          const g = groups.get(r.whatsapp);
+          if (g) { g.push(r); continue; }
+          groups.set(r.whatsapp, [r]);
         }
         rowsOut.push(r);
+      }
+      for (const [phone, g] of groups) {
+        if (g.length < 2) continue;
+        const named = (x: (typeof base)[number]) => (x.name !== "(menú sin nombre)" ? 1 : 0);
+        const best = [...g].sort((a, b) => named(b) - named(a) || b.itemCount - a.itemCount)[0];
+        const latest = g.reduce((m, x) => ((x.expiresAt?.toMillis() ?? 0) > (m?.toMillis() ?? 0) ? x.expiresAt : m), g[0].expiresAt);
+        const merged = {
+          ...best,
+          uploads: g.length,
+          expiresAt: latest,
+          nudgeCount: g.reduce((n, x) => n + x.nudgeCount, 0),
+          hasAccount: g.find((x) => x.hasAccount)?.hasAccount ?? null,
+        };
+        const i = rowsOut.findIndex((x) => x.whatsapp === phone && !x.converted && x.status === "ready");
+        rowsOut[i] = merged;
       }
       setRows(rowsOut);
     });
