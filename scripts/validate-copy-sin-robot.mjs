@@ -36,6 +36,7 @@ const FORMAS = [
   [/,\s*no (el|la|los|las|un|una|tu|tus|su|sus|mi|al|del)\s\w+\.(\s|$)/i, "cierre «X, no el Y.» que repite lo dicho"],
   [/(?<![\wáéíóúñ])(nuestra ventaja|una sola cosa|lo importante|lo que importa|el truco|la diferencia|la respuesta)\s*:/i, "dos puntos de revelación"],
   [/(^|[^\d.,])0\s?%\s*([.\n]|$)/, "«0 %» a secas (di qué no se cobra)"],
+  [/\bno es\b[^.,\n]{1,40},\s*es\b/i, "«no es X, es Y»"],
 ];
 
 function revisar(t) {
