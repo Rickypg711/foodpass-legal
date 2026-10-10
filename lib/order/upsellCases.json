@@ -1,0 +1,14 @@
+[
+  {"name": "co-compra con evidencia", "cartTotal": 120, "suggestion": {"menuItemId": "a1", "name": "Agua de horchata", "price": 30, "priceDelta": 30, "type": "copurchase", "evidence": {"pairOrders": 5, "lift": 1.8}}, "expect": {"copy": "pairedTogether", "priceDelta": 30, "newTotal": 150}},
+  {"name": "co-compra sin evidencia: nada", "cartTotal": 120, "suggestion": {"menuItemId": "a1", "name": "Agua de horchata", "price": 30, "type": "copurchase", "pitchTitle": "¿Le agregas esto?", "pitchBody": "La gente lo pide junto."}, "expect": null},
+  {"name": "co-compra con 2 pedidos: nada", "cartTotal": 120, "suggestion": {"menuItemId": "a1", "name": "Agua", "price": 30, "type": "copurchase", "evidence": {"pairOrders": 2, "lift": 3}}, "expect": null},
+  {"name": "co-compra popular sin lift: nada", "cartTotal": 120, "suggestion": {"menuItemId": "a1", "name": "Coca", "price": 25, "type": "copurchase", "evidence": {"pairOrders": 40, "lift": 1}}, "expect": null},
+  {"name": "agrandar sin cambiar la línea chica: nada (cobraría las dos)", "cartTotal": 180, "suggestion": {"menuItemId": "p2", "name": "Pizza grande pepperoni", "price": 260, "priceDelta": 80, "type": "sizeup"}, "expect": null},
+  {"name": "el +$X es el precio completo aunque venga priceDelta", "cartTotal": 100, "suggestion": {"menuItemId": "d2", "name": "Limonada", "price": 35, "priceDelta": 10, "type": "complement"}, "expect": {"copy": "drink", "priceDelta": 35, "newTotal": 135}},
+  {"name": "bebida", "cartTotal": 95.5, "suggestion": {"menuItemId": "d1", "name": "Refresco", "price": 25, "type": "complement"}, "expect": {"copy": "drink", "priceDelta": 25, "newTotal": 120.5}},
+  {"name": "centavos sin error de punto flotante", "cartTotal": 0.1, "suggestion": {"menuItemId": "d1", "name": "Dulce", "price": 0.2, "type": "complement"}, "expect": {"copy": "drink", "priceDelta": 0.2, "newTotal": 0.3}},
+  {"name": "tipo desconocido: nada", "cartTotal": 50, "suggestion": {"menuItemId": "x", "name": "Algo", "price": 10, "type": "gemini"}, "expect": null},
+  {"name": "precio cero: nada", "cartTotal": 50, "suggestion": {"menuItemId": "x", "name": "Gratis", "price": 0, "type": "complement"}, "expect": null},
+  {"name": "sin id: nada", "cartTotal": 50, "suggestion": {"name": "Algo", "price": 10, "type": "complement"}, "expect": null},
+  {"name": "sin sugerencia", "cartTotal": 50, "suggestion": null, "expect": null}
+]

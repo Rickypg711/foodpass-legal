@@ -10,6 +10,12 @@
 // points). The server decides the bonus + the occasional 🎰 doble puntos roll;
 // points credit at loyalty award time (order scan), carried on the order item.
 //
+// HONESTO (9-oct-2026, FOODPASS docs/UPSELL_9_OCT.md reglas 1, 5, 6, 7, 9 y 14): la frase de Gemini ya no se pinta;
+// lib/order/upsellPresentation.ts dice solo hechos ("La gente lo pide junto" solo con evidencia del local), con
+// "+$X" (precio completo de lo que entra) y el total nuevo antes del toque. No se sugiere lo que está fuera de su
+// horario o pide opciones obligatorias. Mostrada / agregada / "no, gracias" se miden (trackUpsellEvent), igual que
+// la app (lib/pages/orders/upsell_suggestion_card.dart).
+//
 // Defensive: on any error or when there's no suggestion, it renders nothing —
 // it can never break the checkout flow.
 
@@ -24,6 +30,33 @@ import {
   fetchUpsellSuggestion,
   type UpsellSuggestion as Suggestion,
 } from "@/lib/upsellSuggestionCache";
+import { doc, getDoc } from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase";
+import { trackUpsellEvent } from "@/lib/analytics/orderEvents";
+import { formatPrice } from "@/lib/priceFormat";
+import {
+  UPSELL_COPY,
+  upsellAddLabel,
+  upsellItemSuggestible,
+  upsellNewTotalLabel,
+  upsellPresentation,
+} from "@/lib/order/upsellPresentation";
+
+/** ¿Se puede sugerir ahora? Lee el platillo; ante cualquier duda, no. */
+async function suggestibleNow(
+  restaurantId: string,
+  menuItemId: string,
+  restaurantData: Record<string, unknown> | null | undefined,
+): Promise<boolean> {
+  try {
+    const snap = await getDoc(doc(getFirebaseDb(), "restaurants", restaurantId, "menu", menuItemId));
+    const data = snap.data();
+    if (!data) return false;
+    return upsellItemSuggestible(data, restaurantData);
+  } catch {
+    return false;
+  }
+}
 
 /** Goal-gradient context: the verified customer's balance + next goal, so the
  * bonus line can say "con esto te faltarían solo N pts para tu X GRATIS" —
@@ -46,11 +79,17 @@ export function UpsellCard({
   theme: th = DEFAULT_FLOW,
   restaurantId,
   goal = null,
+  cartTotal = null,
+  restaurantData = null,
 }: {
   /** Ropa del flujo (piel del local); sin piel, el naranja de siempre. */
   theme?: FlowTheme;
   restaurantId: string;
   goal?: UpsellGoalContext | null;
+  /** El total que se cobra hoy (con envío): "Tu total queda en $Y". null = no se promete total. */
+  cartTotal?: number | null;
+  /** Doc del local (ventanas por categoría) para no sugerir fuera de horario. */
+  restaurantData?: Record<string, unknown> | null;
 }) {
   const { lines, addItem } = useCart();
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
@@ -81,17 +120,22 @@ export function UpsellCard({
       const s = await fetchUpsellSuggestion(restaurantId, ids);
       // dismissedSuggestionIds (robo #4 a Biomenus): un "no, gracias" se
       // respeta 14 días — la sugerencia rechazada no vuelve a aparecer.
+      let next = s && isUpsellDismissed(restaurantId, s.menuItemId) ? null : s;
+      // Sin un hecho que decir, nada (regla 7); fuera de horario u opciones obligatorias, nada (regla 9).
+      if (next && !upsellPresentation(next as unknown as Record<string, unknown>, 0)) next = null;
+      if (next && !(await suggestibleNow(restaurantId, next.menuItemId, restaurantData))) next = null;
       if (!cancelled) {
-        setSuggestion(
-          s && isUpsellDismissed(restaurantId, s.menuItemId) ? null : s,
-        );
+        setSuggestion(next);
+        if (next) {
+          trackUpsellEvent({ action: "shown", surface: "cart", restaurantId, menuItemId: next.menuItemId, upsellType: next.type });
+        }
       }
     }
     run();
     return () => {
       cancelled = true;
     };
-  }, [sig, restaurantId, lines, added]);
+  }, [sig, restaurantId, lines, added, restaurantData]);
 
   // Animate the boost bar right after the add (visible progress at the moment
   // of the yes — hook #1 of the locked mechanic).
@@ -161,10 +205,9 @@ export function UpsellCard({
   }
 
   if (!suggestion) return null;
-
-  const delta = Number.isFinite(suggestion.priceDelta)
-    ? suggestion.priceDelta
-    : suggestion.price;
+  const view = upsellPresentation(suggestion as unknown as Record<string, unknown>, cartTotal ?? 0);
+  if (!view) return null;
+  const delta = view.priceDelta;
   const bonus = Math.max(0, Math.floor(suggestion.bonusPoints ?? 0));
   const surprise = suggestion.surprise === true;
 
@@ -177,6 +220,7 @@ export function UpsellCard({
         type="button"
         aria-label="No, gracias. No me lo vuelvas a sugerir"
         onClick={() => {
+          trackUpsellEvent({ action: "dismissed", surface: "cart", restaurantId, menuItemId: suggestion.menuItemId, upsellType: suggestion.type });
           rememberUpsellDismissal(restaurantId, suggestion.menuItemId);
           setSuggestion(null);
         }}
@@ -186,16 +230,16 @@ export function UpsellCard({
       </button>
       <div className="flex items-center gap-3 pr-5">
         <div className="flex-1">
-          <p className="text-sm font-bold">
-            {suggestion.pitchTitle || "¿Le agregas algo?"}
-          </p>
-          <p className="text-xs text-black/70">
-            {suggestion.pitchBody || suggestion.name}
-          </p>
+          <p className="text-sm font-bold">{UPSELL_COPY[view.copy]}</p>
+          <p className="text-sm">{view.name}</p>
+          {cartTotal != null ? (
+            <p className="text-xs tabular-nums text-black/70">{upsellNewTotalLabel(formatPrice(view.newTotal))}</p>
+          ) : null}
         </div>
         <button
           type="button"
           onClick={() => {
+            trackUpsellEvent({ action: "added", surface: "cart", restaurantId, menuItemId: suggestion.menuItemId, upsellType: suggestion.type });
             addItem({
               menuItemId: suggestion.menuItemId,
               name: suggestion.name,
@@ -209,7 +253,7 @@ export function UpsellCard({
           }}
           className={`shrink-0 ${th.btnSmall}`}
         >
-          + ${Math.round(delta)}
+          {upsellAddLabel(formatPrice(delta))}
         </button>
       </div>
       {bonus > 0 ? (

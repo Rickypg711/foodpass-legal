@@ -8,6 +8,9 @@
 import Image from "next/image";
 import { formatPrice } from "@/lib/priceFormat";
 
+/** De dónde sale "Lo más pedido" (menuSignals: pedidos cobrados de 30 días). */
+export const TOP_PICKS_SOURCE = "Según sus pedidos de los últimos 30 días";
+
 export type MenuTopPick = {
   id: string;
   name: string;
@@ -32,6 +35,9 @@ export function MenuTopPicks({
         <span className="h-5 w-1 self-center rounded-full bg-[#F28C38]" aria-hidden />
         Lo más pedido
       </h2>
+      {/* De dónde sale (9-oct-2026, regla 10 de FOODPASS docs/ARTESANIA_APPS_9_OCT.md): la misma frase que la app
+          (l10n menuTopPicksSource). */}
+      <p className="-mt-1.5 mb-2.5 text-[13px] text-[#1C2526]/70">{TOP_PICKS_SOURCE}</p>
       <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         {items.map((item) => (
           <li key={item.id} className="w-32 shrink-0">

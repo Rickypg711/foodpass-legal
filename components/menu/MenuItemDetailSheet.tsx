@@ -7,6 +7,7 @@
 // nada. El "Agregar" de aquí manda al MISMO flujo que el "+" de la tarjeta
 // (con opciones abre la hoja de opciones; sin opciones agrega directo).
 
+import { trackUpsellEvent } from "@/lib/analytics/orderEvents";
 import Image from "next/image";
 import { useEffect } from "react";
 import { formatPrice } from "@/lib/priceFormat";
@@ -29,6 +30,9 @@ export type MenuItemDetailSheetProps = {
   /** "Va bien con" (8-oct): hasta 2 platillos que la gente pide junto con este
    *  (restaurants/{id}.menuSignals.pairs). Vacío o sin dato = no se pinta. */
   pairs?: { id: string; name: string; price: number; quantity?: number }[];
+  /** Para medir "Va bien con" (mostrada / agregada, FOODPASS docs/UPSELL_9_OCT.md regla 14; igual que la app). */
+  restaurantId?: string;
+  itemId?: string;
   /** Agregar uno de "Va bien con" por el mismo camino del "+" de la tarjeta. */
   onAddPair?: (id: string) => void;
 };
@@ -205,7 +209,17 @@ export function MenuItemDetailSheet({
   skin = null,
   pairs = [],
   onAddPair,
+  restaurantId,
+  itemId,
 }: MenuItemDetailSheetProps) {
+  // "Va bien con" mostrada: una vez por platillo abierto (mismo evento que la app).
+  const pairsKey = open ? pairs.map((p) => p.id).join(",") : "";
+  useEffect(() => {
+    if (!pairsKey || !restaurantId) return;
+    for (const id of pairsKey.split(",").slice(0, 2)) {
+      trackUpsellEvent({ action: "shown", surface: "sheet", restaurantId, menuItemId: id, anchorItemId: itemId, upsellType: "pair" });
+    }
+  }, [pairsKey, restaurantId, itemId]);
   // Escape cierra, como cualquier hoja (el toque fuera y la ✕ también).
   useEffect(() => {
     if (!open) return;
@@ -312,7 +326,12 @@ export function MenuItemDetailSheet({
                       <button
                         type="button"
                         aria-label={`Agregar ${p.name}`}
-                        onClick={() => onAddPair(p.id)}
+                        onClick={() => {
+                          if (restaurantId) {
+                            trackUpsellEvent({ action: "added", surface: "sheet", restaurantId, menuItemId: p.id, anchorItemId: itemId, upsellType: "pair" });
+                          }
+                          onAddPair(p.id);
+                        }}
                         className="shrink-0 rounded-full border border-current/25 px-4 py-2 text-[13px] font-semibold transition-all hover:opacity-80 active:scale-[0.97]"
                       >
                         {p.quantity && p.quantity > 0 ? `Llevas ${p.quantity} · +` : "Agregar +"}
