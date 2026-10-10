@@ -57,6 +57,28 @@ export function trackWhatsappOrderMessageSent(p: {
   });
 }
 
+/** Sugerencias (FOODPASS docs/UPSELL_9_OCT.md regla 14): mostrada, agregada o "no, gracias". Mismo evento y
+ *  campos que la app (CustomerOrderingAnalytics.upsellEvent). surface = "sheet" ("Va bien con") o "cart". */
+export function trackUpsellEvent(p: {
+  action: "shown" | "added" | "dismissed";
+  surface: "sheet" | "cart";
+  restaurantId: string;
+  menuItemId: string;
+  anchorItemId?: string;
+  upsellType?: string;
+}): void {
+  void logEventSafe("upsell_event", {
+    action: p.action,
+    surface: p.surface,
+    source: "upsell",
+    restaurant_id: p.restaurantId,
+    menu_item_id: p.menuItemId,
+    ...(p.anchorItemId ? { anchor_item_id: p.anchorItemId } : {}),
+    ...(p.upsellType ? { upsell_type: p.upsellType } : {}),
+    placement_channel: "web",
+  });
+}
+
 // ── Cierre del pedido (10-oct-2026, FOODPASS docs/design/checkout-final/ESTUDIO.md) ──
 // Mismos nombres y campos que la app (CustomerOrderingAnalytics.checkout*). Ningún evento lleva nombre,
 // teléfono ni platillos: solo el local y cómo fue.

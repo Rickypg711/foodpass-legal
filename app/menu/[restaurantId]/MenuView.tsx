@@ -34,6 +34,7 @@ import { resolveTableFromLocation } from "@/lib/order/tableSession";
 import { resolveRefFromLocation } from "@/lib/referral/refSession";
 import { captureEntrySource } from "@/lib/order/entrySource";
 import ReferralClaimBar from "@/components/loyalty/ReferralClaimBar";
+import { freeItemsEnabled } from "@/lib/loyalty/freeItems";
 import { useWebOrdering } from "@/lib/ordering/WebOrderingContext";
 import { getRestaurantImageUrl, getRestaurantBannerUrl } from "@/lib/restaurantImage";
 import { MenuItemDetailSheet } from "@/components/menu/MenuItemDetailSheet";
@@ -1880,6 +1881,8 @@ function PublicMenuPageWithOrdering({
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
   );
+  /** Compuerta del referido por teléfono (freeItemsV2Enabled): apagada, la barra del amigo no promete nada. Espejo de la app. */
+  const [referralGateOn, setReferralGateOn] = useState<boolean>(freeItemsEnabled(initial?.raw));
   /** Premios apagados (5-sep): sin nada que ganar, el menú no vende puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState<boolean>(
     initial ? restaurantPromisesPoints(initial.raw) : true,
@@ -1997,6 +2000,7 @@ function PublicMenuPageWithOrdering({
         setSkin(menuSkinFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setReferralGateOn(freeItemsEnabled(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
         setAddress(
@@ -2108,7 +2112,7 @@ function PublicMenuPageWithOrdering({
       <ReferralClaimBar
         restaurantId={restaurantId}
         refCode={refCode}
-        itemName={firstVisitReward}
+        itemName={referralGateOn ? firstVisitReward : null}
       />
 
       {/* Llegó por el QR de su mesa: se le dice de una, para que sepa que el
@@ -2244,6 +2248,8 @@ function PublicMenuPageWithOrdering({
 
       <MenuItemDetailSheet
         skin={skin}
+        restaurantId={restaurantId}
+        itemId={detailItem?.id}
         open={detailItem !== null}
         name={detailItem?.name ?? ""}
         description={detailItem?.description ?? null}
@@ -2382,6 +2388,8 @@ function PublicMenuPageBrowseOnly({
   const [firstVisitReward, setFirstVisitReward] = useState<string | null>(
     initial ? firstVisitRewardLabelFromRestaurant(initial.raw) : null,
   );
+  /** Compuerta del referido por teléfono (freeItemsV2Enabled): apagada, la barra del amigo no promete nada. Espejo de la app. */
+  const [referralGateOn, setReferralGateOn] = useState<boolean>(freeItemsEnabled(initial?.raw));
   /** Premios apagados (5-sep): sin nada que ganar, el menú no vende puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState<boolean>(
     initial ? restaurantPromisesPoints(initial.raw) : true,
@@ -2472,6 +2480,7 @@ function PublicMenuPageBrowseOnly({
         setSkin(menuSkinFromRestaurant(rData));
         setTagline(taglineFromRestaurant(rData));
         setFirstVisitReward(firstVisitRewardLabelFromRestaurant(rData));
+        setReferralGateOn(freeItemsEnabled(rData));
         setLoyaltyLive(restaurantPromisesPoints(rData));
         setSchedule(scheduleStatus(rData));
         setAddress(
@@ -2553,7 +2562,7 @@ function PublicMenuPageBrowseOnly({
       <ReferralClaimBar
         restaurantId={restaurantId}
         refCode={refCode}
-        itemName={firstVisitReward}
+        itemName={referralGateOn ? firstVisitReward : null}
       />
 
       <main className={"mx-auto w-full " + mainWidthFor(skin) + " px-4 pt-5 pb-[200px] sm:px-6 sm:pt-6 sm:pb-[180px]"}>
@@ -2610,6 +2619,8 @@ function PublicMenuPageBrowseOnly({
 
       <MenuItemDetailSheet
         skin={skin}
+        restaurantId={restaurantId}
+        itemId={detailItem?.id}
         open={detailItem !== null}
         name={detailItem?.name ?? ""}
         description={detailItem?.description ?? null}

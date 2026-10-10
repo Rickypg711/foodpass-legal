@@ -966,6 +966,10 @@ export default function CheckoutPage() {
                 cartTotal: subtotal,
               } satisfies UpsellGoalContext;
             })()}
+            // "Tu total queda en $Y" (UPSELL regla 6) con el total que se cobra; con un canje elegido el total
+            // puede cambiar distinto, así que ahí solo se dice "+$X".
+            cartTotal={redemption ? null : totalConEnvio}
+            restaurantData={restaurantData}
           />
 
           {/* Forma de pago — last decision before the CTA it controls.

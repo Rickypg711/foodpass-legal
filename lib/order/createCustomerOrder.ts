@@ -14,6 +14,7 @@ import { saveOrderSnapshot } from "@/lib/order/orderSessionStorage";
 import { saveDinerIdentity } from "@/lib/order/dinerIdentity";
 import { readStoredRef } from "@/lib/referral/refSession";
 import { readStoredEntrySource } from "@/lib/order/entrySource";
+import { readStoredOrderSource } from "@/lib/order/orderAttribution";
 import type { CartLine } from "@/lib/cart/types";
 
 export type CreateOrderResult = {
@@ -87,6 +88,8 @@ export async function createCustomerWebOrder(params: {
     referralCode: readStoredRef(params.restaurantId),
     // Llegó por la tarjeta impresa de Rappi/DiDi (lib/order/entrySource.ts).
     entrySource: readStoredEntrySource(params.restaurantId),
+    // De dónde vino (9-oct-2026): el `src` del link que abrió el menú.
+    storedOrderSource: readStoredOrderSource(params.restaurantId),
   });
 
   if (payload.orderSource !== ORDER_SOURCE_CUSTOMER_WEB) {

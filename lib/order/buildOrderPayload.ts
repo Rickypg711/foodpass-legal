@@ -1,4 +1,5 @@
 import { parseEntrySource } from "./entrySource.ts";
+import { resolveWebOrderSource, type StoredOrderSource } from "./orderAttribution.ts";
 import { serverTimestamp } from "firebase/firestore";
 import type { CartLine } from "@/lib/cart/types";
 import { resolveInitialOrderStatus } from "@/lib/order/orderLifecycle";
@@ -41,6 +42,11 @@ export type BuildOrderInput = {
   referralCode?: string | null;
   /** Por dónde llegó (lib/order/entrySource.ts). Solo valores conocidos. */
   entrySource?: string | null;
+  /**
+   * `src` del link guardado al abrir el menú (lib/order/orderAttribution.ts).
+   * Con la mesa, el referido y la tarjeta decide `source` del pedido.
+   */
+  storedOrderSource?: StoredOrderSource | null;
   pickupPin: string;
   cartLines: CartLine[];
   restaurantName: string;
@@ -251,6 +257,19 @@ export function buildCustomerWebOrderPayload(
   const entry = parseEntrySource(input.entrySource);
   if (entry) {
     payload.entrySource = entry;
+  }
+
+  // De dónde vino el pedido (9-oct-2026): misma lista que la app y el
+  // servidor (lib/order/orderAttribution.ts). Siempre se escribe.
+  const attribution = resolveWebOrderSource({
+    stored: input.storedOrderSource ?? null,
+    tableNumber: input.tableNumber ?? null,
+    referralCode: ref,
+    entrySource: entry,
+  });
+  payload.source = attribution.source;
+  if (attribution.sourceRef) {
+    payload.sourceRef = attribution.sourceRef;
   }
 
   const r = input.redemptionRequest;

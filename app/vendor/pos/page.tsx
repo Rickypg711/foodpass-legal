@@ -1620,6 +1620,8 @@ export default function PosPage() {
         total: netTotal,
         orderType: "in_store",
         orderSource: "pos",
+        // De dónde vino (lib/order/orderAttribution.ts): la Caja siempre es pos.
+        source: "pos",
         status: "pending",
         paymentMethod: mode === "now" ? method : "pending",
         paymentStatus: mode === "now" ? "paid" : "pending",

@@ -86,6 +86,10 @@ export type CustomerOrderPayload = {
    *  `total`. Solo se escribe cuando es > 0. Mismo campo que lee la app. */
   deliveryFee?: number;
   orderSource: typeof ORDER_SOURCE_CUSTOMER_WEB;
+  /** De dónde vino (lib/order/orderAttribution.ts, misma lista que la app). */
+  source?: import("@/lib/order/orderAttribution").OrderAttributionSource;
+  /** id de lo que se tocó (platillo, post, local), si aplica. */
+  sourceRef?: string;
   customerName: string;
   /** Customer WhatsApp/phone, digits only (e.g. "6141234567"). Required at
    * checkout for BOTH methods — contact for the order + future loyalty capture. */
