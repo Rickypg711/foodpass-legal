@@ -15,10 +15,20 @@ import {
   type PaymentMethod,
 } from "@/lib/pos/paidOrderFields";
 import {
+  trackCheckoutError,
+  trackCheckoutReviewShown,
   trackCheckoutStarted,
+  trackCheckoutSubmit,
   trackOrderPlaced,
   trackWhatsappOrderMessageSent,
 } from "@/lib/analytics/orderEvents";
+import {
+  checkoutErrorCode,
+  checkoutWelcomeLine,
+  pointsLeftLine,
+  redemptionLine,
+  type CheckoutStanding,
+} from "@/lib/order/checkoutReview";
 import { ensureAnonymousUser } from "@/lib/auth";
 import { requestMercadoPagoPreference } from "@/lib/mercadoPago/createPreferenceClient";
 import { isMpWebDebugClient, mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
@@ -38,7 +48,7 @@ import {
 } from "@/lib/types/order";
 import { CheckoutRedemption } from "@/components/loyalty/CheckoutRedemption";
 import { earnPolicyFromRestaurant } from "@/lib/loyalty/phonePoints";
-import { buildEarnPreview, earnPreviewLine, welcomePreviewLine } from "@/lib/loyalty/earnPreview";
+import { buildEarnPreview, earnPreviewLine } from "@/lib/loyalty/earnPreview";
 import type { UpsellGoalContext } from "@/components/cart/UpsellCard";
 import {
   CUSTOMER_WEB_PAYMENT_METHOD,
@@ -77,6 +87,10 @@ export default function CheckoutPage() {
   const [redemption, setRedemption] = useState<OrderRedemptionRequest | null>(null);
   const [earnPolicy, setEarnPolicy] = useState<{ base: number; step: number }>({ base: 1, step: 30 });
   const [loyalty, setLoyalty] = useState<{ points: number; tiers: { id: string; name: string; points: number }[] } | null>(null);
+  /** ¿Ya compró aquí? Solo se sabe con la sesión verificada para el número tecleado (lo reporta
+   *  CheckoutRedemption) y vale para ESE número: si lo cambia, vuelve a "unknown". De esto cuelga a quién se
+   *  le dice lo del regalo de bienvenida (10-oct: se le prometía a clientes con puntos). */
+  const [standingFor, setStandingFor] = useState<{ phone: string; standing: CheckoutStanding } | null>(null);
   const [restaurantName, setRestaurantName] = useState("Restaurante");
   /** Premios apagados (5-sep): el checkout no promete puntos. */
   const [loyaltyLive, setLoyaltyLive] = useState(true);
@@ -193,6 +207,14 @@ export default function CheckoutPage() {
         restaurantId,
         cartItemCount: itemCount,
         cartTotal: subtotal,
+      });
+      const known = loadDinerIdentity();
+      trackCheckoutReviewShown({
+        restaurantId,
+        hasRedemption: false,
+        atTable: Boolean(resolveTableFromLocation(restaurantId)),
+        hasName: Boolean(known?.name),
+        hasPhone: Boolean(known?.phone),
       });
       setCheckoutLogged(true);
     }
@@ -334,6 +356,16 @@ export default function CheckoutPage() {
     }
     setError(null);
     setSubmitting(true);
+    trackCheckoutSubmit({
+      restaurantId,
+      payKind: enMesa
+        ? "table"
+        : payMethod === PAYMENT_METHOD_PAY_AT_PICKUP
+          ? (effectivePickupPayMethod ?? "cash")
+          : "online",
+      hasRedemption: Boolean(redemption),
+      total: totalConEnvio,
+    });
 
     // Sentado en la mesa 5 no hay decisión de pago que tomar: comes primero y
     // pagas al final, con el mesero. Solo se respeta si el dueño prendió
@@ -447,6 +479,7 @@ export default function CheckoutPage() {
           paymentMethod: PAYMENT_METHOD_PAY_AT_PICKUP,
           message,
         });
+        trackCheckoutError({ restaurantId, code: checkoutErrorCode(err) });
         setError(message);
         setSubmitting(false);
         return;
@@ -593,6 +626,9 @@ export default function CheckoutPage() {
         paymentMethod: CUSTOMER_WEB_PAYMENT_METHOD,
         message,
       });
+      // Aquí cae el 409 `order_needs_review` del precio en servidor, con su mensaje ("Un platillo de tu pedido
+      // cambió o ya no está disponible. Vuelve al menú y revisa tu pedido."). El carrito sigue intacto.
+      trackCheckoutError({ restaurantId, code: checkoutErrorCode(err) });
       setError(message);
       setSubmitting(false);
     }
@@ -788,16 +824,19 @@ export default function CheckoutPage() {
                 Tu WhatsApp <span className={th.accent}>*</span>
               </span>
               {/* Lo que GANA con este pedido, dicho ANTES del campo y con el
-                  número de ESTE pedido — la razón para soltar el teléfono. La
-                  bienvenida solo mientras el número no está completo: con 10
-                  dígitos manda CheckoutRedemption (su estado real). */}
+                  número de ESTE pedido — la razón para soltar el teléfono.
+                  La bienvenida, solo lo que es verdad (10-oct, espejo de la app): a quien ya compró aquí no se
+                  le promete; a quien sabemos que es nuevo se le afirma; sin saber quién es, "si es tu primera
+                  compra aquí". Antes se le decía "Deja tu número y tu X de bienvenida…" a cualquiera. */}
               {(() => {
                 if (!earnLine) return null;
-                const phoneDigitsTyped = customerPhone.replace(/\D/g, "");
-                const welcomeLine =
-                  phoneDigitsTyped.length < 10
-                    ? welcomePreviewLine(buildEarnPreview(restaurantData, totalConEnvio))
-                    : null;
+                const phone10 = customerPhone.replace(/\D/g, "").slice(-10);
+                const standing: CheckoutStanding =
+                  standingFor && standingFor.phone === phone10 ? standingFor.standing : "unknown";
+                const welcomeLine = checkoutWelcomeLine(
+                  buildEarnPreview(restaurantData, totalConEnvio).welcomeRewardName,
+                  standing,
+                );
                 return (
                   <span className={`mt-1 block px-3 py-2 text-[13px] ${th.softBox} ${th.ink}`}>
                     <span className="font-bold">{"⭐ "}{earnLine}</span>
@@ -873,6 +912,7 @@ export default function CheckoutPage() {
             onSelect={setRedemption}
             onLoyalty={(info) => {
               setLoyalty(info);
+              setStandingFor({ phone: customerPhone.replace(/\D/g, "").slice(-10), standing: info.standing });
               // Returning customer: autofill the name we already know (only
               // reachable behind their verified number — no fishing).
               if (info.name) {
@@ -882,8 +922,10 @@ export default function CheckoutPage() {
           />
           ) : null}
           {redemption ? (
-            <p className="-mt-2 rounded-xl bg-[#F0FBF4] px-3.5 py-2.5 text-sm font-semibold text-[#16A34A]">
-              🎁 En este pedido: {redemption.name} GRATIS (canje de {redemption.points} pts)
+            <p className="-mt-2 rounded-xl bg-[#F0FBF4] px-3.5 py-2.5 text-sm font-semibold text-[#15803D]">
+              {/* El premio elegido, dicho igual que en la app, con lo que le queda. */}
+              {redemptionLine(redemption.name, redemption.points)}, sin costo.
+              {loyalty ? ` ${pointsLeftLine(Math.max(0, loyalty.points - redemption.points))}` : ""}
             </p>
           ) : null}
 

@@ -23,6 +23,8 @@ import { ensureAnonymousUser, getFirebaseAuth, waitForAuthReady } from "@/lib/au
 import { getFirebaseDb } from "@/lib/firebase";
 import type { OrderRedemptionRequest } from "@/lib/types/order";
 import { phoneCountryOf, toE164 } from "@/lib/phone/phoneCountry";
+import { checkoutStanding, pointsLeftLine, type CheckoutStanding } from "@/lib/order/checkoutReview";
+import { trackCheckoutRedeem } from "@/lib/analytics/orderEvents";
 
 type Tier = { id: string; name: string; points: number };
 
@@ -69,8 +71,9 @@ export function CheckoutRedemption({
   selected: OrderRedemptionRequest | null;
   onSelect: (r: OrderRedemptionRequest | null) => void;
   /** Reports the verified balance + full tier list (goal-gradient upsell)
-   * + the name on file (checkout autofill for returning customers). */
-  onLoyalty?: (info: { points: number; tiers: Tier[]; name?: string }) => void;
+   * + the name on file (checkout autofill for returning customers)
+   * + si ya compró aquí (10-oct: la bienvenida solo se le promete a quien de verdad es nuevo). */
+  onLoyalty?: (info: { points: number; tiers: Tier[]; name?: string; standing: CheckoutStanding }) => void;
 }) {
   const phone10 = last10(phoneDigits);
   const active = phone10.length === 10;
@@ -140,7 +143,17 @@ export function CheckoutRedemption({
       setState(
         pts > 0 && allTiers.some((t) => pts >= t.points) ? "verified" : "none",
       );
-      onLoyalty?.({ points: pts, tiers: allTiers, name: savedName });
+      onLoyalty?.({
+        points: pts,
+        tiers: allTiers,
+        name: savedName,
+        // Solo se llega aquí con la sesión verificada para este número: la cartera se leyó, exista o no.
+        standing: checkoutStanding({
+          verified: true,
+          walletKnown: true,
+          walletVisits: Number(pcSnap.data()?.visits) || 0,
+        }),
+      });
     } catch {
       setState("none");
     }
@@ -222,45 +235,48 @@ export function CheckoutRedemption({
       <div ref={recaptchaHostRef} />
       {state === "verified" ? (
         <>
-          <p className={th.label}>
-            🎁 Tienes {points} puntos aquí — ¿usar un premio en este pedido?
-          </p>
+          <p className={th.label}>Tienes {points} puntos aquí. ¿Usas un premio en este pedido?</p>
+          {/* 10-oct-2026: el premio se usa con SU botón, no tocando toda la fila. En la app un premio de 50
+              puntos quedó elegido sin querer al deslizar; gastar puntos tiene que ser a propósito. */}
           <div className="mt-2.5 flex flex-col gap-2">
             {tiers.map((t) => {
               const isSel = selected?.tierId === t.id;
               return (
-                <button
+                <div
                   key={t.id}
-                  type="button"
-                  onClick={() =>
-                    onSelect(
-                      isSel ? null : { tierId: t.id, name: t.name, points: t.points },
-                    )
-                  }
-                  aria-pressed={isSel}
-                  className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                    isSel
-                      ? "border-[#16A34A] bg-[#F0FBF4] ring-2 ring-[#16A34A]/25"
-                      : "border-[#1C2526]/12 bg-[#FAF7F2] hover:border-[#16A34A]/50"
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 ${
+                    isSel ? "border-[#16A34A] bg-[#F0FBF4]" : "border-[#1C2526]/12 bg-[#FAF7F2]"
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold">
-                      {isSel ? "✓ " : ""}{t.name} GRATIS
-                    </span>
+                    <span className="block text-sm font-semibold">{t.name}</span>
                     <span className={`block text-xs ${th.ink}/55`}>
-                      Canje de {t.points} puntos — te quedarían {points - t.points}
+                      {isSel ? `En tu pedido · ${t.points} puntos` : `${t.points} puntos`}
                     </span>
                   </span>
-                  <span className="text-lg" aria-hidden>🎁</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      trackCheckoutRedeem({ restaurantId, selected: !isSel, points: t.points });
+                      onSelect(isSel ? null : { tierId: t.id, name: t.name, points: t.points });
+                    }}
+                    aria-pressed={isSel}
+                    aria-label={isSel ? `Quitar ${t.name} de tu pedido` : `Usar ${t.name} con ${t.points} puntos`}
+                    className={
+                      isSel
+                        ? "min-h-11 shrink-0 px-2 text-sm font-semibold text-[#8A4B12] underline"
+                        : "min-h-11 shrink-0 rounded-xl border border-[#1C2526] bg-white px-4 text-sm font-semibold text-[#1C2526]"
+                    }
+                  >
+                    {isSel ? "Quitar" : "Usar"}
+                  </button>
+                </div>
               );
             })}
           </div>
           {selected ? (
             <p className={`mt-2 text-xs ${th.ink}/55`}>
-              El restaurante confirma tu premio al cobrar — lo verás en tu
-              pedido.
+              {pointsLeftLine(Math.max(0, points - selected.points))} El restaurante confirma tu premio al cobrar.
             </p>
           ) : null}
         </>
@@ -293,8 +309,7 @@ export function CheckoutRedemption({
         </>
       ) : state === "none" ? (
         <p className={`text-xs ${th.ink}/55`}>
-          ⭐ Este número aún no tiene premios canjeables aquí — este pedido te
-          suma puntos.
+          Este número todavía no tiene premios para usar aquí. Este pedido te suma puntos.
         </p>
       ) : (
         <button

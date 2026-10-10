@@ -11,8 +11,10 @@
  *  2. Sin nada que ganar (loyaltyReady false) no se promete NADA — ni puntos
  *     ni bienvenida. Decisión 5-sep: nadie promete puntos sin premios.
  *  3. La bienvenida es razón para VOLVER, nunca "gratis hoy".
- *  4. El checkout pinta la línea de puntos del preview y la de bienvenida
- *     SOLO mientras el teléfono no está completo (después manda el lookup).
+ *  4. El checkout pinta la línea de puntos del preview. La de bienvenida, solo
+ *     lo que es verdad (10-oct-2026): nunca a quien ya compró en el local; sin
+ *     saber quién es, "si es tu primera compra aquí". Las frases y sus casos
+ *     viven en lib/order/checkoutReview.ts (scripts/validate-checkout-review.mjs).
  *
  * Run: node scripts/validate-earn-preview.mjs
  */
@@ -33,17 +35,22 @@ assert.ok(src.includes("restaurantPromisesPoints(restaurantData)"), "el preview 
 assert.ok(src.includes("earnPolicyFromRestaurant("), "los puntos salen de la política real, no de un número a mano");
 assert.ok(src.includes("policy.base + Math.floor(orderTotal / policy.step)"), "misma fórmula que acredita: base + floor(total/step)");
 assert.ok(src.includes("parseFirstVisitReward("), "la bienvenida se lee del doc, no se inventa");
-assert.ok(src.includes("te espera en tu próxima visita"), "la bienvenida es razón para volver");
+const review = readFileSync(join(root, "lib/order/checkoutReview.ts"), "utf8");
+assert.ok(review.includes("te espera en tu próxima visita"), "la bienvenida es razón para volver");
+assert.ok(src.includes('checkoutWelcomeLine(p.welcomeRewardName, "unknown")'), "sin saber quién es, la bienvenida va con \"si es tu primera compra\"");
+assert.ok(!src.includes("`Deja tu número"), "la promesa a ciegas de la bienvenida no regresa");
 assert.ok(!/gratis hoy|GRATIS hoy/.test(src), "la bienvenida jamás se vende como regalo de hoy");
 assert.ok(src.includes('n === 1 ? "1 punto"'), "singular: 1 punto");
 
-// 4. El checkout la usa, y la bienvenida solo antes de completar el teléfono
+// 4. El checkout la usa, y la bienvenida depende de si ya compró aquí
 assert.ok(page.includes("buildEarnPreview("), "el checkout debe construir el preview");
 assert.ok(page.includes("earnPreviewLine("), "el checkout debe pintar la línea de puntos del preview");
-const welcomeAt = page.indexOf("welcomePreviewLine(");
-assert.ok(welcomeAt > 0, "el checkout debe pintar la línea de bienvenida");
-const guard = page.slice(Math.max(0, welcomeAt - 400), welcomeAt);
-assert.ok(/phoneDigitsTyped\.length < 10|customerPhone\.replace\(\/\\D\/g, ""\)\.length < 10/.test(guard), "la bienvenida solo se enseña mientras el teléfono NO está completo");
+const welcomeAt = page.indexOf("const welcomeLine = checkoutWelcomeLine(");
+assert.ok(welcomeAt > 0, "el checkout debe pintar la línea de bienvenida con checkoutWelcomeLine");
+const guard = page.slice(Math.max(0, welcomeAt - 400), welcomeAt + 250);
+assert.ok(guard.includes("standingFor.phone === phone10"), "lo que sabemos del comensal vale solo para el número que tecleó");
+assert.ok(/standing,\s*\)/.test(guard), "la bienvenida se decide con el standing del comensal");
+assert.ok(!page.includes("welcomePreviewLine("), "el checkout ya no pinta la bienvenida a ciegas");
 assert.ok(page.includes("loyaltyLive"), "el checkout sigue gateado por la promesa de puntos");
 
 // 5. La Caja web dice lo mismo que la Caja de la app (paridad)

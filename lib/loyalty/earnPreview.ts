@@ -13,11 +13,13 @@
 //  * Los puntos salen de la MISMA fórmula que los acredita (earnPolicy.ts),
 //    nunca de un número a mano.
 //  * La bienvenida se enseña como razón para VOLVER ("se gana hoy, se cobra
-//    la próxima"), y solo mientras el teléfono no está completo: con el
-//    número tecleado manda el lookup real (CheckoutRedemption).
+//    la próxima") y nunca a quien ya compró en el local: sin saber quién es
+//    se dice "si es tu primera compra"; con la sesión verificada decide
+//    `checkoutWelcomeLine` (lib/order/checkoutReview.ts, 10-oct-2026).
 
 import { earnPolicyFromRestaurant } from "./earnPolicy";
 import { parseFirstVisitReward } from "./rewardCatalog";
+import { checkoutWelcomeLine } from "@/lib/order/checkoutReview";
 import { restaurantPromisesPoints } from "@/lib/readiness/evaluate";
 
 export type EarnPreview = {
@@ -51,11 +53,12 @@ export function earnPreviewLine(p: EarnPreview): string | null {
   return p.points && p.points > 0 ? `Con este pedido juntas ${pts(p.points)}` : null;
 }
 
-/** La razón para soltar el número — null cuando la bienvenida está apagada. */
+/** La bienvenida para un comensal del que NO sabemos si ya compró aquí; null cuando está apagada.
+ *  10-oct-2026: antes decía "Deja tu número y tu X de bienvenida te espera…" y se lo prometía también a
+ *  clientes con puntos en el local. Con "si es tu primera compra" es verdad para cualquiera. Cuando sí se
+ *  sabe quién es (sesión verificada), manda `checkoutWelcomeLine(nombre, standing)`. */
 export function welcomePreviewLine(p: EarnPreview): string | null {
-  return p.welcomeRewardName
-    ? `Deja tu número y tu ${p.welcomeRewardName} de bienvenida te espera en tu próxima visita`
-    : null;
+  return checkoutWelcomeLine(p.welcomeRewardName, "unknown");
 }
 
 /** Caja: el cajero le habla al cliente — "Con esta compra junta 7 puntos". */

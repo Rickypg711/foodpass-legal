@@ -1,4 +1,5 @@
 import { mpWebDebugClient, urlHostOnly } from "@/lib/mercadoPago/mpWebDebug";
+import { CheckoutPaymentError, ORDER_NEEDS_REVIEW_CODE } from "@/lib/order/checkoutReview";
 
 export type CreatePreferenceResult = {
   preferenceId: string;
@@ -28,7 +29,11 @@ export async function requestMercadoPagoPreference(params: {
   } catch (err) {
     const message = err instanceof Error ? err.message : "network_error";
     mpWebDebugClient("create_preference_request_error", { message });
-    throw new Error(message);
+    // Sin respuesta del servidor: el checkout lo dice como "sin internet", no con el texto del navegador.
+    throw new CheckoutPaymentError(
+      "No hay internet. Tu pedido no se pagó. Revisa tu conexión y vuelve a intentar.",
+      "network_error",
+    );
   }
 
   const data = (await res.json()) as {
@@ -60,7 +65,15 @@ export async function requestMercadoPagoPreference(params: {
   });
 
   if (!res.ok) {
-    throw new Error(data.message ?? data.error ?? "No pudimos iniciar el pago en línea");
+    // Solo el 409 `order_needs_review` trae un mensaje escrito para el comensal ("Un platillo de tu pedido
+    // cambió…"). Los demás mensajes del servidor son técnicos (o de Mercado Pago, en inglés): no se enseñan.
+    const code = data.error ?? `http_${res.status}`;
+    throw new CheckoutPaymentError(
+      code === ORDER_NEEDS_REVIEW_CODE && data.message
+        ? data.message
+        : "No pudimos iniciar tu pago en línea. Intenta otra vez o elige otra forma de pago.",
+      code,
+    );
   }
 
   if (!data.preferenceId || !data.redirectUrl) {
