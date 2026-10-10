@@ -151,7 +151,9 @@ export function isRestaurantAliveForDiners(
  *   1. `isSetupComplete === true` (menú listo),
  *   2. no es prueba (`isTest !== true`),
  *   3. no está borrado (`status !== "deleted"`),
- *   4. está vivo: nuevo (≤30 días) o con pedido en los últimos 30 días.
+ *   4. está vivo: nuevo (≤30 días) o con pedido en los últimos 30 días,
+ *   5. no está fuera de lista (`unlisted !== true`, 10-oct): local real que
+ *      soltamos. Su link /menu y /r sigue vivo; solo sale del directorio.
  * Los premios YA NO filtran (antes `loyaltyReady !== false` escondía locales
  * reales sin premios y dejaba pasar pruebas): son una insignia. Donde se
  * PROMETEN puntos se exige además `restaurantPromisesPoints`.
@@ -164,6 +166,7 @@ export function isRestaurantVisibleToDiners(
   if (!data) return false;
   if (data.isSetupComplete !== true) return false;
   if (isRestaurantHiddenFromDiners(data)) return false;
+  if (data.unlisted === true) return false;
   return isRestaurantAliveForDiners(data, now);
 }
 

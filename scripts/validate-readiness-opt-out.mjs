@@ -148,6 +148,9 @@ const base = (overrides = {}) => ({
   assert.equal(vis(doc()), false, "doc viejo sin lastOrderAt ni createdAt → fuera");
   assert.equal(vis(doc({ lastOrderAt: ago(2) })), true, "sin createdAt pero con pedido → visible");
   assert.equal(vis(doc({ isTest: false, lastOrderAt: ago(2) })), true, "isTest false no esconde");
+  assert.equal(vis(doc({ unlisted: true, createdAt: ago(3) })), false, "fuera de lista → no sale aunque sea nuevo");
+  assert.equal(vis(doc({ unlisted: true, lastOrderAt: ago(1) })), false, "fuera de lista → no sale aunque venda");
+  assert.equal(vis(doc({ unlisted: false, lastOrderAt: ago(2) })), true, "unlisted false no esconde");
   assert.equal(vis(undefined), false);
   assert.equal(vis(null), false);
 
