@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "omu",
+  "name": "Omu Balls & Sushi",
+  "paper": "Su hoja (foto de WhatsApp, 13-sep): fondo negro con la foto oscura de sushi, píldoras blancas de borde rojo, tarjetas blancas con cabecera roja, letras gordas blancas. components/menu/skins/omu.tsx",
+  "palette": {
+    "bg": "#151311",
+    "surface": "#151311",
+    "ink": "#f9f8f8",
+    "inkSoft": "#f9f8f8bf",
+    "accent": "#f10809",
+    "onAccent": "#f9f8f8",
+    "rule": "#f9f8f826",
+    "heroBg": "#151311",
+    "heroInk": "#f9f8f8",
+    "chipBar": "#151311f2",
+    "chipActiveBg": "#f9f8f8",
+    "chipActiveInk": "#d40607",
+    "chipActiveBorder": "#f10809",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#f9f8f8",
+    "chipInactiveBorder": "#f9f8f859"
+  },
+  "typography": {
+    "display": { "family": "Bodoni Moda", "weight": 400, "fallback": "serif" },
+    "name": { "family": "Montserrat", "weight": 800, "fallback": "sans-serif" },
+    "body": { "family": "Montserrat", "weight": 500, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "logo-center",
+    "logo": "logo.png",
+    "logoShape": "none",
+    "logoSize": 76,
+    "cover": null,
+    "overlay": "none",
+    "align": "center"
+  },
+  "chips": { "font": "body", "size": 11, "weight": 800, "textCase": "upper", "tracking": 0.06, "borderWidth": 2 },
+  "section": {
+    "style": "pill",
+    "font": "name",
+    "size": 21,
+    "weight": 800,
+    "textCase": "upper",
+    "tracking": 0.02,
+    "italic": false,
+    "color": "#151311",
+    "fill": "#f9f8f8",
+    "border": "#f10809",
+    "align": "center",
+    "surface": "none",
+    "radius": 6,
+    "dividers": "none"
+  },
+  "sectionOverrides": [],
+  "dish": {
+    "layout": "list-dense",
+    "photoShape": "rounded",
+    "photoRadius": 4,
+    "photoSize": 112,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 15,
+    "nameWeight": 800,
+    "nameCase": "upper",
+    "nameTracking": 0.01,
+    "nameItalic": false,
+    "nameColor": "#f9f8f8",
+    "descColor": "#f9f8f8bf",
+    "descSize": 11,
+    "leader": "dots",
+    "leaderColor": "#f9f8f842"
+  },
+  "price": {
+    "style": "plain",
+    "font": "name",
+    "size": 16,
+    "weight": 800,
+    "italic": false,
+    "color": "#f9f8f8",
+    "smallCurrency": true
+  },
+  "ornaments": [],
+  "footer": { "ink": "#f9f8f899", "brandInk": "#f9f8f8", "linkInk": "#f9f8f8", "rule": "#f9f8f826" },
+  "webOnlyExtras": [
+    "\"MENÜ\" en Bodoni con los ojitos bajo el logo.",
+    "Tarjetas blancas con cabecera roja para Boneless, Para compartir, Complementa y Refrescos (la app pinta todas las secciones sobre la hoja negra).",
+    "Los 4 pasos numerados de \"¡Ármalas a tu gusto!\" con el número rojo en círculo, y la tabla de cubiertas Ball/Sushi.",
+    "Hoja a cuatro columnas en escritorio; resplandor rojo/café en el fondo (degradados CSS).",
+    "Tamaños del boneless como pastillas con su precio y su +."
+  ]
+}

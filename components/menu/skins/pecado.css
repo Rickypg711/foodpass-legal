@@ -2,7 +2,7 @@
    piel (no en globals.css) para que el fondo y la entrada viajen con ella.
    El patrón es un recorte de SU papel: public/skins/pecado/patron.png. */
 .pecado-skin {
-  background-color: #c03427;
+  background-color: var(--skin-bg, #c03427);
   background-image: url("/skins/pecado/patron.png");
   background-repeat: repeat;
   background-size: 112px auto;

@@ -25,6 +25,7 @@ import {
 import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
+import "./skinTokens.generated.css";
 
 const archivoBlack = Archivo_Black({ weight: "400", subsets: ["latin"], variable: "--tz-chunky" });
 const silkscreen = Silkscreen({ weight: ["400", "700"], subsets: ["latin"], variable: "--tz-pixel" });
@@ -36,7 +37,7 @@ const narrow = Archivo_Narrow({ weight: ["400", "700"], subsets: ["latin"], vari
 /** Clase raíz: fuentes + fondo salmón + tinta. */
 export const TERCERA_ROOT_CLASS =
   `${archivoBlack.variable} ${silkscreen.variable} ${bowlby.variable} ${gochi.variable} ${barlow.variable} ${narrow.variable} ` +
-  "min-h-screen bg-[#f9b699] text-[#1a1a1a] [font-family:var(--tz-body),Arial_Narrow,sans-serif] tercera-skin";
+  "min-h-screen bg-[color:var(--skin-bg,#f9b699)] text-[#1a1a1a] [font-family:var(--tz-body),Arial_Narrow,sans-serif] tercera-skin";
 
 export const TERCERA = {
   salmon: "#f9b699",

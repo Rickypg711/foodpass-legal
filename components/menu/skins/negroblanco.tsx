@@ -27,6 +27,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./negroblanco.css";
+import "./skinTokens.generated.css";
 
 const sans = Inter_Tight({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--nb-sans" });
 const mono = IBM_Plex_Mono({ weight: ["400", "500", "600"], subsets: ["latin"], variable: "--nb-mono" });

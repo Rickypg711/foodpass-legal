@@ -1,7 +1,7 @@
 /* Piel "LasPic" (laspic.tsx): LasPic, Pizza, Pasta & Fun. Vive junto a la piel (no en globals.css).
    La fachada (IG) pone el ajedrez negro/crema y el rojo tomate; su menú de papel pone la hoja blanca editorial. */
 .lp-skin {
-  background-color: #efe9df;
+  background-color: var(--skin-bg, #efe9df);
 }
 /* La franja de ajedrez de su fachada. */
 .lp-skin .lp-checker {

@@ -17,6 +17,16 @@ import { pecadoCategoryLabel } from "@/components/menu/skins/pecado";
 
 export type MenuChip = { category: string; index: number; closed?: boolean };
 
+/**
+ * Colores de los chips de las pieles: salen de su skin.json (public/skins/{id}/skin.json → variables `--skin-*` en
+ * components/menu/skins/skinTokens.generated.css, opción C 9-oct-2026). La app lee el MISMO JSON. Tipografía, tamaño,
+ * sombra y hover siguen aquí por piel; el chip de siempre (sin piel) no cambia.
+ */
+const SKIN_ON =
+  "border-[color:var(--skin-chip-active-border)] bg-[color:var(--skin-chip-active-bg)] text-[color:var(--skin-chip-active-ink)]";
+const SKIN_OFF =
+  "border-[color:var(--skin-chip-inactive-border)] bg-[color:var(--skin-chip-inactive-bg)] text-[color:var(--skin-chip-inactive-ink)]";
+
 /** Reloj del candado del chip tocado. Fuera del componente: la regla de pureza de React no deja leer la hora adentro. */
 const nowMs = () => Date.now();
 
@@ -128,31 +138,31 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
       className={
         "sticky top-0 z-30 -mx-4 mb-4 px-4 py-2 sm:-mx-6 sm:px-6 " +
         (tercera
-          ? "bg-[#f9b699]/95 backdrop-blur-sm"
+          ? "bg-[color:var(--skin-chip-bar)] backdrop-blur-sm"
           : pecado
-            ? "bg-[#c03427]/95 backdrop-blur-sm"
+            ? "bg-[color:var(--skin-chip-bar)] backdrop-blur-sm"
             : nb
-              ? "bg-[#f4f3ef]/88 py-2.5 backdrop-blur-md"
+              ? "bg-[color:var(--skin-chip-bar)] py-2.5 backdrop-blur-md"
               : bl
-                ? "bg-[#fff6f4]/90 py-2.5 backdrop-blur-md"
+                ? "bg-[color:var(--skin-chip-bar)] py-2.5 backdrop-blur-md"
                 : mx
-                  ? "bg-[#234933]/95 py-2.5 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md"
+                  ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md"
                   : lp
-                    ? "bg-[#fbf8f2]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md"
+                    ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md"
                     : tp
-                      ? "bg-[#e9e7e2]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(80,5,10,0.6)] backdrop-blur-md"
+                      ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(80,5,10,0.6)] backdrop-blur-md"
                       : ig
-                        ? "bg-[#f7f8f8]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(11,101,42,0.5)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(11,101,42,0.5)] backdrop-blur-md"
                       : om
-                        ? "bg-[#151311]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       : km
-                        ? "bg-[#263532]/92 py-2.5 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.9)] backdrop-blur-md"
                       : sd
-                        ? "bg-[#fff7f8]/94 py-2.5 shadow-[0_10px_20px_-18px_rgba(58,35,20,0.5)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(58,35,20,0.5)] backdrop-blur-md"
                       : mn
-                        ? "bg-[#6a3393]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(20,5,40,0.8)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(20,5,40,0.8)] backdrop-blur-md"
                       : fr
-                        ? "bg-[#feeef8]/95 py-2.5 shadow-[0_10px_20px_-18px_rgba(86,5,45,0.35)] backdrop-blur-md"
+                        ? "bg-[color:var(--skin-chip-bar)] py-2.5 shadow-[0_10px_20px_-18px_rgba(86,5,45,0.35)] backdrop-blur-md"
               : "bg-[#FAF7F2]/92 shadow-[0_6px_16px_-12px_rgba(28,37,38,0.35)] backdrop-blur-md")
       }
       role="navigation"
@@ -162,66 +172,66 @@ export function MenuCategoryChips({ chips, skin = null }: { chips: MenuChip[]; s
         {chips.map((c) => {
           const on = c.index === active;
           const base = tercera
-            ? "[font-family:var(--tz-pixel),monospace] text-[11px] uppercase tracking-tight border-2 border-[#1a1a1a] " +
-              (on ? "bg-[#1a1a1a] text-[#fbddd5]" : "bg-transparent text-[#1a1a1a] hover:bg-[#1a1a1a]/10")
+            ? "[font-family:var(--tz-pixel),monospace] text-[11px] uppercase tracking-tight border-2 " +
+              (on ? SKIN_ON : SKIN_OFF + " hover:bg-[#1a1a1a]/10")
             : pecado
-              ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[13px] font-extrabold uppercase tracking-wide border-2 border-[#ffeecf] " +
-                (on ? "bg-[#ffeecf] text-[#a61c21]" : "bg-transparent text-[#ffeecf] hover:bg-[#ffeecf]/15")
+              ? "[font-family:var(--pc-name),'Arial_Narrow',sans-serif] text-[13px] font-extrabold uppercase tracking-wide border-2 " +
+                (on ? SKIN_ON : SKIN_OFF + " hover:bg-[#ffeecf]/15")
             : bl
               ? "text-[11px] font-extrabold uppercase tracking-[0.12em] border-2 " +
                 (on
-                  ? "border-[#ff5c9a] bg-[#ff5c9a] text-white shadow-[0_6px_16px_-8px_rgba(255,92,154,0.9)]"
-                  : "border-[#ff5c9a]/30 bg-white text-[#1c1a1b] hover:border-[#ff5c9a]")
+                  ? SKIN_ON + " shadow-[0_6px_16px_-8px_rgba(255,92,154,0.9)]"
+                  : SKIN_OFF + " hover:border-[#ff5c9a]")
             : lp
               ? "[font-family:var(--lp-sans),Jost,sans-serif] text-[11px] font-semibold uppercase tracking-[0.14em] border-[1.5px] " +
                 (on
-                  ? "border-[#141414] bg-[#141414] text-[#fbf8f2]"
-                  : "border-[#141414]/35 bg-transparent text-[#141414] hover:border-[#141414]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#141414]")
             : ig
               ? "[font-family:var(--igo-name),'Arial_Narrow',sans-serif] text-[12.5px] uppercase tracking-[0.06em] border-[1.5px] " +
                 (on
-                  ? "border-[#0b652a] bg-[#0b652a] text-[#f7f8f8]"
-                  : "border-[#0b652a]/35 bg-transparent text-[#0b652a] hover:border-[#0b652a]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#0b652a]")
             : km
               ? "[font-family:var(--kame-display),'League_Spartan',Futura,sans-serif] pb-[5px] pt-[8px] text-[12.5px] font-bold uppercase leading-none tracking-[0.08em] border-[1.5px] " +
                 (on
-                  ? "border-[#f7cf1d] bg-[#f7cf1d] text-[#263532] shadow-[0_8px_18px_-8px_rgba(247,207,29,0.7)]"
-                  : "border-[#f0dc78]/30 bg-transparent text-[#f0dc78] hover:border-[#f7cf1d]")
+                  ? SKIN_ON + " shadow-[0_8px_18px_-8px_rgba(247,207,29,0.7)]"
+                  : SKIN_OFF + " hover:border-[#f7cf1d]")
             : sd
               ? "[font-family:var(--sd-name),'Alfa_Slab_One',Rockwell,serif] text-[12px] uppercase tracking-[0.06em] border-2 " +
                 (on
-                  ? "border-[#612f18] bg-[#612f18] text-[#f0e9d3] shadow-[0_8px_18px_-10px_rgba(58,35,20,0.8)]"
-                  : "border-[#9f4c24]/40 bg-white text-[#612f18] hover:border-[#612f18]")
+                  ? SKIN_ON + " shadow-[0_8px_18px_-10px_rgba(58,35,20,0.8)]"
+                  : SKIN_OFF + " hover:border-[#612f18]")
             : mn
               ? "[font-family:var(--mn-display),'Baloo_2',Nunito,sans-serif] text-[13px] font-bold border-2 " +
                 (on
-                  ? "border-white bg-white text-[#5b2a80] shadow-[0_8px_18px_-10px_rgba(20,5,40,0.8)]"
-                  : "border-white/50 bg-transparent text-white hover:border-white")
+                  ? SKIN_ON + " shadow-[0_8px_18px_-10px_rgba(20,5,40,0.8)]"
+                  : SKIN_OFF + " hover:border-white")
             : om
               ? "text-[11px] font-extrabold uppercase tracking-[0.06em] border-2 " +
                 (on
-                  ? "border-[#f10809] bg-[#f9f8f8] text-[#d40607]"
-                  : "border-[#f9f8f8]/35 bg-transparent text-[#f9f8f8] hover:border-[#f10809]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#f10809]")
             : fr
               ? "[font-family:var(--fr-name),'Bree_Serif',Georgia,serif] text-[14px] border-[1.5px] " +
                 (on
-                  ? "border-[#cb0465] bg-[#cb0465] text-[#fffbfd]"
-                  : "border-[#9e6036] bg-[#fffbfd] text-[#56052d] hover:border-[#cb0465]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#cb0465]")
             : tp
               ? "[font-family:var(--tp-display),'Arial_Narrow',sans-serif] text-[13px] uppercase tracking-[0.06em] border-[1.5px] " +
                 (on
-                  ? "border-[#cf1225] bg-[#cf1225] text-[#f4f1ea]"
-                  : "border-[#cf1225]/35 bg-transparent text-[#cf1225] hover:border-[#cf1225]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#cf1225]")
             : mx
               ? "[font-family:var(--mx-display),Impact,sans-serif] text-[11px] uppercase tracking-[0.12em] border-2 " +
                 (on
-                  ? "border-[#f6f5e0] bg-[#f6f5e0] text-[#234933]"
-                  : "border-[#f6f5e0]/30 bg-transparent text-[#f6f5e0]/90 hover:border-[#f6f5e0]/70")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#f6f5e0]/70")
             : nb
               ? "[font-family:var(--nb-mono),ui-monospace,monospace] text-[11px] uppercase tracking-[0.14em] border " +
                 (on
-                  ? "border-[#0b0b0b] bg-[#0b0b0b] text-white"
-                  : "border-[#0b0b0b]/15 bg-white/70 text-[#0b0b0b]/70 hover:border-[#0b0b0b]/50 hover:text-[#0b0b0b]")
+                  ? SKIN_ON
+                  : SKIN_OFF + " hover:border-[#0b0b0b]/50 hover:text-[#0b0b0b]")
             : "text-[13px] font-semibold border " +
               (on
                 ? "border-[#F28C38] bg-[#F28C38] text-white shadow-sm"

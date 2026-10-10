@@ -2,7 +2,7 @@
    Todo sale de SU menú (Google Sites): el verde bosque de su portada (#234933), el crema de sus hojas (#f6f5e0),
    su jaguar corriendo, sus iconos de salsas y guisos, y sus fotos. */
 .mx-skin {
-  background-color: #234933;
+  background-color: var(--skin-bg, #234933);
 }
 /* Portada: su verde, con un grano de papel apenas visible. */
 .mx-skin .mx-cover {

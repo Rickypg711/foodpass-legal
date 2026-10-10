@@ -32,6 +32,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./kame.css";
+import "./skinTokens.generated.css";
 
 const spartan = League_Spartan({ weight: ["600", "700", "800", "900"], subsets: ["latin"], variable: "--kame-display" });
 const jost = Jost({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--kame-sans" });

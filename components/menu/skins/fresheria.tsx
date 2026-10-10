@@ -33,6 +33,7 @@ import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { MenuItemOptionGroup } from "@/lib/menu/optionGroups";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./fresheria.css";
+import "./skinTokens.generated.css";
 
 const script = Great_Vibes({ weight: "400", subsets: ["latin"], variable: "--fr-script" });
 const bree = Bree_Serif({ weight: "400", subsets: ["latin"], variable: "--fr-name" });

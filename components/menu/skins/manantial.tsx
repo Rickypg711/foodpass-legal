@@ -34,6 +34,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./manantial.css";
+import "./skinTokens.generated.css";
 
 const baloo = Baloo_2({ weight: ["700", "800"], subsets: ["latin"], variable: "--mn-display" });
 const nunito = Nunito({ weight: ["400", "600", "700", "800"], subsets: ["latin"], variable: "--mn-sans" });

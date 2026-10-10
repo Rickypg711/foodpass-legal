@@ -22,6 +22,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./tortasperras.css";
+import "./skinTokens.generated.css";
 
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--tp-display" });
 const script = Yellowtail({ weight: "400", subsets: ["latin"], variable: "--tp-script" });

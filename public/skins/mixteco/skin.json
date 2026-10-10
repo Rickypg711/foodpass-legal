@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "mixteco",
+  "name": "Mixteco, cocina mexicana",
+  "paper": "Su menú (Google Sites): el verde bosque de su portada, el crema de sus hojas, su jaguar corriendo, sus iconos de salsas y guisos y sus fotos. components/menu/skins/mixteco.tsx",
+  "palette": {
+    "bg": "#234933",
+    "surface": "#f6f5e0",
+    "ink": "#1f3a2b",
+    "inkSoft": "#1f3a2bd9",
+    "accent": "#234933",
+    "onAccent": "#f6f5e0",
+    "rule": "#23493326",
+    "heroBg": "#234933",
+    "heroInk": "#cfe3cb",
+    "chipBar": "#234933f2",
+    "chipActiveBg": "#f6f5e0",
+    "chipActiveInk": "#234933",
+    "chipActiveBorder": "#f6f5e0",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#f6f5e0e6",
+    "chipInactiveBorder": "#f6f5e04d"
+  },
+  "typography": {
+    "display": { "family": "Bungee", "weight": 400, "fallback": "sans-serif" },
+    "accent": { "family": "Sacramento", "weight": 400, "fallback": "cursive" },
+    "name": { "family": "Bungee", "weight": 400, "fallback": "sans-serif" },
+    "body": { "family": "Josefin Sans", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "logo-center",
+    "logo": "logo_lockup.png",
+    "logoShape": "none",
+    "logoSize": 104,
+    "cover": null,
+    "overlay": "none",
+    "align": "center"
+  },
+  "chips": { "font": "display", "size": 11, "weight": 400, "textCase": "upper", "tracking": 0.12, "borderWidth": 2 },
+  "section": {
+    "style": "plain",
+    "font": "display",
+    "size": 24,
+    "weight": 400,
+    "textCase": "upper",
+    "tracking": 0.06,
+    "italic": false,
+    "color": "#234933",
+    "align": "start",
+    "surface": "card",
+    "radius": 6,
+    "dividers": "dashed",
+    "dividerColor": "#23493326"
+  },
+  "sectionOverrides": [],
+  "dish": {
+    "layout": "row-photo-right",
+    "photoShape": "rounded",
+    "photoRadius": 6,
+    "photoSize": 88,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 15,
+    "nameWeight": 400,
+    "nameCase": "upper",
+    "nameTracking": 0.15,
+    "nameItalic": false,
+    "nameColor": "#1f3a2b",
+    "descColor": "#1f3a2bd9",
+    "descSize": 15,
+    "leader": "none"
+  },
+  "price": {
+    "style": "plain",
+    "font": "display",
+    "size": 15,
+    "weight": 400,
+    "italic": false,
+    "color": "#557061",
+    "smallCurrency": false
+  },
+  "ornaments": [
+    { "role": "watermark", "asset": "jaguar_solo.png", "placement": "hero", "opacity": 0.16, "size": 180 },
+    { "role": "divider", "asset": "jaguar_run.png", "placement": "page-top", "opacity": 1, "size": 59 }
+  ],
+  "footer": { "ink": "#f6f5e0b3", "brandInk": "#f6f5e0", "linkInk": "#9fd6b3", "rule": "#f6f5e033" },
+  "webOnlyExtras": [
+    "Su frase partida en molde áspero y cursiva (\"EN Mixteco CADA PLATILLO ES UN RITUAL DE Sanación\") con filtro de letra rugosa.",
+    "El nombre de la sección vertical en el margen, de abajo hacia arriba (la app lo pone arriba, horizontal).",
+    "Hojas por bloque (desayunos, caldos, tacos, bebidas) con tiras de fotos antes/después de cada sección.",
+    "Hoja de bebidas con títulos en cursiva (jugos, frutales) y la columna de Salsas y Guisos de la casa con sus iconos.",
+    "Sección Niños en cuadrícula de 3 con foto redonda; el jaguar trota y la luna flota.",
+    "Precio con espaciado ancho (tracking 0.18em)."
+  ]
+}

@@ -26,6 +26,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./mixteco.css";
+import "./skinTokens.generated.css";
 
 const bungee = Bungee({ weight: "400", subsets: ["latin"], variable: "--mx-display" });
 const sacramento = Sacramento({ weight: "400", subsets: ["latin"], variable: "--mx-script" });

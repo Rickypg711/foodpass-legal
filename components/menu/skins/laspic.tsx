@@ -23,6 +23,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./laspic.css";
+import "./skinTokens.generated.css";
 
 const serif = Instrument_Serif({ weight: "400", style: ["normal", "italic"], subsets: ["latin"], variable: "--lp-serif" });
 const jost = Jost({ weight: ["300", "400", "500", "600", "700"], subsets: ["latin"], variable: "--lp-sans" });

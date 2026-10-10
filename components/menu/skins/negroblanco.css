@@ -3,7 +3,7 @@
    La retícula de puntos es el pegboard de SU barra (y el borde de SU papel del
    expendio); el aro de luz del disco es SU lámpara eclipse. */
 .nb-skin {
-  background-color: #f4f3ef;
+  background-color: var(--skin-bg, #f4f3ef);
   background-image: radial-gradient(circle at center, rgba(11, 11, 11, 0.085) 1.1px, transparent 1.6px);
   background-size: 22px 22px;
   background-position: 11px 11px;

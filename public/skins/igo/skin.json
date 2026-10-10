@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "igo",
+  "name": "IGO Pizzeria",
+  "paper": "Sus 4 hojas: blanco con marco verde doble, el higo grabado de marca de agua, títulos con las letras bailando, un dibujo por sección y la etiqueta verde del precio con su barra gris. components/menu/skins/igo.tsx",
+  "palette": {
+    "bg": "#e8e9e6",
+    "surface": "#f7f8f8",
+    "surfaceBorder": "#0b652a",
+    "ink": "#2b2b2b",
+    "inkSoft": "#2b2b2bbf",
+    "accent": "#0b652a",
+    "onAccent": "#f7f8f8",
+    "rule": "#2b2b2b26",
+    "heroBg": "#f7f8f8",
+    "heroInk": "#0b652a",
+    "chipBar": "#f7f8f8f2",
+    "chipActiveBg": "#0b652a",
+    "chipActiveInk": "#f7f8f8",
+    "chipActiveBorder": "#0b652a",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#0b652a",
+    "chipInactiveBorder": "#0b652a59"
+  },
+  "typography": {
+    "display": { "family": "Lilita One", "weight": 400, "fallback": "sans-serif" },
+    "name": { "family": "Oswald", "weight": 500, "fallback": "sans-serif" },
+    "body": { "family": "Jost", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "logo-center",
+    "logo": "logo.png",
+    "logoShape": "none",
+    "logoSize": 96,
+    "cover": null,
+    "overlay": "none",
+    "align": "center"
+  },
+  "chips": { "font": "name", "size": 12.5, "weight": 400, "textCase": "upper", "tracking": 0.06, "borderWidth": 1.5 },
+  "section": {
+    "style": "plain",
+    "font": "display",
+    "size": 26,
+    "weight": 400,
+    "textCase": "upper",
+    "tracking": 0.02,
+    "italic": false,
+    "color": "#0b652a",
+    "align": "center",
+    "surface": "card",
+    "radius": 0,
+    "dividers": "hairline",
+    "dividerColor": "#2b2b2b26"
+  },
+  "sectionOverrides": [
+    { "match": ["pizzas"], "icon": "ico_pizza.png" },
+    { "match": ["calzone"], "icon": "ico_calzone.png" },
+    { "match": ["snacks"], "icon": "ico_snacks.png" },
+    { "match": ["bebidas"], "icon": "ico_bebidas.png" },
+    { "match": ["pastas"], "icon": "ico_pastas.png" },
+    { "match": ["aderezos"], "icon": "ico_aderezos.png" },
+    { "match": ["postres"], "icon": "ico_postres.png" }
+  ],
+  "dish": {
+    "layout": "list-dense",
+    "photoShape": "rounded",
+    "photoRadius": 3,
+    "photoSize": 112,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 14,
+    "nameWeight": 500,
+    "nameCase": "upper",
+    "nameTracking": 0.02,
+    "nameItalic": false,
+    "nameColor": "#0b652a",
+    "descColor": "#2b2b2bbf",
+    "descSize": 13,
+    "leader": "none"
+  },
+  "price": {
+    "style": "tag",
+    "font": "body",
+    "size": 12.5,
+    "weight": 600,
+    "italic": false,
+    "color": "#f7f8f8",
+    "bg": "#0b652a",
+    "smallCurrency": false
+  },
+  "ornaments": [
+    { "role": "watermark", "asset": "higo_marca.png", "placement": "page", "opacity": 0.12, "size": 260 }
+  ],
+  "footer": { "ink": "#2b2b2b99", "brandInk": "#0b652a", "linkInk": "#0b652a", "rule": "#0b652a33" },
+  "webOnlyExtras": [
+    "Marco verde DOBLE (borde 3 px + contorno 1 px separado 4 px); la app pinta un solo borde.",
+    "Títulos con las letras bailando (cada letra a otra altura y ladeada).",
+    "Barra gris a lo ancho después de la etiqueta del precio, y la descripción en cursiva entre paréntesis.",
+    "Tres fotos en marcos verdes en la portada (la de en medio sube) y franja verde con @igopizza.local y su cel.",
+    "El higo grabado sale en la esquina de cada hoja (en la app va una vez, tenue, al fondo).",
+    "Mascota junto al título del panel de premios."
+  ]
+}

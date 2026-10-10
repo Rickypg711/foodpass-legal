@@ -13,7 +13,7 @@
   --sd-ink: #3a2314;
   /* El mantel: cuadritos rosas sobre blanco. Bajitos de tono (6-oct, Ricardo: "pega mucho") para que el plato
      blanco y la madera manden; el mantel es fondo, no protagonista. */
-  background-color: #fff8f9;
+  background-color: var(--skin-bg, #fff8f9);
   background-image:
     linear-gradient(90deg, rgba(243, 182, 198, 0.36) 50%, transparent 50%),
     linear-gradient(0deg, rgba(243, 182, 198, 0.36) 50%, transparent 50%);

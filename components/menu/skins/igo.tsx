@@ -27,6 +27,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./igo.css";
+import "./skinTokens.generated.css";
 
 const lilita = Lilita_One({ weight: "400", subsets: ["latin"], variable: "--igo-display" });
 const oswald = Oswald({ weight: ["400", "500", "600"], subsets: ["latin"], variable: "--igo-name" });

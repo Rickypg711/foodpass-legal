@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "pecado",
+  "name": "Pecado Escondido",
+  "paper": "Su carta: rojo con su patrón, hojas crema con PLATILLOS / BEBIDAS en bloque con sombra amarilla, píldoras con iconos a línea y la hoja verde PECADO MAÑANERO. components/menu/skins/pecado.tsx",
+  "palette": {
+    "bg": "#c03427",
+    "surface": "#ffeecf",
+    "ink": "#a61c21",
+    "inkSoft": "#a61c21e6",
+    "accent": "#a61c21",
+    "onAccent": "#ffeecf",
+    "rule": "#a61c2133",
+    "heroBg": "#ffeecf",
+    "heroInk": "#a61c21",
+    "chipBar": "#c03427f2",
+    "chipActiveBg": "#ffeecf",
+    "chipActiveInk": "#a61c21",
+    "chipActiveBorder": "#ffeecf",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#ffeecf",
+    "chipInactiveBorder": "#ffeecf"
+  },
+  "typography": {
+    "display": { "family": "Lilita One", "weight": 400, "fallback": "sans-serif" },
+    "name": { "family": "Barlow Condensed", "weight": 800, "fallback": "sans-serif" },
+    "body": { "family": "Montserrat", "weight": 500, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "logo-center",
+    "logo": "logo.png",
+    "logoShape": "none",
+    "logoSize": 120,
+    "cover": "restaurant",
+    "overlay": "none",
+    "align": "center"
+  },
+  "chips": { "font": "name", "size": 13, "weight": 800, "textCase": "upper", "tracking": 0.025, "borderWidth": 2 },
+  "section": {
+    "style": "pill",
+    "font": "name",
+    "size": 17,
+    "weight": 800,
+    "textCase": "upper",
+    "tracking": 0.05,
+    "italic": false,
+    "color": "#a61c21",
+    "fill": "#00000000",
+    "border": "#a61c21",
+    "align": "center",
+    "surface": "card",
+    "radius": 28,
+    "dividers": "none"
+  },
+  "sectionOverrides": [
+    {
+      "match": ["chilaquiles", "tortilla costena", "sopes", "sope", "molletes", "mollete", "enchiladas", "taco cabo", "huevos", "jugos", "bebidas mananeras", "extras mananeros", "mananero", "mananeros"],
+      "color": "#4d5f2a",
+      "border": "#969e57"
+    },
+    { "match": ["happy hour"], "surface": "#fbaa19", "sticker": "botella.png" },
+    { "match": ["extras", "extra", "promos", "promociones"], "surface": "#fbaa19" },
+    { "match": ["ceviches"], "icon": "ic_ceviches.png" },
+    { "match": ["tostadas"], "icon": "ic_tostadas.png" },
+    { "match": ["chicharrines"], "icon": "ic_chicharrines.png" },
+    { "match": ["tostilocos"], "icon": "ic_tostilocos.png" },
+    { "match": ["especiales"], "icon": "ic_especiales.png" },
+    { "match": ["chelas"], "icon": "ic_chelas.png" },
+    { "match": ["micheladas"], "icon": "ic_micheladas.png" },
+    { "match": ["softs"], "icon": "ic_softs.png" },
+    { "match": ["cocteles"], "icon": "ic_cocteles.png" },
+    { "match": ["mezcal"], "icon": "ic_mezcal.png" }
+  ],
+  "dish": {
+    "layout": "row-photo-right",
+    "photoShape": "rounded",
+    "photoRadius": 16,
+    "photoSize": 76,
+    "photoBorder": "#a61c21",
+    "nameFont": "name",
+    "nameSize": 19,
+    "nameWeight": 800,
+    "nameCase": "upper",
+    "nameTracking": 0.025,
+    "nameItalic": true,
+    "nameColor": "#a61c21",
+    "descColor": "#a61c21e6",
+    "descSize": 13.5,
+    "leader": "none"
+  },
+  "price": {
+    "style": "plain",
+    "font": "name",
+    "size": 19,
+    "weight": 800,
+    "italic": true,
+    "color": "#a61c21",
+    "smallCurrency": false
+  },
+  "ornaments": [
+    { "role": "pattern", "asset": "patron.png", "placement": "page", "opacity": 1, "size": 112 }
+  ],
+  "footer": { "ink": "#ffeecfd9", "brandInk": "#ffeecf", "linkInk": "#fbaa19", "rule": "#ffeecf59" },
+  "webOnlyExtras": [
+    "Hojas PLATILLOS / BEBIDAS / PECADO MAÑANERO con el título en bloque y sombra amarilla doble; la hoja verde lleva aro olivo de 10 px y su tazón que flota.",
+    "Tres polaroids de su Instagram torcidas bajo el logo (tacos, poke, la banda).",
+    "Nombres de sección como los escribe su papel (\"¡Pa' Botanear!\", \"Happy Hour · 3 a 4 pm\") y píldoras grandes sin icono para Marisquitos, Taquería y Pa' botanear.",
+    "La descripción que comparten todos los platillos de una sección va una vez bajo la píldora.",
+    "Icono de chiles junto a \"Elige tu salsa\"; botones con sombra en bloque #7a1014.",
+    "La hoja verde recolorea iconos con filtro CSS (hue-rotate)."
+  ]
+}

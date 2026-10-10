@@ -14,7 +14,7 @@
   /* La pared de adentro (7-oct, fotos de Saira): lila con sus dibujos a línea en magenta, como su vinil: cono
      con galleta cuadriculada, paleta con volumen, copa con bolas escurriendo y cereza, fresas y cerezas
      (public/skins/manantial/wall.svg). */
-  background-color: #efe6f6;
+  background-color: var(--skin-bg, #efe6f6);
   background-image: url("/skins/manantial/wall.svg");
   background-size: 520px 520px;
   background-attachment: fixed;

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "kame",
+  "name": "Kame House Cevichería",
+  "paper": "Su volante: hoja verde pizarrón, franja amarilla con su logo redondo y la foto de sus platillos, títulos amarillos gordos, nombres dorado claro. components/menu/skins/kame.tsx",
+  "palette": {
+    "bg": "#263532",
+    "surface": "#263532",
+    "ink": "#fbf3d0",
+    "inkSoft": "#d8b25a",
+    "accent": "#f7cf1d",
+    "onAccent": "#263532",
+    "rule": "#f0dc7826",
+    "heroBg": "#efd250",
+    "heroInk": "#263532",
+    "chipBar": "#263532eb",
+    "chipActiveBg": "#f7cf1d",
+    "chipActiveInk": "#263532",
+    "chipActiveBorder": "#f7cf1d",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#f0dc78",
+    "chipInactiveBorder": "#f0dc784d"
+  },
+  "typography": {
+    "display": { "family": "League Spartan", "weight": 900, "fallback": "sans-serif" },
+    "name": { "family": "League Spartan", "weight": 700, "fallback": "sans-serif" },
+    "body": { "family": "Jost", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "logo-board",
+    "logo": "logo.png",
+    "logoShape": "circle",
+    "logoSize": 112,
+    "cover": "food.webp",
+    "overlay": "none",
+    "align": "start"
+  },
+  "chips": { "font": "display", "size": 12.5, "weight": 700, "textCase": "upper", "tracking": 0.08, "borderWidth": 1.5 },
+  "section": {
+    "style": "bar",
+    "font": "display",
+    "size": 33,
+    "weight": 900,
+    "textCase": "upper",
+    "tracking": -0.01,
+    "italic": false,
+    "color": "#f7cf1d",
+    "align": "start",
+    "surface": "none",
+    "radius": 0,
+    "dividers": "none"
+  },
+  "sectionOverrides": [],
+  "dish": {
+    "layout": "list-dense",
+    "photoShape": "rounded",
+    "photoRadius": 14,
+    "photoSize": 112,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 17,
+    "nameWeight": 700,
+    "nameCase": "upper",
+    "nameTracking": 0.07,
+    "nameItalic": false,
+    "nameColor": "#f0dc78",
+    "descColor": "#d8b25a",
+    "descSize": 14.5,
+    "leader": "dots",
+    "leaderColor": "#f0dc784d"
+  },
+  "price": {
+    "style": "plain",
+    "font": "name",
+    "size": 19,
+    "weight": 700,
+    "italic": false,
+    "color": "#edb64a",
+    "smallCurrency": true
+  },
+  "ornaments": [],
+  "footer": { "ink": "#fbf3d099", "brandInk": "#fbf3d0", "linkInk": "#f7cf1d", "rule": "#efd25033" },
+  "webOnlyExtras": [
+    "Anillo de letras que gira alrededor del logo (CEVICHES ✦ COCTELES ✦ …) y rayos de sol que giran detrás de los platillos.",
+    "Puntitos de imprenta en la orilla de la franja; los platillos flotan.",
+    "Cinta que corre con sus secciones; sello rojo \"New\" en OSTIONES; medalla redonda con la foto junto al título.",
+    "CEVICHE como tabla ½ · 1L con tamaños como botones.",
+    "Renglones que entran al hacer scroll y rayita del título que se dibuja al llegar."
+  ]
+}

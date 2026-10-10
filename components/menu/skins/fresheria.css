@@ -4,7 +4,7 @@
    borde dorado y sus fresas dibujadas a línea muy tenues al fondo. Su rosa es #feeef8, su vino #56052d, su magenta
    #cb0465 y su dorado #9e6036 (histograma del propio PDF). */
 .fr-skin {
-  background-color: #feeef8;
+  background-color: var(--skin-bg, #feeef8);
   background-image:
     radial-gradient(40rem 26rem at 8% 0%, rgba(255, 255, 255, 0.55), transparent 65%),
     radial-gradient(34rem 24rem at 96% 100%, rgba(203, 4, 101, 0.06), transparent 65%);

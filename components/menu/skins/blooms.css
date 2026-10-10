@@ -2,7 +2,7 @@
    Todo sale de SU "Menú BLOOMS 2026" (Canva): el rubor de acuarela de su portada, la franja rosa que corre
    por la izquierda de cada página, el ajedrez rosa de la página de pizzas y sus acuarelas de platillos. */
 .bl-skin {
-  background-color: #fbe9e6;
+  background-color: var(--skin-bg, #fbe9e6);
 }
 /* La franja rosa de su papel, pegada a la izquierda de la pantalla. */
 .bl-skin::before {

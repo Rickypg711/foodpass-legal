@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "id": "tercera",
+  "name": "Café de la Tercera",
+  "paper": "Sus dos menús de papel: salmón de fondo, paneles durazno y salvia, títulos rojo chunky, verde pixel y naranja bubble, la mano, el muñeco con cabeza de disco, las tacitas y el vinilo. components/menu/skins/tercera.tsx",
+  "palette": {
+    "bg": "#f9b699",
+    "surface": "#fbddd5",
+    "ink": "#1a1a1a",
+    "inkSoft": "#1a1a1ad9",
+    "accent": "#e74b34",
+    "onAccent": "#fbddd5",
+    "rule": "#1a1a1a40",
+    "heroBg": "#f9b699",
+    "heroInk": "#1a1a1a",
+    "chipBar": "#f9b699f2",
+    "chipActiveBg": "#1a1a1a",
+    "chipActiveInk": "#fbddd5",
+    "chipActiveBorder": "#1a1a1a",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#1a1a1a",
+    "chipInactiveBorder": "#1a1a1a"
+  },
+  "typography": {
+    "display": { "family": "Archivo Black", "weight": 400, "fallback": "sans-serif" },
+    "accent": { "family": "Silkscreen", "weight": 400, "fallback": "monospace" },
+    "name": { "family": "Barlow Condensed", "weight": 800, "fallback": "sans-serif" },
+    "body": { "family": "Archivo Narrow", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "wordmark",
+    "logo": null,
+    "logoShape": "none",
+    "logoSize": 0,
+    "cover": "restaurant",
+    "overlay": "none",
+    "nameColor": "#f2472d",
+    "align": "center"
+  },
+  "chips": { "font": "accent", "size": 11, "weight": 400, "textCase": "upper", "tracking": -0.025, "borderWidth": 2 },
+  "section": {
+    "style": "plain",
+    "font": "display",
+    "size": 26,
+    "weight": 400,
+    "textCase": "upper",
+    "tracking": 0.025,
+    "italic": false,
+    "color": "#e74b34",
+    "align": "start",
+    "surface": "card",
+    "radius": 28,
+    "dividers": "dotted",
+    "dividerColor": "#1a1a1a40"
+  },
+  "sectionOverrides": [
+    { "match": ["desayunos"], "font": "display", "color": "#e74b34", "surface": "#fbddd5", "sticker": "disco_guy.png" },
+    { "match": ["con pan"], "font": "accent", "color": "#315233", "surface": "#ddd9c0", "sticker": "mano.png" },
+    { "match": ["ensaladas"], "font": "display", "color": "#00b044", "surface": "#fac6b8" },
+    { "match": ["entradas"], "font": "display", "color": "#315233", "surface": "#00000000", "border": "#315233", "borderStyle": "dashed" },
+    { "match": ["pa papear"], "font": "accent", "color": "#e85c1e", "surface": "#00000000", "border": "#315233", "borderStyle": "dashed" },
+    { "match": ["sandos"], "font": "display", "color": "#ee892f", "surface": "#fbddd5" },
+    { "match": ["fuertes"], "font": "display", "color": "#e74b34", "surface": "#fbddd5" },
+    { "match": ["con cafe"], "font": "display", "color": "#315233", "surface": "#fbb2a3", "sticker": "tacitas_calcetin.png" },
+    { "match": ["latte especialidades"], "font": "display", "color": "#e26320", "surface": "#fbddd5", "sticker": "tacitas_caminando.png" },
+    { "match": ["de temporada"], "font": "accent", "color": "#f2472d", "surface": "#fbe9de", "border": "#f2472d", "borderStyle": "dashed" },
+    { "match": ["sin cafe"], "font": "accent", "color": "#e74b34", "surface": "#ddd9c0" },
+    { "match": ["mocktails"], "font": "display", "color": "#e74b34", "surface": "#e9d3d3" },
+    { "match": ["matcha bar"], "font": "accent", "color": "#00b044", "surface": "#00000000", "border": "#f2472d", "borderStyle": "dashed" },
+    { "match": ["postres"], "font": "display", "color": "#e26320", "surface": "#fbddd5", "sticker": "vinilo_mano.png" },
+    { "match": ["smoothies"], "font": "display", "color": "#1f7a8c", "surface": "#fac6b8" }
+  ],
+  "dish": {
+    "layout": "row-photo-right",
+    "photoShape": "rounded",
+    "photoRadius": 16,
+    "photoSize": 76,
+    "photoBorder": "#1a1a1a",
+    "nameFont": "name",
+    "nameSize": 17,
+    "nameWeight": 800,
+    "nameCase": "upper",
+    "nameTracking": 0.025,
+    "nameItalic": false,
+    "nameColor": "#1a1a1a",
+    "descColor": "#1a1a1ad9",
+    "descSize": 13.5,
+    "leader": "dots",
+    "leaderColor": "#1a1a1ab3"
+  },
+  "price": {
+    "style": "plain",
+    "font": "name",
+    "size": 17,
+    "weight": 800,
+    "italic": false,
+    "color": "#1a1a1a",
+    "smallCurrency": false
+  },
+  "ornaments": [
+    { "role": "sticker", "asset": "caritas.png", "placement": "hero", "opacity": 1, "size": 48 }
+  ],
+  "footer": { "ink": "#1a1a1ab3", "brandInk": "#1a1a1a", "linkInk": "#e74b34", "rule": "#1a1a1a66" },
+  "webOnlyExtras": [
+    "El nombre en arco (textPath) con la letra bubble (Bowlby One) y \"CUU · MX\" en pixel a los lados de las caritas.",
+    "Seis letras de su papel: chunky, pixel, bubble y la letra a mano (Gochi Hand) en lema, notas y opciones; la app usa display/accent/name/body y pinta en display las secciones bubble.",
+    "Las secciones que no están en su papel rotan tres estilos (chunky/peach, pixel/salvia, bubble/sin panel).",
+    "Ilustraciones que se salen del panel por arriba (el muñeco disco se mece); raya punteada bajo el encabezado.",
+    "Logo del local con aro negro junto al lema."
+  ]
+}

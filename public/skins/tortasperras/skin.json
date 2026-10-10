@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "id": "tortasperras",
+  "name": "Pinches Tortas Perras",
+  "paper": "Sus tres hojas de Instagram: la portada roja con fibras (\"Pásele joven / ¿Que va a Querer?\") y el papel hueso moteado con los óvalos TORTAS y TACOS. components/menu/skins/tortasperras.tsx",
+  "palette": {
+    "bg": "#e9e7e2",
+    "surface": "#e9e7e2",
+    "ink": "#2b2a28",
+    "inkSoft": "#2b2a28d9",
+    "accent": "#cf1225",
+    "onAccent": "#f4f1ea",
+    "rule": "#2b2a2829",
+    "heroBg": "#b3121a",
+    "heroInk": "#f4f1ea",
+    "chipBar": "#e9e7e2f2",
+    "chipActiveBg": "#cf1225",
+    "chipActiveInk": "#f4f1ea",
+    "chipActiveBorder": "#cf1225",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#cf1225",
+    "chipInactiveBorder": "#cf122559"
+  },
+  "typography": {
+    "display": { "family": "Anton", "weight": 400, "fallback": "sans-serif" },
+    "accent": { "family": "Yellowtail", "weight": 400, "fallback": "cursive" },
+    "name": { "family": "Poppins", "weight": 700, "fallback": "sans-serif" },
+    "body": { "family": "Poppins", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "wordmark",
+    "logo": null,
+    "logoShape": "none",
+    "logoSize": 0,
+    "cover": null,
+    "overlay": "none",
+    "align": "center"
+  },
+  "chips": { "font": "display", "size": 13, "weight": 400, "textCase": "upper", "tracking": 0.06, "borderWidth": 1.5 },
+  "section": {
+    "style": "oval",
+    "font": "display",
+    "size": 26,
+    "weight": 400,
+    "textCase": "upper",
+    "tracking": 0.03,
+    "italic": false,
+    "color": "#cf1225",
+    "fill": "#00000000",
+    "border": "#cf1225",
+    "align": "center",
+    "surface": "none",
+    "radius": 0,
+    "dividers": "none"
+  },
+  "sectionOverrides": [],
+  "dish": {
+    "layout": "list-dense",
+    "photoShape": "rounded",
+    "photoRadius": 3,
+    "photoSize": 112,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 15,
+    "nameWeight": 700,
+    "nameCase": "upper",
+    "nameTracking": 0.035,
+    "nameItalic": false,
+    "nameColor": "#cf1225",
+    "descColor": "#2b2a28d9",
+    "descSize": 14,
+    "leader": "none"
+  },
+  "price": {
+    "style": "plain",
+    "font": "name",
+    "size": 15,
+    "weight": 600,
+    "italic": false,
+    "color": "#2b2a28",
+    "smallCurrency": false
+  },
+  "ornaments": [],
+  "footer": { "ink": "#2b2a2899", "brandInk": "#cf1225", "linkInk": "#cf1225", "rule": "#2b2a2826" },
+  "webOnlyExtras": [
+    "Fibras del papel: motas claras y oscuras en la portada roja y en la hoja hueso (degradados CSS).",
+    "Óvalo \"Nuestro Menú\" en cursiva (Yellowtail) sobre el nombre y \"¿Que va a querer?\" debajo.",
+    "Rayita roja sobre cada óvalo de sección; el óvalo va ladeado 1.2°.",
+    "Hoja a dos columnas en escritorio con su raya al centro."
+  ]
+}

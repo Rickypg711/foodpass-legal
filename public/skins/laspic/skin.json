@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "laspic",
+  "name": "LasPic, Pizza, Pasta & Fun",
+  "paper": "Su fachada (ajedrez negro/crema, \"Las Pic\" en serif rojo) y su menú de papel editorial (mascotas, franja de maridaje, dos columnas). components/menu/skins/laspic.tsx",
+  "palette": {
+    "bg": "#efe9df",
+    "surface": "#fffdf8",
+    "ink": "#141414",
+    "inkSoft": "#141414bf",
+    "accent": "#d23f2c",
+    "onAccent": "#fbf8f2",
+    "rule": "#141414",
+    "heroBg": "#f4eee4",
+    "heroInk": "#141414",
+    "chipBar": "#fbf8f2f2",
+    "chipActiveBg": "#141414",
+    "chipActiveInk": "#fbf8f2",
+    "chipActiveBorder": "#141414",
+    "chipInactiveBg": "#00000000",
+    "chipInactiveInk": "#141414",
+    "chipInactiveBorder": "#14141459"
+  },
+  "typography": {
+    "display": { "family": "Instrument Serif", "weight": 400, "fallback": "serif" },
+    "name": { "family": "Jost", "weight": 600, "fallback": "sans-serif" },
+    "body": { "family": "Jost", "weight": 400, "fallback": "sans-serif" }
+  },
+  "hero": {
+    "variant": "wordmark",
+    "logo": null,
+    "logoShape": "none",
+    "logoSize": 0,
+    "cover": null,
+    "overlay": "none",
+    "nameColor": "#d23f2c",
+    "align": "center"
+  },
+  "chips": { "font": "body", "size": 11, "weight": 600, "textCase": "upper", "tracking": 0.14, "borderWidth": 1.5 },
+  "section": {
+    "style": "underline",
+    "font": "display",
+    "size": 30,
+    "weight": 400,
+    "textCase": "none",
+    "tracking": 0,
+    "italic": false,
+    "color": "#141414",
+    "align": "start",
+    "surface": "card",
+    "radius": 0,
+    "dividers": "none"
+  },
+  "sectionOverrides": [],
+  "dish": {
+    "layout": "list-dense",
+    "photoShape": "rounded",
+    "photoRadius": 3,
+    "photoSize": 112,
+    "photoBorder": null,
+    "nameFont": "name",
+    "nameSize": 14,
+    "nameWeight": 600,
+    "nameCase": "upper",
+    "nameTracking": 0.1,
+    "nameItalic": false,
+    "nameColor": "#141414",
+    "descColor": "#141414bf",
+    "descSize": 13.5,
+    "leader": "none"
+  },
+  "price": {
+    "style": "plain",
+    "font": "body",
+    "size": 14,
+    "weight": 500,
+    "italic": false,
+    "color": "#141414",
+    "smallCurrency": false
+  },
+  "ornaments": [
+    { "role": "sticker", "asset": "mascota_izq.png", "placement": "page-top", "opacity": 1, "size": 44 },
+    { "role": "sticker", "asset": "mascota_der.png", "placement": "page-top", "opacity": 1, "size": 44 }
+  ],
+  "footer": { "ink": "#14141499", "brandInk": "#141414", "linkInk": "#d23f2c", "rule": "#14141426" },
+  "webOnlyExtras": [
+    "Franjas de ajedrez negro/crema arriba y abajo de la fachada (conic-gradient CSS).",
+    "\"Pizzería\" espaciado sobre \"Las Pic\" y \"Pizza · Pasta and Fun\" debajo; horario de su papel en dos renglones.",
+    "Franja de maridaje con las figuras ▽ ○ □ rayadas junto a cada platillo (código del vino).",
+    "Palabras chicas (de, y, con…) del nombre en peso normal y \"LasPic\" en la serif.",
+    "Hoja a dos columnas en escritorio con la raya negra al centro; foto del platillo un poco gris."
+  ]
+}

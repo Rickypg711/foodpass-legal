@@ -4,7 +4,7 @@
 /* La página es el MISMO papel que la hoja: bajo la portada roja todo es hueso corrido, sin franjas de otro color
    entre la portada, la barra de secciones y la hoja (la hoja se separa con su sombra, no con el fondo). */
 .tp-skin {
-  background-color: #e9e7e2;
+  background-color: var(--skin-bg, #e9e7e2);
 }
 
 /* Su portada: rojo con la fibra del papel (motas claras y oscuras, muy tenues). */

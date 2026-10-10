@@ -28,6 +28,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./pecado.css";
+import "./skinTokens.generated.css";
 
 const lilita = Lilita_One({ weight: "400", subsets: ["latin"], variable: "--pc-block" });
 const barlow = Barlow_Condensed({ weight: ["700", "800"], style: ["normal", "italic"], subsets: ["latin"], variable: "--pc-name" });

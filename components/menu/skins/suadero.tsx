@@ -25,6 +25,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./suadero.css";
+import "./skinTokens.generated.css";
 
 const rye = Rye({ weight: "400", subsets: ["latin"], variable: "--sd-display" });
 const alfa = Alfa_Slab_One({ weight: "400", subsets: ["latin"], variable: "--sd-name" });

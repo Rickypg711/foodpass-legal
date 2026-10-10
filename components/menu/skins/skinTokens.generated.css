@@ -1,0 +1,244 @@
+/* GENERADO por scripts/build-skin-tokens.mjs desde public/skins/{id}/skin.json. NO EDITAR A MANO:
+   cambia el skin.json y corre `npm run build:skin-tokens`. El candado (scripts/validate-skin-json.mjs) truena
+   si este archivo no coincide con los skin.json. */
+.bl-skin {
+  --skin-accent: #ff5c9a;
+  --skin-bg: #fbe9e6;
+  --skin-chip-active-bg: #ff5c9a;
+  --skin-chip-active-border: #ff5c9a;
+  --skin-chip-active-ink: #ffffff;
+  --skin-chip-bar: rgb(255 246 244 / 0.9);
+  --skin-chip-inactive-bg: #ffffff;
+  --skin-chip-inactive-border: rgb(255 92 154 / 0.3);
+  --skin-chip-inactive-ink: #1c1a1b;
+  --skin-hero-bg: #f9d4cd;
+  --skin-hero-ink: #1c1a1b;
+  --skin-ink: #1c1a1b;
+  --skin-ink-soft: #e8407f;
+  --skin-on-accent: #ffffff;
+  --skin-rule: rgb(255 92 154 / 0.3);
+  --skin-surface: #ffffff;
+}
+.fr-skin {
+  --skin-accent: #cb0465;
+  --skin-bg: #feeef8;
+  --skin-chip-active-bg: #cb0465;
+  --skin-chip-active-border: #cb0465;
+  --skin-chip-active-ink: #fffbfd;
+  --skin-chip-bar: rgb(254 238 248 / 0.95);
+  --skin-chip-inactive-bg: #fffbfd;
+  --skin-chip-inactive-border: #9e6036;
+  --skin-chip-inactive-ink: #56052d;
+  --skin-hero-bg: #feeef8;
+  --skin-hero-ink: #56052d;
+  --skin-ink: #56052d;
+  --skin-ink-soft: rgb(86 5 45 / 0.7);
+  --skin-on-accent: #fffbfd;
+  --skin-rule: rgb(158 96 54 / 0.45);
+  --skin-surface: #feeef8;
+  --skin-surface-border: #9e6036;
+}
+.igo-skin {
+  --skin-accent: #0b652a;
+  --skin-bg: #e8e9e6;
+  --skin-chip-active-bg: #0b652a;
+  --skin-chip-active-border: #0b652a;
+  --skin-chip-active-ink: #f7f8f8;
+  --skin-chip-bar: rgb(247 248 248 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(11 101 42 / 0.35);
+  --skin-chip-inactive-ink: #0b652a;
+  --skin-hero-bg: #f7f8f8;
+  --skin-hero-ink: #0b652a;
+  --skin-ink: #2b2b2b;
+  --skin-ink-soft: rgb(43 43 43 / 0.75);
+  --skin-on-accent: #f7f8f8;
+  --skin-rule: rgb(43 43 43 / 0.15);
+  --skin-surface: #f7f8f8;
+  --skin-surface-border: #0b652a;
+}
+.kame-skin {
+  --skin-accent: #f7cf1d;
+  --skin-bg: #263532;
+  --skin-chip-active-bg: #f7cf1d;
+  --skin-chip-active-border: #f7cf1d;
+  --skin-chip-active-ink: #263532;
+  --skin-chip-bar: rgb(38 53 50 / 0.92);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(240 220 120 / 0.3);
+  --skin-chip-inactive-ink: #f0dc78;
+  --skin-hero-bg: #efd250;
+  --skin-hero-ink: #263532;
+  --skin-ink: #fbf3d0;
+  --skin-ink-soft: #d8b25a;
+  --skin-on-accent: #263532;
+  --skin-rule: rgb(240 220 120 / 0.15);
+  --skin-surface: #263532;
+}
+.lp-skin {
+  --skin-accent: #d23f2c;
+  --skin-bg: #efe9df;
+  --skin-chip-active-bg: #141414;
+  --skin-chip-active-border: #141414;
+  --skin-chip-active-ink: #fbf8f2;
+  --skin-chip-bar: rgb(251 248 242 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(20 20 20 / 0.35);
+  --skin-chip-inactive-ink: #141414;
+  --skin-hero-bg: #f4eee4;
+  --skin-hero-ink: #141414;
+  --skin-ink: #141414;
+  --skin-ink-soft: rgb(20 20 20 / 0.75);
+  --skin-on-accent: #fbf8f2;
+  --skin-rule: #141414;
+  --skin-surface: #fffdf8;
+}
+.mn-skin {
+  --skin-accent: #1d4ed8;
+  --skin-bg: #efe6f6;
+  --skin-chip-active-bg: #ffffff;
+  --skin-chip-active-border: #ffffff;
+  --skin-chip-active-ink: #5b2a80;
+  --skin-chip-bar: rgb(106 51 147 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(255 255 255 / 0.5);
+  --skin-chip-inactive-ink: #ffffff;
+  --skin-hero-bg: #7b3fa6;
+  --skin-hero-ink: #ffffff;
+  --skin-ink: #2a1740;
+  --skin-ink-soft: rgb(42 23 64 / 0.7);
+  --skin-on-accent: #ffffff;
+  --skin-rule: rgb(42 23 64 / 0.1);
+  --skin-surface: #ffffff;
+  --skin-surface-border: rgb(42 23 64 / 0.12);
+}
+.mx-skin {
+  --skin-accent: #234933;
+  --skin-bg: #234933;
+  --skin-chip-active-bg: #f6f5e0;
+  --skin-chip-active-border: #f6f5e0;
+  --skin-chip-active-ink: #234933;
+  --skin-chip-bar: rgb(35 73 51 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(246 245 224 / 0.3);
+  --skin-chip-inactive-ink: rgb(246 245 224 / 0.9);
+  --skin-hero-bg: #234933;
+  --skin-hero-ink: #cfe3cb;
+  --skin-ink: #1f3a2b;
+  --skin-ink-soft: rgb(31 58 43 / 0.85);
+  --skin-on-accent: #f6f5e0;
+  --skin-rule: rgb(35 73 51 / 0.15);
+  --skin-surface: #f6f5e0;
+}
+.nb-skin {
+  --skin-accent: #0b0b0b;
+  --skin-bg: #f4f3ef;
+  --skin-chip-active-bg: #0b0b0b;
+  --skin-chip-active-border: #0b0b0b;
+  --skin-chip-active-ink: #ffffff;
+  --skin-chip-bar: rgb(244 243 239 / 0.88);
+  --skin-chip-inactive-bg: rgb(255 255 255 / 0.7);
+  --skin-chip-inactive-border: rgb(11 11 11 / 0.15);
+  --skin-chip-inactive-ink: rgb(11 11 11 / 0.7);
+  --skin-hero-bg: #0b0b0b;
+  --skin-hero-ink: #ffffff;
+  --skin-ink: #0b0b0b;
+  --skin-ink-alt: #ffffff;
+  --skin-ink-soft: rgb(11 11 11 / 0.6);
+  --skin-on-accent: #ffffff;
+  --skin-rule: rgb(11 11 11 / 0.08);
+  --skin-surface: #ffffff;
+  --skin-surface-alt: #0b0b0b;
+  --skin-surface-border: rgb(11 11 11 / 0.07);
+}
+.omu-skin {
+  --skin-accent: #f10809;
+  --skin-bg: #151311;
+  --skin-chip-active-bg: #f9f8f8;
+  --skin-chip-active-border: #f10809;
+  --skin-chip-active-ink: #d40607;
+  --skin-chip-bar: rgb(21 19 17 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(249 248 248 / 0.35);
+  --skin-chip-inactive-ink: #f9f8f8;
+  --skin-hero-bg: #151311;
+  --skin-hero-ink: #f9f8f8;
+  --skin-ink: #f9f8f8;
+  --skin-ink-soft: rgb(249 248 248 / 0.75);
+  --skin-on-accent: #f9f8f8;
+  --skin-rule: rgb(249 248 248 / 0.15);
+  --skin-surface: #151311;
+}
+.pecado-skin {
+  --skin-accent: #a61c21;
+  --skin-bg: #c03427;
+  --skin-chip-active-bg: #ffeecf;
+  --skin-chip-active-border: #ffeecf;
+  --skin-chip-active-ink: #a61c21;
+  --skin-chip-bar: rgb(192 52 39 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: #ffeecf;
+  --skin-chip-inactive-ink: #ffeecf;
+  --skin-hero-bg: #ffeecf;
+  --skin-hero-ink: #a61c21;
+  --skin-ink: #a61c21;
+  --skin-ink-soft: rgb(166 28 33 / 0.9);
+  --skin-on-accent: #ffeecf;
+  --skin-rule: rgb(166 28 33 / 0.2);
+  --skin-surface: #ffeecf;
+}
+.sd-skin {
+  --skin-accent: #c6361c;
+  --skin-bg: #fff8f9;
+  --skin-chip-active-bg: #612f18;
+  --skin-chip-active-border: #612f18;
+  --skin-chip-active-ink: #f0e9d3;
+  --skin-chip-bar: rgb(255 247 248 / 0.94);
+  --skin-chip-inactive-bg: #ffffff;
+  --skin-chip-inactive-border: rgb(159 76 36 / 0.4);
+  --skin-chip-inactive-ink: #612f18;
+  --skin-hero-bg: #9f4c24;
+  --skin-hero-ink: #f0e9d3;
+  --skin-ink: #3a2314;
+  --skin-ink-soft: rgb(58 35 20 / 0.72);
+  --skin-on-accent: #f0e9d3;
+  --skin-rule: rgb(97 47 24 / 0.1);
+  --skin-surface: #fdfdfb;
+  --skin-surface-border: rgb(58 35 20 / 0.08);
+}
+.tercera-skin {
+  --skin-accent: #e74b34;
+  --skin-bg: #f9b699;
+  --skin-chip-active-bg: #1a1a1a;
+  --skin-chip-active-border: #1a1a1a;
+  --skin-chip-active-ink: #fbddd5;
+  --skin-chip-bar: rgb(249 182 153 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: #1a1a1a;
+  --skin-chip-inactive-ink: #1a1a1a;
+  --skin-hero-bg: #f9b699;
+  --skin-hero-ink: #1a1a1a;
+  --skin-ink: #1a1a1a;
+  --skin-ink-soft: rgb(26 26 26 / 0.85);
+  --skin-on-accent: #fbddd5;
+  --skin-rule: rgb(26 26 26 / 0.25);
+  --skin-surface: #fbddd5;
+}
+.tp-skin {
+  --skin-accent: #cf1225;
+  --skin-bg: #e9e7e2;
+  --skin-chip-active-bg: #cf1225;
+  --skin-chip-active-border: #cf1225;
+  --skin-chip-active-ink: #f4f1ea;
+  --skin-chip-bar: rgb(233 231 226 / 0.95);
+  --skin-chip-inactive-bg: rgb(0 0 0 / 0);
+  --skin-chip-inactive-border: rgb(207 18 37 / 0.35);
+  --skin-chip-inactive-ink: #cf1225;
+  --skin-hero-bg: #b3121a;
+  --skin-hero-ink: #f4f1ea;
+  --skin-ink: #2b2a28;
+  --skin-ink-soft: rgb(43 42 40 / 0.85);
+  --skin-on-accent: #f4f1ea;
+  --skin-rule: rgb(43 42 40 / 0.16);
+  --skin-surface: #e9e7e2;
+}

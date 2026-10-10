@@ -3,7 +3,7 @@
    blancas con borde rojo, tarjetas blancas con cabecera roja, números rojos en círculo y letras gordas blancas.
    Su rojo es #f10809 y su negro #151311, sacados de la propia hoja. */
 .omu-skin {
-  background-color: #151311;
+  background-color: var(--skin-bg, #151311);
   background-image:
     radial-gradient(ellipse 70% 40% at 50% 0%, rgba(120, 60, 40, 0.28), transparent 70%),
     radial-gradient(ellipse 60% 50% at 85% 100%, rgba(241, 8, 9, 0.08), transparent 70%),

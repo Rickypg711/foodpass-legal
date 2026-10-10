@@ -26,6 +26,7 @@ import { formatPrice } from "@/lib/priceFormat";
 import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./blooms.css";
+import "./skinTokens.generated.css";
 
 const mont = Montserrat({ weight: ["400", "500", "600", "700", "800", "900"], subsets: ["latin"], variable: "--bl-sans" });
 const pinyon = Pinyon_Script({ weight: "400", subsets: ["latin"], variable: "--bl-script" });

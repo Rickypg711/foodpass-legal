@@ -3,7 +3,7 @@
    logo redondo y la foto de sus platillos, títulos amarillos gordos, nombres en dorado claro y precios en dorado.
    Su verde es #263532 y su amarillo #EFD250, sacados del propio volante. */
 .kame-skin {
-  --k-bg: #263532;
+  --k-bg: var(--skin-bg, #263532);
   --k-deep: #1c2826;
   --k-band: #efd250;
   --k-title: #f7cf1d;

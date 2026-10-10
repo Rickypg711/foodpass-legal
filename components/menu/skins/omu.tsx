@@ -34,6 +34,7 @@ import type { MenuItemCardProps } from "@/components/menu/MenuItemCard";
 import type { MenuItemOptionGroup } from "@/lib/menu/optionGroups";
 import type { ScheduleStatus } from "@/lib/schedule";
 import "./omu.css";
+import "./skinTokens.generated.css";
 
 const montserrat = Montserrat({ weight: ["400", "500", "600", "700", "800", "900"], subsets: ["latin"], variable: "--omu-sans" });
 const bodoni = Bodoni_Moda({ weight: ["400", "500"], subsets: ["latin"], variable: "--omu-display" });

@@ -2,7 +2,7 @@
    Todo sale de sus 4 hojas: el marco verde doble, el papel casi blanco, la etiqueta verde del precio con su barra
    gris, el higo grabado de marca de agua y la franja verde del pie. Su verde es #0b652a (sacado de su propio PDF). */
 .igo-skin {
-  background-color: #e8e9e6;
+  background-color: var(--skin-bg, #e8e9e6);
 }
 
 /* Su hoja: blanca con el marco verde doble de su menú. */
