@@ -14,6 +14,8 @@ export type BuildPreferenceBodyInput = {
   customerEmail?: string;
   items: PreferenceCartItem[];
   total: number;
+  /** Moneda del local (ISO, p. ej. "MXN"). Sin dato, México: los locales viejos no traen el campo. */
+  currency?: string;
   /** Commission rate 0–1 (e.g. 0.03 = 3%). Omitted or 0 → no marketplace_fee on preference. */
   marketplaceFeeRate?: number;
   successUrl: string;
@@ -35,20 +37,21 @@ export function shouldIncludeAutoReturn(successUrl: string): boolean {
 export function buildMercadoPagoPreferenceBody(
   input: BuildPreferenceBodyInput,
 ): Record<string, unknown> {
+  const currency = /^[A-Z]{3}$/.test(input.currency ?? "") ? (input.currency as string) : "MXN";
   const mpItems =
     input.items.length > 0
       ? input.items.map((item) => ({
           title: item.title.slice(0, 256),
           quantity: Math.max(1, Math.round(item.quantity)),
           unit_price: Number(item.unit_price),
-          currency_id: "MXN",
+          currency_id: currency,
         }))
       : [
           {
             title: `Pedido ${input.orderId}`,
             quantity: 1,
             unit_price: input.total,
-            currency_id: "MXN",
+            currency_id: currency,
           },
         ];
 

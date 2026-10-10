@@ -1,0 +1,1758 @@
+{
+ "_": "Casos espejo del precio del servidor. Los corre functions (test/order_pricing.test.js) y la web (scripts/validate-order-pricing.mjs). Idéntico en los dos repos.",
+ "menuById": {
+  "taco": {
+   "name": "Taco de suadero",
+   "price": 25,
+   "isAvailable": true
+  },
+  "refresco": {
+   "name": "Refresco",
+   "price": 30
+  },
+  "agua": {
+   "name": "Agua de horchata",
+   "price": "45"
+  },
+  "hamburguesa": {
+   "name": "Hamburguesa",
+   "price": 95,
+   "optionGroups": [
+    {
+     "id": "extras",
+     "name": "Extras",
+     "required": false,
+     "min": 0,
+     "max": 3,
+     "options": [
+      {
+       "id": "camaron",
+       "name": "Camarón",
+       "priceDelta": 25
+      },
+      {
+       "id": "tocino",
+       "name": "Tocino",
+       "priceDelta": 15
+      },
+      {
+       "id": "aguacate",
+       "name": "Aguacate",
+       "priceDelta": 12.5,
+       "available": false
+      }
+     ]
+    },
+    {
+     "id": "termino",
+     "name": "Término",
+     "required": true,
+     "min": 1,
+     "max": 1,
+     "options": [
+      {
+       "id": "medio",
+       "name": "Medio",
+       "priceDelta": 0
+      },
+      {
+       "id": "bien",
+       "name": "Bien cocida",
+       "priceDelta": 0
+      }
+     ]
+    }
+   ]
+  },
+  "pizza": {
+   "name": "Pizza pepperoni",
+   "price": 120,
+   "description": "Masa de la casa. Elige tu tamaño: Personal, Grande +$90, Familiar +$150."
+  },
+  "alitas": {
+   "name": "Alitas",
+   "price": 140,
+   "description": "10 piezas. Elige tu salsa: Búfalo, BBQ, Mango Habanero. Opcional: Papas +$35, Aderezo extra +$10.50."
+  },
+  "cafe": {
+   "name": "Café",
+   "price": 20,
+   "optionGroups": [
+    {
+     "id": "tamano",
+     "name": "Tamaño",
+     "required": true,
+     "min": 1,
+     "max": 1,
+     "options": [
+      {
+       "id": "chico",
+       "name": "Chico",
+       "priceDelta": 10
+      },
+      {
+       "id": "grande",
+       "name": "Grande",
+       "priceDelta": 30
+      }
+     ]
+    }
+   ]
+  },
+  "agotado": {
+   "name": "Pozole",
+   "price": 110,
+   "isAvailable": false
+  },
+  "centavos": {
+   "name": "Dulce",
+   "price": 0.1
+  },
+  "centavos2": {
+   "name": "Chicle",
+   "price": 0.2
+  },
+  "roto": {
+   "name": "Sin precio",
+   "price": "gratis"
+  }
+ },
+ "cases": [
+  {
+   "name": "pedido honesto",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 3,
+      "subtotal": 75
+     },
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 30,
+      "quantity": 1,
+      "subtotal": 30
+     }
+    ],
+    "total": 105
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 105,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: total de $1 con platillos bien",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 12,
+      "subtotal": 300
+     }
+    ],
+    "total": 1
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 300,
+    "mismatch": true,
+    "reasons": [
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: platillo a $1",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 1,
+      "quantity": 12,
+      "subtotal": 12
+     }
+    ],
+    "total": 12
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 300,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: precio negativo",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": -25,
+      "quantity": 3,
+      "subtotal": -75
+     },
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 30,
+      "quantity": 4,
+      "subtotal": 120
+     }
+    ],
+    "total": 45
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 195,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: subtotal no cuadra con precio por cantidad",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 4,
+      "subtotal": 25
+     }
+    ],
+    "total": 100
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 100,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "el dueño subió el precio a medio pedido",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 90,
+      "quantity": 1,
+      "subtotal": 90,
+      "selectedModifiers": [
+       {
+        "modifierName": "Término",
+        "selectedOptions": [
+         "Medio"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 90
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 95,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "el dueño bajó el precio a medio pedido",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 35,
+      "quantity": 2,
+      "subtotal": 70
+     }
+    ],
+    "total": 70
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 60,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "opción con costo, honesto",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 120,
+      "quantity": 2,
+      "subtotal": 240,
+      "selectedModifiers": [
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Camarón"
+        ]
+       },
+       {
+        "modifierName": "Término",
+        "selectedOptions": [
+         "Medio"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 240
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 240,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "dos extras en un grupo de varios",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 135,
+      "quantity": 1,
+      "subtotal": 135,
+      "selectedModifiers": [
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Camarón",
+         "Tocino"
+        ]
+       },
+       {
+        "modifierName": "Término",
+        "selectedOptions": [
+         "Bien cocida"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 135
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 135,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: pide el extra y paga el precio base",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 95,
+      "quantity": 2,
+      "subtotal": 190,
+      "selectedModifiers": [
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Camarón"
+        ]
+       },
+       {
+        "modifierName": "Término",
+        "selectedOptions": [
+         "Medio"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 190
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 240,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "nombre de opción con otras mayúsculas",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 120,
+      "quantity": 1,
+      "subtotal": 120,
+      "selectedModifiers": [
+       {
+        "modifierName": "extras",
+        "selectedOptions": [
+         "camarón"
+        ]
+       },
+       {
+        "modifierName": "término",
+        "selectedOptions": [
+         "medio"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 120
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 120,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "tamaño leído de la descripción",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "pizza",
+      "name": "pizza",
+      "price": 210,
+      "quantity": 1,
+      "subtotal": 210,
+      "selectedModifiers": [
+       {
+        "modifierName": "Tamaño",
+        "selectedOptions": [
+         "Grande"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 210
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 210,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: tamaño familiar a precio de personal",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "pizza",
+      "name": "pizza",
+      "price": 120,
+      "quantity": 1,
+      "subtotal": 120,
+      "selectedModifiers": [
+       {
+        "modifierName": "Tamaño",
+        "selectedOptions": [
+         "Familiar"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 120
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 270,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "salsa gratis y extra con centavos, de la descripción",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "alitas",
+      "name": "alitas",
+      "price": 150.5,
+      "quantity": 2,
+      "subtotal": 301.0,
+      "selectedModifiers": [
+       {
+        "modifierName": "Salsa",
+        "selectedOptions": [
+         "BBQ"
+        ]
+       },
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Aderezo extra"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 301
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 301,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "obligatorio con costo que no viene: se cobra el más barato",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "cafe",
+      "name": "cafe",
+      "price": 20,
+      "quantity": 1,
+      "subtotal": 20
+     }
+    ],
+    "total": 20
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 30,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "missing_required_option",
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "obligatorio sin costo que no viene no cambia el precio",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 95,
+      "quantity": 1,
+      "subtotal": 95
+     }
+    ],
+    "total": 95
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 95,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "opción que no existe",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 95,
+      "quantity": 1,
+      "subtotal": 95,
+      "selectedModifiers": [
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Langosta"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 95
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "unknown_option"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "grupo que no existe",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 1,
+      "subtotal": 25,
+      "selectedModifiers": [
+       {
+        "modifierName": "Regalo",
+        "selectedOptions": [
+         "Gratis"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 25
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "unknown_option"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "opción agotada hoy",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "hamburguesa",
+      "name": "hamburguesa",
+      "price": 107.5,
+      "quantity": 1,
+      "subtotal": 107.5,
+      "selectedModifiers": [
+       {
+        "modifierName": "Extras",
+        "selectedOptions": [
+         "Aguacate"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 107.5
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "available": false,
+    "serverTotal": 107.5,
+    "mismatch": false,
+    "reasons": [
+     "option_unavailable"
+    ]
+   }
+  },
+  {
+   "name": "dos opciones donde solo va una: se cobran las dos y queda anotado",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "pizza",
+      "name": "pizza",
+      "price": 360,
+      "quantity": 1,
+      "subtotal": 360,
+      "selectedModifiers": [
+       {
+        "modifierName": "Tamaño",
+        "selectedOptions": [
+         "Grande",
+         "Familiar"
+        ]
+       }
+      ]
+     }
+    ],
+    "total": 360
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 360,
+    "mismatch": false,
+    "reasons": [
+     "too_many_options"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "platillo que no está en el menú",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "fantasma",
+      "name": "fantasma",
+      "price": 10,
+      "quantity": 1,
+      "subtotal": 10
+     }
+    ],
+    "total": 10
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "unknown_item"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "platillo de otro local (ruta con diagonal)",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "../../otroLocal/menu/taco",
+      "name": "../../otroLocal/menu/taco",
+      "price": 1,
+      "quantity": 1,
+      "subtotal": 1
+     }
+    ],
+    "total": 1
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "unknown_item"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "venta rápida de la Caja no es de un comensal",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "__quick_sell__",
+      "name": "__quick_sell__",
+      "price": 1,
+      "quantity": 1,
+      "subtotal": 1
+     }
+    ],
+    "total": 1
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "unknown_item"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "platillo apagado",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "agotado",
+      "name": "agotado",
+      "price": 110,
+      "quantity": 1,
+      "subtotal": 110
+     }
+    ],
+    "total": 110
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "available": false,
+    "serverTotal": 110,
+    "mismatch": false,
+    "reasons": [
+     "item_unavailable"
+    ]
+   }
+  },
+  {
+   "name": "cantidad negativa",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": -2,
+      "subtotal": -50
+     },
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 30,
+      "quantity": 3,
+      "subtotal": 90
+     }
+    ],
+    "total": 40
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_quantity"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "cantidad con decimales",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 0.01,
+      "subtotal": 0.25
+     }
+    ],
+    "total": 0.25
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_quantity"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "cantidad absurda",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 100000,
+      "subtotal": 2500000
+     }
+    ],
+    "total": 2500000
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_quantity"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "cantidad como texto",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": "3",
+      "subtotal": 0
+     }
+    ],
+    "total": 75
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_quantity"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "línea sin platillo",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "name": "algo",
+      "price": 5,
+      "quantity": 1,
+      "subtotal": 5
+     }
+    ],
+    "total": 5
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_item"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "pedido vacío",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [],
+    "total": 0
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "no_items"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "precio del menú guardado como texto",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "agua",
+      "name": "agua",
+      "price": 45,
+      "quantity": 2,
+      "subtotal": 90
+     }
+    ],
+    "total": 90
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 90,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "precio del menú que no es número",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "roto",
+      "name": "roto",
+      "price": 0,
+      "quantity": 1,
+      "subtotal": 0
+     }
+    ],
+    "total": 0
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": false,
+    "serverTotal": null,
+    "mismatch": true,
+    "reasons": [
+     "bad_menu_price"
+    ],
+    "available": false
+   }
+  },
+  {
+   "name": "centavos: 0.1 + 0.2 no es trampa",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "centavos",
+      "name": "centavos",
+      "price": 0.1,
+      "quantity": 1,
+      "subtotal": 0.1
+     },
+     {
+      "menuItemId": "centavos2",
+      "name": "centavos2",
+      "price": 0.2,
+      "quantity": 1,
+      "subtotal": 0.2
+     }
+    ],
+    "total": 0.30000000000000004
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 0.3,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "un centavo de redondeo pasa",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 3,
+      "subtotal": 75
+     }
+    ],
+    "total": 75.01
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 75,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "dos centavos ya no",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 3,
+      "subtotal": 75
+     }
+    ],
+    "total": 74.98
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 75,
+    "mismatch": true,
+    "reasons": [
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "a domicilio, honesto",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "delivery",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 4,
+      "subtotal": 100
+     }
+    ],
+    "total": 135,
+    "deliveryFee": 35,
+    "deliveryAddress": "Casa azul"
+   },
+   "restaurant": {
+    "name": "Central",
+    "currencyCode": "MXN",
+    "deliveryEnabled": true,
+    "deliveryFee": 35
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 135,
+    "mismatch": false,
+    "reasons": [],
+    "deliveryFee": 35,
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: a domicilio sin pagar el envío",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "delivery",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 4,
+      "subtotal": 100
+     }
+    ],
+    "total": 100,
+    "deliveryAddress": "Casa azul"
+   },
+   "restaurant": {
+    "name": "Central",
+    "currencyCode": "MXN",
+    "deliveryEnabled": true,
+    "deliveryFee": 35
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 135,
+    "mismatch": true,
+    "reasons": [
+     "delivery_fee_differs",
+     "total_differs"
+    ],
+    "deliveryFee": 35,
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: envío inventado en un pedido para recoger",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 4,
+      "subtotal": 100
+     }
+    ],
+    "total": 120,
+    "deliveryFee": 20
+   },
+   "restaurant": {
+    "name": "Central",
+    "currencyCode": "MXN",
+    "deliveryEnabled": true,
+    "deliveryFee": 35
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 100,
+    "mismatch": true,
+    "reasons": [
+     "delivery_fee_differs",
+     "total_differs"
+    ],
+    "deliveryFee": 0,
+    "available": true
+   }
+  },
+  {
+   "name": "a domicilio en un local que no entrega",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "delivery",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 4,
+      "subtotal": 100
+     }
+    ],
+    "total": 100,
+    "deliveryAddress": "Casa azul"
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "available": false,
+    "serverTotal": 100,
+    "mismatch": false,
+    "reasons": [
+     "delivery_not_offered"
+    ]
+   }
+  },
+  {
+   "name": "local en dólares",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 30,
+      "quantity": 1,
+      "subtotal": 30
+     }
+    ],
+    "total": 30
+   },
+   "restaurant": {
+    "name": "Fresh Water",
+    "currencyCode": "USD"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 30,
+    "mismatch": false,
+    "reasons": [],
+    "currency": "USD",
+    "available": true
+   }
+  },
+  {
+   "name": "local viejo sin moneda es de México",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "refresco",
+      "name": "refresco",
+      "price": 30,
+      "quantity": 1,
+      "subtotal": 30
+     }
+    ],
+    "total": 30
+   },
+   "restaurant": {
+    "name": "Viejo"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 30,
+    "mismatch": false,
+    "reasons": [],
+    "currency": "MXN",
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: descuento inventado",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 12,
+      "subtotal": 300
+     }
+    ],
+    "total": 50,
+    "discountAmount": 250,
+    "discountReason": "promo",
+    "appliedDiscountIds": [
+     "x"
+    ]
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 300,
+    "mismatch": true,
+    "reasons": [
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "total guardado como texto que sí cuadra",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 2,
+      "subtotal": 50
+     }
+    ],
+    "total": "50"
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 50,
+    "mismatch": false,
+    "reasons": [],
+    "available": true
+   }
+  },
+  {
+   "name": "total ausente",
+   "order": {
+    "orderSource": "customer_web",
+    "paymentMethod": "mercado_pago",
+    "paymentStatus": "pending",
+    "status": "payment_pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "taco",
+      "name": "taco",
+      "price": 25,
+      "quantity": 2,
+      "subtotal": 50
+     }
+    ],
+    "total": null
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "serverTotal": 50,
+    "mismatch": true,
+    "reasons": [
+     "total_differs"
+    ],
+    "available": true
+   }
+  },
+  {
+   "name": "trampa: platillo apagado a $1 (tiene precio aunque hoy no se venda)",
+   "order": {
+    "orderSource": "customer_app",
+    "paymentMethod": "pay_at_pickup",
+    "paymentStatus": "pending",
+    "status": "pending",
+    "orderType": "pickup",
+    "items": [
+     {
+      "menuItemId": "agotado",
+      "name": "Pozole",
+      "price": 1,
+      "quantity": 2,
+      "subtotal": 2
+     }
+    ],
+    "total": 2
+   },
+   "restaurant": {
+    "name": "Taquería",
+    "currencyCode": "MXN"
+   },
+   "expect": {
+    "priceable": true,
+    "available": false,
+    "serverTotal": 220,
+    "mismatch": true,
+    "reasons": [
+     "item_price_differs",
+     "item_unavailable",
+     "total_differs"
+    ]
+   }
+  }
+ ]
+}

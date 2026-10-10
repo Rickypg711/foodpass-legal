@@ -12,12 +12,19 @@ import {
   preferenceBodySafeSummary,
   urlHostOnly,
 } from "@/lib/mercadoPago/mpWebDebug";
-import {
-  calculateMarketplaceFeeAmount,
-  parseMarketplaceFeeRate,
-} from "@/lib/mercadoPago/marketplaceFee";
+import { parseMarketplaceFeeRate } from "@/lib/mercadoPago/marketplaceFee";
 import { evaluateRestaurantMpEligibility } from "@/lib/mercadoPago/restaurantEligibility";
 import { PAYMENT_METHOD_MERCADO_PAGO } from "@/lib/types/order";
+import {
+  ORDER_NEEDS_REVIEW_MESSAGE,
+  buildPricingAudit,
+  commissionFieldsFor,
+  correctedOrderFields,
+  isCustomerOrder,
+  lockedPricing,
+  preferenceItemsFrom,
+  priceOrderFromMenu,
+} from "@/lib/order/serverOrderPricing";
 
 const MP_PREFERENCES_URL = "https://api.mercadopago.com/checkout/preferences";
 
@@ -189,23 +196,92 @@ export async function POST(request: Request) {
     const failureUrl = `${base}${orderPath}?payment=failure`;
     const pendingUrl = `${base}${orderPath}?payment=pending`;
 
-    const items = (order.items ?? []).map((it) => ({
-      title: (it.name ?? "Item").toString(),
-      quantity: typeof it.quantity === "number" ? it.quantity : 1,
-      unit_price:
-        typeof it.price === "number"
-          ? it.price
-          : typeof it.subtotal === "number" && typeof it.quantity === "number" && it.quantity > 0
-            ? it.subtotal / it.quantity
-            : 0,
-    }));
-    // 🛵 A domicilio (9-sep): el envío ya está sumado en order.total; si no
-    // viaja como renglón, Mercado Pago cobraría MENOS que el total y la
-    // orden quedaría "pagada" con dinero faltante.
-    const deliveryFee =
-      typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? order.deliveryFee : 0;
-    if (deliveryFee > 0) {
-      items.push({ title: "Envío a domicilio", quantity: 1, unit_price: deliveryFee });
+    const marketplaceFeeRate = parseMarketplaceFeeRate(
+      process.env.MERCADO_PAGO_MARKETPLACE_FEE_RATE,
+    );
+
+    // 10-oct-2026: lo que se cobra sale del menú del local, no del pedido.
+    // Antes esta ruta cobraba `items[].price` y `total`, que escribe el
+    // teléfono: se podía pagar $1 por $300 de comida. Regla y casos en
+    // lib/order/orderPricing.cjs (el mismo archivo que usa el webhook).
+    let items: { title: string; quantity: number; unit_price: number }[];
+    let orderTotal: number;
+    let currency: string | undefined;
+    let priceChanged = false;
+    const orderDoc = orderSnap.data() as Record<string, unknown>;
+
+    if (isCustomerOrder(orderDoc)) {
+      const locked = lockedPricing(orderDoc);
+      const pricing =
+        locked ?? (await priceOrderFromMenu(db, restaurantId, orderDoc, restaurantData));
+
+      if (!pricing.priceable || !pricing.available || !pricing.serverTotal || pricing.serverTotal <= 0) {
+        // Platillo que ya no existe o está apagado, cantidad rara, opción
+        // agotada: no se cobra. Queda anotado y el comensal vuelve a su carrito.
+        await orderSnap.ref.update({
+          pricing: {
+            ...buildPricingAudit(pricing, { by: "create_preference_rejected", corrected: false }),
+            at: FieldValue.serverTimestamp(),
+          },
+        });
+        mpWebDebugServer("order_pricing_rejected", {
+          restaurantId,
+          orderId,
+          reasons: pricing.reasons,
+        });
+        return NextResponse.json(
+          { error: "order_needs_review", message: ORDER_NEEDS_REVIEW_MESSAGE, reasons: pricing.reasons },
+          { status: 409 },
+        );
+      }
+
+      if (!locked) {
+        // El pedido queda con los precios del servidor ANTES de ir a Mercado
+        // Pago, para que el webhook compare el pago contra `pricing.serverTotal`
+        // y el dueño vea en Pedidos lo mismo que se cobró.
+        await orderSnap.ref.update({
+          ...correctedOrderFields(orderDoc, pricing),
+          ...commissionFieldsFor(orderDoc, pricing.serverTotal, marketplaceFeeRate),
+          pricing: {
+            ...buildPricingAudit(pricing, { by: "create_preference", corrected: pricing.mismatch }),
+            at: FieldValue.serverTimestamp(),
+          },
+        });
+      }
+      mpWebDebugServer("order_priced", {
+        restaurantId,
+        orderId,
+        locked: !!locked,
+        mismatch: pricing.mismatch,
+        reasons: pricing.reasons,
+      });
+
+      items = preferenceItemsFrom(pricing);
+      orderTotal = pricing.serverTotal;
+      currency = pricing.currency;
+      priceChanged = pricing.mismatch;
+    } else {
+      // Pedido que escribió el personal del local (Caja): sus precios son los
+      // del dueño. El comensal no puede crear un pedido así (firestore.rules).
+      items = (order.items ?? []).map((it) => ({
+        title: (it.name ?? "Item").toString(),
+        quantity: typeof it.quantity === "number" ? it.quantity : 1,
+        unit_price:
+          typeof it.price === "number"
+            ? it.price
+            : typeof it.subtotal === "number" && typeof it.quantity === "number" && it.quantity > 0
+              ? it.subtotal / it.quantity
+              : 0,
+      }));
+      // 🛵 A domicilio (9-sep): el envío ya está sumado en order.total; si no
+      // viaja como renglón, Mercado Pago cobraría MENOS que el total y la
+      // orden quedaría "pagada" con dinero faltante.
+      const deliveryFee =
+        typeof order.deliveryFee === "number" && order.deliveryFee > 0 ? order.deliveryFee : 0;
+      if (deliveryFee > 0) {
+        items.push({ title: "Envío a domicilio", quantity: 1, unit_price: deliveryFee });
+      }
+      orderTotal = typeof order.total === "number" ? order.total : 0;
     }
 
     const webhookUrl = process.env.MERCADO_PAGO_WEBHOOK_URL?.trim() ?? "";
@@ -217,15 +293,6 @@ export async function POST(request: Request) {
       });
     }
 
-    const orderTotal = typeof order.total === "number" ? order.total : 0;
-    const marketplaceFeeRate = parseMarketplaceFeeRate(
-      process.env.MERCADO_PAGO_MARKETPLACE_FEE_RATE,
-    );
-    const marketplaceFeeAmount = calculateMarketplaceFeeAmount(
-      orderTotal,
-      marketplaceFeeRate,
-    );
-
     const preferenceBody = buildMercadoPagoPreferenceBody({
       orderId,
       restaurantId,
@@ -233,6 +300,7 @@ export async function POST(request: Request) {
       customerName: order.customerName,
       items,
       total: orderTotal,
+      currency,
       marketplaceFeeRate,
       successUrl,
       failureUrl,
@@ -332,6 +400,10 @@ export async function POST(request: Request) {
       redirectUrl,
       sandboxMode: isSandboxMode(),
       redirectSource: redirectSource ?? undefined,
+      // Lo que de verdad se cobra (precio del menú). `priceChanged` = el pedido
+      // traía otro precio y el servidor lo dejó en el del menú.
+      total: orderTotal,
+      priceChanged,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "internal_error";

@@ -32,20 +32,22 @@ function shouldIncludeAutoReturn(successUrl) {
 }
 
 function buildMercadoPagoPreferenceBody(input) {
+  // 10-oct-2026: la moneda es la del local (espejo de buildPreferenceRequest.ts).
+  const currency = /^[A-Z]{3}$/.test(input.currency ?? "") ? input.currency : "MXN";
   const mpItems =
     input.items.length > 0
       ? input.items.map((item) => ({
           title: item.title.slice(0, 256),
           quantity: Math.max(1, Math.round(item.quantity)),
           unit_price: Number(item.unit_price),
-          currency_id: "MXN",
+          currency_id: currency,
         }))
       : [
           {
             title: `Pedido ${input.orderId}`,
             quantity: 1,
             unit_price: input.total,
-            currency_id: "MXN",
+            currency_id: currency,
           },
         ];
 
